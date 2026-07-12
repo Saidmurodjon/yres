@@ -17,7 +17,11 @@ import { Layers, Pencil } from "lucide-react";
 import { useState } from "react";
 import { useEnvelope } from "../../hooks";
 import { ApiError } from "../../lib/api";
-import { ENVELOPE_ELEMENT_CATEGORY_LABELS, ORIENTATION_LABELS, formatNumber } from "../../lib/labels";
+import {
+  ENVELOPE_ELEMENT_CATEGORY_LABELS,
+  ORIENTATION_LABELS,
+  formatNumber,
+} from "../../lib/labels";
 import { EnvelopeEditorDialog } from "./envelope-editor-dialog";
 
 export function EnvelopeTab({ buildingId }: { buildingId: string }) {
@@ -102,8 +106,9 @@ export function EnvelopeTab({ buildingId }: { buildingId: string }) {
                       <TableRow key={ct.id}>
                         <TableCell className="font-medium">{ct.code}</TableCell>
                         <TableCell>
-                          {ENVELOPE_ELEMENT_CATEGORY_LABELS[ct.elementCategory as keyof typeof ENVELOPE_ELEMENT_CATEGORY_LABELS] ??
-                            ct.elementCategory}
+                          {ENVELOPE_ELEMENT_CATEGORY_LABELS[
+                            ct.elementCategory as keyof typeof ENVELOPE_ELEMENT_CATEGORY_LABELS
+                          ] ?? ct.elementCategory}
                         </TableCell>
                         <TableCell>
                           <Badge variant={ct.scenario === "before" ? "secondary" : "default"}>

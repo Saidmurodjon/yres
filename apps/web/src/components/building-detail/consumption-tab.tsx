@@ -25,7 +25,12 @@ import { type FormEvent, useState } from "react";
 import { useConsumption, useCreateConsumption } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import type { EnergyCarrier } from "../../lib/api-types";
-import { ENERGY_CARRIERS, ENERGY_CARRIER_LABELS, MONTH_LABELS, formatNumber } from "../../lib/labels";
+import {
+  ENERGY_CARRIERS,
+  ENERGY_CARRIER_LABELS,
+  MONTH_LABELS,
+  formatNumber,
+} from "../../lib/labels";
 
 interface NewBillForm {
   energyCarrier: EnergyCarrier;
