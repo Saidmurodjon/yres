@@ -31,7 +31,10 @@ import {
   useReplaceCoolingWindows,
   useReplaceDhw,
   useReplaceDistribution,
+  useReplaceEquipment,
   useReplaceGeneration,
+  useReplaceLighting,
+  useReplaceRenewables,
   useReplaceVentilation,
   useSystems,
 } from "../../hooks";
@@ -43,8 +46,12 @@ import type {
   DistributionSystem,
   DistributionSystemType,
   EnergyCarrier,
+  EquipmentItem,
   GenerationSource,
   GenerationSourceType,
+  LightingZone,
+  RenewableSystem,
+  RenewableSystemType,
   VentilationSystem,
   VentilationSystemType,
 } from "../../lib/api-types";
@@ -58,6 +65,8 @@ import {
   GENERATION_SOURCE_TYPES,
   ORIENTATIONS,
   ORIENTATION_LABELS,
+  RENEWABLE_SYSTEM_TYPE_LABELS,
+  RENEWABLE_SYSTEM_TYPES,
   VENTILATION_SYSTEM_TYPE_LABELS,
 } from "../../lib/labels";
 
@@ -262,6 +271,16 @@ export function SystemsTab({ buildingId }: { buildingId: string }) {
       <GenerationSection buildingId={buildingId} scenario={scenario} sources={data.generationSources} />
       <CoolingWindowsSection buildingId={buildingId} scenario={scenario} windows={data.coolingWindows} />
       <CoolingSystemsSection buildingId={buildingId} scenario={scenario} systems={data.coolingSystems} />
+      <LightingSection buildingId={buildingId} scenario={scenario} zones={data.lightingZones} />
+      <EquipmentSection buildingId={buildingId} scenario={scenario} items={data.equipmentItems} />
+
+      <div className="border-t border-border pt-6">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Renewables (solar PV / solar DHW) aren't tied to a scenario — they represent a proposed
+          addition with no "before" state, so this list applies regardless of the tab above.
+        </p>
+        <RenewablesSection buildingId={buildingId} systems={data.renewableSystems} />
+      </div>
     </div>
   );
 }
@@ -677,6 +696,253 @@ function CoolingSystemsSection({
       rows={rows}
       onRowsChange={setRows}
       onAddRow={() => ({ id: newLocalId(), description: "", seer: "3" })}
+      onSave={handleSave}
+      saving={replace.isPending}
+      error={error}
+    />
+  );
+}
+
+function LightingSection({
+  buildingId,
+  scenario,
+  zones,
+}: { buildingId: string; scenario: Scenario; zones: LightingZone[] }) {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const replace = useReplaceLighting(buildingId);
+
+  useEffect(() => {
+    setRows(
+      toRows(zones, scenario, (z) => ({
+        id: z.id,
+        name: z.name,
+        areaM2: z.areaM2.toString(),
+        incandescentFraction: z.technologyMix.incandescentFraction.toString(),
+        fluorescentElectromagneticFraction:
+          z.technologyMix.fluorescentElectromagneticFraction.toString(),
+        fluorescentElectronicFraction: z.technologyMix.fluorescentElectronicFraction.toString(),
+        ledFraction: z.technologyMix.ledFraction.toString(),
+        utilizationFactor: z.utilizationFactor.toString(),
+      })),
+    );
+    setError(null);
+  }, [zones, scenario]);
+
+  async function handleSave() {
+    setError(null);
+    try {
+      await replace.mutateAsync({
+        scenario,
+        zones: rows.map((r) => ({
+          name: r.name || "Zone",
+          areaM2: num(r, "areaM2"),
+          technologyMix: {
+            incandescentFraction: num(r, "incandescentFraction"),
+            fluorescentElectromagneticFraction: num(r, "fluorescentElectromagneticFraction"),
+            fluorescentElectronicFraction: num(r, "fluorescentElectronicFraction"),
+            ledFraction: num(r, "ledFraction"),
+          },
+          utilizationFactor: num(r, "utilizationFactor"),
+        })),
+      });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to save lighting zones.");
+    }
+  }
+
+  return (
+    <EditableRowsCard
+      title="Lighting"
+      description="Technology-mix fractions should sum to ~1 per zone. Utilization factor reflects control strategy (e.g. 0.3 always-on, 0.55 with presence/daylight sensors)."
+      columns={[
+        { key: "name", label: "Zone", type: "text" },
+        { key: "areaM2", label: "Area (m²)", type: "number" },
+        { key: "incandescentFraction", label: "Incandescent (0-1)", type: "number" },
+        { key: "fluorescentElectromagneticFraction", label: "Fluor. magnetic (0-1)", type: "number" },
+        { key: "fluorescentElectronicFraction", label: "Fluor. electronic (0-1)", type: "number" },
+        { key: "ledFraction", label: "LED (0-1)", type: "number" },
+        { key: "utilizationFactor", label: "Utilization factor (0-1)", type: "number" },
+      ]}
+      rows={rows}
+      onRowsChange={setRows}
+      onAddRow={() => ({
+        id: newLocalId(),
+        name: "",
+        areaM2: "0",
+        incandescentFraction: "0",
+        fluorescentElectromagneticFraction: "0",
+        fluorescentElectronicFraction: "0",
+        ledFraction: "1",
+        utilizationFactor: "0.4",
+      })}
+      onSave={handleSave}
+      saving={replace.isPending}
+      error={error}
+    />
+  );
+}
+
+function EquipmentSection({
+  buildingId,
+  scenario,
+  items,
+}: { buildingId: string; scenario: Scenario; items: EquipmentItem[] }) {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const replace = useReplaceEquipment(buildingId);
+
+  useEffect(() => {
+    setRows(
+      toRows(items, scenario, (i) => ({
+        id: i.id,
+        name: i.name,
+        category: i.category ?? "",
+        unitPowerKw: i.unitPowerKw.toString(),
+        quantity: i.quantity.toString(),
+        heatingSeasonHours: i.heatingSeasonHours.toString(),
+        coolingSeasonHours: i.coolingSeasonHours.toString(),
+        heatingUtilizationFactor: i.heatingUtilizationFactor.toString(),
+        coolingUtilizationFactor: i.coolingUtilizationFactor.toString(),
+      })),
+    );
+    setError(null);
+  }, [items, scenario]);
+
+  async function handleSave() {
+    setError(null);
+    try {
+      await replace.mutateAsync({
+        scenario,
+        items: rows.map((r) => ({
+          name: r.name || "Equipment",
+          category: r.category || null,
+          unitPowerKw: num(r, "unitPowerKw"),
+          quantity: Math.round(num(r, "quantity")),
+          heatingSeasonHours: num(r, "heatingSeasonHours"),
+          coolingSeasonHours: num(r, "coolingSeasonHours"),
+          heatingUtilizationFactor: num(r, "heatingUtilizationFactor"),
+          coolingUtilizationFactor: num(r, "coolingUtilizationFactor"),
+        })),
+      });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to save equipment items.");
+    }
+  }
+
+  return (
+    <EditableRowsCard
+      title="Equipment"
+      description="Electrical appliances/devices. Cooling-season consumption also feeds the cooling load below as an internal heat gain."
+      columns={[
+        { key: "name", label: "Name", type: "text" },
+        { key: "category", label: "Category", type: "text" },
+        { key: "unitPowerKw", label: "Unit power (kW)", type: "number" },
+        { key: "quantity", label: "Qty", type: "number" },
+        { key: "heatingSeasonHours", label: "Heating-season hours", type: "number" },
+        { key: "coolingSeasonHours", label: "Cooling-season hours", type: "number" },
+        { key: "heatingUtilizationFactor", label: "Heating util. (0-1)", type: "number" },
+        { key: "coolingUtilizationFactor", label: "Cooling util. (0-1)", type: "number" },
+      ]}
+      rows={rows}
+      onRowsChange={setRows}
+      onAddRow={() => ({
+        id: newLocalId(),
+        name: "",
+        category: "",
+        unitPowerKw: "0.2",
+        quantity: "1",
+        heatingSeasonHours: "0",
+        coolingSeasonHours: "0",
+        heatingUtilizationFactor: "1",
+        coolingUtilizationFactor: "1",
+      })}
+      onSave={handleSave}
+      saving={replace.isPending}
+      error={error}
+    />
+  );
+}
+
+function RenewablesSection({
+  buildingId,
+  systems,
+}: { buildingId: string; systems: RenewableSystem[] }) {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const replace = useReplaceRenewables(buildingId);
+
+  useEffect(() => {
+    setRows(
+      systems.map((s) => ({
+        id: s.id,
+        systemType: s.systemType,
+        capacityKw: s.capacityKw?.toString() ?? "",
+        collectorCount: s.collectorCount?.toString() ?? "",
+        availableAreaM2: s.availableAreaM2.toString(),
+        unitCostUsd: s.unitCostUsd.toString(),
+        annualProductionKwh: s.monthlyProduction
+          .reduce((sum, m) => sum + m.productionKwh, 0)
+          .toString(),
+      })),
+    );
+    setError(null);
+  }, [systems]);
+
+  async function handleSave() {
+    setError(null);
+    try {
+      await replace.mutateAsync({
+        systems: rows.map((r) => {
+          const collectorCount = numOrNull(r, "collectorCount");
+          // Entered as a single annual total (matching this tab's other
+          // fields) rather than a 12-value PVGIS-style table — spread
+          // evenly across months for storage. See EditableRowsCard's
+          // description text on this section for why.
+          const monthlyProductionKwh = Array<number>(12).fill(num(r, "annualProductionKwh") / 12);
+          return {
+            systemType: (r.systemType || "pv") as RenewableSystemType,
+            capacityKw: numOrNull(r, "capacityKw"),
+            collectorCount: collectorCount !== null ? Math.round(collectorCount) : null,
+            availableAreaM2: num(r, "availableAreaM2"),
+            unitCostUsd: num(r, "unitCostUsd"),
+            monthlyProductionKwh,
+          };
+        }),
+      });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to save renewable systems.");
+    }
+  }
+
+  return (
+    <EditableRowsCard
+      title="Renewables — solar PV & solar DHW"
+      description="Production is entered as an annual total (spread evenly across months for storage) rather than a month-by-month PVGIS table. It displaces purchased electricity (PV) or DHW energy (Solar DHW) — see the Results page's 'Potential energy use' KPI."
+      columns={[
+        {
+          key: "systemType",
+          label: "Type",
+          type: "select",
+          options: RENEWABLE_SYSTEM_TYPES.map((v) => ({ value: v, label: RENEWABLE_SYSTEM_TYPE_LABELS[v] })),
+        },
+        { key: "capacityKw", label: "Capacity (kW, PV)", type: "number" },
+        { key: "collectorCount", label: "Collectors (Solar DHW)", type: "number" },
+        { key: "availableAreaM2", label: "Available roof area (m²)", type: "number" },
+        { key: "unitCostUsd", label: "Cost (USD)", type: "number" },
+        { key: "annualProductionKwh", label: "Annual production (kWh/y)", type: "number" },
+      ]}
+      rows={rows}
+      onRowsChange={setRows}
+      onAddRow={() => ({
+        id: newLocalId(),
+        systemType: "pv",
+        capacityKw: "10",
+        collectorCount: "",
+        availableAreaM2: "100",
+        unitCostUsd: "7268",
+        annualProductionKwh: "15607",
+      })}
       onSave={handleSave}
       saving={replace.isPending}
       error={error}

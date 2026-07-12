@@ -1,4 +1,5 @@
 import {
+  LAMP_TYPE_NAMES,
   type Database,
   building,
   constructionType,
@@ -9,9 +10,13 @@ import {
   energyMeasure,
   energyTariff,
   envelopeElement,
+  equipmentItem,
   generationSource,
+  lampType,
+  lightingZone,
   openingType,
   pipeLossReference,
+  renewableSystem,
   surfaceResistance,
   ventilationSystem,
 } from "@yres/db";
@@ -24,8 +29,12 @@ import type {
   EndUseEnergyTotals,
   EnergyMeasureResult,
   EnvelopeHeatLossResult,
+  EquipmentResult,
   GenerationSourceResult,
   HeatingEnergyBalanceResult,
+  LampPowerDensityWPerM2,
+  LightingResult,
+  RenewableProductionResult,
   Scenario,
   VentilationLossResult,
 } from "@yres/types";
@@ -41,6 +50,7 @@ import {
   type PipeSegmentInput,
   calculateDistributionLoss,
 } from "./distribution.service";
+import { type EquipmentItemInput, calculateEquipmentResult } from "./equipment.service";
 import {
   type BuildingBlockInput,
   type ConstructionTypeUValueInput,
@@ -67,12 +77,17 @@ import {
   type MonthlyClimateInput,
   calculateEnvelopeHeatLoss,
 } from "./heatloss.service";
+import { type LightingZoneInput, calculateLightingResult } from "./lighting.service";
+import { type RenewableSystemInput, calculateRenewableProduction } from "./renewable.service";
 import {
   calculateMechanicalAirFlowM3h,
   calculateMechanicalVentilationElectricalKwh,
   calculateNaturalAirFlowM3h,
   calculateVentilationLoss,
 } from "./ventilation.service";
+
+/** `EMS` sheet: flat 3% savings applied to each end-use's standardized need (`D5=C5*3%`, same pattern for DHW/Cooling/Lighting). */
+const EMS_SAVINGS_RATE = 0.03;
 
 const SCENARIOS: Scenario[] = ["before", "after"];
 
@@ -246,6 +261,41 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     where: eq(generationSource.buildingId, buildingId),
   });
 
+  // --- Lighting ---
+  const lightingZoneRows = await db.query.lightingZone.findMany({
+    where: eq(lightingZone.buildingId, buildingId),
+  });
+  const lampTypeRows = await db.select().from(lampType);
+  const lampPowerDensityByName = new Map(lampTypeRows.map((l) => [l.name, l.powerDensityWPerM2]));
+  const lampPowerDensity: LampPowerDensityWPerM2 = {
+    incandescent: lampPowerDensityByName.get(LAMP_TYPE_NAMES.incandescent) ?? 0,
+    fluorescentElectromagnetic:
+      lampPowerDensityByName.get(LAMP_TYPE_NAMES.fluorescentElectromagnetic) ?? 0,
+    fluorescentElectronic: lampPowerDensityByName.get(LAMP_TYPE_NAMES.fluorescentElectronic) ?? 0,
+    led: lampPowerDensityByName.get(LAMP_TYPE_NAMES.led) ?? 0,
+  };
+
+  // --- Equipment ---
+  const equipmentItemRows = await db.query.equipmentItem.findMany({
+    where: eq(equipmentItem.buildingId, buildingId),
+  });
+
+  // --- Renewables (PV / Solar DHW) — not scenario-tagged: these represent a
+  // proposed addition, so their production only ever offsets the "after"
+  // scenario's totals (see buildAuditSummary).
+  const renewableSystemRows = await db.query.renewableSystem.findMany({
+    where: eq(renewableSystem.buildingId, buildingId),
+    with: { monthlyProduction: true },
+  });
+  const renewableProduction = calculateRenewableProduction(
+    renewableSystemRows.map(
+      (r): RenewableSystemInput => ({
+        systemType: r.systemType,
+        monthlyProductionKwh: r.monthlyProduction.map((m) => m.productionKwh),
+      }),
+    ),
+  );
+
   const envelopeHeatLoss: EnvelopeHeatLossResult[] = [];
   const ventilationLoss: VentilationLossResult[] = [];
   const heatingEnergyBalance: HeatingEnergyBalanceResult[] = [];
@@ -253,6 +303,8 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
   const distributionLoss: DistributionLossResult[] = [];
   const cooling: CoolingResult[] = [];
   const generation: GenerationSourceResult[] = [];
+  const lighting: LightingResult[] = [];
+  const equipment: EquipmentResult[] = [];
 
   for (const scenario of SCENARIOS) {
     const heatLossGroups = resolveHeatLossGroups(
@@ -380,6 +432,40 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
       );
     }
 
+    lighting.push(
+      calculateLightingResult(
+        scenario,
+        lightingZoneRows
+          .filter((z) => z.scenario === scenario)
+          .map(
+            (z): LightingZoneInput => ({
+              areaM2: z.areaM2,
+              technologyMix: z.technologyMix,
+              utilizationFactor: z.utilizationFactor,
+            }),
+          ),
+        lampPowerDensity,
+        operationHoursDuringHeatingSeason,
+      ),
+    );
+
+    const equipmentResult = calculateEquipmentResult(
+      scenario,
+      equipmentItemRows
+        .filter((e) => e.scenario === scenario)
+        .map(
+          (e): EquipmentItemInput => ({
+            unitPowerKw: e.unitPowerKw,
+            quantity: e.quantity,
+            heatingSeasonHours: e.heatingSeasonHours,
+            coolingSeasonHours: e.coolingSeasonHours,
+            heatingUtilizationFactor: e.heatingUtilizationFactor,
+            coolingUtilizationFactor: e.coolingUtilizationFactor,
+          }),
+        ),
+    );
+    equipment.push(equipmentResult);
+
     const coolingWindowInputs: CoolingWindowInput[] = coolingWindowRows
       .filter((w) => w.scenario === scenario)
       .map((w) => ({
@@ -415,7 +501,14 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
       coolingRadiationByOrientation,
     );
     const coolingSeer = coolingSystemRows.find((c) => c.scenario === scenario)?.seer ?? 1;
-    cooling.push(calculateCoolingResult(scenario, coolingSolarGainsKwh, 0, coolingSeer));
+    cooling.push(
+      calculateCoolingResult(
+        scenario,
+        coolingSolarGainsKwh,
+        equipmentResult.coolingSeasonConsumptionKwh,
+        coolingSeer,
+      ),
+    );
 
     const heatingAnnualNeedKwh =
       heatingEnergyBalance[heatingEnergyBalance.length - 1]?.annualNetEnergyNeedKwh ?? 0;
@@ -502,12 +595,14 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
       ventilationLoss,
       distributionLoss,
       generation,
+      lighting,
+      equipment,
+      renewableProduction,
+      heatingEnergyBalance,
+      dhwDemand,
+      cooling,
     });
 
-    // TODO: lighting/equipment/PV/solar-DHW/EMS measures aren't modeled by this
-    // pass of the audit engine (see docs/data-dictionary.md's "light pass"
-    // sheets) — their savings default to 0 until LightingService/EquipmentService/
-    // RenewableService are implemented.
     const tariff = latestTariffByCarrier.get(inferCarrierForMeasure(measure.category)) ?? {
       unitCostUsd: 0.05,
       emissionFactorKgCo2PerKwh: 0.3,
@@ -544,7 +639,14 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     };
   });
 
-  const summary = buildAuditSummary(measures, heatedFloorAreaM2, finalEnergyByEndUse);
+  const summary = buildAuditSummary(
+    measures,
+    heatedFloorAreaM2,
+    finalEnergyByEndUse,
+    lighting,
+    equipment,
+    renewableProduction,
+  );
 
   return {
     buildingId,
@@ -558,6 +660,9 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     distributionLoss,
     cooling,
     generation,
+    lighting,
+    equipment,
+    renewableProduction,
     finalEnergyByEndUse,
     measures,
   };
@@ -575,6 +680,12 @@ function inferCarrierForMeasure(
   if (category === "gas_boiler_replacement" || category === "heating_system") return "gas";
   if (category === "lighting" || category === "equipment_replacement" || category === "pv")
     return "electricity";
+  // "solar_dhw" and "ems" default to "gas": Solar DHW displaces whatever
+  // heats the building's water (usually gas in this workbook's examples),
+  // and EMS savings are genuinely a thermal+electrical mix (see the EMS
+  // sheet's separate D9/D10 totals) that this single-tariff-per-measure
+  // model can't represent precisely — "gas" is the same approximation
+  // already used for every other unlisted category here.
   return "gas";
 }
 
@@ -585,6 +696,12 @@ function resolveMeasureStandardizedSavingsKwh(
     ventilationLoss: VentilationLossResult[];
     distributionLoss: DistributionLossResult[];
     generation: GenerationSourceResult[];
+    lighting: LightingResult[];
+    equipment: EquipmentResult[];
+    renewableProduction: RenewableProductionResult[];
+    heatingEnergyBalance: HeatingEnergyBalanceResult[];
+    dhwDemand: DhwDemandResult[];
+    cooling: CoolingResult[];
   },
 ): number {
   const before = context.envelopeHeatLoss.find((r) => r.scenario === "before");
@@ -631,6 +748,42 @@ function resolveMeasureStandardizedSavingsKwh(
         rows.reduce((s, r) => s + r.finalEnergyConsumptionKwh, 0);
       return sum(beforeGen) - sum(afterGen);
     }
+    // `Lighting` sheet: `Measures_summary!E11=Lighting!L17` — the before/after
+    // delta of the sheet's own total, same pattern as every envelope/
+    // generation category above.
+    case "lighting": {
+      const beforeL = context.lighting.find((l) => l.scenario === "before")?.annualConsumptionKwh ?? 0;
+      const afterL = context.lighting.find((l) => l.scenario === "after")?.annualConsumptionKwh ?? 0;
+      return beforeL - afterL;
+    }
+    // `Equipment` sheet: `Measures_summary!E12=Equipment!K102` (before/after total delta).
+    case "equipment_replacement": {
+      const beforeE = context.equipment.find((e) => e.scenario === "before")?.annualConsumptionKwh ?? 0;
+      const afterE = context.equipment.find((e) => e.scenario === "after")?.annualConsumptionKwh ?? 0;
+      return beforeE - afterE;
+    }
+    // `PV`/`Solar DHW` sheets: there's no "before" state — installing the
+    // system simply displaces that much purchased energy, so annual
+    // production itself *is* the standardized saving (`Measures_summary!E13
+    // =PV!C25`, `E14`-equivalent for Solar DHW).
+    case "pv":
+      return context.renewableProduction.find((r) => r.systemType === "pv")?.annualProductionKwh ?? 0;
+    case "solar_dhw":
+      return (
+        context.renewableProduction.find((r) => r.systemType === "solar_dhw")?.annualProductionKwh ?? 0
+      );
+    // `EMS` sheet: flat 3% of each "after" (i.e. after every other proposed
+    // measure) end-use need — heating, DHW, cooling, and lighting.
+    case "ems": {
+      const afterHeatingKwh =
+        context.heatingEnergyBalance.find((h) => h.scenario === "after")?.annualNetEnergyNeedKwh ?? 0;
+      const afterDhwKwh = context.dhwDemand.find((d) => d.scenario === "after")?.totalKwh ?? 0;
+      const afterCoolingKwh =
+        context.cooling.find((c) => c.scenario === "after")?.electricalEnergyForCoolingKwh ?? 0;
+      const afterLightingKwh =
+        context.lighting.find((l) => l.scenario === "after")?.annualConsumptionKwh ?? 0;
+      return (afterHeatingKwh + afterDhwKwh + afterCoolingKwh + afterLightingKwh) * EMS_SAVINGS_RATE;
+    }
     default:
       return 0;
   }
@@ -640,13 +793,36 @@ function buildAuditSummary(
   measures: EnergyMeasureResult[],
   heatedFloorAreaM2: number,
   finalEnergyByEndUse: EndUseEnergyTotals[],
+  lighting: LightingResult[],
+  equipment: EquipmentResult[],
+  renewableProduction: RenewableProductionResult[],
 ): AuditSummary {
-  const currentTotalKwh = finalEnergyByEndUse
-    .filter((e) => e.scenario === "before")
-    .reduce((sum, e) => sum + e.finalEnergyConsumptionKwh, 0);
-  const potentialTotalKwh = finalEnergyByEndUse
-    .filter((e) => e.scenario === "after")
-    .reduce((sum, e) => sum + e.finalEnergyConsumptionKwh, 0);
+  // Lighting and equipment are direct final electricity consumption (no
+  // generation/distribution conversion applies to them the way it does for
+  // heating/DHW/cooling), so they're summed in here rather than folded into
+  // `finalEnergyByEndUse` (whose `EndUse` type is specifically the three
+  // end-uses that go through a `generationSource`).
+  const lightingEquipmentKwh = (scenario: "before" | "after") =>
+    (lighting.find((l) => l.scenario === scenario)?.annualConsumptionKwh ?? 0) +
+    (equipment.find((e) => e.scenario === scenario)?.annualConsumptionKwh ?? 0);
+
+  const currentTotalKwh =
+    finalEnergyByEndUse
+      .filter((e) => e.scenario === "before")
+      .reduce((sum, e) => sum + e.finalEnergyConsumptionKwh, 0) + lightingEquipmentKwh("before");
+
+  // PV/Solar DHW production only ever represents a proposed addition (no
+  // "before" state — see renewable.service.ts), so it offsets the "after"
+  // total only, clamped at 0 rather than going negative.
+  const renewableOffsetKwh = renewableProduction.reduce((sum, r) => sum + r.annualProductionKwh, 0);
+  const potentialTotalKwh = Math.max(
+    0,
+    finalEnergyByEndUse
+      .filter((e) => e.scenario === "after")
+      .reduce((sum, e) => sum + e.finalEnergyConsumptionKwh, 0) +
+      lightingEquipmentKwh("after") -
+      renewableOffsetKwh,
+  );
 
   const totalInvestmentUsd = measures
     .filter((m) => m.proposedForImplementation)

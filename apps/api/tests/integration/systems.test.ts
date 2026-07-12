@@ -252,4 +252,135 @@ describe("Systems API (ventilation, DHW, distribution, generation, cooling)", ()
     );
     expect(response.status).toBe(400);
   });
+
+  it("bulk-replaces lighting zones for a scenario", async () => {
+    const { cookie } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+
+    const response = await putJson(
+      `/api/buildings/${buildingId}/systems/lighting`,
+      {
+        scenario: "after",
+        zones: [
+          {
+            name: "Wards",
+            areaM2: 500,
+            technologyMix: {
+              incandescentFraction: 0,
+              fluorescentElectromagneticFraction: 0,
+              fluorescentElectronicFraction: 0,
+              ledFraction: 1,
+            },
+            utilizationFactor: 0.55,
+          },
+        ],
+      },
+      cookie,
+    );
+    expect(response.status).toBe(200);
+
+    const getResponse = await authRequest(`/api/buildings/${buildingId}/systems`, {}, cookie);
+    const body = (await getResponse.json()) as {
+      lightingZones: { name: string; scenario: string }[];
+    };
+    expect(body.lightingZones).toHaveLength(1);
+    expect(body.lightingZones[0]?.name).toBe("Wards");
+    expect(body.lightingZones[0]?.scenario).toBe("after");
+  });
+
+  it("bulk-replaces equipment items for a scenario", async () => {
+    const { cookie } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+
+    const response = await putJson(
+      `/api/buildings/${buildingId}/systems/equipment`,
+      {
+        scenario: "before",
+        items: [
+          {
+            name: "Old refrigerator",
+            unitPowerKw: 0.3,
+            quantity: 4,
+            heatingSeasonHours: 1630,
+            coolingSeasonHours: 500,
+            heatingUtilizationFactor: 1,
+            coolingUtilizationFactor: 1,
+          },
+        ],
+      },
+      cookie,
+    );
+    expect(response.status).toBe(200);
+
+    const getResponse = await authRequest(`/api/buildings/${buildingId}/systems`, {}, cookie);
+    const body = (await getResponse.json()) as {
+      equipmentItems: { name: string; quantity: number }[];
+    };
+    expect(body.equipmentItems).toHaveLength(1);
+    expect(body.equipmentItems[0]?.name).toBe("Old refrigerator");
+    expect(body.equipmentItems[0]?.quantity).toBe(4);
+  });
+
+  it("bulk-replaces renewable systems with their monthly production, cascading old ones away", async () => {
+    const { cookie } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+
+    const firstResponse = await putJson(
+      `/api/buildings/${buildingId}/systems/renewables`,
+      {
+        systems: [
+          {
+            systemType: "pv",
+            capacityKw: 10,
+            availableAreaM2: 100,
+            unitCostUsd: 7268,
+            monthlyProductionKwh: [910, 1100, 1300, 1450, 1600, 1623, 1600, 1500, 1300, 1100, 950, 910],
+          },
+        ],
+      },
+      cookie,
+    );
+    expect(firstResponse.status).toBe(200);
+
+    const getResponse = await authRequest(`/api/buildings/${buildingId}/systems`, {}, cookie);
+    const body = (await getResponse.json()) as {
+      renewableSystems: { systemType: string; monthlyProduction: { month: number }[] }[];
+    };
+    expect(body.renewableSystems).toHaveLength(1);
+    expect(body.renewableSystems[0]?.systemType).toBe("pv");
+    expect(body.renewableSystems[0]?.monthlyProduction).toHaveLength(12);
+
+    // Replacing again must not leave the old system's monthly rows behind
+    // (relies on the FK cascade, not an explicit child delete).
+    const secondResponse = await putJson(
+      `/api/buildings/${buildingId}/systems/renewables`,
+      { systems: [] },
+      cookie,
+    );
+    expect(secondResponse.status).toBe(200);
+    const getAfterClear = await authRequest(`/api/buildings/${buildingId}/systems`, {}, cookie);
+    const bodyAfterClear = (await getAfterClear.json()) as { renewableSystems: unknown[] };
+    expect(bodyAfterClear.renewableSystems).toHaveLength(0);
+  });
+
+  it("rejects a renewable system with fewer than 12 months of production", async () => {
+    const { cookie } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+
+    const response = await putJson(
+      `/api/buildings/${buildingId}/systems/renewables`,
+      {
+        systems: [
+          {
+            systemType: "solar_dhw",
+            availableAreaM2: 20,
+            unitCostUsd: 32448,
+            monthlyProductionKwh: [100, 200, 300],
+          },
+        ],
+      },
+      cookie,
+    );
+    expect(response.status).toBe(400);
+  });
 });

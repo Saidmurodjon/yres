@@ -1,4 +1,4 @@
-import { material } from "@yres/db";
+import { lampType, material } from "@yres/db";
 import { Hono } from "hono";
 import type { AppEnv } from "../middleware/auth";
 import { authMiddleware } from "../middleware/auth";
@@ -13,4 +13,13 @@ referenceRoutes.get("/materials", async (c) => {
   const db = c.get("db");
   const materials = await db.select().from(material);
   return c.json({ materials });
+});
+
+// GET /lamp-types - global lamp power-density reference table (Lighting
+// sheet, Q7:R11), used both to populate lighting-zone technology-mix forms
+// and by LightingService to weight each zone's power density.
+referenceRoutes.get("/lamp-types", async (c) => {
+  const db = c.get("db");
+  const lampTypes = await db.select().from(lampType);
+  return c.json({ lampTypes });
 });

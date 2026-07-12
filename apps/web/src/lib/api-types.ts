@@ -306,6 +306,63 @@ export interface CoolingSystem {
   seer: number;
 }
 
+export interface LightingTechnologyMix {
+  incandescentFraction: number;
+  fluorescentElectromagneticFraction: number;
+  fluorescentElectronicFraction: number;
+  ledFraction: number;
+}
+
+export interface LightingZone {
+  id: string;
+  buildingId: string;
+  scenario: Scenario;
+  name: string;
+  areaM2: number;
+  technologyMix: LightingTechnologyMix;
+  utilizationFactor: number;
+}
+
+export interface EquipmentItem {
+  id: string;
+  buildingId: string;
+  scenario: Scenario;
+  name: string;
+  category: string | null;
+  unitPowerKw: number;
+  quantity: number;
+  heatingSeasonHours: number;
+  coolingSeasonHours: number;
+  heatingUtilizationFactor: number;
+  coolingUtilizationFactor: number;
+}
+
+export type RenewableSystemType = "pv" | "solar_dhw";
+
+export interface RenewableProductionMonth {
+  id: string;
+  renewableSystemId: string;
+  month: number;
+  productionKwh: number;
+}
+
+export interface RenewableSystem {
+  id: string;
+  buildingId: string;
+  systemType: RenewableSystemType;
+  capacityKw: number | null;
+  collectorCount: number | null;
+  availableAreaM2: number;
+  unitCostUsd: number;
+  monthlyProduction: RenewableProductionMonth[];
+}
+
+export interface LampType {
+  id: string;
+  name: string;
+  powerDensityWPerM2: number;
+}
+
 export interface SystemsData {
   ventilationSystems: VentilationSystem[];
   dhwSources: DhwSource[];
@@ -313,6 +370,9 @@ export interface SystemsData {
   generationSources: GenerationSource[];
   coolingWindows: CoolingWindow[];
   coolingSystems: CoolingSystem[];
+  lightingZones: LightingZone[];
+  equipmentItems: EquipmentItem[];
+  renewableSystems: RenewableSystem[];
 }
 
 export interface ReplaceVentilationPayload {
@@ -372,6 +432,41 @@ export interface ReplaceCoolingSystemsPayload {
   systems: {
     description?: string | null;
     seer: number;
+  }[];
+}
+
+export interface ReplaceLightingPayload {
+  scenario: Scenario;
+  zones: {
+    name: string;
+    areaM2: number;
+    technologyMix: LightingTechnologyMix;
+    utilizationFactor: number;
+  }[];
+}
+
+export interface ReplaceEquipmentPayload {
+  scenario: Scenario;
+  items: {
+    name: string;
+    category?: string | null;
+    unitPowerKw: number;
+    quantity?: number;
+    heatingSeasonHours?: number;
+    coolingSeasonHours?: number;
+    heatingUtilizationFactor?: number;
+    coolingUtilizationFactor?: number;
+  }[];
+}
+
+export interface ReplaceRenewablesPayload {
+  systems: {
+    systemType: RenewableSystemType;
+    capacityKw?: number | null;
+    collectorCount?: number | null;
+    availableAreaM2: number;
+    unitCostUsd: number;
+    monthlyProductionKwh: number[];
   }[];
 }
 

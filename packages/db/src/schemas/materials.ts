@@ -32,3 +32,16 @@ export const lampType = pgTable("lamp_type", {
   name: text("name").notNull().unique(),
   powerDensityWPerM2: numeric("power_density_w_per_m2", { mode: "number" }).notNull(),
 });
+
+/**
+ * The four fixed lamp-technology names (Lighting sheet, Q7:R11) that
+ * `lightingZone.technologyMix`'s fraction keys correspond to 1:1. Shared
+ * between seed.ts (which inserts exactly these rows) and
+ * LightingService (which looks them up by name) so the two can't drift.
+ */
+export const LAMP_TYPE_NAMES = {
+  incandescent: "Incandescent",
+  fluorescentElectromagnetic: "Fluorescent (electromagnetic ballast)",
+  fluorescentElectronic: "Fluorescent (electronic ballast)",
+  led: "LED 600×600 37W",
+} as const;

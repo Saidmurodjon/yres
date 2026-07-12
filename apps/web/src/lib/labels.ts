@@ -4,6 +4,7 @@ import type {
   EnergyCarrier,
   GenerationSourceType,
   MeasureCategory,
+  RenewableSystemType,
   VentilationSystemType,
 } from "./api-types";
 
@@ -109,6 +110,15 @@ export const GENERATION_SOURCE_TYPE_LABELS: Record<GenerationSourceType, string>
 export const GENERATION_SOURCE_TYPES = Object.keys(
   GENERATION_SOURCE_TYPE_LABELS,
 ) as GenerationSourceType[];
+
+export const RENEWABLE_SYSTEM_TYPE_LABELS: Record<RenewableSystemType, string> = {
+  pv: "Solar PV",
+  solar_dhw: "Solar DHW",
+};
+
+export const RENEWABLE_SYSTEM_TYPES = Object.keys(
+  RENEWABLE_SYSTEM_TYPE_LABELS,
+) as RenewableSystemType[];
 
 export const MONTH_LABELS = [
   "January",

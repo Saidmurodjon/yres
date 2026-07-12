@@ -3,7 +3,11 @@ import {
   coolingWindow,
   dhwSource,
   distributionSystem,
+  equipmentItem,
   generationSource,
+  lightingZone,
+  renewableProductionMonthly,
+  renewableSystem,
   ventilationSystem,
 } from "@yres/db";
 import { and, eq } from "drizzle-orm";
@@ -16,7 +20,10 @@ import {
   replaceCoolingWindowsSchema,
   replaceDhwSchema,
   replaceDistributionSchema,
+  replaceEquipmentSchema,
   replaceGenerationSchema,
+  replaceLightingSchema,
+  replaceRenewablesSchema,
   replaceVentilationSchema,
 } from "../schemas/systems";
 
@@ -46,6 +53,9 @@ systemsRoutes.get("/:id/systems", async (c) => {
     generationSources,
     coolingWindows,
     coolingSystems,
+    lightingZones,
+    equipmentItems,
+    renewableSystems,
   ] = await Promise.all([
     db.select().from(ventilationSystem).where(eq(ventilationSystem.buildingId, buildingId)),
     db.select().from(dhwSource).where(eq(dhwSource.buildingId, buildingId)),
@@ -53,6 +63,12 @@ systemsRoutes.get("/:id/systems", async (c) => {
     db.select().from(generationSource).where(eq(generationSource.buildingId, buildingId)),
     db.select().from(coolingWindow).where(eq(coolingWindow.buildingId, buildingId)),
     db.select().from(coolingSystem).where(eq(coolingSystem.buildingId, buildingId)),
+    db.select().from(lightingZone).where(eq(lightingZone.buildingId, buildingId)),
+    db.select().from(equipmentItem).where(eq(equipmentItem.buildingId, buildingId)),
+    db.query.renewableSystem.findMany({
+      where: eq(renewableSystem.buildingId, buildingId),
+      with: { monthlyProduction: true },
+    }),
   ]);
 
   return c.json({
@@ -62,6 +78,9 @@ systemsRoutes.get("/:id/systems", async (c) => {
     generationSources,
     coolingWindows,
     coolingSystems,
+    lightingZones,
+    equipmentItems,
+    renewableSystems,
   });
 });
 
@@ -260,4 +279,130 @@ systemsRoutes.put("/:id/systems/cooling-systems", async (c) => {
   await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
 
   return c.json({ scenario, count: rows.length });
+});
+
+// PUT /:id/systems/lighting - bulk-replace a scenario's lighting zones
+systemsRoutes.put("/:id/systems/lighting", async (c) => {
+  const buildingId = c.req.param("id");
+  const body = await c.req.json().catch(() => null);
+  const parsed = replaceLightingSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid body", details: parsed.error.flatten() }, 400);
+  }
+
+  const db = c.get("db");
+  const user = c.get("user");
+  const owned = await findOwnedBuilding(db, buildingId, user.id);
+  if (!owned) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  const { scenario, zones } = parsed.data;
+  const rows = zones.map((z) => ({ ...z, buildingId, scenario }));
+
+  const statements: BatchItem<"pg">[] = [
+    db
+      .delete(lightingZone)
+      .where(and(eq(lightingZone.buildingId, buildingId), eq(lightingZone.scenario, scenario))),
+  ];
+  if (rows.length > 0) {
+    statements.push(db.insert(lightingZone).values(rows));
+  }
+  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+
+  return c.json({ scenario, count: rows.length });
+});
+
+// PUT /:id/systems/equipment - bulk-replace a scenario's equipment inventory
+systemsRoutes.put("/:id/systems/equipment", async (c) => {
+  const buildingId = c.req.param("id");
+  const body = await c.req.json().catch(() => null);
+  const parsed = replaceEquipmentSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid body", details: parsed.error.flatten() }, 400);
+  }
+
+  const db = c.get("db");
+  const user = c.get("user");
+  const owned = await findOwnedBuilding(db, buildingId, user.id);
+  if (!owned) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  const { scenario, items } = parsed.data;
+  const rows = items.map((i) => ({ ...i, buildingId, scenario }));
+
+  const statements: BatchItem<"pg">[] = [
+    db
+      .delete(equipmentItem)
+      .where(and(eq(equipmentItem.buildingId, buildingId), eq(equipmentItem.scenario, scenario))),
+  ];
+  if (rows.length > 0) {
+    statements.push(db.insert(equipmentItem).values(rows));
+  }
+  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+
+  return c.json({ scenario, count: rows.length });
+});
+
+// PUT /:id/systems/renewables - bulk-replace the building's entire set of
+// renewable (PV / Solar DHW) systems, each with its 12 months of production.
+// Not scenario-scoped (see schemas/systems.ts's doc comment on
+// replaceRenewablesSchema). Deleting a renewable_system row cascades to its
+// renewable_production_monthly rows (see packages/db/src/schemas/renewables.ts),
+// so only the parent needs an explicit delete here. Child ids are generated
+// client-side up front, same reasoning as envelope.ts's batch — statements
+// in a batch can't read each other's results.
+systemsRoutes.put("/:id/systems/renewables", async (c) => {
+  const buildingId = c.req.param("id");
+  const body = await c.req.json().catch(() => null);
+  const parsed = replaceRenewablesSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid body", details: parsed.error.flatten() }, 400);
+  }
+
+  const db = c.get("db");
+  const user = c.get("user");
+  const owned = await findOwnedBuilding(db, buildingId, user.id);
+  if (!owned) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  const { systems } = parsed.data;
+
+  const systemRows: (typeof renewableSystem.$inferInsert)[] = [];
+  const monthlyRows: (typeof renewableProductionMonthly.$inferInsert)[] = [];
+  for (const system of systems) {
+    const systemId = crypto.randomUUID();
+    systemRows.push({
+      id: systemId,
+      buildingId,
+      systemType: system.systemType,
+      capacityKw: system.capacityKw ?? null,
+      collectorCount: system.collectorCount ?? null,
+      availableAreaM2: system.availableAreaM2,
+      unitCostUsd: system.unitCostUsd,
+    });
+    system.monthlyProductionKwh.forEach((productionKwh, i) => {
+      monthlyRows.push({
+        id: crypto.randomUUID(),
+        renewableSystemId: systemId,
+        month: i + 1,
+        productionKwh,
+      });
+    });
+  }
+
+  const statements: BatchItem<"pg">[] = [
+    db.delete(renewableSystem).where(eq(renewableSystem.buildingId, buildingId)),
+  ];
+  if (systemRows.length > 0) {
+    statements.push(db.insert(renewableSystem).values(systemRows));
+  }
+  if (monthlyRows.length > 0) {
+    statements.push(db.insert(renewableProductionMonthly).values(monthlyRows));
+  }
+  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+
+  return c.json({ count: systemRows.length });
 });

@@ -9,13 +9,17 @@ import type {
   CreateUtilityBillInput,
   EnergyMeasure,
   EnvelopeData,
+  LampType,
   Material,
   ReplaceCoolingSystemsPayload,
   ReplaceCoolingWindowsPayload,
   ReplaceDhwPayload,
   ReplaceDistributionPayload,
   ReplaceEnvelopePayload,
+  ReplaceEquipmentPayload,
   ReplaceGenerationPayload,
+  ReplaceLightingPayload,
+  ReplaceRenewablesPayload,
   ReplaceVentilationPayload,
   SystemsData,
   UpdateBuildingInput,
@@ -156,6 +160,21 @@ export const api = {
         `/api/buildings/${buildingId}/systems/cooling-systems`,
         { method: "PUT", body: JSON.stringify(payload) },
       ),
+    replaceLighting: (buildingId: string, payload: ReplaceLightingPayload) =>
+      request<{ scenario: string; count: number }>(`/api/buildings/${buildingId}/systems/lighting`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }),
+    replaceEquipment: (buildingId: string, payload: ReplaceEquipmentPayload) =>
+      request<{ scenario: string; count: number }>(`/api/buildings/${buildingId}/systems/equipment`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }),
+    replaceRenewables: (buildingId: string, payload: ReplaceRenewablesPayload) =>
+      request<{ count: number }>(`/api/buildings/${buildingId}/systems/renewables`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }),
   },
 
   climate: {
@@ -169,6 +188,7 @@ export const api = {
 
   reference: {
     materials: () => request<{ materials: Material[] }>("/api/reference/materials"),
+    lampTypes: () => request<{ lampTypes: LampType[] }>("/api/reference/lamp-types"),
   },
 
   audit: {

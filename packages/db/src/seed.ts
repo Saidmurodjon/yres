@@ -1,6 +1,7 @@
 import type { BatchItem } from "drizzle-orm/batch";
 import { type Database, createDb } from "./index";
 import {
+  LAMP_TYPE_NAMES,
   climateMonthlyNormal,
   climateRegion,
   energyTariff,
@@ -162,10 +163,10 @@ export async function seedReferenceDataWithDb(db: Database) {
     db
       .insert(lampType)
       .values([
-        { name: "Incandescent", powerDensityWPerM2: 25 },
-        { name: "Fluorescent (electromagnetic ballast)", powerDensityWPerM2: 17.8 },
-        { name: "Fluorescent (electronic ballast)", powerDensityWPerM2: 14.81 },
-        { name: "LED 600×600 37W", powerDensityWPerM2: 7.4 },
+        { name: LAMP_TYPE_NAMES.incandescent, powerDensityWPerM2: 25 },
+        { name: LAMP_TYPE_NAMES.fluorescentElectromagnetic, powerDensityWPerM2: 17.8 },
+        { name: LAMP_TYPE_NAMES.fluorescentElectronic, powerDensityWPerM2: 14.81 },
+        { name: LAMP_TYPE_NAMES.led, powerDensityWPerM2: 7.4 },
       ])
       .onConflictDoNothing({ target: lampType.name }),
 

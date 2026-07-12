@@ -5,7 +5,10 @@ import type {
   ReplaceCoolingWindowsPayload,
   ReplaceDhwPayload,
   ReplaceDistributionPayload,
+  ReplaceEquipmentPayload,
   ReplaceGenerationPayload,
+  ReplaceLightingPayload,
+  ReplaceRenewablesPayload,
   ReplaceVentilationPayload,
 } from "../lib/api-types";
 
@@ -71,6 +74,32 @@ export function useReplaceCoolingSystems(buildingId: string) {
   return useMutation({
     mutationFn: (payload: ReplaceCoolingSystemsPayload) =>
       api.systems.replaceCoolingSystems(buildingId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useReplaceLighting(buildingId: string) {
+  const invalidate = useInvalidateSystems(buildingId);
+  return useMutation({
+    mutationFn: (payload: ReplaceLightingPayload) => api.systems.replaceLighting(buildingId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useReplaceEquipment(buildingId: string) {
+  const invalidate = useInvalidateSystems(buildingId);
+  return useMutation({
+    mutationFn: (payload: ReplaceEquipmentPayload) =>
+      api.systems.replaceEquipment(buildingId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useReplaceRenewables(buildingId: string) {
+  const invalidate = useInvalidateSystems(buildingId);
+  return useMutation({
+    mutationFn: (payload: ReplaceRenewablesPayload) =>
+      api.systems.replaceRenewables(buildingId, payload),
     onSuccess: invalidate,
   });
 }

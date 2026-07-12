@@ -8,3 +8,11 @@ export function useMaterials() {
     staleTime: 60 * 60 * 1000,
   });
 }
+
+export function useLampTypes() {
+  return useQuery({
+    queryKey: ["reference", "lamp-types"],
+    queryFn: () => api.reference.lampTypes(),
+    staleTime: 60 * 60 * 1000,
+  });
+}

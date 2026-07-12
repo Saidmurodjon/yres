@@ -1,5 +1,6 @@
 import type { CoolingResult } from "./cooling";
 import type { DhwDemandResult, DistributionLossResult } from "./dhw";
+import type { EquipmentResult } from "./equipment";
 import type { EnvelopeAreaBreakdown } from "./envelope";
 import type { EndUseEnergyTotals, GenerationSourceResult } from "./generation";
 import type {
@@ -7,7 +8,9 @@ import type {
   HeatingEnergyBalanceResult,
   VentilationLossResult,
 } from "./heatbalance";
+import type { LightingResult } from "./lighting";
 import type { EnergyMeasureResult } from "./measures";
+import type { RenewableProductionResult } from "./renewable";
 
 export interface AuditSummary {
   currentEnergyUseKwhPerM2Year: number;
@@ -31,6 +34,10 @@ export interface AuditResult {
   distributionLoss: DistributionLossResult[];
   cooling: CoolingResult[];
   generation: GenerationSourceResult[];
+  lighting: LightingResult[];
+  equipment: EquipmentResult[];
+  /** Not scenario-tagged — see `renewable.service.ts`'s doc comment for why. */
+  renewableProduction: RenewableProductionResult[];
   finalEnergyByEndUse: EndUseEnergyTotals[];
   measures: EnergyMeasureResult[];
 }

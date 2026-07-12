@@ -11,12 +11,15 @@ full frontend (dashboard, building management, audit wizard, results, financial 
 original Excel calculation engine (`3-DMTT v5.xlsx`) this platform reimplements, and
 `docs/deployment.md` for taking it live.
 
-Known gaps: lighting/equipment/PV/solar-DHW/EMS measure savings aren't modeled yet (return 0,
-not fabricated numbers — see `apps/api/src/services/audit.engine.ts`), and there's no
-multi-tenant/role model yet (buildings belong to a single user, not an organization with
-owner/ESCO/auditor/bank roles). PDF report export (`apps/api/src/services/report.service.ts`,
-downloadable from the Results page) and CRUD + UI for ventilation/DHW/distribution/generation/
-cooling systems (the "Systems" tab) are both built.
+Lighting, equipment, PV, solar-DHW, and EMS are now modeled in `AuditEngine` (see
+`apps/api/src/services/{lighting,equipment,renewable}.service.ts`) and have CRUD + UI in the
+"Systems" tab, alongside ventilation/DHW/distribution/generation/cooling. PDF report export
+(`apps/api/src/services/report.service.ts`) is downloadable from the Results page.
+
+Known gaps: no multi-tenant/role model yet (buildings belong to a single user, not an
+organization with owner/ESCO/auditor/bank roles); shading elements have no CRUD/UI or
+calculation wiring; there's no route to create `energy_measure` rows (they're expected to be
+seeded/derived, not user-authored, per the source workbook's structure).
 
 ## Architecture
 
