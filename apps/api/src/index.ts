@@ -1,9 +1,11 @@
+import * as Sentry from "@sentry/cloudflare";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { createAuth } from "./auth";
 import type { AppEnv } from "./middleware/auth";
 import { dbMiddleware } from "./middleware/db";
+import { rateLimit } from "./middleware/rate-limit";
 import { auditRoutes } from "./routes/audit";
 import { buildingRoutes } from "./routes/buildings";
 import { climateRoutes } from "./routes/climate";
@@ -22,6 +24,19 @@ export interface Env {
   API_URL: string;
   WEB_URL: string;
   REPORTS_BUCKET: R2Bucket;
+  /** Resend API key for transactional email (password reset, verification). Empty in dev — sendEmail() logs and no-ops without it. */
+  RESEND_API_KEY: string;
+  /** "From" address for outgoing email, e.g. "YRES <noreply@yourdomain.com>". Falls back to Resend's shared sandbox sender if unset. */
+  EMAIL_FROM: string;
+  /** Sentry DSN for error tracking. Empty disables reporting (see the withSentry call below). */
+  SENTRY_DSN: string;
+  /**
+   * Cloudflare's native Rate Limiting binding (see wrangler.toml) — only
+   * present when provisioned for an environment. `rateLimit()` middleware
+   * falls back to an in-memory limiter when this is absent, so it's safe to
+   * leave unset locally/in tests.
+   */
+  RATE_LIMITER?: RateLimit;
 }
 
 const app = new Hono<AppEnv>();
@@ -36,6 +51,17 @@ app.use("*", logger());
 app.use("*", dbMiddleware);
 
 app.get("/health", (c) => c.json({ status: "ok" }));
+
+// Credential-guessing targets: sign-in/sign-up (brute force, credential
+// stuffing) and the password-reset request (email-bombing a victim). Other
+// /api/auth/* traffic (session checks, OAuth callback) is left unlimited —
+// those aren't attacker-useful and get called on every page load.
+app.use("/api/auth/sign-in/*", rateLimit({ keyPrefix: "auth-signin", max: 10, windowMs: 60_000 }));
+app.use("/api/auth/sign-up/*", rateLimit({ keyPrefix: "auth-signup", max: 10, windowMs: 60_000 }));
+app.use(
+  "/api/auth/request-password-reset",
+  rateLimit({ keyPrefix: "auth-reset", max: 5, windowMs: 60_000 }),
+);
 
 // Better Auth owns every method/path under /api/auth/* (sign-in, sign-up,
 // sign-out, session, OAuth callback, etc.) — hand the raw request straight
@@ -56,4 +82,11 @@ app.route("/api/buildings", membersRoutes);
 app.route("/api/climate", climateRoutes);
 app.route("/api/reference", referenceRoutes);
 
-export default app;
+// Reports uncaught exceptions (route bugs, calculation-engine errors,
+// unexpected DB failures) to Sentry with request context. A blank
+// SENTRY_DSN (local dev, or before it's provisioned) disables reporting
+// entirely rather than erroring — see CloudflareOptions.enabled below.
+export default Sentry.withSentry(
+  (env: Env) => ({ dsn: env.SENTRY_DSN, enabled: Boolean(env.SENTRY_DSN), tracesSampleRate: 0.1 }),
+  app,
+);

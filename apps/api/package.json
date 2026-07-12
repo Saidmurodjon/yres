@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@sentry/cloudflare": "^10.65.0",
     "@yres/db": "workspace:*",
     "@yres/types": "workspace:*",
     "better-auth": "^1.1.21",

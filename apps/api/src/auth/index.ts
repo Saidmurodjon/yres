@@ -2,6 +2,7 @@ import type { Database } from "@yres/db";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import type { Env } from "../index";
+import { sendEmail } from "../lib/email";
 
 export function createAuth(env: Env, db: Database) {
   return betterAuth({
@@ -13,7 +14,25 @@ export function createAuth(env: Env, db: Database) {
     trustedOrigins: [env.WEB_URL],
     database: drizzleAdapter(db, { provider: "pg" }),
     secret: env.BETTER_AUTH_SECRET,
-    emailAndPassword: { enabled: true },
+    emailAndPassword: {
+      enabled: true,
+      sendResetPassword: async ({ user, url }) => {
+        await sendEmail(env, {
+          to: user.email,
+          subject: "Reset your YRES password",
+          html: `<p>Someone requested a password reset for your YRES account.</p><p><a href="${url}">Click here to choose a new password</a>. This link expires in 1 hour.</p><p>If you didn't request this, you can ignore this email.</p>`,
+        });
+      },
+    },
+    emailVerification: {
+      sendVerificationEmail: async ({ user, url }) => {
+        await sendEmail(env, {
+          to: user.email,
+          subject: "Verify your YRES email address",
+          html: `<p>Welcome to YRES — please confirm this is your email address.</p><p><a href="${url}">Verify email</a></p>`,
+        });
+      },
+    },
     socialProviders: {
       google: {
         clientId: env.GOOGLE_CLIENT_ID,

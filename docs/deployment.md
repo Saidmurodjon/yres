@@ -53,6 +53,29 @@ Skip this if you only need email/password auth (already fully functional). To en
 2. Authorized redirect URI: `<your API URL>/api/auth/callback/google`.
 3. Note the client ID/secret — these become `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`.
 
+## 3b. Resend (transactional email — password reset, email verification)
+
+Without this, the app still runs, but `sendResetPassword`/`sendVerificationEmail` silently log
+instead of sending (see `apps/api/src/lib/email.ts`) — users who forget a password have no
+recovery path.
+
+1. Create an account at [resend.com](https://resend.com) and verify a sending domain (or use their
+   shared `onboarding@resend.dev` sandbox sender for early testing — real inboxes only, no custom
+   domain needed).
+2. Create an API key (**API Keys → Create API Key**) — this is `RESEND_API_KEY`.
+3. Set `EMAIL_FROM` in `wrangler.toml`'s `[env.production.vars]` to an address on your verified
+   domain, e.g. `YRES <noreply@yourdomain.com>` (not a secret — it's already in the file as a
+   placeholder you should replace).
+
+## 3c. Sentry (error tracking, optional but recommended)
+
+Without a DSN, error reporting is disabled entirely (see the `withSentry` wrapper in
+`apps/api/src/index.ts`) — API exceptions are only visible in Worker logs, not aggregated or
+alerted on.
+
+1. Create a project at [sentry.io](https://sentry.io) (platform: Cloudflare Workers).
+2. Copy its DSN — this is `SENTRY_DSN`.
+
 ## 4. Configure secrets
 
 **Cloudflare Worker secrets** (not stored in `wrangler.toml` — set directly):
@@ -62,7 +85,16 @@ bunx wrangler secret put DATABASE_URL --env production
 bunx wrangler secret put BETTER_AUTH_SECRET --env production   # any long random string
 bunx wrangler secret put GOOGLE_CLIENT_ID --env production      # optional
 bunx wrangler secret put GOOGLE_CLIENT_SECRET --env production  # optional
+bunx wrangler secret put RESEND_API_KEY --env production        # optional, see 3b
+bunx wrangler secret put SENTRY_DSN --env production            # optional, see 3c
 ```
+
+**Rate limiting** (brute-force/credential-stuffing protection on sign-in, sign-up, and
+password-reset requests): `wrangler.toml` already provisions a native Cloudflare Rate Limiting
+binding (`RATE_LIMITER`) for both dev and `[env.production]` — no extra account setup needed, it
+activates automatically once deployed. If you remove that binding, the app still runs — it falls
+back to an in-memory limiter (see `apps/api/src/middleware/rate-limit.ts`), which works but isn't
+shared across Worker isolates.
 
 **GitHub Actions repo secrets** (Settings → Secrets and variables → Actions), used by
 `.github/workflows/deploy.yml`:

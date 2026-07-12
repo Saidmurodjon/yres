@@ -7,3 +7,11 @@ DATABASE_URL=postgresql://user:password@ep-xxxx.aws.neon.tech/yres?sslmode=requi
 BETTER_AUTH_SECRET=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
+
+# Optional locally — password-reset/verification emails just log to the
+# console instead of sending when this is blank (see src/lib/email.ts).
+RESEND_API_KEY=
+
+# Optional locally — error reporting is disabled entirely when this is
+# blank (see the withSentry call in src/index.ts).
+SENTRY_DSN=

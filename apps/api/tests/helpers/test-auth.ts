@@ -17,7 +17,15 @@ export async function signUpTestUser(): Promise<{ cookie: string; userId: string
     "/api/auth/sign-up/email",
     {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      // rate-limit middleware keys on the client IP; app.request() has no
+      // real network IP, so every call would otherwise collapse into one
+      // shared "unknown" bucket and trip the limiter across unrelated test
+      // files. A unique synthetic IP per sign-up keeps each test isolated
+      // while still exercising the real middleware (not bypassing it).
+      headers: {
+        "Content-Type": "application/json",
+        "x-forwarded-for": `10.0.${Math.floor(userCounter / 255)}.${userCounter % 255}`,
+      },
       body: JSON.stringify({ email, password, name: `Test User ${userCounter}` }),
     },
     testEnv,

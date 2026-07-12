@@ -7,15 +7,29 @@ compatibility_flags = ["nodejs_compat"]
 NODE_ENV = "development"
 API_URL = "http://localhost:3000"
 WEB_URL = "http://localhost:5173"
+EMAIL_FROM = "YRES <onboarding@resend.dev>"
 
 [[r2_buckets]]
 binding = "REPORTS_BUCKET"
 bucket_name = "yres-reports-dev"
 
+# Cloudflare's native Rate Limiting binding, used by src/middleware/rate-limit.ts
+# to throttle sign-in/sign-up/password-reset requests at the edge. `limit`/
+# `period` apply uniformly to every key the middleware passes it (it
+# differentiates *who* is being limited, not *how much* — see that file's
+# doc comment). Optional: if you don't provision this, the middleware falls
+# back to an in-memory per-process limiter, which is fine for early/low-traffic
+# deployments but isn't shared across Worker isolates.
+[[unsafe.bindings]]
+name = "RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 10, period = 60 }
+
 # Secrets (DATABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
-# BETTER_AUTH_SECRET) are set via `wrangler secret put <NAME>` (add
-# `--env production` for the production environment below) and are never
-# stored in this file. See docs/deployment.md.
+# BETTER_AUTH_SECRET, RESEND_API_KEY, SENTRY_DSN) are set via
+# `wrangler secret put <NAME>` (add `--env production` for the production
+# environment below) and are never stored in this file. See docs/deployment.md.
 
 # --- Production environment ---
 # `name`/`API_URL`/`WEB_URL` below are placeholders — replace with your
@@ -27,7 +41,14 @@ name = "yres-api-production"
 NODE_ENV = "production"
 API_URL = "https://yres-api-production.workers.dev"
 WEB_URL = "https://yres.app"
+EMAIL_FROM = "YRES <noreply@yres.app>"
 
 [[env.production.r2_buckets]]
 binding = "REPORTS_BUCKET"
 bucket_name = "yres-reports"
+
+[[env.production.unsafe.bindings]]
+name = "RATE_LIMITER"
+type = "ratelimit"
+namespace_id = "1002"
+simple = { limit = 10, period = 60 }
