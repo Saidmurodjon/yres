@@ -1,0 +1,14 @@
+name = "yres-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-18"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+NODE_ENV = "development"
+
+[[r2_buckets]]
+binding = "REPORTS_BUCKET"
+bucket_name = "yres-reports"
+
+# Secrets (DATABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, BETTER_AUTH_SECRET)
+# are set via `wrangler secret put <NAME>` and are not stored in this file.
