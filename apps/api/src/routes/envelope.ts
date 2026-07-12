@@ -83,7 +83,22 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
     return c.json({ error: "Not found" }, 404);
   }
 
-  const { scenario, constructionTypes, openingTypes, envelopeElements } = parsed.data;
+  const { scenario, buildingBlocks, constructionTypes, openingTypes, envelopeElements } =
+    parsed.data;
+
+  const buildingBlockRows: (typeof buildingBlock.$inferInsert)[] | undefined = buildingBlocks?.map(
+    (block) => ({
+      id: crypto.randomUUID(),
+      buildingId,
+      name: block.name,
+      footprintLengthM: block.footprintLengthM,
+      footprintWidthM: block.footprintWidthM,
+      numberOfFloors: block.numberOfFloors,
+      floorToFloorHeightM: block.floorToFloorHeightM,
+      perimeterM: block.perimeterM,
+      perimeterLossCoefficient: block.perimeterLossCoefficient ?? 0.4,
+    }),
+  );
 
   const constructionTypeIdByCode = new Map<string, string>();
   const constructionTypeRows: (typeof constructionType.$inferInsert)[] = constructionTypes.map(
@@ -217,6 +232,13 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
     deleteConstructionTypes,
   ];
 
+  if (buildingBlockRows) {
+    statements.push(db.delete(buildingBlock).where(eq(buildingBlock.buildingId, buildingId)));
+    if (buildingBlockRows.length > 0) {
+      statements.push(db.insert(buildingBlock).values(buildingBlockRows));
+    }
+  }
+
   if (constructionTypeRows.length > 0) {
     statements.push(db.insert(constructionType).values(constructionTypeRows));
   }
@@ -237,6 +259,7 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
 
   return c.json({
     scenario,
+    buildingBlockIds: buildingBlockRows?.map((b) => b.id) ?? [],
     constructionTypeIds: [...constructionTypeIdByCode.values()],
     openingTypeIds: [...openingTypeIdByCode.values()],
     envelopeElementIds,

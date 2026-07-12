@@ -113,6 +113,16 @@ export interface EnvelopeData {
 
 export interface ReplaceEnvelopePayload {
   scenario: Scenario;
+  /** Omit to leave existing building blocks untouched; pass an array (including []) to replace all of them. Blocks aren't scenario-specific. */
+  buildingBlocks?: {
+    name: string;
+    footprintLengthM: number;
+    footprintWidthM: number;
+    numberOfFloors: number;
+    floorToFloorHeightM: number;
+    perimeterM: number;
+    perimeterLossCoefficient?: number;
+  }[];
   constructionTypes: {
     code: string;
     elementCategory: string;

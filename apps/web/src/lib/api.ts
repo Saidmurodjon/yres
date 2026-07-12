@@ -9,6 +9,7 @@ import type {
   CreateUtilityBillInput,
   EnergyMeasure,
   EnvelopeData,
+  Material,
   ReplaceEnvelopePayload,
   UpdateBuildingInput,
   UtilityBill,
@@ -123,6 +124,10 @@ export const api = {
       ),
     region: (id: string) =>
       request<{ region: ClimateRegionWithNormals }>(`/api/climate/regions/${id}`),
+  },
+
+  reference: {
+    materials: () => request<{ materials: Material[] }>("/api/reference/materials"),
   },
 
   audit: {

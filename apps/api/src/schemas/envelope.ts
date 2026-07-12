@@ -53,8 +53,22 @@ const envelopeElementInputSchema = z.object({
   openings: z.array(envelopeOpeningInputSchema).default([]),
 });
 
+const buildingBlockInputSchema = z.object({
+  name: z.string().min(1),
+  footprintLengthM: z.number().positive(),
+  footprintWidthM: z.number().positive(),
+  numberOfFloors: z.number().int().positive(),
+  floorToFloorHeightM: z.number().positive(),
+  perimeterM: z.number().positive(),
+  perimeterLossCoefficient: z.number().min(0).max(1).optional(),
+});
+
 export const replaceEnvelopeSchema = z.object({
   scenario: z.enum(scenarioEnum.enumValues).default("before"),
+  // Footprint blocks aren't scenario-specific (retrofit changes U-values, not
+  // geometry) — omit this field to leave existing blocks untouched, or pass
+  // an array (including []) to replace all of the building's blocks.
+  buildingBlocks: z.array(buildingBlockInputSchema).optional(),
   constructionTypes: z.array(constructionTypeInputSchema).default([]),
   openingTypes: z.array(openingTypeInputSchema).default([]),
   envelopeElements: z.array(envelopeElementInputSchema).default([]),
