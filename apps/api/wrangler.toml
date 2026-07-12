@@ -5,6 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 NODE_ENV = "development"
+API_URL = "http://localhost:3000"
 WEB_URL = "http://localhost:5173"
 
 [[r2_buckets]]
@@ -17,13 +18,14 @@ bucket_name = "yres-reports-dev"
 # stored in this file. See docs/deployment.md.
 
 # --- Production environment ---
-# `name`/`WEB_URL` below are placeholders — replace with your actual
-# Cloudflare Worker name and deployed frontend URL before going live.
+# `name`/`API_URL`/`WEB_URL` below are placeholders — replace with your
+# actual Cloudflare Worker name and deployed URLs before going live.
 [env.production]
 name = "yres-api-production"
 
 [env.production.vars]
 NODE_ENV = "production"
+API_URL = "https://yres-api-production.workers.dev"
 WEB_URL = "https://yres.app"
 
 [[env.production.r2_buckets]]

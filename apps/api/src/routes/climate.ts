@@ -1,4 +1,4 @@
-import { climateRegion, createDb } from "@yres/db";
+import { climateRegion } from "@yres/db";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import type { AppEnv } from "../middleware/auth";
@@ -14,7 +14,7 @@ climateRoutes.get("/regions", async (c) => {
   }
   const { limit, offset } = toLimitOffset(parsedQuery.data);
 
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
   const regions = await db.select().from(climateRegion).limit(limit).offset(offset);
 
   return c.json({
@@ -27,7 +27,7 @@ climateRoutes.get("/regions", async (c) => {
 // GET /regions/:id - one region with its 12 monthly normals joined
 climateRoutes.get("/regions/:id", async (c) => {
   const id = c.req.param("id");
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
 
   const region = await db.query.climateRegion.findFirst({
     where: eq(climateRegion.id, id),

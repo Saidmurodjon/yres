@@ -13,6 +13,28 @@ jobs:
   ci:
     name: Lint, type-check, test, build
     runs-on: ubuntu-latest
+    services:
+      # apps/api's integration tests (tests/integration/*) run real HTTP
+      # requests through the Hono app against a real Postgres — the
+      # production/dev database driver only speaks Neon's HTTP protocol, so
+      # tests substitute node-postgres via a mocked `createDb` (see
+      # apps/api/tests/setup.ts and tests/helpers/test-db.ts). Unit tests
+      # under tests/services/ don't touch this at all.
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: yres
+          POSTGRES_PASSWORD: yres_test_password
+          POSTGRES_DB: yres_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      TEST_DATABASE_URL: postgresql://yres:yres_test_password@localhost:5432/yres_test
     steps:
       - uses: actions/checkout@v4
 
@@ -29,8 +51,21 @@ jobs:
       - name: Type-check
         run: bun run type-check
 
+      - name: Apply migrations to test database
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -qq -y postgresql-client
+          psql "$TEST_DATABASE_URL" -f packages/db/drizzle/*.sql
+
       - name: Test
         run: bun run test
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+        working-directory: apps/web
+
+      - name: E2E test
+        run: bunx playwright test
+        working-directory: apps/web
 
       - name: Build
         run: bun run build

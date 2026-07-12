@@ -9,7 +9,8 @@
     "deploy": "wrangler pages deploy dist --project-name=yres-web",
     "type-check": "tsc --noEmit",
     "lint": "biome lint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.11",
@@ -23,6 +24,7 @@
     "recharts": "^2.15.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/vite": "^4.0.0",
     "@tanstack/router-plugin": "^1.92.5",
     "@types/react": "^19.0.2",

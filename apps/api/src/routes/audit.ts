@@ -1,4 +1,4 @@
-import { auditRun, createDb } from "@yres/db";
+import { auditRun } from "@yres/db";
 import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { findOwnedBuilding } from "../lib/building-access";
@@ -17,7 +17,7 @@ auditRoutes.use("*", authMiddleware);
 // recomputed fresh on each GET /results call.
 auditRoutes.post("/:id/audit/run", async (c) => {
   const buildingId = c.req.param("id");
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
   const user = c.get("user");
 
   const owned = await findOwnedBuilding(db, buildingId, user.id);
@@ -64,7 +64,7 @@ auditRoutes.post("/:id/audit/run", async (c) => {
 // GET /:id/audit/status - latest audit_run for the building
 auditRoutes.get("/:id/audit/status", async (c) => {
   const buildingId = c.req.param("id");
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
   const user = c.get("user");
 
   const owned = await findOwnedBuilding(db, buildingId, user.id);
@@ -89,7 +89,7 @@ auditRoutes.get("/:id/audit/status", async (c) => {
 // GET /:id/audit/results - the latest completed audit_run
 auditRoutes.get("/:id/audit/results", async (c) => {
   const buildingId = c.req.param("id");
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
   const user = c.get("user");
 
   const owned = await findOwnedBuilding(db, buildingId, user.id);

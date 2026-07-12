@@ -1,4 +1,4 @@
-import { createDb, energyMeasure } from "@yres/db";
+import { energyMeasure } from "@yres/db";
 import { and, eq, inArray, notInArray } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
@@ -20,7 +20,7 @@ measuresRoutes.get("/:id/measures", async (c) => {
   }
   const { limit, offset } = toLimitOffset(parsedQuery.data);
 
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
   const user = c.get("user");
 
   const owned = await findOwnedBuilding(db, buildingId, user.id);
@@ -54,7 +54,7 @@ measuresRoutes.post("/:id/measures/select", async (c) => {
     return c.json({ error: "Invalid body", details: parsed.error.flatten() }, 400);
   }
 
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
   const user = c.get("user");
 
   const owned = await findOwnedBuilding(db, buildingId, user.id);

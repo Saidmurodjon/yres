@@ -2,7 +2,6 @@ import {
   buildingBlock,
   constructionLayer,
   constructionType,
-  createDb,
   envelopeElement,
   envelopeOpening,
   openingType,
@@ -23,7 +22,7 @@ envelopeRoutes.use("*", authMiddleware);
 // blocks, construction types + layers, and opening types.
 envelopeRoutes.get("/:id/envelope", async (c) => {
   const buildingId = c.req.param("id");
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
   const user = c.get("user");
 
   const owned = await findOwnedBuilding(db, buildingId, user.id);
@@ -75,7 +74,7 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
     return c.json({ error: "Invalid body", details: parsed.error.flatten() }, 400);
   }
 
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
   const user = c.get("user");
 
   const owned = await findOwnedBuilding(db, buildingId, user.id);

@@ -1,4 +1,4 @@
-import { createDb, utilityBill } from "@yres/db";
+import { utilityBill } from "@yres/db";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { findOwnedBuilding } from "../lib/building-access";
@@ -19,7 +19,7 @@ consumptionRoutes.get("/:id/consumption", async (c) => {
   }
   const { limit, offset } = toLimitOffset(parsedQuery.data);
 
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
   const user = c.get("user");
 
   const owned = await findOwnedBuilding(db, buildingId, user.id);
@@ -50,7 +50,7 @@ consumptionRoutes.post("/:id/consumption", async (c) => {
     return c.json({ error: "Invalid body", details: parsed.error.flatten() }, 400);
   }
 
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
   const user = c.get("user");
 
   const owned = await findOwnedBuilding(db, buildingId, user.id);

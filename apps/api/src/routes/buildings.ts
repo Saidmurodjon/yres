@@ -1,4 +1,4 @@
-import { building, createDb } from "@yres/db";
+import { building } from "@yres/db";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { findOwnedBuilding } from "../lib/building-access";
@@ -18,7 +18,7 @@ buildingRoutes.get("/", async (c) => {
   }
   const { limit, offset } = toLimitOffset(parsedQuery.data);
 
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
   const user = c.get("user");
 
   const buildings = await db
@@ -43,7 +43,7 @@ buildingRoutes.post("/", async (c) => {
     return c.json({ error: "Invalid body", details: parsed.error.flatten() }, 400);
   }
 
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
   const user = c.get("user");
 
   const [created] = await db
@@ -57,7 +57,7 @@ buildingRoutes.post("/", async (c) => {
 // GET /:id - get one building, scoped to current user
 buildingRoutes.get("/:id", async (c) => {
   const id = c.req.param("id");
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
   const user = c.get("user");
 
   const found = await findOwnedBuilding(db, id, user.id);
@@ -77,7 +77,7 @@ buildingRoutes.put("/:id", async (c) => {
     return c.json({ error: "Invalid body", details: parsed.error.flatten() }, 400);
   }
 
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
   const user = c.get("user");
 
   const existing = await findOwnedBuilding(db, id, user.id);
@@ -97,7 +97,7 @@ buildingRoutes.put("/:id", async (c) => {
 // DELETE /:id - delete a building
 buildingRoutes.delete("/:id", async (c) => {
   const id = c.req.param("id");
-  const db = createDb(c.env.DATABASE_URL);
+  const db = c.get("db");
   const user = c.get("user");
 
   const existing = await findOwnedBuilding(db, id, user.id);
