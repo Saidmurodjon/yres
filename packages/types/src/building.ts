@@ -8,12 +8,7 @@ export type BuildingType =
   | "administrative"
   | "other";
 
-export type HeatingSource =
-  | "district_heating"
-  | "gas_boiler"
-  | "electric"
-  | "coal"
-  | "other";
+export type HeatingSource = "district_heating" | "gas_boiler" | "electric" | "coal" | "other";
 
 export interface BuildingSummary {
   id: string;

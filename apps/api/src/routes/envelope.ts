@@ -129,6 +129,9 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
       uValueWm2k: ot.uValueWm2k,
       widthM: ot.widthM ?? null,
       heightM: ot.heightM ?? null,
+      gValue: ot.gValue ?? null,
+      frameFactor: ot.frameFactor ?? null,
+      shadingFactor: ot.shadingFactor ?? 1,
       description: ot.description ?? null,
     };
   });

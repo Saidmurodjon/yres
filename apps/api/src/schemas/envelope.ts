@@ -28,6 +28,11 @@ const openingTypeInputSchema = z.object({
   uValueWm2k: z.number().positive(),
   widthM: z.number().positive().nullable().optional(),
   heightM: z.number().positive().nullable().optional(),
+  // Solar-gain properties — only meaningful for category: "window", used by
+  // the audit engine's EN ISO 13790 solar gain calculation.
+  gValue: z.number().min(0).max(1).nullable().optional(),
+  frameFactor: z.number().min(0).max(1).nullable().optional(),
+  shadingFactor: z.number().min(0).max(1).optional(),
   description: z.string().nullable().optional(),
 });
 

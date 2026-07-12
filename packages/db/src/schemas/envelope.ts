@@ -45,6 +45,12 @@ export const openingType = pgTable("opening_type", {
   uValueWm2k: numeric("u_value_w_m2k", { mode: "number" }).notNull(),
   widthM: numeric("width_m", { mode: "number" }),
   heightM: numeric("height_m", { mode: "number" }),
+  /** Solar energy transmittance — only meaningful for `category: "window"`. */
+  gValue: numeric("g_value", { mode: "number" }),
+  /** Frame factor `Fw` — glazed fraction of the opening. */
+  frameFactor: numeric("frame_factor", { mode: "number" }),
+  /** Combined horizon × overhang × fin external shading reduction factor. */
+  shadingFactor: numeric("shading_factor", { mode: "number" }).notNull().default(1),
   description: text("description"),
 });
 

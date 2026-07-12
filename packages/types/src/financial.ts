@@ -10,8 +10,16 @@ export interface FinancialIndicators {
 export interface CashflowYear {
   year: number;
   capex: number;
-  energySavings: number;
+  grossSavings: number;
   maintenanceCost: number;
   netCashflow: number;
-  cumulativeCashflow: number;
+  discountedNetCashflow: number;
+  cumulativeDiscountedCashflow: number;
+}
+
+export interface EnergyTariff {
+  energyCarrier: "gas" | "electricity" | "district_heat" | "coal";
+  unitCostUsdPerKwh: number;
+  emissionFactorKgCo2PerKwh: number;
+  primaryEnergyFactor: number;
 }

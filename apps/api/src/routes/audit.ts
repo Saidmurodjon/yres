@@ -3,24 +3,18 @@ import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { findOwnedBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
+import { runFullAudit } from "../services/audit.engine";
 
 export const auditRoutes = new Hono<AppEnv>();
 
 auditRoutes.use("*", authMiddleware);
 
-// POST /:id/audit/run - create an audit_run row and (once the calculation
-// engine is wired up) run it synchronously.
-//
-// TODO(calc-engine): apps/api/src/services/audit.engine.ts does not exist
-// yet (the energy-calculation engine is being built in parallel). Once it
-// exports something like `runFullAudit(db, buildingId)`, this handler should:
-//   1. insert the audit_run row with status "pending"
-//   2. call runFullAudit(db, buildingId) inside a try/catch
-//   3. on success: update the row to status "completed", set completedAt,
-//      and persist the result (e.g. reportR2Key or a results table)
-//   4. on failure: update the row to status "failed" with errorMessage
-// For now we only create the row and leave it "pending" so the rest of the
-// API surface (status/results polling) is already wired.
+// POST /:id/audit/run - create an audit_run row and run the calculation
+// engine synchronously. Nothing about the *result* is persisted (per the
+// "recalculate on demand, don't store calculated values" rule) — only the
+// run's lifecycle (status/timestamps) is, so the UI has something to poll
+// and history to show. The result itself is returned inline here and
+// recomputed fresh on each GET /results call.
 auditRoutes.post("/:id/audit/run", async (c) => {
   const buildingId = c.req.param("id");
   const db = createDb(c.env.DATABASE_URL);
@@ -36,18 +30,35 @@ auditRoutes.post("/:id/audit/run", async (c) => {
     .values({
       buildingId,
       triggeredByUserId: user.id,
-      status: "pending",
+      status: "running",
       startedAt: new Date(),
     })
     .returning();
 
-  return c.json(
-    {
-      auditRun: run,
-      message: "Audit engine is not wired up yet; run created with status 'pending'.",
-    },
-    202,
-  );
+  if (!run) {
+    return c.json({ error: "Failed to create audit run" }, 500);
+  }
+
+  try {
+    const result = await runFullAudit(db, buildingId);
+    await db
+      .update(auditRun)
+      .set({ status: "completed", completedAt: new Date() })
+      .where(eq(auditRun.id, run.id));
+
+    return c.json({ auditRun: { ...run, status: "completed" as const }, result }, 201);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    await db
+      .update(auditRun)
+      .set({ status: "failed", errorMessage })
+      .where(eq(auditRun.id, run.id));
+
+    return c.json(
+      { auditRun: { ...run, status: "failed" as const, errorMessage }, error: errorMessage },
+      500,
+    );
+  }
 });
 
 // GET /:id/audit/status - latest audit_run for the building
@@ -94,16 +105,12 @@ auditRoutes.get("/:id/audit/results", async (c) => {
     .limit(1);
 
   if (!latestCompleted) {
-    // TODO(calc-engine): once runFullAudit() exists and results are
-    // persisted, replace this stub with the real result shape.
-    return c.json(
-      {
-        error: "No completed audit run for this building yet",
-        stub: true,
-      },
-      501,
-    );
+    return c.json({ error: "No completed audit run for this building yet" }, 404);
   }
 
-  return c.json({ auditRun: latestCompleted });
+  // Results are never persisted (see POST /run) — recompute fresh from the
+  // building's current inputs so this always reflects the latest data.
+  const result = await runFullAudit(db, buildingId);
+
+  return c.json({ auditRun: latestCompleted, result });
 });
