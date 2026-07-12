@@ -91,6 +91,101 @@ describe("Measures API", () => {
     expect(secondById.get(roof.id)).toBe(false);
     expect(secondById.get(windows.id)).toBe(true);
   });
+
+  it("creates a measure via POST and lists it back", async () => {
+    const { cookie } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+
+    const createResponse = await authRequest(
+      `/api/buildings/${buildingId}/measures`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "LED retrofit",
+          category: "lighting",
+          investmentCostUsd: 4000,
+          lifetimeYears: 15,
+          maintenanceCostPercent: 0.01,
+        }),
+      },
+      cookie,
+    );
+    expect(createResponse.status).toBe(201);
+    const { measure } = (await createResponse.json()) as { measure: { id: string; name: string } };
+    expect(measure.name).toBe("LED retrofit");
+
+    const listResponse = await authRequest(`/api/buildings/${buildingId}/measures`, {}, cookie);
+    const { measures } = (await listResponse.json()) as { measures: { id: string }[] };
+    expect(measures.map((m) => m.id)).toContain(measure.id);
+  });
+
+  it("rejects a measure with an unknown category (400)", async () => {
+    const { cookie } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+
+    const response = await authRequest(
+      `/api/buildings/${buildingId}/measures`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Bogus", category: "not-a-real-category", investmentCostUsd: 100 }),
+      },
+      cookie,
+    );
+    expect(response.status).toBe(400);
+  });
+
+  it("deletes a measure", async () => {
+    const { cookie } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+
+    const createResponse = await authRequest(
+      `/api/buildings/${buildingId}/measures`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Roof insulation", category: "envelope_roof_insulation", investmentCostUsd: 3000 }),
+      },
+      cookie,
+    );
+    const { measure } = (await createResponse.json()) as { measure: { id: string } };
+
+    const deleteResponse = await authRequest(
+      `/api/buildings/${buildingId}/measures/${measure.id}`,
+      { method: "DELETE" },
+      cookie,
+    );
+    expect(deleteResponse.status).toBe(204);
+
+    const listResponse = await authRequest(`/api/buildings/${buildingId}/measures`, {}, cookie);
+    const { measures } = (await listResponse.json()) as { measures: { id: string }[] };
+    expect(measures.map((m) => m.id)).not.toContain(measure.id);
+  });
+
+  it("404s deleting a measure that doesn't belong to the building", async () => {
+    const { cookie } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+    const otherBuildingId = await createBuilding(cookie);
+
+    const createResponse = await authRequest(
+      `/api/buildings/${otherBuildingId}/measures`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "Wall insulation", category: "envelope_wall_insulation", investmentCostUsd: 3000 }),
+      },
+      cookie,
+    );
+    const { measure } = (await createResponse.json()) as { measure: { id: string } };
+
+    const deleteResponse = await authRequest(
+      `/api/buildings/${buildingId}/measures/${measure.id}`,
+      { method: "DELETE" },
+      cookie,
+    );
+    expect(deleteResponse.status).toBe(404);
+  });
 });
 
 describe("Consumption API", () => {

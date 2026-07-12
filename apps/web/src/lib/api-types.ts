@@ -181,6 +181,14 @@ export interface EnergyMeasure {
   createdAt: string;
 }
 
+export interface CreateMeasureInput {
+  name: string;
+  category: MeasureCategory;
+  investmentCostUsd: number;
+  lifetimeYears?: number;
+  maintenanceCostPercent?: number;
+}
+
 export type EnergyCarrier = "gas" | "electricity" | "district_heat" | "coal";
 
 export interface UtilityBill {

@@ -16,10 +16,15 @@ Lighting, equipment, PV, solar-DHW, and EMS are now modeled in `AuditEngine` (se
 "Systems" tab, alongside ventilation/DHW/distribution/generation/cooling. PDF report export
 (`apps/api/src/services/report.service.ts`) is downloadable from the Results page.
 
+Energy measures now have full CRUD (`POST`/`DELETE /:id/measures`) and an "Add a measure" form
+on the Measures tab — previously there was no way to create one at all, so the tab's proposal/
+selection workflow was unreachable for any real building. (Along the way, fixed a pagination cap
+bug that had been silently 400ing both the Measures and Consumption tabs on every load — see
+`schemas/pagination.ts`.)
+
 Known gaps: no multi-tenant/role model yet (buildings belong to a single user, not an
 organization with owner/ESCO/auditor/bank roles); shading elements have no CRUD/UI or
-calculation wiring; there's no route to create `energy_measure` rows (they're expected to be
-seeded/derived, not user-authored, per the source workbook's structure).
+calculation wiring.
 
 ## Architecture
 
