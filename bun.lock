@@ -17,6 +17,7 @@
         "@yres/db": "workspace:*",
         "@yres/types": "workspace:*",
         "better-auth": "^1.1.21",
+        "drizzle-orm": "^0.45.2",
         "hono": "^4.6.16",
         "zod": "^3.24.1",
       },
