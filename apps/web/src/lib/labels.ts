@@ -1,5 +1,11 @@
 import type { BuildingType, EndUse, EnvelopeElementCategory, Orientation } from "@yres/types";
-import type { EnergyCarrier, MeasureCategory } from "./api-types";
+import type {
+  DistributionSystemType,
+  EnergyCarrier,
+  GenerationSourceType,
+  MeasureCategory,
+  VentilationSystemType,
+} from "./api-types";
 
 export const BUILDING_TYPE_LABELS: Record<BuildingType, string> = {
   residential_mfh: "Residential (multi-family)",
@@ -78,6 +84,31 @@ export const MEASURE_CATEGORY_LABELS: Record<MeasureCategory, string> = {
   ems: "Energy management system",
   other: "Other",
 };
+
+export const VENTILATION_SYSTEM_TYPE_LABELS: Record<VentilationSystemType, string> = {
+  natural: "Natural",
+  mechanical: "Mechanical",
+};
+
+export const DISTRIBUTION_SYSTEM_TYPE_LABELS: Record<DistributionSystemType, string> = {
+  heating: "Heating",
+  dhw: "DHW",
+};
+
+export const GENERATION_SOURCE_TYPE_LABELS: Record<GenerationSourceType, string> = {
+  gas_boiler: "Gas boiler",
+  electric_boiler: "Electric boiler",
+  district_heating: "District heating",
+  solar_dhw: "Solar DHW",
+  split_ac: "Split AC",
+  centralized_ac: "Centralized AC",
+  heat_pump: "Heat pump",
+  other: "Other",
+};
+
+export const GENERATION_SOURCE_TYPES = Object.keys(
+  GENERATION_SOURCE_TYPE_LABELS,
+) as GenerationSourceType[];
 
 export const MONTH_LABELS = [
   "January",

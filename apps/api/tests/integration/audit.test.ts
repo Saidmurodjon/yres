@@ -1,4 +1,4 @@
-import { climateRegion, generationSource } from "@yres/db";
+import { climateRegion } from "@yres/db";
 import { seedReferenceDataWithDb } from "@yres/db/seed";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
@@ -118,19 +118,23 @@ describe("Audit run (end-to-end through real reference data)", () => {
     );
     expect(envelopeResponse.status).toBe(200);
 
-    // No CRUD route manages ventilation/DHW/distribution/generation/cooling
-    // systems yet (a real product gap — see the Phase 5 report), so seed a
-    // heating generation source directly to exercise the full
-    // need→distribution→generation→purchased-energy pipeline end-to-end,
-    // not just the envelope-loss portion.
-    await testDb.insert(generationSource).values({
-      buildingId: building.id,
-      endUse: "heating",
-      scenario: "before",
-      sourceType: "gas_boiler",
-      efficiencyOrSeer: 0.58,
-      shareOfDemand: 1,
-    });
+    // Configure a heating generation source through the real API (see
+    // routes/systems.ts) to exercise the full need→distribution→
+    // generation→purchased-energy pipeline end-to-end, not just the
+    // envelope-loss portion.
+    const generationResponse = await authRequest(
+      `/api/buildings/${building.id}/systems/generation`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scenario: "before",
+          sources: [{ endUse: "heating", sourceType: "gas_boiler", efficiencyOrSeer: 0.58 }],
+        }),
+      },
+      cookie,
+    );
+    expect(generationResponse.status).toBe(200);
 
     const runResponse = await authRequest(`/api/buildings/${building.id}/audit/run`, { method: "POST" }, cookie);
     expect(runResponse.status).toBe(201);

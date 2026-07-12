@@ -11,6 +11,7 @@ import { consumptionRoutes } from "../../src/routes/consumption";
 import { envelopeRoutes } from "../../src/routes/envelope";
 import { measuresRoutes } from "../../src/routes/measures";
 import { referenceRoutes } from "../../src/routes/reference";
+import { systemsRoutes } from "../../src/routes/systems";
 import { resetTestDb, testDb } from "../helpers/test-db";
 import { testEnv } from "../helpers/test-env";
 
@@ -42,6 +43,7 @@ app.route("/api/buildings", envelopeRoutes);
 app.route("/api/buildings", measuresRoutes);
 app.route("/api/buildings", consumptionRoutes);
 app.route("/api/buildings", auditRoutes);
+app.route("/api/buildings", systemsRoutes);
 app.route("/api/climate", climateRoutes);
 app.route("/api/reference", referenceRoutes);
 

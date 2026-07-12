@@ -232,6 +232,149 @@ export interface ClimateRegionWithNormals extends ClimateRegion {
   monthlyNormals: ClimateMonthlyNormal[];
 }
 
+export type VentilationSystemType = "natural" | "mechanical";
+
+export interface VentilationSystem {
+  id: string;
+  buildingId: string;
+  scenario: Scenario;
+  systemType: VentilationSystemType;
+  airChangeRatePerHour: number | null;
+  freshAirPerPersonM3h: number | null;
+  heatRecoveryEfficiency: number | null;
+  fanElectricalPowerKw: number | null;
+}
+
+export interface DhwSource {
+  id: string;
+  buildingId: string;
+  scenario: Scenario;
+  sourceName: string;
+  energyCarrier: EnergyCarrier;
+  specificConsumptionLPersonDay: number;
+  personsServed: number;
+}
+
+export type DistributionSystemType = "heating" | "dhw";
+
+export interface DistributionSystem {
+  id: string;
+  buildingId: string;
+  systemType: DistributionSystemType;
+  scenario: Scenario;
+  pipeDiameterClass: string;
+  lengthM: number;
+  insulatedFraction: number;
+  meanFluidTempC: number;
+}
+
+export type GenerationSourceType =
+  | "gas_boiler"
+  | "electric_boiler"
+  | "district_heating"
+  | "solar_dhw"
+  | "split_ac"
+  | "centralized_ac"
+  | "heat_pump"
+  | "other";
+
+export interface GenerationSource {
+  id: string;
+  buildingId: string;
+  endUse: "heating" | "dhw" | "cooling";
+  scenario: Scenario;
+  sourceType: GenerationSourceType;
+  efficiencyOrSeer: number;
+  shareOfDemand: number;
+}
+
+export interface CoolingWindow {
+  id: string;
+  buildingId: string;
+  scenario: Scenario;
+  orientation: Orientation;
+  areaM2: number;
+  gValue: number;
+  shadingFactor: number;
+}
+
+export interface CoolingSystem {
+  id: string;
+  buildingId: string;
+  scenario: Scenario;
+  description: string | null;
+  seer: number;
+}
+
+export interface SystemsData {
+  ventilationSystems: VentilationSystem[];
+  dhwSources: DhwSource[];
+  distributionSystems: DistributionSystem[];
+  generationSources: GenerationSource[];
+  coolingWindows: CoolingWindow[];
+  coolingSystems: CoolingSystem[];
+}
+
+export interface ReplaceVentilationPayload {
+  scenario: Scenario;
+  systems: {
+    systemType: VentilationSystemType;
+    airChangeRatePerHour?: number | null;
+    freshAirPerPersonM3h?: number | null;
+    heatRecoveryEfficiency?: number | null;
+    fanElectricalPowerKw?: number | null;
+  }[];
+}
+
+export interface ReplaceDhwPayload {
+  scenario: Scenario;
+  sources: {
+    sourceName: string;
+    energyCarrier: EnergyCarrier;
+    specificConsumptionLPersonDay: number;
+    personsServed: number;
+  }[];
+}
+
+export interface ReplaceDistributionPayload {
+  scenario: Scenario;
+  systems: {
+    systemType: DistributionSystemType;
+    pipeDiameterClass: string;
+    lengthM: number;
+    insulatedFraction?: number;
+    meanFluidTempC: number;
+  }[];
+}
+
+export interface ReplaceGenerationPayload {
+  scenario: Scenario;
+  sources: {
+    endUse: "heating" | "dhw" | "cooling";
+    sourceType: GenerationSourceType;
+    efficiencyOrSeer: number;
+    shareOfDemand?: number;
+  }[];
+}
+
+export interface ReplaceCoolingWindowsPayload {
+  scenario: Scenario;
+  windows: {
+    orientation: Orientation;
+    areaM2: number;
+    gValue: number;
+    shadingFactor?: number;
+  }[];
+}
+
+export interface ReplaceCoolingSystemsPayload {
+  scenario: Scenario;
+  systems: {
+    description?: string | null;
+    seer: number;
+  }[];
+}
+
 export type AuditRunStatus = "pending" | "running" | "completed" | "failed";
 
 export interface AuditRun {

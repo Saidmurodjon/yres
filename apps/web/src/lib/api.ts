@@ -10,7 +10,14 @@ import type {
   EnergyMeasure,
   EnvelopeData,
   Material,
+  ReplaceCoolingSystemsPayload,
+  ReplaceCoolingWindowsPayload,
+  ReplaceDhwPayload,
+  ReplaceDistributionPayload,
   ReplaceEnvelopePayload,
+  ReplaceGenerationPayload,
+  ReplaceVentilationPayload,
+  SystemsData,
   UpdateBuildingInput,
   UtilityBill,
 } from "./api-types";
@@ -115,6 +122,40 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ bills }),
       }),
+  },
+
+  systems: {
+    get: (buildingId: string) => request<SystemsData>(`/api/buildings/${buildingId}/systems`),
+    replaceVentilation: (buildingId: string, payload: ReplaceVentilationPayload) =>
+      request<{ scenario: string; count: number }>(
+        `/api/buildings/${buildingId}/systems/ventilation`,
+        { method: "PUT", body: JSON.stringify(payload) },
+      ),
+    replaceDhw: (buildingId: string, payload: ReplaceDhwPayload) =>
+      request<{ scenario: string; count: number }>(`/api/buildings/${buildingId}/systems/dhw`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      }),
+    replaceDistribution: (buildingId: string, payload: ReplaceDistributionPayload) =>
+      request<{ scenario: string; count: number }>(
+        `/api/buildings/${buildingId}/systems/distribution`,
+        { method: "PUT", body: JSON.stringify(payload) },
+      ),
+    replaceGeneration: (buildingId: string, payload: ReplaceGenerationPayload) =>
+      request<{ scenario: string; count: number }>(
+        `/api/buildings/${buildingId}/systems/generation`,
+        { method: "PUT", body: JSON.stringify(payload) },
+      ),
+    replaceCoolingWindows: (buildingId: string, payload: ReplaceCoolingWindowsPayload) =>
+      request<{ scenario: string; count: number }>(
+        `/api/buildings/${buildingId}/systems/cooling-windows`,
+        { method: "PUT", body: JSON.stringify(payload) },
+      ),
+    replaceCoolingSystems: (buildingId: string, payload: ReplaceCoolingSystemsPayload) =>
+      request<{ scenario: string; count: number }>(
+        `/api/buildings/${buildingId}/systems/cooling-systems`,
+        { method: "PUT", body: JSON.stringify(payload) },
+      ),
   },
 
   climate: {

@@ -11,6 +11,7 @@ import { consumptionRoutes } from "./routes/consumption";
 import { envelopeRoutes } from "./routes/envelope";
 import { measuresRoutes } from "./routes/measures";
 import { referenceRoutes } from "./routes/reference";
+import { systemsRoutes } from "./routes/systems";
 
 export interface Env {
   DATABASE_URL: string;
@@ -49,6 +50,7 @@ app.route("/api/buildings", envelopeRoutes);
 app.route("/api/buildings", measuresRoutes);
 app.route("/api/buildings", consumptionRoutes);
 app.route("/api/buildings", auditRoutes);
+app.route("/api/buildings", systemsRoutes);
 app.route("/api/climate", climateRoutes);
 app.route("/api/reference", referenceRoutes);
 

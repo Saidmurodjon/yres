@@ -14,6 +14,7 @@ import { ConsumptionTab } from "../../../../components/building-detail/consumpti
 import { EnvelopeTab } from "../../../../components/building-detail/envelope-tab";
 import { MeasuresTab } from "../../../../components/building-detail/measures-tab";
 import { OverviewTab } from "../../../../components/building-detail/overview-tab";
+import { SystemsTab } from "../../../../components/building-detail/systems-tab";
 import { useBuilding } from "../../../../hooks";
 import { ApiError } from "../../../../lib/api";
 
@@ -73,6 +74,7 @@ function BuildingDetailPage() {
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="envelope">Envelope</TabsTrigger>
+          <TabsTrigger value="systems">Systems</TabsTrigger>
           <TabsTrigger value="consumption">Consumption</TabsTrigger>
           <TabsTrigger value="measures">Measures</TabsTrigger>
         </TabsList>
@@ -82,6 +84,9 @@ function BuildingDetailPage() {
         </TabsContent>
         <TabsContent value="envelope">
           <EnvelopeTab buildingId={building.id} />
+        </TabsContent>
+        <TabsContent value="systems">
+          <SystemsTab buildingId={building.id} />
         </TabsContent>
         <TabsContent value="consumption">
           <ConsumptionTab buildingId={building.id} />
