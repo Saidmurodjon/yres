@@ -1,6 +1,15 @@
 import type { Env } from "../../src/index";
 
 /**
+ * Trivial in-memory stand-in for the R2Bucket binding — just enough of the
+ * interface (`put`) for routes/audit.ts's report route to run in tests
+ * without a real Cloudflare R2 bucket. Not a full R2Bucket implementation.
+ */
+const fakeReportsBucket = {
+  put: async () => undefined,
+} as unknown as Env["REPORTS_BUCKET"];
+
+/**
  * Fake Worker bindings for `app.request(path, init, env)` in tests.
  * `DATABASE_URL` is never actually used to connect (see test-db.ts —
  * `createDb` is mocked to ignore its argument) but Better Auth's config
@@ -16,7 +25,5 @@ export const testEnv: Env = {
   // can point this at whatever port its Vite dev server actually runs on —
   // CORS requires an exact origin match, not just "some localhost".
   WEB_URL: process.env.E2E_WEB_URL ?? "http://localhost:5173",
-  // Unused by any route yet (report generation isn't implemented) — a real
-  // R2Bucket isn't available in this test environment.
-  REPORTS_BUCKET: undefined as unknown as Env["REPORTS_BUCKET"],
+  REPORTS_BUCKET: fakeReportsBucket,
 };

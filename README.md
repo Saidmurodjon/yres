@@ -12,8 +12,11 @@ original Excel calculation engine (`3-DMTT v5.xlsx`) this platform reimplements,
 `docs/deployment.md` for taking it live.
 
 Known gaps: lighting/equipment/PV/solar-DHW/EMS measure savings aren't modeled yet (return 0,
-not fabricated numbers — see `apps/api/src/services/audit.engine.ts`); PDF/Excel report
-generation and export aren't built (an R2 bucket is provisioned for it).
+not fabricated numbers — see `apps/api/src/services/audit.engine.ts`), and there's no
+multi-tenant/role model yet (buildings belong to a single user, not an organization with
+owner/ESCO/auditor/bank roles). PDF report export (`apps/api/src/services/report.service.ts`,
+downloadable from the Results page) and CRUD + UI for ventilation/DHW/distribution/generation/
+cooling systems (the "Systems" tab) are both built.
 
 ## Architecture
 

@@ -23,6 +23,7 @@ import {
   ArrowRight,
   Clock,
   DollarSign,
+  Download,
   Leaf,
   Loader2,
   PiggyBank,
@@ -51,7 +52,7 @@ import {
 import { ChartLegend } from "../../../../components/chart-legend";
 import { ChartTooltip } from "../../../../components/chart-tooltip";
 import { ShareBar } from "../../../../components/share-bar";
-import { useAuditResults, useRunAudit } from "../../../../hooks/use-audit";
+import { useAuditResults, useDownloadAuditReport, useRunAudit } from "../../../../hooks/use-audit";
 import { ApiError } from "../../../../lib/api";
 import {
   BALANCE_COLORS,
@@ -78,6 +79,7 @@ function AuditResultsPage() {
   const { buildingId } = Route.useParams();
   const auditResultsQuery = useAuditResults(buildingId);
   const runAudit = useRunAudit(buildingId);
+  const downloadReport = useDownloadAuditReport(buildingId);
   const [balanceScenario, setBalanceScenario] = useState<Scenario>("after");
 
   if (auditResultsQuery.isLoading) {
@@ -167,6 +169,23 @@ function AuditResultsPage() {
                 Financial analysis
               </Link>
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => downloadReport.mutate()}
+              disabled={downloadReport.isPending}
+            >
+              {downloadReport.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Preparing…
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Download report
+                </>
+              )}
+            </Button>
             <Button onClick={() => runAudit.mutate()} disabled={runAudit.isPending}>
               {runAudit.isPending ? (
                 <>
@@ -184,6 +203,13 @@ function AuditResultsPage() {
           {runAudit.isError && (
             <p className="max-w-xs text-right text-sm text-destructive">
               {runAudit.error instanceof ApiError ? runAudit.error.message : "Failed to run audit."}
+            </p>
+          )}
+          {downloadReport.isError && (
+            <p className="max-w-xs text-right text-sm text-destructive">
+              {downloadReport.error instanceof ApiError
+                ? downloadReport.error.message
+                : "Failed to download report."}
             </p>
           )}
         </div>

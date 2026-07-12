@@ -31,3 +31,20 @@ export function useRunAudit(buildingId: string) {
     },
   });
 }
+
+/** Downloads the audit report PDF and triggers a browser save-as, rather than just returning the blob. */
+export function useDownloadAuditReport(buildingId: string) {
+  return useMutation({
+    mutationFn: async () => {
+      const { blob, fileName } = await api.audit.report(buildingId);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    },
+  });
+}

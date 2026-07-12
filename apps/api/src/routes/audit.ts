@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { findOwnedBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import { runFullAudit } from "../services/audit.engine";
+import { generateAuditReportPdf } from "../services/report.service";
 
 export const auditRoutes = new Hono<AppEnv>();
 
@@ -113,4 +114,49 @@ auditRoutes.get("/:id/audit/results", async (c) => {
   const result = await runFullAudit(db, buildingId);
 
   return c.json({ auditRun: latestCompleted, result });
+});
+
+// GET /:id/audit/report - a downloadable PDF summarizing the latest audit
+// result. Recomputed fresh on every request (same "recalculate on demand"
+// rule as /results) rather than served from a stored copy — a cached copy
+// is still written to R2 under a stable per-building key so there's a
+// persistent artifact (e.g. for future emailing/sharing features), but the
+// response itself never depends on that cache being warm or fresh.
+auditRoutes.get("/:id/audit/report", async (c) => {
+  const buildingId = c.req.param("id");
+  const db = c.get("db");
+  const user = c.get("user");
+
+  const owned = await findOwnedBuilding(db, buildingId, user.id);
+  if (!owned) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  const [latestCompleted] = await db
+    .select()
+    .from(auditRun)
+    .where(and(eq(auditRun.buildingId, buildingId), eq(auditRun.status, "completed")))
+    .orderBy(desc(auditRun.createdAt))
+    .limit(1);
+
+  if (!latestCompleted) {
+    return c.json({ error: "No completed audit run for this building yet" }, 404);
+  }
+
+  const result = await runFullAudit(db, buildingId);
+  const pdfBytes = await generateAuditReportPdf(owned, result);
+
+  const r2Key = `reports/${buildingId}/latest.pdf`;
+  await c.env.REPORTS_BUCKET.put(r2Key, pdfBytes, {
+    httpMetadata: { contentType: "application/pdf" },
+  });
+  await db.update(auditRun).set({ reportR2Key: r2Key }).where(eq(auditRun.id, latestCompleted.id));
+
+  const fileName = `${owned.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-audit-report.pdf`;
+  return new Response(pdfBytes, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="${fileName}"`,
+    },
+  });
 });

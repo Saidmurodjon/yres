@@ -183,5 +183,17 @@ export const api = {
       request<{ auditRun: AuditRun; result: AuditResult }>(
         `/api/buildings/${buildingId}/audit/results`,
       ),
+    report: async (buildingId: string): Promise<{ blob: Blob; fileName: string }> => {
+      const response = await fetch(`${API_URL}/api/buildings/${buildingId}/audit/report`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new ApiError(response.status, body as ApiErrorBody);
+      }
+      const disposition = response.headers.get("Content-Disposition") ?? "";
+      const fileName = /filename="([^"]+)"/.exec(disposition)?.[1] ?? "audit-report.pdf";
+      return { blob: await response.blob(), fileName };
+    },
   },
 };
