@@ -2,13 +2,23 @@ import { Link } from "@tanstack/react-router";
 import { Button, Card, CardContent, Skeleton } from "@yres/ui";
 import { AlertTriangle, ClipboardList } from "lucide-react";
 
+const KPI_SKELETON_KEYS = [
+  "current-use",
+  "potential-use",
+  "potential-savings",
+  "co2-reduction",
+  "investment",
+  "annual-savings",
+  "payback",
+];
+
 /** Loading skeleton shared by the results and financial pages. */
 export function AuditResultsSkeleton() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-        {Array.from({ length: 7 }, (_, index) => (
-          <Skeleton key={`kpi-${index}`} className="h-24" />
+        {KPI_SKELETON_KEYS.map((key) => (
+          <Skeleton key={key} className="h-24" />
         ))}
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
