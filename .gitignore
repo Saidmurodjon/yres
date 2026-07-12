@@ -13,3 +13,6 @@ coverage/
 bun.lockb
 drizzle/meta/
 routeTree.gen.ts
+
+# generated migrations are produced by `bun run db:generate` against a real DATABASE_URL
+packages/db/drizzle/
