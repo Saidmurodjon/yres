@@ -1,13 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { authClient } from "../lib/auth-client";
 
 export const Route = createFileRoute("/")({
-  component: HomePage,
+  beforeLoad: async () => {
+    const { data } = await authClient.getSession();
+    throw redirect({ to: data ? "/dashboard" : "/login" });
+  },
 });
-
-function HomePage() {
-  return (
-    <main className="flex min-h-screen items-center justify-center">
-      <h1 className="text-3xl font-semibold">YRES — Energy Efficiency Audit Platform</h1>
-    </main>
-  );
-}

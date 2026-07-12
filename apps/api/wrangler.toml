@@ -5,6 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 NODE_ENV = "development"
+WEB_URL = "http://localhost:5173"
 
 [[r2_buckets]]
 binding = "REPORTS_BUCKET"

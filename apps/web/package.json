@@ -16,6 +16,8 @@
     "@tanstack/react-router": "^1.92.5",
     "@yres/types": "workspace:*",
     "@yres/ui": "workspace:*",
+    "better-auth": "^1.1.21",
+    "lucide-react": "^0.469.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.15.0"
