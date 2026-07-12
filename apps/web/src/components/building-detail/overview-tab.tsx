@@ -3,7 +3,7 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@yres/u
 import { BarChart3, ClipboardCheck, LineChart, Pencil, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
-import type { Building } from "../../lib/api-types";
+import type { Building, BuildingRole } from "../../lib/api-types";
 import { BUILDING_TYPE_LABELS, formatDate, formatNumber } from "../../lib/labels";
 import { DeleteBuildingDialog } from "./delete-building-dialog";
 import { EditBuildingDialog } from "./edit-building-dialog";
@@ -22,9 +22,11 @@ function Field({ label, value }: FieldProps) {
   );
 }
 
-export function OverviewTab({ building }: { building: Building }) {
+export function OverviewTab({ building, role }: { building: Building; role: BuildingRole }) {
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const canEdit = role === "owner" || role === "editor";
+  const canDelete = role === "owner";
 
   return (
     <div className="space-y-6">
@@ -49,16 +51,22 @@ export function OverviewTab({ building }: { building: Building }) {
             </Link>
           </Button>
         </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-          <Button size="sm" variant="destructive" onClick={() => setDeleteOpen(true)}>
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        </div>
+        {(canEdit || canDelete) && (
+          <div className="flex gap-2">
+            {canEdit && (
+              <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+                <Pencil className="h-4 w-4" />
+                Edit
+              </Button>
+            )}
+            {canDelete && (
+              <Button size="sm" variant="destructive" onClick={() => setDeleteOpen(true)}>
+                <Trash2 className="h-4 w-4" />
+                Delete
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

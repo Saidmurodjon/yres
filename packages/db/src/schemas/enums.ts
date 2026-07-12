@@ -82,3 +82,12 @@ export const auditRunStatusEnum = pgEnum("audit_run_status", [
   "completed",
   "failed",
 ]);
+
+/**
+ * Per-building collaborator access level (separate from `user.role`, which
+ * is an unused Better Auth scaffolding column and not this feature). The
+ * building's creator (`building.userId`) is always an implicit "owner" and
+ * never appears as a `buildingMember` row — this enum only covers people
+ * *invited* to a building they don't own.
+ */
+export const buildingMemberRoleEnum = pgEnum("building_member_role", ["editor", "viewer"]);

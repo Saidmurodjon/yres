@@ -38,6 +38,7 @@ export const testDb = Object.assign(baseDb, {
 }) as unknown as Database;
 
 const TABLES_IN_FK_ORDER = [
+  "building_member",
   "renewable_production_monthly",
   "envelope_opening",
   "envelope_element",

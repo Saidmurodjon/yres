@@ -3,13 +3,17 @@ import type {
   ApiErrorBody,
   AuditRun,
   Building,
+  BuildingMember,
+  BuildingRole,
+  BuildingWithRole,
   ClimateRegion,
   ClimateRegionWithNormals,
   CreateBuildingInput,
-  CreateUtilityBillInput,
   CreateMeasureInput,
+  CreateUtilityBillInput,
   EnergyMeasure,
   EnvelopeData,
+  InviteMemberInput,
   LampType,
   Material,
   ReplaceCoolingSystemsPayload,
@@ -77,10 +81,11 @@ function toQueryString(params?: ListParams): string {
 export const api = {
   buildings: {
     list: (params?: ListParams) =>
-      request<{ buildings: Building[]; page: number; pageSize: number }>(
+      request<{ buildings: BuildingWithRole[]; page: number; pageSize: number }>(
         `/api/buildings${toQueryString(params)}`,
       ),
-    get: (id: string) => request<{ building: Building }>(`/api/buildings/${id}`),
+    get: (id: string) =>
+      request<{ building: Building; role: BuildingRole }>(`/api/buildings/${id}`),
     create: (data: CreateBuildingInput) =>
       request<{ building: Building }>("/api/buildings", {
         method: "POST",
@@ -183,6 +188,23 @@ export const api = {
         method: "PUT",
         body: JSON.stringify(payload),
       }),
+  },
+
+  members: {
+    list: (buildingId: string) =>
+      request<{ members: BuildingMember[] }>(`/api/buildings/${buildingId}/members`),
+    invite: (buildingId: string, data: InviteMemberInput) =>
+      request<{ member: BuildingMember }>(`/api/buildings/${buildingId}/members`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    updateRole: (buildingId: string, memberId: string, role: "editor" | "viewer") =>
+      request<{ member: BuildingMember }>(`/api/buildings/${buildingId}/members/${memberId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ role }),
+      }),
+    remove: (buildingId: string, memberId: string) =>
+      request<void>(`/api/buildings/${buildingId}/members/${memberId}`, { method: "DELETE" }),
   },
 
   climate: {

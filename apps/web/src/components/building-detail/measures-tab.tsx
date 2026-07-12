@@ -48,7 +48,10 @@ function emptyForm(): NewMeasureForm {
   };
 }
 
-export function MeasuresTab({ buildingId }: { buildingId: string }) {
+export function MeasuresTab({
+  buildingId,
+  readOnly = false,
+}: { buildingId: string; readOnly?: boolean }) {
   const { data, isLoading, isError, error } = useMeasures(buildingId, { pageSize: 200 });
   const selectMeasures = useSelectMeasures(buildingId);
   const createMeasure = useCreateMeasure(buildingId);
@@ -155,7 +158,7 @@ export function MeasuresTab({ buildingId }: { buildingId: string }) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">Energy measures</CardTitle>
-          {measures.length > 0 && (
+          {measures.length > 0 && !readOnly && (
             <Button size="sm" onClick={handleSave} disabled={selectMeasures.isPending}>
               {selectMeasures.isPending ? "Saving..." : "Save selection"}
             </Button>
@@ -167,9 +170,9 @@ export function MeasuresTab({ buildingId }: { buildingId: string }) {
               <Wrench className="h-10 w-10 text-muted-foreground" />
               <p className="font-medium">No measures added yet</p>
               <p className="max-w-sm text-sm text-muted-foreground">
-                Add candidate energy-saving measures below, then mark the ones you're proposing for
-                implementation — their standardized savings are computed from this building's
-                envelope, systems, and (for lighting/equipment) before/after data on the Systems tab.
+                {readOnly
+                  ? "Nothing has been proposed for this building yet."
+                  : "Add candidate energy-saving measures below, then mark the ones you're proposing for implementation — their standardized savings are computed from this building's envelope, systems, and (for lighting/equipment) before/after data on the Systems tab."}
               </p>
             </div>
           ) : (
@@ -183,7 +186,7 @@ export function MeasuresTab({ buildingId }: { buildingId: string }) {
                     <TableHead>Investment (USD)</TableHead>
                     <TableHead>Lifetime (yrs)</TableHead>
                     <TableHead>Maintenance (%)</TableHead>
-                    <TableHead />
+                    {!readOnly && <TableHead />}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -195,6 +198,7 @@ export function MeasuresTab({ buildingId }: { buildingId: string }) {
                           className="h-4 w-4 rounded border-input"
                           checked={selected.has(measure.id)}
                           onChange={() => toggle(measure.id)}
+                          disabled={readOnly}
                           aria-label={`Propose ${measure.name}`}
                         />
                       </TableCell>
@@ -207,18 +211,20 @@ export function MeasuresTab({ buildingId }: { buildingId: string }) {
                       <TableCell>{formatNumber(measure.investmentCostUsd, 0)}</TableCell>
                       <TableCell>{measure.lifetimeYears}</TableCell>
                       <TableCell>{formatNumber(measure.maintenanceCostPercent, 2)}</TableCell>
-                      <TableCell>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDelete(measure.id)}
-                          disabled={deleteMeasure.isPending}
-                          aria-label={`Delete ${measure.name}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+                      {!readOnly && (
+                        <TableCell>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDelete(measure.id)}
+                            disabled={deleteMeasure.isPending}
+                            aria-label={`Delete ${measure.name}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -233,6 +239,7 @@ export function MeasuresTab({ buildingId }: { buildingId: string }) {
         </CardContent>
       </Card>
 
+      {!readOnly && (
       <form onSubmit={handleCreate}>
         <Card>
           <CardHeader>
@@ -303,6 +310,7 @@ export function MeasuresTab({ buildingId }: { buildingId: string }) {
           </CardFooter>
         </Card>
       </form>
+      )}
     </div>
   );
 }

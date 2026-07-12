@@ -24,7 +24,10 @@ import {
 } from "../../lib/labels";
 import { EnvelopeEditorDialog } from "./envelope-editor-dialog";
 
-export function EnvelopeTab({ buildingId }: { buildingId: string }) {
+export function EnvelopeTab({
+  buildingId,
+  readOnly = false,
+}: { buildingId: string; readOnly?: boolean }) {
   const { data, isLoading, isError, error } = useEnvelope(buildingId);
   const [editorOpen, setEditorOpen] = useState(false);
 
@@ -60,10 +63,12 @@ export function EnvelopeTab({ buildingId }: { buildingId: string }) {
           Construction assemblies, opening types, and the elements that reference them. The editor
           manages the "before" (baseline) scenario.
         </p>
-        <Button size="sm" onClick={() => setEditorOpen(true)}>
-          <Pencil className="h-4 w-4" />
-          Edit envelope
-        </Button>
+        {!readOnly && (
+          <Button size="sm" onClick={() => setEditorOpen(true)}>
+            <Pencil className="h-4 w-4" />
+            Edit envelope
+          </Button>
+        )}
       </div>
 
       {isEmpty ? (
@@ -75,10 +80,12 @@ export function EnvelopeTab({ buildingId }: { buildingId: string }) {
               Define construction types, opening types, and envelope elements to enable heat-loss
               calculations for this building.
             </p>
-            <Button className="mt-2" onClick={() => setEditorOpen(true)}>
-              <Pencil className="h-4 w-4" />
-              Add envelope data
-            </Button>
+            {!readOnly && (
+              <Button className="mt-2" onClick={() => setEditorOpen(true)}>
+                <Pencil className="h-4 w-4" />
+                Add envelope data
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (

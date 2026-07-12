@@ -13,7 +13,7 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
-import { findOwnedBuilding } from "../lib/building-access";
+import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import {
   replaceCoolingSystemsSchema,
@@ -41,8 +41,8 @@ systemsRoutes.get("/:id/systems", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
 
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
   }
 
@@ -98,9 +98,12 @@ systemsRoutes.put("/:id/systems/ventilation", async (c) => {
 
   const db = c.get("db");
   const user = c.get("user");
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
   }
 
   const { scenario, systems } = parsed.data;
@@ -130,9 +133,12 @@ systemsRoutes.put("/:id/systems/dhw", async (c) => {
 
   const db = c.get("db");
   const user = c.get("user");
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
   }
 
   const { scenario, sources } = parsed.data;
@@ -161,9 +167,12 @@ systemsRoutes.put("/:id/systems/distribution", async (c) => {
 
   const db = c.get("db");
   const user = c.get("user");
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
   }
 
   const { scenario, systems } = parsed.data;
@@ -195,9 +204,12 @@ systemsRoutes.put("/:id/systems/generation", async (c) => {
 
   const db = c.get("db");
   const user = c.get("user");
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
   }
 
   const { scenario, sources } = parsed.data;
@@ -227,9 +239,12 @@ systemsRoutes.put("/:id/systems/cooling-windows", async (c) => {
 
   const db = c.get("db");
   const user = c.get("user");
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
   }
 
   const { scenario, windows } = parsed.data;
@@ -260,9 +275,12 @@ systemsRoutes.put("/:id/systems/cooling-systems", async (c) => {
 
   const db = c.get("db");
   const user = c.get("user");
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
   }
 
   const { scenario, systems } = parsed.data;
@@ -292,9 +310,12 @@ systemsRoutes.put("/:id/systems/lighting", async (c) => {
 
   const db = c.get("db");
   const user = c.get("user");
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
   }
 
   const { scenario, zones } = parsed.data;
@@ -324,9 +345,12 @@ systemsRoutes.put("/:id/systems/equipment", async (c) => {
 
   const db = c.get("db");
   const user = c.get("user");
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
   }
 
   const { scenario, items } = parsed.data;
@@ -363,9 +387,12 @@ systemsRoutes.put("/:id/systems/renewables", async (c) => {
 
   const db = c.get("db");
   const user = c.get("user");
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
   }
 
   const { systems } = parsed.data;

@@ -9,7 +9,7 @@ import {
 import { and, eq, inArray } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
-import { findOwnedBuilding } from "../lib/building-access";
+import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import { replaceEnvelopeSchema } from "../schemas/envelope";
 
@@ -25,8 +25,8 @@ envelopeRoutes.get("/:id/envelope", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
 
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
   }
 
@@ -77,9 +77,12 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
 
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
   }
 
   const { scenario, buildingBlocks, constructionTypes, openingTypes, envelopeElements } =

@@ -1,7 +1,7 @@
 import { utilityBill } from "@yres/db";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { findOwnedBuilding } from "../lib/building-access";
+import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import { createUtilityBillsSchema } from "../schemas/consumption";
 import { paginationQuerySchema, toLimitOffset } from "../schemas/pagination";
@@ -22,8 +22,8 @@ consumptionRoutes.get("/:id/consumption", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
 
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
   }
 
@@ -53,9 +53,12 @@ consumptionRoutes.post("/:id/consumption", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
 
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
   }
 
   const rows = parsed.data.bills.map((bill) => ({ ...bill, buildingId }));

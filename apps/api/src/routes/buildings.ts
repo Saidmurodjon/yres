@@ -1,7 +1,7 @@
-import { building } from "@yres/db";
-import { eq } from "drizzle-orm";
+import { building, buildingMember } from "@yres/db";
+import { eq, inArray, or } from "drizzle-orm";
 import { Hono } from "hono";
-import { findOwnedBuilding } from "../lib/building-access";
+import { canWrite, findAccessibleBuilding, findOwnedBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import { createBuildingSchema, updateBuildingSchema } from "../schemas/building";
 import { paginationQuerySchema, toLimitOffset } from "../schemas/pagination";
@@ -10,7 +10,7 @@ export const buildingRoutes = new Hono<AppEnv>();
 
 buildingRoutes.use("*", authMiddleware);
 
-// GET / - list current user's buildings, paginated
+// GET / - list buildings the current user owns or has been shared, paginated
 buildingRoutes.get("/", async (c) => {
   const parsedQuery = paginationQuerySchema.safeParse(c.req.query());
   if (!parsedQuery.success) {
@@ -21,15 +21,32 @@ buildingRoutes.get("/", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
 
-  const buildings = await db
-    .select()
-    .from(building)
-    .where(eq(building.userId, user.id))
-    .limit(limit)
-    .offset(offset);
+  const memberBuildingIds = db
+    .select({ id: buildingMember.buildingId })
+    .from(buildingMember)
+    .where(eq(buildingMember.userId, user.id));
+
+  const [buildings, memberships] = await Promise.all([
+    db
+      .select()
+      .from(building)
+      .where(or(eq(building.userId, user.id), inArray(building.id, memberBuildingIds)))
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ buildingId: buildingMember.buildingId, role: buildingMember.role })
+      .from(buildingMember)
+      .where(eq(buildingMember.userId, user.id)),
+  ]);
+
+  const roleByBuildingId = new Map(memberships.map((m) => [m.buildingId, m.role]));
+  const buildingsWithRole = buildings.map((b) => ({
+    ...b,
+    role: b.userId === user.id ? ("owner" as const) : (roleByBuildingId.get(b.id) ?? "viewer"),
+  }));
 
   return c.json({
-    buildings,
+    buildings: buildingsWithRole,
     page: parsedQuery.data.page,
     pageSize: parsedQuery.data.pageSize,
   });
@@ -54,21 +71,21 @@ buildingRoutes.post("/", async (c) => {
   return c.json({ building: created }, 201);
 });
 
-// GET /:id - get one building, scoped to current user
+// GET /:id - get one building, scoped to anyone with access (owner or shared member)
 buildingRoutes.get("/:id", async (c) => {
   const id = c.req.param("id");
   const db = c.get("db");
   const user = c.get("user");
 
-  const found = await findOwnedBuilding(db, id, user.id);
-  if (!found) {
+  const access = await findAccessibleBuilding(db, id, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
   }
 
-  return c.json({ building: found });
+  return c.json({ building: access.building, role: access.role });
 });
 
-// PUT /:id - update a building
+// PUT /:id - update a building (owner or editor; viewers are read-only)
 buildingRoutes.put("/:id", async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json().catch(() => null);
@@ -80,9 +97,12 @@ buildingRoutes.put("/:id", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
 
-  const existing = await findOwnedBuilding(db, id, user.id);
-  if (!existing) {
+  const access = await findAccessibleBuilding(db, id, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
   }
 
   const [updated] = await db
@@ -94,7 +114,7 @@ buildingRoutes.put("/:id", async (c) => {
   return c.json({ building: updated });
 });
 
-// DELETE /:id - delete a building
+// DELETE /:id - delete a building (owner only — shared editors can't delete it out from under the owner)
 buildingRoutes.delete("/:id", async (c) => {
   const id = c.req.param("id");
   const db = c.get("db");

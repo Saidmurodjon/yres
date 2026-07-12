@@ -15,3 +15,4 @@ export * from "./measures";
 export * from "./financial";
 export * from "./consumption";
 export * from "./audits";
+export * from "./collaboration";

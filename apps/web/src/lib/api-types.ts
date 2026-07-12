@@ -27,6 +27,27 @@ export interface Building {
 export type CreateBuildingInput = Omit<Building, "id" | "userId" | "createdAt" | "updatedAt">;
 export type UpdateBuildingInput = Partial<CreateBuildingInput>;
 
+/** The building's creator is always "owner" (never a row in BuildingMember); invited users are "editor" or "viewer". */
+export type BuildingRole = "owner" | "editor" | "viewer";
+
+export interface BuildingWithRole extends Building {
+  role: BuildingRole;
+}
+
+export interface BuildingMember {
+  id: string;
+  role: "editor" | "viewer";
+  createdAt: string;
+  userId: string;
+  name: string;
+  email: string;
+}
+
+export interface InviteMemberInput {
+  email: string;
+  role: "editor" | "viewer";
+}
+
 export interface BuildingBlock {
   id: string;
   buildingId: string;

@@ -101,6 +101,7 @@ function EditableRowsCard({
   onSave,
   saving,
   error,
+  readOnly = false,
 }: {
   title: string;
   description: string;
@@ -111,6 +112,7 @@ function EditableRowsCard({
   onSave: () => void;
   saving: boolean;
   error: string | null;
+  readOnly?: boolean;
 }) {
   function updateCell(rowId: string, key: string, value: string) {
     onRowsChange(rows.map((r) => (r.id === rowId ? { ...r, [key]: value } : r)));
@@ -136,7 +138,7 @@ function EditableRowsCard({
                 {columns.map((col) => (
                   <TableHead key={col.key}>{col.label}</TableHead>
                 ))}
-                <TableHead />
+                {!readOnly && <TableHead />}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -148,6 +150,7 @@ function EditableRowsCard({
                         <Select
                           value={row[col.key] ?? ""}
                           onValueChange={(v) => updateCell(row.id, col.key, v)}
+                          disabled={readOnly}
                         >
                           <SelectTrigger className="h-9 w-full min-w-[9rem]">
                             <SelectValue />
@@ -166,22 +169,25 @@ function EditableRowsCard({
                           step={col.step ?? "any"}
                           value={row[col.key] ?? ""}
                           onChange={(e) => updateCell(row.id, col.key, e.target.value)}
+                          disabled={readOnly}
                           className="h-9 min-w-[6rem] px-2 py-1"
                         />
                       )}
                     </TableCell>
                   ))}
-                  <TableCell>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeRow(row.id)}
-                      aria-label="Remove row"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+                  {!readOnly && (
+                    <TableCell>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeRow(row.id)}
+                        aria-label="Remove row"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
@@ -189,20 +195,31 @@ function EditableRowsCard({
         )}
         {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
       </CardContent>
-      <CardFooter className="justify-between">
-        <Button type="button" variant="outline" size="sm" onClick={() => onRowsChange([...rows, onAddRow()])}>
-          <Plus className="h-4 w-4" />
-          Add row
-        </Button>
-        <Button type="button" size="sm" onClick={onSave} disabled={saving}>
-          {saving ? "Saving..." : "Save"}
-        </Button>
-      </CardFooter>
+      {!readOnly && (
+        <CardFooter className="justify-between">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onRowsChange([...rows, onAddRow()])}
+          >
+            <Plus className="h-4 w-4" />
+            Add row
+          </Button>
+          <Button type="button" size="sm" onClick={onSave} disabled={saving}>
+            {saving ? "Saving..." : "Save"}
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }
 
-function toRows<T extends { id: string }>(items: T[], scenario: Scenario, map: (item: T) => Row): Row[] {
+function toRows<T extends { id: string }>(
+  items: T[],
+  scenario: Scenario,
+  map: (item: T) => Row,
+): Row[] {
   return items
     .filter((item) => (item as unknown as { scenario?: Scenario }).scenario === scenario)
     .map(map);
@@ -220,7 +237,10 @@ function numOrNull(row: Row, key: string): number | null {
   return Number.isNaN(n) ? null : n;
 }
 
-export function SystemsTab({ buildingId }: { buildingId: string }) {
+export function SystemsTab({
+  buildingId,
+  readOnly = false,
+}: { buildingId: string; readOnly?: boolean }) {
   const { data, isLoading, isError, error } = useSystems(buildingId);
   const [scenario, setScenario] = useState<Scenario>("before");
 
@@ -261,25 +281,65 @@ export function SystemsTab({ buildingId }: { buildingId: string }) {
         </TabsList>
       </Tabs>
 
-      <VentilationSection buildingId={buildingId} scenario={scenario} systems={data.ventilationSystems} />
-      <DhwSection buildingId={buildingId} scenario={scenario} sources={data.dhwSources} />
+      <VentilationSection
+        buildingId={buildingId}
+        scenario={scenario}
+        systems={data.ventilationSystems}
+        readOnly={readOnly}
+      />
+      <DhwSection
+        buildingId={buildingId}
+        scenario={scenario}
+        sources={data.dhwSources}
+        readOnly={readOnly}
+      />
       <DistributionSection
         buildingId={buildingId}
         scenario={scenario}
         systems={data.distributionSystems}
+        readOnly={readOnly}
       />
-      <GenerationSection buildingId={buildingId} scenario={scenario} sources={data.generationSources} />
-      <CoolingWindowsSection buildingId={buildingId} scenario={scenario} windows={data.coolingWindows} />
-      <CoolingSystemsSection buildingId={buildingId} scenario={scenario} systems={data.coolingSystems} />
-      <LightingSection buildingId={buildingId} scenario={scenario} zones={data.lightingZones} />
-      <EquipmentSection buildingId={buildingId} scenario={scenario} items={data.equipmentItems} />
+      <GenerationSection
+        buildingId={buildingId}
+        scenario={scenario}
+        sources={data.generationSources}
+        readOnly={readOnly}
+      />
+      <CoolingWindowsSection
+        buildingId={buildingId}
+        scenario={scenario}
+        windows={data.coolingWindows}
+        readOnly={readOnly}
+      />
+      <CoolingSystemsSection
+        buildingId={buildingId}
+        scenario={scenario}
+        systems={data.coolingSystems}
+        readOnly={readOnly}
+      />
+      <LightingSection
+        buildingId={buildingId}
+        scenario={scenario}
+        zones={data.lightingZones}
+        readOnly={readOnly}
+      />
+      <EquipmentSection
+        buildingId={buildingId}
+        scenario={scenario}
+        items={data.equipmentItems}
+        readOnly={readOnly}
+      />
 
       <div className="border-t border-border pt-6">
         <p className="mb-4 text-sm text-muted-foreground">
           Renewables (solar PV / solar DHW) aren't tied to a scenario — they represent a proposed
           addition with no "before" state, so this list applies regardless of the tab above.
         </p>
-        <RenewablesSection buildingId={buildingId} systems={data.renewableSystems} />
+        <RenewablesSection
+          buildingId={buildingId}
+          systems={data.renewableSystems}
+          readOnly={readOnly}
+        />
       </div>
     </div>
   );
@@ -289,7 +349,8 @@ function VentilationSection({
   buildingId,
   scenario,
   systems,
-}: { buildingId: string; scenario: Scenario; systems: VentilationSystem[] }) {
+  readOnly,
+}: { buildingId: string; scenario: Scenario; systems: VentilationSystem[]; readOnly: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceVentilation(buildingId);
@@ -351,6 +412,7 @@ function VentilationSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      readOnly={readOnly}
     />
   );
 }
@@ -359,7 +421,8 @@ function DhwSection({
   buildingId,
   scenario,
   sources,
-}: { buildingId: string; scenario: Scenario; sources: DhwSource[] }) {
+  readOnly,
+}: { buildingId: string; scenario: Scenario; sources: DhwSource[]; readOnly: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceDhw(buildingId);
@@ -421,6 +484,7 @@ function DhwSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      readOnly={readOnly}
     />
   );
 }
@@ -429,7 +493,8 @@ function DistributionSection({
   buildingId,
   scenario,
   systems,
-}: { buildingId: string; scenario: Scenario; systems: DistributionSystem[] }) {
+  readOnly,
+}: { buildingId: string; scenario: Scenario; systems: DistributionSystem[]; readOnly: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceDistribution(buildingId);
@@ -498,6 +563,7 @@ function DistributionSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      readOnly={readOnly}
     />
   );
 }
@@ -506,7 +572,8 @@ function GenerationSection({
   buildingId,
   scenario,
   sources,
-}: { buildingId: string; scenario: Scenario; sources: GenerationSource[] }) {
+  readOnly,
+}: { buildingId: string; scenario: Scenario; sources: GenerationSource[]; readOnly: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceGeneration(buildingId);
@@ -576,6 +643,7 @@ function GenerationSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      readOnly={readOnly}
     />
   );
 }
@@ -584,7 +652,8 @@ function CoolingWindowsSection({
   buildingId,
   scenario,
   windows,
-}: { buildingId: string; scenario: Scenario; windows: CoolingWindow[] }) {
+  readOnly,
+}: { buildingId: string; scenario: Scenario; windows: CoolingWindow[]; readOnly: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceCoolingWindows(buildingId);
@@ -646,6 +715,7 @@ function CoolingWindowsSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      readOnly={readOnly}
     />
   );
 }
@@ -654,7 +724,8 @@ function CoolingSystemsSection({
   buildingId,
   scenario,
   systems,
-}: { buildingId: string; scenario: Scenario; systems: CoolingSystem[] }) {
+  readOnly,
+}: { buildingId: string; scenario: Scenario; systems: CoolingSystem[]; readOnly: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceCoolingSystems(buildingId);
@@ -699,6 +770,7 @@ function CoolingSystemsSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      readOnly={readOnly}
     />
   );
 }
@@ -707,7 +779,8 @@ function LightingSection({
   buildingId,
   scenario,
   zones,
-}: { buildingId: string; scenario: Scenario; zones: LightingZone[] }) {
+  readOnly,
+}: { buildingId: string; scenario: Scenario; zones: LightingZone[]; readOnly: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceLighting(buildingId);
@@ -759,7 +832,11 @@ function LightingSection({
         { key: "name", label: "Zone", type: "text" },
         { key: "areaM2", label: "Area (m²)", type: "number" },
         { key: "incandescentFraction", label: "Incandescent (0-1)", type: "number" },
-        { key: "fluorescentElectromagneticFraction", label: "Fluor. magnetic (0-1)", type: "number" },
+        {
+          key: "fluorescentElectromagneticFraction",
+          label: "Fluor. magnetic (0-1)",
+          type: "number",
+        },
         { key: "fluorescentElectronicFraction", label: "Fluor. electronic (0-1)", type: "number" },
         { key: "ledFraction", label: "LED (0-1)", type: "number" },
         { key: "utilizationFactor", label: "Utilization factor (0-1)", type: "number" },
@@ -779,6 +856,7 @@ function LightingSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      readOnly={readOnly}
     />
   );
 }
@@ -787,7 +865,8 @@ function EquipmentSection({
   buildingId,
   scenario,
   items,
-}: { buildingId: string; scenario: Scenario; items: EquipmentItem[] }) {
+  readOnly,
+}: { buildingId: string; scenario: Scenario; items: EquipmentItem[]; readOnly: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceEquipment(buildingId);
@@ -860,6 +939,7 @@ function EquipmentSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      readOnly={readOnly}
     />
   );
 }
@@ -867,7 +947,8 @@ function EquipmentSection({
 function RenewablesSection({
   buildingId,
   systems,
-}: { buildingId: string; systems: RenewableSystem[] }) {
+  readOnly,
+}: { buildingId: string; systems: RenewableSystem[]; readOnly: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceRenewables(buildingId);
@@ -924,7 +1005,10 @@ function RenewablesSection({
           key: "systemType",
           label: "Type",
           type: "select",
-          options: RENEWABLE_SYSTEM_TYPES.map((v) => ({ value: v, label: RENEWABLE_SYSTEM_TYPE_LABELS[v] })),
+          options: RENEWABLE_SYSTEM_TYPES.map((v) => ({
+            value: v,
+            label: RENEWABLE_SYSTEM_TYPE_LABELS[v],
+          })),
         },
         { key: "capacityKw", label: "Capacity (kW, PV)", type: "number" },
         { key: "collectorCount", label: "Collectors (Solar DHW)", type: "number" },
@@ -946,6 +1030,7 @@ function RenewablesSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      readOnly={readOnly}
     />
   );
 }

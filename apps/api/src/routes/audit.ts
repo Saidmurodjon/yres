@@ -1,7 +1,7 @@
 import { auditRun } from "@yres/db";
 import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { findOwnedBuilding } from "../lib/building-access";
+import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import { runFullAudit } from "../services/audit.engine";
 import { generateAuditReportPdf } from "../services/report.service";
@@ -21,8 +21,8 @@ auditRoutes.post("/:id/audit/run", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
 
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
   }
 
@@ -68,8 +68,8 @@ auditRoutes.get("/:id/audit/status", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
 
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
   }
 
@@ -93,8 +93,8 @@ auditRoutes.get("/:id/audit/results", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
 
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
   }
 
@@ -127,8 +127,8 @@ auditRoutes.get("/:id/audit/report", async (c) => {
   const db = c.get("db");
   const user = c.get("user");
 
-  const owned = await findOwnedBuilding(db, buildingId, user.id);
-  if (!owned) {
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
     return c.json({ error: "Not found" }, 404);
   }
 
@@ -144,7 +144,7 @@ auditRoutes.get("/:id/audit/report", async (c) => {
   }
 
   const result = await runFullAudit(db, buildingId);
-  const pdfBytes = await generateAuditReportPdf(owned, result);
+  const pdfBytes = await generateAuditReportPdf(access.building, result);
 
   const r2Key = `reports/${buildingId}/latest.pdf`;
   await c.env.REPORTS_BUCKET.put(r2Key, pdfBytes, {
@@ -152,7 +152,7 @@ auditRoutes.get("/:id/audit/report", async (c) => {
   });
   await db.update(auditRun).set({ reportR2Key: r2Key }).where(eq(auditRun.id, latestCompleted.id));
 
-  const fileName = `${owned.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-audit-report.pdf`;
+  const fileName = `${access.building.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-audit-report.pdf`;
   return new Response(pdfBytes, {
     headers: {
       "Content-Type": "application/pdf",

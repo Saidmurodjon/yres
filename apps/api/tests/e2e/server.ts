@@ -10,6 +10,7 @@ import { climateRoutes } from "../../src/routes/climate";
 import { consumptionRoutes } from "../../src/routes/consumption";
 import { envelopeRoutes } from "../../src/routes/envelope";
 import { measuresRoutes } from "../../src/routes/measures";
+import { membersRoutes } from "../../src/routes/members";
 import { referenceRoutes } from "../../src/routes/reference";
 import { systemsRoutes } from "../../src/routes/systems";
 import { resetTestDb, testDb } from "../helpers/test-db";
@@ -44,6 +45,7 @@ app.route("/api/buildings", measuresRoutes);
 app.route("/api/buildings", consumptionRoutes);
 app.route("/api/buildings", auditRoutes);
 app.route("/api/buildings", systemsRoutes);
+app.route("/api/buildings", membersRoutes);
 app.route("/api/climate", climateRoutes);
 app.route("/api/reference", referenceRoutes);
 

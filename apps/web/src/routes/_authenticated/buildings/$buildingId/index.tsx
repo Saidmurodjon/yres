@@ -1,5 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -9,11 +10,12 @@ import {
   TabsList,
   TabsTrigger,
 } from "@yres/ui";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye } from "lucide-react";
 import { ConsumptionTab } from "../../../../components/building-detail/consumption-tab";
 import { EnvelopeTab } from "../../../../components/building-detail/envelope-tab";
 import { MeasuresTab } from "../../../../components/building-detail/measures-tab";
 import { OverviewTab } from "../../../../components/building-detail/overview-tab";
+import { SharingTab } from "../../../../components/building-detail/sharing-tab";
 import { SystemsTab } from "../../../../components/building-detail/systems-tab";
 import { useBuilding } from "../../../../hooks";
 import { ApiError } from "../../../../lib/api";
@@ -55,7 +57,8 @@ function BuildingDetailPage() {
     );
   }
 
-  const { building } = data;
+  const { building, role } = data;
+  const isReadOnly = role === "viewer";
 
   return (
     <div className="space-y-6">
@@ -66,8 +69,21 @@ function BuildingDetailPage() {
             Back to buildings
           </Link>
         </Button>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">{building.name}</h1>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight">{building.name}</h1>
+          {role !== "owner" && (
+            <Badge variant={isReadOnly ? "secondary" : "outline"} className="capitalize">
+              {role} access
+            </Badge>
+          )}
+        </div>
         <p className="mt-1 text-muted-foreground">{building.location}</p>
+        {isReadOnly && (
+          <div className="mt-3 flex items-center gap-2 rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
+            <Eye className="h-4 w-4 shrink-0" />
+            You have view-only access to this building — changes are disabled.
+          </div>
+        )}
       </div>
 
       <Tabs defaultValue="overview">
@@ -77,22 +93,26 @@ function BuildingDetailPage() {
           <TabsTrigger value="systems">Systems</TabsTrigger>
           <TabsTrigger value="consumption">Consumption</TabsTrigger>
           <TabsTrigger value="measures">Measures</TabsTrigger>
+          <TabsTrigger value="sharing">Sharing</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
-          <OverviewTab building={building} />
+          <OverviewTab building={building} role={role} />
         </TabsContent>
         <TabsContent value="envelope">
-          <EnvelopeTab buildingId={building.id} />
+          <EnvelopeTab buildingId={building.id} readOnly={isReadOnly} />
         </TabsContent>
         <TabsContent value="systems">
-          <SystemsTab buildingId={building.id} />
+          <SystemsTab buildingId={building.id} readOnly={isReadOnly} />
         </TabsContent>
         <TabsContent value="consumption">
-          <ConsumptionTab buildingId={building.id} />
+          <ConsumptionTab buildingId={building.id} readOnly={isReadOnly} />
         </TabsContent>
         <TabsContent value="measures">
-          <MeasuresTab buildingId={building.id} />
+          <MeasuresTab buildingId={building.id} readOnly={isReadOnly} />
+        </TabsContent>
+        <TabsContent value="sharing">
+          <SharingTab buildingId={building.id} role={role} />
         </TabsContent>
       </Tabs>
     </div>

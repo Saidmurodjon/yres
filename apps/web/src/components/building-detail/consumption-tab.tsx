@@ -55,7 +55,10 @@ function emptyForm(): NewBillForm {
   };
 }
 
-export function ConsumptionTab({ buildingId }: { buildingId: string }) {
+export function ConsumptionTab({
+  buildingId,
+  readOnly = false,
+}: { buildingId: string; readOnly?: boolean }) {
   const { data, isLoading, isError, error } = useConsumption(buildingId, { pageSize: 200 });
   const createConsumption = useCreateConsumption(buildingId);
 
@@ -170,6 +173,7 @@ export function ConsumptionTab({ buildingId }: { buildingId: string }) {
         </CardContent>
       </Card>
 
+      {!readOnly && (
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader>
@@ -272,6 +276,7 @@ export function ConsumptionTab({ buildingId }: { buildingId: string }) {
           </CardFooter>
         </Card>
       </form>
+      )}
     </div>
   );
 }
