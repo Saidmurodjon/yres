@@ -12,6 +12,7 @@
   "scripts": {
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
+    "seed": "bun run src/seed.ts",
     "studio": "drizzle-kit studio",
     "type-check": "tsc --noEmit",
     "lint": "biome lint ."

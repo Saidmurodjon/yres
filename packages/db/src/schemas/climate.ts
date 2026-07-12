@@ -17,6 +17,14 @@ export const climateMonthlyNormal = pgTable("climate_monthly_normal", {
     .references(() => climateRegion.id, { onDelete: "cascade" }),
   month: integer("month").notNull(),
   avgOutdoorTempC: numeric("avg_outdoor_temp_c", { mode: "number" }).notNull(),
+  /**
+   * Days *within the heating season* that fall in this calendar month —
+   * distinct from the month's total calendar days, since boundary months
+   * (typically the first/last month of the season) only partially overlap
+   * it. Null for non-heating-season months. Falls back to full calendar
+   * days in `HeatLossService`/`GainService` callers when unset.
+   */
+  heatingDaysInMonth: integer("heating_days_in_month"),
   solarRadiationSouthKwhM2: numeric("solar_radiation_south_kwh_m2", { mode: "number" }),
   solarRadiationNorthKwhM2: numeric("solar_radiation_north_kwh_m2", { mode: "number" }),
   solarRadiationEastWestKwhM2: numeric("solar_radiation_east_west_kwh_m2", { mode: "number" }),

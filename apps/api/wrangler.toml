@@ -9,7 +9,23 @@ WEB_URL = "http://localhost:5173"
 
 [[r2_buckets]]
 binding = "REPORTS_BUCKET"
-bucket_name = "yres-reports"
+bucket_name = "yres-reports-dev"
 
-# Secrets (DATABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, BETTER_AUTH_SECRET)
-# are set via `wrangler secret put <NAME>` and are not stored in this file.
+# Secrets (DATABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
+# BETTER_AUTH_SECRET) are set via `wrangler secret put <NAME>` (add
+# `--env production` for the production environment below) and are never
+# stored in this file. See docs/deployment.md.
+
+# --- Production environment ---
+# `name`/`WEB_URL` below are placeholders — replace with your actual
+# Cloudflare Worker name and deployed frontend URL before going live.
+[env.production]
+name = "yres-api-production"
+
+[env.production.vars]
+NODE_ENV = "production"
+WEB_URL = "https://yres.app"
+
+[[env.production.r2_buckets]]
+binding = "REPORTS_BUCKET"
+bucket_name = "yres-reports"

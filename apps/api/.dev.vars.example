@@ -1,0 +1,9 @@
+# Copy to `.dev.vars` (gitignored) for local `wrangler dev` — Wrangler loads
+# secrets from this file locally; in deployed environments they're set via
+# `wrangler secret put` instead (see docs/deployment.md). Non-secret vars
+# (NODE_ENV, WEB_URL) live in wrangler.toml's [vars] block, not here.
+
+DATABASE_URL=postgresql://user:password@ep-xxxx.aws.neon.tech/yres?sslmode=require
+BETTER_AUTH_SECRET=
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=

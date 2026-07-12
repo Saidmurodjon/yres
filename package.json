@@ -16,6 +16,7 @@
     "format": "biome format --write .",
     "db:generate": "bun run --cwd packages/db generate",
     "db:migrate": "bun run --cwd packages/db migrate",
+    "db:seed": "bun run --cwd packages/db seed",
     "db:studio": "bun run --cwd packages/db studio",
     "deploy:api": "bun run --cwd apps/api deploy",
     "deploy:web": "bun run --cwd apps/web deploy"

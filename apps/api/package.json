@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "build": "tsc --noEmit",
-    "deploy": "wrangler deploy",
+    "deploy": "wrangler deploy --env production",
     "type-check": "tsc --noEmit",
     "lint": "biome lint .",
     "test": "vitest run"

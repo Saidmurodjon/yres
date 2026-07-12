@@ -122,7 +122,7 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     .map((m) => ({
       month: m.month,
       avgOutdoorTempC: m.avgOutdoorTempC,
-      heatingDays: daysInMonth(m.month),
+      heatingDays: m.heatingDaysInMonth ?? daysInMonth(m.month),
     }));
 
   const monthlySolarRadiation = buildingRecord.climateRegion.monthlyNormals
@@ -563,6 +563,7 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
   };
 }
 
+/** Fallback for climate regions without a precise `heatingDaysInMonth` value. */
 function daysInMonth(month: number): number {
   const days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   return days[month - 1] ?? 30;
