@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "apps/web",
+      "port": 5173
+    },
+    {
+      "name": "web-preview",
+      "runtimeExecutable": "bunx",
+      "runtimeArgs": ["vite", "preview", "--port", "4173"],
+      "cwd": "apps/web",
+      "port": 4173
+    }
+  ]
+}
