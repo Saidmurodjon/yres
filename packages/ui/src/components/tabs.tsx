@@ -10,7 +10,11 @@ export function TabsList({
   return (
     <TabsPrimitive.List
       className={cn(
-        "inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground",
+        // max-w-full + overflow-x-auto: on viewports too narrow to fit every
+        // trigger (e.g. the building detail page's 6 tabs on mobile), the
+        // list scrolls horizontally instead of silently clipping the
+        // trailing triggers with no way to reach them.
+        "inline-flex h-10 max-w-full items-center justify-center overflow-x-auto rounded-md bg-muted p-1 text-muted-foreground",
         className,
       )}
       {...props}
