@@ -54,6 +54,16 @@ export async function seedReferenceDataWithDb(db: Database) {
 
   const statements: BatchItem<"pg">[] = [
     // --- Materials (U-values sheet, Y7:Z46 conductivity table) ---
+    // Full transcription of that lookup table (previously only ~9 of its ~38
+    // rows were captured). A few source rows were left out rather than added
+    // as near-duplicates: "Expanded polysterene EPS", "Extruded polysterene
+    // XPS", and "Mineral wool MW" (plain) match the existing EPS/XPS/Mineral
+    // wool (MW) rows' values exactly and are the same material under a
+    // longer name. "Pol taxta" (Uzbek: floor board) and "Tsement-qum
+    // qorishmasi" (Uzbek: cement-sand mix) likewise duplicate "Wood (pine)"
+    // and "Concrete/sand mix" at the same conductivity. Rows the sheet only
+    // gave in Uzbek/Russian are translated here for consistency with every
+    // other row's English name — conductivity values are untouched.
     db
       .insert(material)
       .values([
@@ -66,6 +76,37 @@ export async function seedReferenceDataWithDb(db: Database) {
         { name: "Aerated concrete (YTONG)", thermalConductivityWPerMk: 0.41 },
         { name: "Bricks", thermalConductivityWPerMk: 0.7 },
         { name: "Expanded clay", thermalConductivityWPerMk: 0.17 },
+        { name: "Concrete mixed with EPS (G-Sort)", thermalConductivityWPerMk: 0.07 },
+        { name: "Concrete with stones", thermalConductivityWPerMk: 1.74 },
+        { name: "Polystyrene concrete (Polistirolbeton)", thermalConductivityWPerMk: 0.055 },
+        { name: "Concrete with expanded clay", thermalConductivityWPerMk: 0.52 },
+        { name: "Aggregated slag (from boilers)", thermalConductivityWPerMk: 0.76 },
+        { name: "Ruberoid", thermalConductivityWPerMk: 0.17 },
+        { name: "Bitumen polymeric materials", thermalConductivityWPerMk: 0.27 },
+        { name: "Wood (pine)", thermalConductivityWPerMk: 0.29 },
+        { name: "Mosaic", thermalConductivityWPerMk: 1.74 },
+        { name: "Marble", thermalConductivityWPerMk: 2.91 },
+        { name: "Granite", thermalConductivityWPerMk: 3.49 },
+        { name: "Concrete/sand mix", thermalConductivityWPerMk: 0.76 },
+        { name: "Limestone", thermalConductivityWPerMk: 0.73 },
+        { name: "Hollow bricks", thermalConductivityWPerMk: 0.58 },
+        { name: "Linoleum", thermalConductivityWPerMk: 0.35 },
+        { name: "Tile", thermalConductivityWPerMk: 1.1 },
+        { name: "Clay layer with straw", thermalConductivityWPerMk: 0.65 },
+        { name: "Magnesium oxide board", thermalConductivityWPerMk: 0.21 },
+        {
+          name: "Concrete hollow panels (220mm)",
+          thermalConductivityWPerMk: 1.295,
+        },
+        { name: "Decorative stone", thermalConductivityWPerMk: 2.1 },
+        { name: "Synthetic foam gasket (Sintipon)", thermalConductivityWPerMk: 0.04 },
+        { name: "Vapor/waterproofing membrane", thermalConductivityWPerMk: 0.4 },
+        { name: "Slate sheet", thermalConductivityWPerMk: 0.01 },
+        { name: "Gypsum (plaster)", thermalConductivityWPerMk: 0.35 },
+        { name: "Gypsum plasterboard (drywall)", thermalConductivityWPerMk: 0.19 },
+        { name: "Lime-sand mortar", thermalConductivityWPerMk: 0.7 },
+        { name: "Parquet/laminate/linoleum flooring", thermalConductivityWPerMk: 0.38 },
+        { name: "Mineral wool MW 150", thermalConductivityWPerMk: 0.22 },
       ])
       .onConflictDoNothing({ target: material.name }),
 
