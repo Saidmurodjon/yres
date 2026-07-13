@@ -19,7 +19,31 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen flex-col sm:flex-row">
+      {/* Below `sm` the sidebar is hidden entirely, so this bar is mobile's
+          only way to switch sections or sign out — without it there was no
+          navigation on phone-width screens at all. */}
+      <header className="flex items-center justify-between border-b border-border bg-card px-3 py-2 sm:hidden">
+        <Link to="/dashboard" className="px-1 text-lg font-semibold">
+          YRES
+        </Link>
+        <nav className="flex items-center gap-1">
+          {NAV_ITEMS.map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              aria-label={item.label}
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground [&.active]:bg-accent [&.active]:text-accent-foreground"
+              activeProps={{ className: "active" }}
+            >
+              <item.icon className="h-4 w-4" />
+            </Link>
+          ))}
+          <Button variant="ghost" size="sm" aria-label="Sign out" onClick={handleSignOut}>
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </nav>
+      </header>
       <aside className="hidden w-64 flex-col border-r border-border bg-card p-4 sm:flex">
         <Link to="/dashboard" className="mb-8 px-2 text-lg font-semibold">
           YRES
