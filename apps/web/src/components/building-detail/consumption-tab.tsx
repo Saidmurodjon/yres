@@ -20,11 +20,11 @@ import {
   TableHeader,
   TableRow,
 } from "@yres/ui";
-import { Plus, Receipt } from "lucide-react";
-import { type FormEvent, useState } from "react";
-import { useConsumption, useCreateConsumption } from "../../hooks";
+import { Receipt, Save } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useConsumption, useReplaceConsumption } from "../../hooks";
 import { ApiError } from "../../lib/api";
-import type { EnergyCarrier } from "../../lib/api-types";
+import type { EnergyCarrier, MonthlyBillInput, UtilityBill } from "../../lib/api-types";
 import {
   ENERGY_CARRIERS,
   ENERGY_CARRIER_LABELS,
@@ -32,85 +32,100 @@ import {
   formatNumber,
 } from "../../lib/labels";
 
-interface NewBillForm {
-  energyCarrier: EnergyCarrier;
-  year: string;
-  month: string;
+interface MonthRow {
   consumptionNative: string;
   consumptionKwh: string;
   expenseLocal: string;
   tariffLocal: string;
 }
 
-function emptyForm(): NewBillForm {
-  const now = new Date();
-  return {
-    energyCarrier: "electricity",
-    year: String(now.getFullYear()),
-    month: String(now.getMonth() + 1),
-    consumptionNative: "",
-    consumptionKwh: "",
-    expenseLocal: "",
-    tariffLocal: "",
-  };
+function emptyMonthRow(): MonthRow {
+  return { consumptionNative: "", consumptionKwh: "", expenseLocal: "", tariffLocal: "" };
+}
+
+function emptyGrid(): MonthRow[] {
+  return MONTH_LABELS.map(() => emptyMonthRow());
+}
+
+function gridFromBills(bills: UtilityBill[], carrier: EnergyCarrier, year: number): MonthRow[] {
+  const grid = emptyGrid();
+  for (const bill of bills) {
+    if (bill.energyCarrier !== carrier || bill.year !== year) continue;
+    grid[bill.month - 1] = {
+      consumptionNative: String(bill.consumptionNative),
+      consumptionKwh: bill.consumptionKwh !== null ? String(bill.consumptionKwh) : "",
+      expenseLocal: bill.expenseLocal !== null ? String(bill.expenseLocal) : "",
+      tariffLocal: bill.tariffLocal !== null ? String(bill.tariffLocal) : "",
+    };
+  }
+  return grid;
 }
 
 export function ConsumptionTab({
   buildingId,
   readOnly = false,
 }: { buildingId: string; readOnly?: boolean }) {
-  const { data, isLoading, isError, error } = useConsumption(buildingId, { pageSize: 200 });
-  const createConsumption = useCreateConsumption(buildingId);
+  const { data, isLoading, isError, error } = useConsumption(buildingId, { pageSize: 500 });
+  const replaceConsumption = useReplaceConsumption(buildingId);
 
-  const [form, setForm] = useState<NewBillForm>(emptyForm());
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const [apiError, setApiError] = useState<string | null>(null);
+  const bills = useMemo(() => data?.bills ?? [], [data]);
+  const currentYear = new Date().getFullYear();
 
-  function set<K extends keyof NewBillForm>(key: K, value: NewBillForm[K]) {
-    setForm((f) => ({ ...f, [key]: value }));
+  const [carrier, setCarrier] = useState<EnergyCarrier>("electricity");
+  const [year, setYear] = useState(currentYear);
+  const [grid, setGrid] = useState<MonthRow[]>(emptyGrid);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  // Re-fill the grid from saved data whenever the carrier/year picker changes
+  // or a fresh fetch lands — but not on every keystroke, since this same
+  // `bills` array is what the grid is editing towards.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally excludes `bills` — see above.
+  useEffect(() => {
+    setGrid(gridFromBills(bills, carrier, year));
+    setSaved(false);
+  }, [carrier, year, isLoading]);
+
+  const years = useMemo(() => {
+    const fromData = bills.map((b) => b.year);
+    const set = new Set([...fromData, currentYear, currentYear - 1, currentYear - 2]);
+    return [...set].sort((a, b) => b - a);
+  }, [bills, currentYear]);
+
+  function updateCell(monthIdx: number, field: keyof MonthRow, value: string) {
+    setGrid((g) => g.map((row, i) => (i === monthIdx ? { ...row, [field]: value } : row)));
+    setSaved(false);
   }
 
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    setValidationError(null);
-    setApiError(null);
+  async function handleSave() {
+    setSaveError(null);
+    setSaved(false);
 
-    const year = Number(form.year);
-    const month = Number(form.month);
-    const consumptionNative = Number(form.consumptionNative);
-
-    if (!form.year.trim() || Number.isNaN(year)) {
-      setValidationError("Year is required.");
-      return;
-    }
-    if (!form.month.trim() || Number.isNaN(month) || month < 1 || month > 12) {
-      setValidationError("Month must be between 1 and 12.");
-      return;
-    }
-    if (!form.consumptionNative.trim() || Number.isNaN(consumptionNative)) {
-      setValidationError("Consumption is required.");
-      return;
+    const monthlyBills: MonthlyBillInput[] = [];
+    for (const [idx, row] of grid.entries()) {
+      if (!row.consumptionNative.trim()) continue;
+      const consumptionNative = Number(row.consumptionNative);
+      if (Number.isNaN(consumptionNative)) {
+        setSaveError(`${MONTH_LABELS[idx]}: consumption must be a number.`);
+        return;
+      }
+      monthlyBills.push({
+        month: idx + 1,
+        consumptionNative,
+        consumptionKwh: row.consumptionKwh.trim() ? Number(row.consumptionKwh) : null,
+        expenseLocal: row.expenseLocal.trim() ? Number(row.expenseLocal) : null,
+        tariffLocal: row.tariffLocal.trim() ? Number(row.tariffLocal) : null,
+      });
     }
 
     try {
-      await createConsumption.mutateAsync([
-        {
-          energyCarrier: form.energyCarrier,
-          year,
-          month,
-          consumptionNative,
-          consumptionKwh: form.consumptionKwh.trim() ? Number(form.consumptionKwh) : null,
-          expenseLocal: form.expenseLocal.trim() ? Number(form.expenseLocal) : null,
-          tariffLocal: form.tariffLocal.trim() ? Number(form.tariffLocal) : null,
-        },
-      ]);
-      setForm(emptyForm());
+      await replaceConsumption.mutateAsync({ energyCarrier: carrier, year, bills: monthlyBills });
+      setSaved(true);
     } catch (err) {
-      setApiError(err instanceof ApiError ? err.message : "Failed to add utility bill.");
+      setSaveError(err instanceof ApiError ? err.message : "Failed to save consumption data.");
     }
   }
 
-  const bills = data?.bills ?? [];
   const sortedBills = [...bills].sort((a, b) => {
     if (a.year !== b.year) return b.year - a.year;
     if (a.month !== b.month) return b.month - a.month;
@@ -119,9 +134,135 @@ export function ConsumptionTab({
 
   return (
     <div className="space-y-6">
+      {!readOnly && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Enter monthly bills</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Pick a carrier and year, fill in whichever months you have bills for, then save them
+              all at once — matching the source spreadsheet's one-table-per-carrier layout instead
+              of adding one month at a time.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2 sm:max-w-md">
+              <div className="space-y-1.5">
+                <Label>Energy carrier</Label>
+                <Select value={carrier} onValueChange={(v) => setCarrier(v as EnergyCarrier)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ENERGY_CARRIERS.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {ENERGY_CARRIER_LABELS[c]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Year</Label>
+                <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((y) => (
+                      <SelectItem key={y} value={String(y)}>
+                        {y}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto rounded-md border border-border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Month</TableHead>
+                    <TableHead>Consumption</TableHead>
+                    <TableHead>Consumption (kWh)</TableHead>
+                    <TableHead>Expense</TableHead>
+                    <TableHead>Tariff</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {grid.map((row, idx) => {
+                    const label = MONTH_LABELS[idx] ?? `Month ${idx + 1}`;
+                    return (
+                      <TableRow key={label}>
+                        <TableCell className="font-medium">{label}</TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            step="any"
+                            className="w-32"
+                            aria-label={`${label} consumption`}
+                            value={row.consumptionNative}
+                            onChange={(e) => updateCell(idx, "consumptionNative", e.target.value)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            step="any"
+                            className="w-32"
+                            aria-label={`${label} consumption in kWh`}
+                            value={row.consumptionKwh}
+                            onChange={(e) => updateCell(idx, "consumptionKwh", e.target.value)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            step="any"
+                            className="w-32"
+                            aria-label={`${label} expense`}
+                            value={row.expenseLocal}
+                            onChange={(e) => updateCell(idx, "expenseLocal", e.target.value)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Input
+                            type="number"
+                            step="any"
+                            className="w-32"
+                            aria-label={`${label} tariff`}
+                            value={row.tariffLocal}
+                            onChange={(e) => updateCell(idx, "tariffLocal", e.target.value)}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+
+            {saveError && <p className="text-sm text-destructive">{saveError}</p>}
+            {saved && !saveError && (
+              <p className="text-sm text-muted-foreground">
+                Saved {ENERGY_CARRIER_LABELS[carrier].toLowerCase()} bills for {year}.
+              </p>
+            )}
+          </CardContent>
+          <CardFooter className="justify-end">
+            <Button onClick={handleSave} disabled={replaceConsumption.isPending}>
+              <Save className="h-4 w-4" />
+              {replaceConsumption.isPending
+                ? "Saving..."
+                : `Save ${ENERGY_CARRIER_LABELS[carrier].toLowerCase()} — ${year}`}
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Utility bills</CardTitle>
+          <CardTitle className="text-base">All utility bills</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -139,7 +280,7 @@ export function ConsumptionTab({
               <Receipt className="h-10 w-10 text-muted-foreground" />
               <p className="font-medium">No utility bills recorded yet</p>
               <p className="max-w-sm text-sm text-muted-foreground">
-                Add monthly bills below to track historical energy consumption.
+                Use the grid above to add a carrier's monthly bills for a year.
               </p>
             </div>
           ) : (
@@ -172,111 +313,6 @@ export function ConsumptionTab({
           )}
         </CardContent>
       </Card>
-
-      {!readOnly && (
-      <form onSubmit={handleSubmit}>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Add a bill</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              <div className="space-y-1.5">
-                <Label>Energy carrier</Label>
-                <Select
-                  value={form.energyCarrier}
-                  onValueChange={(v) => set("energyCarrier", v as EnergyCarrier)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ENERGY_CARRIERS.map((carrier) => (
-                      <SelectItem key={carrier} value={carrier}>
-                        {ENERGY_CARRIER_LABELS[carrier]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="bill-year">Year</Label>
-                <Input
-                  id="bill-year"
-                  type="number"
-                  value={form.year}
-                  onChange={(e) => set("year", e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Month</Label>
-                <Select value={form.month} onValueChange={(v) => set("month", v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MONTH_LABELS.map((label, idx) => (
-                      <SelectItem key={label} value={String(idx + 1)}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="bill-consumption">Consumption (native units)</Label>
-                <Input
-                  id="bill-consumption"
-                  type="number"
-                  step="any"
-                  value={form.consumptionNative}
-                  onChange={(e) => set("consumptionNative", e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="bill-kwh">Consumption (kWh)</Label>
-                <Input
-                  id="bill-kwh"
-                  type="number"
-                  step="any"
-                  value={form.consumptionKwh}
-                  onChange={(e) => set("consumptionKwh", e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="bill-expense">Expense (local currency)</Label>
-                <Input
-                  id="bill-expense"
-                  type="number"
-                  step="any"
-                  value={form.expenseLocal}
-                  onChange={(e) => set("expenseLocal", e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="bill-tariff">Tariff (local currency)</Label>
-                <Input
-                  id="bill-tariff"
-                  type="number"
-                  step="any"
-                  value={form.tariffLocal}
-                  onChange={(e) => set("tariffLocal", e.target.value)}
-                />
-              </div>
-            </div>
-
-            {validationError && <p className="mt-4 text-sm text-destructive">{validationError}</p>}
-            {apiError && <p className="mt-4 text-sm text-destructive">{apiError}</p>}
-          </CardContent>
-          <CardFooter className="justify-end">
-            <Button type="submit" disabled={createConsumption.isPending}>
-              <Plus className="h-4 w-4" />
-              {createConsumption.isPending ? "Adding..." : "Add bill"}
-            </Button>
-          </CardFooter>
-        </Card>
-      </form>
-      )}
     </div>
   );
 }

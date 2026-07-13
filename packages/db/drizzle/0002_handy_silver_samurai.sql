@@ -1,0 +1,1 @@
+ALTER TABLE "utility_bill" ADD CONSTRAINT "utility_bill_building_id_energy_carrier_year_month_unique" UNIQUE("building_id","energy_carrier","year","month");

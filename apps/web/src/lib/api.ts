@@ -25,6 +25,7 @@ import type {
   ReplaceGenerationPayload,
   ReplaceLightingPayload,
   ReplaceRenewablesPayload,
+  ReplaceUtilityBillsInput,
   ReplaceVentilationPayload,
   SystemsData,
   UpdateBuildingInput,
@@ -139,6 +140,11 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ bills }),
       }),
+    replace: (buildingId: string, payload: ReplaceUtilityBillsInput) =>
+      request<{ energyCarrier: string; year: number; count: number }>(
+        `/api/buildings/${buildingId}/consumption`,
+        { method: "PUT", body: JSON.stringify(payload) },
+      ),
   },
 
   systems: {

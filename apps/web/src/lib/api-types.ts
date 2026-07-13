@@ -234,6 +234,20 @@ export interface CreateUtilityBillInput {
   tariffLocal?: number | null;
 }
 
+export interface MonthlyBillInput {
+  month: number;
+  consumptionNative: number;
+  consumptionKwh?: number | null;
+  expenseLocal?: number | null;
+  tariffLocal?: number | null;
+}
+
+export interface ReplaceUtilityBillsInput {
+  energyCarrier: EnergyCarrier;
+  year: number;
+  bills: MonthlyBillInput[];
+}
+
 export interface ClimateMonthlyNormal {
   id: string;
   climateRegionId: string;

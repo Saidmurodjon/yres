@@ -1,9 +1,10 @@
 import { utilityBill } from "@yres/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
-import { createUtilityBillsSchema } from "../schemas/consumption";
+import { createUtilityBillsSchema, replaceUtilityBillsSchema } from "../schemas/consumption";
 import { paginationQuerySchema, toLimitOffset } from "../schemas/pagination";
 
 export const consumptionRoutes = new Hono<AppEnv>();
@@ -66,4 +67,50 @@ consumptionRoutes.post("/:id/consumption", async (c) => {
   const inserted = await db.insert(utilityBill).values(rows).returning();
 
   return c.json({ bills: inserted }, 201);
+});
+
+// PUT /:id/consumption - bulk-replace one carrier's bills for one year (the
+// consumption tab's grid: a row per month, saved together). Mirrors the
+// envelope/systems PUT routes' delete-then-insert-in-a-batch pattern instead
+// of an upsert, so re-saving with fewer months than before actually clears
+// the removed ones rather than leaving stale rows behind.
+consumptionRoutes.put("/:id/consumption", async (c) => {
+  const buildingId = c.req.param("id");
+  const body = await c.req.json().catch(() => null);
+  const parsed = replaceUtilityBillsSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid body", details: parsed.error.flatten() }, 400);
+  }
+
+  const db = c.get("db");
+  const user = c.get("user");
+
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
+    return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
+  }
+
+  const { energyCarrier, year, bills } = parsed.data;
+  const rows = bills.map((bill) => ({ ...bill, buildingId, energyCarrier, year }));
+
+  const statements: BatchItem<"pg">[] = [
+    db
+      .delete(utilityBill)
+      .where(
+        and(
+          eq(utilityBill.buildingId, buildingId),
+          eq(utilityBill.energyCarrier, energyCarrier),
+          eq(utilityBill.year, year),
+        ),
+      ),
+  ];
+  if (rows.length > 0) {
+    statements.push(db.insert(utilityBill).values(rows));
+  }
+  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+
+  return c.json({ energyCarrier, year, count: rows.length });
 });
