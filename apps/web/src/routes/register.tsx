@@ -44,17 +44,28 @@ function RegisterPage() {
 
   async function handleGoogleSignIn() {
     if (isGoogleSubmitting) return;
+    setError(null);
     setIsGoogleSubmitting(true);
-    // Both must be absolute: the API (a different origin from this app)
-    // performs the final redirect after the OAuth callback, so a relative
-    // path would resolve against the API's own origin instead of this app's.
-    // errorCallbackURL keeps failures on this app too — without it, Better
-    // Auth falls back to its own bare error page on the API's origin.
-    await signIn.social({
-      provider: "google",
-      callbackURL: `${window.location.origin}/dashboard`,
-      errorCallbackURL: `${window.location.origin}/login?error=oauth_failed`,
-    });
+    try {
+      // Both must be absolute: the API (a different origin from this app)
+      // performs the final redirect after the OAuth callback, so a relative
+      // path would resolve against the API's own origin instead of this app's.
+      // errorCallbackURL keeps failures on this app too — without it, Better
+      // Auth falls back to its own bare error page on the API's origin.
+      const { error: signInError } = await signIn.social({
+        provider: "google",
+        callbackURL: `${window.location.origin}/dashboard`,
+        errorCallbackURL: `${window.location.origin}/login?error=oauth_failed`,
+      });
+      // A successful call navigates the browser away to Google before this
+      // line runs — only an error (rejected API call, no redirect issued)
+      // reaches here, so it's safe to always re-enable the button below.
+      if (signInError) setError(signInError.message ?? "Could not start Google sign-in.");
+    } catch {
+      setError("Could not reach the server. Check your connection and try again.");
+    } finally {
+      setIsGoogleSubmitting(false);
+    }
   }
 
   return (
