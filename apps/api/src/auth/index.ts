@@ -39,6 +39,18 @@ export function createAuth(env: Env, db: Database) {
         clientSecret: env.GOOGLE_CLIENT_SECRET,
       },
     },
+    account: {
+      accountLinking: {
+        // Google verifies the email itself, so it shouldn't matter whether
+        // the *local* password account happens to have finished its own
+        // separate verification email — without this, Better Auth's default
+        // (require the existing local account's emailVerified to already be
+        // true) throws "account_not_linked" for anyone who signed up with
+        // email/password and never clicked that link, silently bouncing
+        // them back to /login on every Google sign-in attempt.
+        requireLocalEmailVerified: false,
+      },
+    },
     session: {
       expiresIn: 60 * 60 * 24 * 7,
     },
