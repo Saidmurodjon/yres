@@ -36,12 +36,13 @@ simple = { limit = 10, period = 60 }
 # actual Cloudflare Worker name and deployed URLs before going live.
 [env.production]
 name = "yres-api-production"
+routes = [{ pattern = "yres-api.saidmurod.com", custom_domain = true }]
 
 [env.production.vars]
 NODE_ENV = "production"
-API_URL = "https://yres-api-production.workers.dev"
-WEB_URL = "https://yres.app"
-EMAIL_FROM = "YRES <noreply@yres.app>"
+API_URL = "https://yres-api.saidmurod.com"
+WEB_URL = "https://yres.saidmurod.com"
+EMAIL_FROM = "YRES <noreply@saidmurod.com>"
 
 [[env.production.r2_buckets]]
 binding = "REPORTS_BUCKET"

@@ -8,17 +8,21 @@ import {
   CardTitle,
   Input,
   Label,
+  Separator,
 } from "@yres/ui";
 import { type FormEvent, useState } from "react";
 import { signIn } from "../lib/auth-client";
 
 interface LoginSearch {
   redirect?: string;
+  error?: string;
 }
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, unknown>): LoginSearch =>
-    typeof search.redirect === "string" ? { redirect: search.redirect } : {},
+  validateSearch: (search: Record<string, unknown>): LoginSearch => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+    error: typeof search.error === "string" ? search.error : undefined,
+  }),
   component: LoginPage,
 });
 
@@ -27,8 +31,11 @@ function LoginPage() {
   const search = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    search.error ? "Google sign-in failed. Please try again." : null,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -44,6 +51,22 @@ function LoginPage() {
     }
 
     navigate({ to: search.redirect ?? "/dashboard" });
+  }
+
+  async function handleGoogleSignIn() {
+    if (isGoogleSubmitting) return;
+    setIsGoogleSubmitting(true);
+    // Both must be absolute: the API (a different origin from this app)
+    // performs the final redirect after the OAuth callback, so a relative
+    // path would resolve against the API's own origin instead of this app's.
+    // errorCallbackURL keeps failures (e.g. a stale/expired OAuth state) on
+    // this app too — without it, Better Auth falls back to its own bare
+    // error page on the API's origin.
+    await signIn.social({
+      provider: "google",
+      callbackURL: `${window.location.origin}${search.redirect ?? "/dashboard"}`,
+      errorCallbackURL: `${window.location.origin}/login?error=oauth_failed`,
+    });
   }
 
   return (
@@ -90,6 +113,20 @@ function LoginPage() {
               {isSubmitting ? "Signing in..." : "Sign in"}
             </Button>
           </form>
+          <div className="my-4 flex items-center gap-3">
+            <Separator className="flex-1" />
+            <span className="text-xs text-muted-foreground">OR</span>
+            <Separator className="flex-1" />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            disabled={isGoogleSubmitting}
+            onClick={handleGoogleSignIn}
+          >
+            {isGoogleSubmitting ? "Redirecting…" : "Continue with Google"}
+          </Button>
           <p className="mt-4 text-center text-sm text-muted-foreground">
             No account?{" "}
             <Link

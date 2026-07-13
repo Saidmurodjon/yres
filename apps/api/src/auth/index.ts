@@ -42,5 +42,19 @@ export function createAuth(env: Env, db: Database) {
     session: {
       expiresIn: 60 * 60 * 24 * 7,
     },
+    // Production serves the web app and this API from sibling subdomains of
+    // saidmurod.com (not pages.dev/workers.dev, which are separate public
+    // suffixes with no shared registrable domain — cookies can never be
+    // shared between those no matter what attributes are set). Scoping the
+    // cookie to .saidmurod.com makes auth requests same-site, so the default
+    // SameSite=Lax cookie is sent on the frontend's cross-origin fetches.
+    advanced: env.WEB_URL.endsWith("saidmurod.com")
+      ? {
+          crossSubDomainCookies: {
+            enabled: true,
+            domain: ".saidmurod.com",
+          },
+        }
+      : undefined,
   });
 }

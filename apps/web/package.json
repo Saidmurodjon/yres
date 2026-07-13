@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "vite build && tsc --noEmit",
     "deploy": "wrangler pages deploy dist --project-name=yres-web",
-    "type-check": "tsc --noEmit",
+    "type-check": "vite build && tsc --noEmit",
     "lint": "biome lint .",
     "preview": "vite preview",
     "test:e2e": "playwright test"
