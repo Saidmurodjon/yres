@@ -54,8 +54,8 @@ function ResetPasswordPage() {
     <main className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Choose a new password</CardTitle>
-          <CardDescription>Your reset link has been verified.</CardDescription>
+          <CardTitle>{token ? "Choose a new password" : "Invalid reset link"}</CardTitle>
+          {token && <CardDescription>Your reset link has been verified.</CardDescription>}
         </CardHeader>
         <CardContent>
           {!token ? (
