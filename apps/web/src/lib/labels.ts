@@ -48,6 +48,26 @@ export const ENVELOPE_ELEMENT_CATEGORIES = Object.keys(
   ENVELOPE_ELEMENT_CATEGORY_LABELS,
 ) as EnvelopeElementCategory[];
 
+/**
+ * Labels for `AuditResult.energyBalanceBreakdown` rows. Keys are either an
+ * `EnvelopeElementCategory`, "window"/"door", or one of the fixed
+ * final-energy/offset categories the audit engine emits — see
+ * `EnergyBalanceSection` in `@yres/types` for what each row represents.
+ */
+export const ENERGY_BALANCE_CATEGORY_LABELS: Record<string, string> = {
+  ...ENVELOPE_ELEMENT_CATEGORY_LABELS,
+  window: "Windows",
+  door: "Doors",
+  ventilation: "Ventilation",
+  thermal_generation: "Heating & DHW generation (thermal fuels)",
+  electrical_generation: "Heating & DHW generation (electric)",
+  lighting: "Lighting",
+  equipment: "Equipment",
+  cooling: "Cooling",
+  pv_production: "Solar PV production",
+  solar_dhw_production: "Solar DHW production",
+};
+
 export const OPENING_CATEGORY_LABELS: Record<"window" | "door", string> = {
   window: "Window",
   door: "Door",

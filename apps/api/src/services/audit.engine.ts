@@ -18,6 +18,7 @@ import {
   pipeLossReference,
   renewableSystem,
   surfaceResistance,
+  utilityBill,
   ventilationSystem,
 } from "@yres/db";
 import type {
@@ -27,6 +28,7 @@ import type {
   DhwDemandResult,
   DistributionLossResult,
   EndUseEnergyTotals,
+  EnergyBalanceRow,
   EnergyMeasureResult,
   EnvelopeHeatLossResult,
   EquipmentResult,
@@ -577,6 +579,118 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     });
   }
 
+  // --- Energy balance breakdown ("Breakdown Baseline & Balance" sheet's
+  // per-component rows): envelope/ventilation losses are the gross,
+  // pre-generation thermal demand, kept separate from the final-energy rows
+  // below (see EnergyBalanceSection's doc comment for why they don't sum
+  // together into one total).
+  const generationSourceById = new Map(generationSourceRows.map((s) => [s.id, s]));
+  const energyBalanceBreakdown: EnergyBalanceRow[] = [];
+  const envelopeCategories = new Set<string>();
+  for (const scenario of SCENARIOS) {
+    const byCategory =
+      envelopeHeatLoss.find((e) => e.scenario === scenario)?.annualByCategory ?? {};
+    for (const category of Object.keys(byCategory)) envelopeCategories.add(category);
+  }
+  for (const category of envelopeCategories) {
+    energyBalanceBreakdown.push({
+      category,
+      section: "envelope_ventilation_loss",
+      beforeKwh: envelopeHeatLoss.find((e) => e.scenario === "before")?.annualByCategory[category] ?? 0,
+      afterKwh: envelopeHeatLoss.find((e) => e.scenario === "after")?.annualByCategory[category] ?? 0,
+    });
+  }
+  energyBalanceBreakdown.push({
+    category: "ventilation",
+    section: "envelope_ventilation_loss",
+    beforeKwh: sumVentilationThermalLossKwh(ventilationLoss, "before"),
+    afterKwh: sumVentilationThermalLossKwh(ventilationLoss, "after"),
+  });
+
+  for (const [category, carrierFilter] of [
+    ["thermal_generation", (c: string) => c !== "electricity"],
+    ["electrical_generation", (c: string) => c === "electricity"],
+  ] as const) {
+    energyBalanceBreakdown.push({
+      category,
+      section: "final_energy",
+      beforeKwh: sumGenerationByCarrier(generation, generationSourceById, "before", carrierFilter),
+      afterKwh: sumGenerationByCarrier(generation, generationSourceById, "after", carrierFilter),
+    });
+  }
+  energyBalanceBreakdown.push({
+    category: "lighting",
+    section: "final_energy",
+    beforeKwh: lighting.find((l) => l.scenario === "before")?.annualConsumptionKwh ?? 0,
+    afterKwh: lighting.find((l) => l.scenario === "after")?.annualConsumptionKwh ?? 0,
+  });
+  energyBalanceBreakdown.push({
+    category: "equipment",
+    section: "final_energy",
+    beforeKwh: equipment.find((e) => e.scenario === "before")?.annualConsumptionKwh ?? 0,
+    afterKwh: equipment.find((e) => e.scenario === "after")?.annualConsumptionKwh ?? 0,
+  });
+  energyBalanceBreakdown.push({
+    category: "cooling",
+    section: "final_energy",
+    beforeKwh: cooling.find((c) => c.scenario === "before")?.electricalEnergyForCoolingKwh ?? 0,
+    afterKwh: cooling.find((c) => c.scenario === "after")?.electricalEnergyForCoolingKwh ?? 0,
+  });
+  for (const production of renewableProduction) {
+    energyBalanceBreakdown.push({
+      category: `${production.systemType}_production`,
+      section: "renewable_offset",
+      beforeKwh: 0,
+      afterKwh: production.annualProductionKwh,
+    });
+  }
+
+  // --- Baseline calibration ("Breakdown Baseline & Balance" sheet's "ratio"
+  // column): the standardized model is built from nameplate/nominal inputs
+  // (design U-values, rated efficiencies, occupancy assumptions), which
+  // rarely matches what the building actually purchased. Comparing the
+  // "before" scenario's theoretical need against the metered baseline, per
+  // carrier, gives a calibration factor applied to every measure's
+  // standardized savings — the same theoretical kWh saved is worth more or
+  // less depending on how the model over/under-shoots reality for that fuel.
+  const theoreticalBeforeKwhByCarrier = new Map<string, number>();
+  const addTheoretical = (carrier: string, kwh: number) => {
+    theoreticalBeforeKwhByCarrier.set(carrier, (theoreticalBeforeKwhByCarrier.get(carrier) ?? 0) + kwh);
+  };
+  for (const g of generation.filter((g) => g.scenario === "before")) {
+    const sourceType = generationSourceById.get(g.sourceId)?.sourceType;
+    const carrier = sourceType && carrierForGenerationSourceType(sourceType);
+    if (carrier) addTheoretical(carrier, g.finalEnergyConsumptionKwh);
+  }
+  addTheoretical("electricity", lighting.find((l) => l.scenario === "before")?.annualConsumptionKwh ?? 0);
+  addTheoretical(
+    "electricity",
+    equipment.find((e) => e.scenario === "before")?.annualConsumptionKwh ?? 0,
+  );
+  addTheoretical(
+    "electricity",
+    cooling.find((c) => c.scenario === "before")?.electricalEnergyForCoolingKwh ?? 0,
+  );
+
+  const utilityBillRows = await db.select().from(utilityBill).where(eq(utilityBill.buildingId, buildingId));
+  const actualKwhByCarrierYear = new Map<string, Map<number, number>>();
+  for (const bill of utilityBillRows) {
+    if (bill.consumptionKwh == null) continue;
+    const byYear = actualKwhByCarrierYear.get(bill.energyCarrier) ?? new Map<number, number>();
+    byYear.set(bill.year, (byYear.get(bill.year) ?? 0) + bill.consumptionKwh);
+    actualKwhByCarrierYear.set(bill.energyCarrier, byYear);
+  }
+
+  const baselineRatioByCarrier = new Map<string, number>();
+  for (const [carrier, byYear] of actualKwhByCarrierYear) {
+    const years = [...byYear.values()];
+    const actualAverageKwh = years.reduce((sum, v) => sum + v, 0) / years.length;
+    const theoreticalKwh = theoreticalBeforeKwhByCarrier.get(carrier) ?? 0;
+    // No standardized counterpart, or no bills at all for this carrier: leave
+    // it uncalibrated (ratio 1) rather than dividing by zero or guessing.
+    if (theoreticalKwh > 0) baselineRatioByCarrier.set(carrier, actualAverageKwh / theoreticalKwh);
+  }
+
   // --- Measures & financials ---
   const measureRows = await db.query.energyMeasure.findMany({
     where: eq(energyMeasure.buildingId, buildingId),
@@ -603,7 +717,8 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
       cooling,
     });
 
-    const tariff = latestTariffByCarrier.get(inferCarrierForMeasure(measure.category)) ?? {
+    const carrier = inferCarrierForMeasure(measure.category);
+    const tariff = latestTariffByCarrier.get(carrier) ?? {
       unitCostUsd: 0.05,
       emissionFactorKgCo2PerKwh: 0.3,
     };
@@ -612,8 +727,18 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
       investmentCostUsd: measure.investmentCostUsd,
       maintenanceCostPercent: measure.maintenanceCostPercent,
       firstYearAnnualSavingsUsd: savingsKwh * tariff.unitCostUsd,
-      annualEscalationRate:
-        ENERGY_ESCALATION_RATES[inferCarrierForMeasure(measure.category)] ?? 0.02,
+      annualEscalationRate: ENERGY_ESCALATION_RATES[carrier] ?? 0.02,
+      lifetimeYears: measure.lifetimeYears,
+      discountRate: 0.04,
+    });
+
+    const baselineRatio = baselineRatioByCarrier.get(carrier) ?? 1;
+    const actualSavingsKwh = savingsKwh * baselineRatio;
+    const { indicators: actual } = calculateFinancialIndicators({
+      investmentCostUsd: measure.investmentCostUsd,
+      maintenanceCostPercent: measure.maintenanceCostPercent,
+      firstYearAnnualSavingsUsd: actualSavingsKwh * tariff.unitCostUsd,
+      annualEscalationRate: ENERGY_ESCALATION_RATES[carrier] ?? 0.02,
       lifetimeYears: measure.lifetimeYears,
       discountRate: 0.04,
     });
@@ -625,8 +750,8 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
       investmentCostUsd: measure.investmentCostUsd,
       standardizedAnnualSavingsKwh: savingsKwh,
       standardizedAnnualSavingsUsd: savingsKwh * tariff.unitCostUsd,
-      actualAnnualSavingsKwh: savingsKwh,
-      actualAnnualSavingsUsd: savingsKwh * tariff.unitCostUsd,
+      actualAnnualSavingsKwh: actualSavingsKwh,
+      actualAnnualSavingsUsd: actualSavingsKwh * tariff.unitCostUsd,
       simplePaybackYears: standardized.simplePaybackYears,
       lifetimeYears: measure.lifetimeYears,
       co2ReductionTonnesPerYear: calculateCo2ReductionTonnesPerYear(
@@ -635,7 +760,7 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
       ),
       proposedForImplementation: measure.proposedForImplementation,
       standardized,
-      actual: standardized,
+      actual,
     };
   });
 
@@ -664,6 +789,7 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     equipment,
     renewableProduction,
     finalEnergyByEndUse,
+    energyBalanceBreakdown,
     measures,
   };
 }
@@ -687,6 +813,60 @@ function inferCarrierForMeasure(
   // model can't represent precisely — "gas" is the same approximation
   // already used for every other unlisted category here.
   return "gas";
+}
+
+/**
+ * Maps a `generationSource` row's `sourceType` to the purchased-energy
+ * carrier it's billed under, for baseline calibration against utility bills.
+ * Returns `null` for source types that don't correspond to any of the four
+ * billed carriers: "solar_dhw" here is an existing solar-thermal system
+ * already meeting part of DHW demand — free collected energy, never
+ * metered — and "other" is genuinely unknown, so guessing a carrier for it
+ * would silently miscalibrate that carrier's ratio instead of leaving it at
+ * the safe default of 1.
+ */
+function carrierForGenerationSourceType(
+  sourceType: string,
+): "gas" | "electricity" | "district_heat" | "coal" | null {
+  switch (sourceType) {
+    case "gas_boiler":
+      return "gas";
+    case "electric_boiler":
+    case "heat_pump":
+    case "split_ac":
+    case "centralized_ac":
+      return "electricity";
+    case "district_heating":
+      return "district_heat";
+    default:
+      return null;
+  }
+}
+
+/** `VentilationLossResult.totalKwh` mixes in the mechanical fan's own electrical draw; this sums just the thermal (heat) loss for one scenario, for the energy balance breakdown's envelope+ventilation section. */
+function sumVentilationThermalLossKwh(
+  ventilationLoss: VentilationLossResult[],
+  scenario: Scenario,
+): number {
+  const result = ventilationLoss.find((v) => v.scenario === scenario);
+  if (!result) return 0;
+  return result.naturalAnnualKwh + result.mechanicalAnnualKwh;
+}
+
+/** Sums `generation`'s final (purchased) energy for one scenario, restricted to sources whose carrier passes `carrierFilter` — used to split the same heating+DHW generation total into thermal-carrier vs electric-carrier rows. */
+function sumGenerationByCarrier(
+  generation: GenerationSourceResult[],
+  generationSourceById: Map<string, { sourceType: string }>,
+  scenario: Scenario,
+  carrierFilter: (carrier: string) => boolean,
+): number {
+  return generation
+    .filter((g) => g.scenario === scenario)
+    .reduce((sum, g) => {
+      const sourceType = generationSourceById.get(g.sourceId)?.sourceType;
+      const carrier = sourceType && carrierForGenerationSourceType(sourceType);
+      return carrier && carrierFilter(carrier) ? sum + g.finalEnergyConsumptionKwh : sum;
+    }, 0);
 }
 
 function resolveMeasureStandardizedSavingsKwh(

@@ -61,6 +61,7 @@ import {
   SCENARIO_COLORS,
 } from "../../../../lib/chart-colors";
 import {
+  ENERGY_BALANCE_CATEGORY_LABELS,
   END_USES,
   END_USE_LABELS,
   MEASURE_CATEGORY_LABELS,
@@ -133,6 +134,23 @@ function AuditResultsPage() {
         ?.finalEnergyConsumptionKwh ?? 0;
     return { endUse, label: END_USE_LABELS[endUse], before, after };
   }).filter((row) => row.before > 0 || row.after > 0);
+
+  const BALANCE_SECTION_LABELS = {
+    envelope_ventilation_loss: "Envelope & ventilation heat losses (gross thermal demand)",
+    final_energy: "Final energy consumption (purchased)",
+    renewable_offset: "Renewable production",
+  } as const;
+  const balanceSections = (
+    ["envelope_ventilation_loss", "final_energy", "renewable_offset"] as const
+  )
+    .map((section) => ({
+      key: section,
+      label: BALANCE_SECTION_LABELS[section],
+      rows: result.energyBalanceBreakdown.filter(
+        (row) => row.section === section && (row.beforeKwh > 0 || row.afterKwh > 0),
+      ),
+    }))
+    .filter((section) => section.rows.length > 0);
 
   const shareSegments = endUseRows.map((row) => ({
     key: row.endUse,
@@ -328,6 +346,65 @@ function AuditResultsPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Energy balance breakdown</CardTitle>
+          <CardDescription>
+            By component (kWh/yr) — envelope and ventilation rows are gross thermal demand before
+            generation efficiency; final energy is what's actually purchased per carrier.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {balanceSections.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No energy balance data available.
+            </p>
+          ) : (
+            <div className="space-y-6">
+              {balanceSections.map((section) => (
+                <div key={section.key}>
+                  <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
+                    {section.label}
+                  </h3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Component</TableHead>
+                        <TableHead className="text-right">Before (kWh/yr)</TableHead>
+                        <TableHead className="text-right">After (kWh/yr)</TableHead>
+                        <TableHead className="text-right">Savings (kWh/yr)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {section.rows.map((row) => (
+                        <TableRow key={row.category}>
+                          <TableCell className="font-medium">
+                            {ENERGY_BALANCE_CATEGORY_LABELS[row.category] ?? row.category}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {row.section === "renewable_offset"
+                              ? "—"
+                              : formatNumber(row.beforeKwh, 0)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {formatNumber(row.afterKwh, 0)}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {row.section === "renewable_offset"
+                              ? "—"
+                              : formatNumber(row.beforeKwh - row.afterKwh, 0)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
