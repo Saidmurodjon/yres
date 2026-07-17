@@ -7,9 +7,14 @@ import type {
   BuildingMember,
   BuildingRole,
   BuildingWithRole,
+  ChatAttachmentUploadResult,
+  ChatMessage,
+  ChatUserSearchResult,
   ClimateRegion,
   ClimateRegionWithNormals,
+  ConversationSummary,
   CreateBuildingInput,
+  CreateConversationInput,
   CreateMeasureInput,
   CreateNonEeMeasureInput,
   CreateUtilityBillInput,
@@ -33,6 +38,7 @@ import type {
   ReplaceVentilationPayload,
   SystemsData,
   UpdateBuildingInput,
+  UpdateConversationInput,
   UpdateUserInput,
   UserProfile,
   UtilityBill,
@@ -94,6 +100,42 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify(data),
       }),
+  },
+
+  chat: {
+    listConversations: () =>
+      request<{ conversations: ConversationSummary[] }>("/api/chat/conversations"),
+    createConversation: (data: CreateConversationInput) =>
+      request<{ conversationId: string }>("/api/chat/conversations", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    updateConversation: (id: string, data: UpdateConversationInput) =>
+      request<{ ok: true }>(`/api/chat/conversations/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    messages: (id: string, params?: ListParams) =>
+      request<{ messages: ChatMessage[]; page: number; pageSize: number }>(
+        `/api/chat/conversations/${id}/messages${toQueryString(params)}`,
+      ),
+    markRead: (id: string) =>
+      request<{ ok: true }>(`/api/chat/conversations/${id}/read`, { method: "PATCH" }),
+    searchUsers: (q: string) =>
+      request<{ users: ChatUserSearchResult[] }>(`/api/chat/users/search?q=${encodeURIComponent(q)}`),
+    uploadAttachment: async (conversationId: string, file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch(
+        `${API_URL}/api/chat/conversations/${conversationId}/attachments`,
+        { method: "POST", credentials: "include", body: formData },
+      );
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new ApiError(response.status, body as ApiErrorBody);
+      }
+      return body as ChatAttachmentUploadResult;
+    },
   },
 
   notifications: {

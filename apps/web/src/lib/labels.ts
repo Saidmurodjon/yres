@@ -177,6 +177,13 @@ export function formatDate(value: string | null | undefined): string {
   return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
+export function formatTime(value: string | null | undefined): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
 /** USD currency, no decimals by default — these figures are estimates, not invoices. */
 export function formatCurrency(value: number | null | undefined, fractionDigits = 0): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";

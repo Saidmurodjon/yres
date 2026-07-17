@@ -18,6 +18,72 @@ export interface UpdateUserInput {
   image?: string | null;
 }
 
+export type ConversationType = "direct" | "group";
+export type ConversationMemberRole = "owner" | "member";
+
+export interface ConversationMemberSummary {
+  id: string;
+  name: string;
+  username: string;
+  image: string | null;
+  role: ConversationMemberRole;
+}
+
+export interface ConversationSummary {
+  id: string;
+  type: ConversationType;
+  name: string;
+  members: ConversationMemberSummary[];
+  myRole: ConversationMemberRole;
+  lastMessage: {
+    id: string;
+    body: string | null;
+    deletedAt: string | null;
+    senderId: string;
+    createdAt: string;
+  } | null;
+  unreadCount: number;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  body: string;
+  replyToId: string | null;
+  createdAt: string;
+  editedAt: string | null;
+  deletedAt: string | null;
+  attachmentUrl: string | null;
+  attachmentName: string | null;
+  attachmentMimeType: string | null;
+  attachmentSizeBytes: number | null;
+}
+
+export type CreateConversationInput =
+  | { type: "direct"; username: string }
+  | { type: "group"; name: string; usernames: string[] };
+
+export interface UpdateConversationInput {
+  name?: string;
+  addUsernames?: string[];
+  removeUserIds?: string[];
+}
+
+export interface ChatUserSearchResult {
+  id: string;
+  name: string;
+  username: string;
+  image: string | null;
+}
+
+export interface ChatAttachmentUploadResult {
+  attachmentUrl: string;
+  attachmentName: string;
+  attachmentMimeType: string;
+  attachmentSizeBytes: number;
+}
+
 export interface Notification {
   id: string;
   userId: string;

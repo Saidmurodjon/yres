@@ -212,6 +212,36 @@ chatRoutes.get("/conversations/:id/messages", async (c) => {
   return c.json({ messages: rows, page: parsedQuery.data.page, pageSize: parsedQuery.data.pageSize });
 });
 
+// GET /api/chat/conversations/:id/ws - upgrades to a WebSocket and forwards
+// to this conversation's ConversationRoom Durable Object instance. The DO
+// itself has no session/cookie context, so the caller's id is checked here
+// (membership) and then appended as a query param before forwarding.
+chatRoutes.get("/conversations/:id/ws", async (c) => {
+  const conversationId = c.req.param("id");
+  const db = c.get("db");
+  const authUser = c.get("user");
+
+  const [membership] = await db
+    .select()
+    .from(conversationMember)
+    .where(
+      and(eq(conversationMember.conversationId, conversationId), eq(conversationMember.userId, authUser.id)),
+    )
+    .limit(1);
+  if (!membership) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  const id = c.env.CONVERSATION_ROOM.idFromName(conversationId);
+  const stub = c.env.CONVERSATION_ROOM.get(id);
+
+  const url = new URL(c.req.raw.url);
+  url.searchParams.set("userId", authUser.id);
+  const forwardedRequest = new Request(url.toString(), c.req.raw);
+
+  return stub.fetch(forwardedRequest);
+});
+
 // PATCH /api/chat/conversations/:id/read - mark this conversation read.
 chatRoutes.patch("/conversations/:id/read", async (c) => {
   const conversationId = c.req.param("id");
