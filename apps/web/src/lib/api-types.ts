@@ -18,6 +18,16 @@ export interface UpdateUserInput {
   image?: string | null;
 }
 
+export interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  username: string;
+  role: UserRole;
+  emailVerified: boolean;
+  createdAt: string;
+}
+
 export interface Building {
   id: string;
   userId: string;

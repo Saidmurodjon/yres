@@ -1,5 +1,6 @@
 import type { AuditResult } from "@yres/types";
 import type {
+  AdminUser,
   ApiErrorBody,
   AuditRun,
   Building,
@@ -35,6 +36,7 @@ import type {
   UserProfile,
   UtilityBill,
 } from "./api-types";
+import type { UserRole } from "./auth-types";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -90,6 +92,18 @@ export const api = {
       request<{ user: UserProfile }>("/api/users/me", {
         method: "PATCH",
         body: JSON.stringify(data),
+      }),
+  },
+
+  adminUsers: {
+    list: (params?: ListParams) =>
+      request<{ users: AdminUser[]; page: number; pageSize: number }>(
+        `/api/admin/users${toQueryString(params)}`,
+      ),
+    updateRole: (userId: string, role: UserRole) =>
+      request<{ user: { id: string; role: UserRole } }>(`/api/admin/users/${userId}/role`, {
+        method: "PATCH",
+        body: JSON.stringify({ role }),
       }),
   },
 

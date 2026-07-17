@@ -16,14 +16,14 @@ import {
   PopoverTrigger,
   Toaster,
 } from "@yres/ui";
-import { Bell, Building2, LayoutDashboard, LogOut, UserRound } from "lucide-react";
+import { Bell, Building2, LayoutDashboard, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { signOut, useSession } from "../lib/auth-client";
 import type { SessionUser, UserRole } from "../lib/auth-types";
 import { USER_ROLE_LABELS } from "../lib/labels";
 
 interface NavItem {
-  to: "/dashboard" | "/buildings";
+  to: "/dashboard" | "/buildings" | "/admin/users";
   label: string;
   icon: typeof LayoutDashboard;
   /** Omit to show for every role. */
@@ -33,6 +33,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/buildings", label: "Buildings", icon: Building2 },
+  { to: "/admin/users", label: "Users", icon: ShieldCheck, roles: ["admin"] },
 ];
 
 function visibleNavItems(role: UserRole | undefined) {

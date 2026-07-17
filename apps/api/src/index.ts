@@ -6,6 +6,7 @@ import { createAuth } from "./auth";
 import type { AppEnv } from "./middleware/auth";
 import { dbMiddleware } from "./middleware/db";
 import { rateLimit } from "./middleware/rate-limit";
+import { adminUsersRoutes } from "./routes/admin-users";
 import { auditRoutes } from "./routes/audit";
 import { buildingRoutes } from "./routes/buildings";
 import { climateRoutes } from "./routes/climate";
@@ -83,6 +84,7 @@ app.route("/api/buildings", membersRoutes);
 app.route("/api/climate", climateRoutes);
 app.route("/api/reference", referenceRoutes);
 app.route("/api/users", usersRoutes);
+app.route("/api/admin", adminUsersRoutes);
 
 // Reports uncaught exceptions (route bugs, calculation-engine errors,
 // unexpected DB failures) to Sentry with request context. A blank
