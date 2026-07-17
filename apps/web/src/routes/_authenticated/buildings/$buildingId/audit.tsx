@@ -17,6 +17,7 @@ import {
 } from "@yres/ui";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useBuilding,
   useCreateConsumption,
@@ -34,13 +35,10 @@ export const Route = createFileRoute("/_authenticated/buildings/$buildingId/audi
 });
 
 type WizardStep = "envelope" | "consumption" | "run";
-const STEPS: { id: WizardStep; label: string }[] = [
-  { id: "envelope", label: "Envelope" },
-  { id: "consumption", label: "Consumption" },
-  { id: "run", label: "Run audit" },
-];
+const STEP_IDS: WizardStep[] = ["envelope", "consumption", "run"];
 
 function AuditWizardPage() {
+  const { t } = useTranslation("audit");
   const { buildingId } = Route.useParams();
   const navigate = useNavigate();
   const { data: buildingData, isLoading: buildingLoading } = useBuilding(buildingId);
@@ -50,20 +48,26 @@ function AuditWizardPage() {
 
   const hasEnvelope = (envelopeData?.envelopeElements.length ?? 0) > 0;
 
+  const STEPS: { id: WizardStep; label: string }[] = STEP_IDS.map((id) => ({
+    id,
+    label: t(`wizard.steps.${id}`),
+  }));
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <Button asChild variant="ghost" size="sm" className="-ml-2">
           <Link to="/buildings/$buildingId" params={{ buildingId }}>
             <ArrowLeft className="h-4 w-4" />
-            Back to {buildingLoading ? "building" : (buildingData?.building.name ?? "building")}
+            {t("wizard.backTo", {
+              name: buildingLoading
+                ? t("wizard.genericBuilding")
+                : (buildingData?.building.name ?? t("wizard.genericBuilding")),
+            })}
           </Link>
         </Button>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">Run Energy Audit</h1>
-        <p className="mt-1 text-muted-foreground">
-          A quick path to a first audit result. You can always refine envelope, ventilation, DHW,
-          and generation data in more detail from the building's Envelope tab afterward.
-        </p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">{t("wizard.title")}</h1>
+        <p className="mt-1 text-muted-foreground">{t("wizard.subtitle")}</p>
       </div>
 
       <ol className="flex items-center gap-2 text-sm">
@@ -265,6 +269,7 @@ function EnvelopeStep({
   hasEnvelope: boolean;
   onDone: () => void;
 }) {
+  const { t } = useTranslation("audit");
   const { data: materialsData, isLoading: materialsLoading } = useMaterials();
   const replaceEnvelope = useReplaceEnvelope(buildingId);
   const [values, setValues] = useState(DEFAULT_QUICK_ENVELOPE);
@@ -282,7 +287,7 @@ function EnvelopeStep({
       await replaceEnvelope.mutateAsync(buildQuickEnvelopePayload(values));
       onDone();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to save envelope data.");
+      setError(err instanceof ApiError ? err.message : t("wizard.envelope.saveFailed"));
     }
   }
 
@@ -294,16 +299,11 @@ function EnvelopeStep({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>No construction materials available</CardTitle>
-          <CardDescription>
-            The materials reference table is empty in this environment, so wall/roof/floor
-            construction can't be entered yet — an admin needs to seed it first. You can still
-            continue and run a limited audit (envelope losses will read as zero until this is
-            fixed).
-          </CardDescription>
+          <CardTitle>{t("wizard.envelope.noMaterialsTitle")}</CardTitle>
+          <CardDescription>{t("wizard.envelope.noMaterialsDescription")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={onDone}>Skip envelope setup</Button>
+          <Button onClick={onDone}>{t("wizard.envelope.skipSetup")}</Button>
         </CardContent>
       </Card>
     );
@@ -313,18 +313,17 @@ function EnvelopeStep({
     <form onSubmit={handleSubmit} className="space-y-6">
       {hasEnvelope && (
         <div className="rounded-md border border-warning/50 bg-warning/10 p-3 text-sm text-warning-foreground">
-          This building already has envelope data. Saving here will replace its "before"
-          construction types, opening types, and elements.
+          {t("wizard.envelope.replaceWarning")}
         </div>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle>Building footprint</CardTitle>
-          <CardDescription>Used to derive heated floor area and volume.</CardDescription>
+          <CardTitle>{t("wizard.envelope.footprintTitle")}</CardTitle>
+          <CardDescription>{t("wizard.envelope.footprintDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <Field label="Footprint length (m)">
+          <Field label={t("wizard.envelope.footprintLength")}>
             <Input
               type="number"
               min={0}
@@ -333,7 +332,7 @@ function EnvelopeStep({
               onChange={(e) => set("footprintLengthM", e.target.value)}
             />
           </Field>
-          <Field label="Footprint width (m)">
+          <Field label={t("wizard.envelope.footprintWidth")}>
             <Input
               type="number"
               min={0}
@@ -342,7 +341,7 @@ function EnvelopeStep({
               onChange={(e) => set("footprintWidthM", e.target.value)}
             />
           </Field>
-          <Field label="Number of floors">
+          <Field label={t("wizard.envelope.numberOfFloors")}>
             <Input
               type="number"
               min={1}
@@ -351,7 +350,7 @@ function EnvelopeStep({
               onChange={(e) => set("numberOfFloors", e.target.value)}
             />
           </Field>
-          <Field label="Floor-to-floor height (m)">
+          <Field label={t("wizard.envelope.floorToFloorHeight")}>
             <Input
               type="number"
               min={0}
@@ -364,8 +363,8 @@ function EnvelopeStep({
       </Card>
 
       <QuickCategoryCard
-        title="External walls"
-        areaLabel="Net wall area (m²), excluding windows"
+        title={t("wizard.envelope.externalWalls")}
+        areaLabel={t("wizard.envelope.netWallArea")}
         areaValue={values.wallAreaM2}
         onAreaChange={(v) => set("wallAreaM2", v)}
         materialId={values.wallMaterialId}
@@ -376,8 +375,8 @@ function EnvelopeStep({
       />
 
       <QuickCategoryCard
-        title="Roof"
-        areaLabel="Roof area (m²)"
+        title={t("wizard.envelope.roof")}
+        areaLabel={t("wizard.envelope.roofArea")}
         areaValue={values.roofAreaM2}
         onAreaChange={(v) => set("roofAreaM2", v)}
         materialId={values.roofMaterialId}
@@ -388,8 +387,8 @@ function EnvelopeStep({
       />
 
       <QuickCategoryCard
-        title="Ground floor"
-        areaLabel="Floor area (m²)"
+        title={t("wizard.envelope.groundFloor")}
+        areaLabel={t("wizard.envelope.floorArea")}
         areaValue={values.floorAreaM2}
         onAreaChange={(v) => set("floorAreaM2", v)}
         materialId={values.floorMaterialId}
@@ -401,14 +400,11 @@ function EnvelopeStep({
 
       <Card>
         <CardHeader>
-          <CardTitle>Windows</CardTitle>
-          <CardDescription>
-            Window U-value is entered directly (matching the source audit methodology), not derived
-            from layers.
-          </CardDescription>
+          <CardTitle>{t("wizard.envelope.windowsTitle")}</CardTitle>
+          <CardDescription>{t("wizard.envelope.windowsDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-4">
-          <Field label="Count">
+          <Field label={t("wizard.envelope.count")}>
             <Input
               type="number"
               min={0}
@@ -417,7 +413,7 @@ function EnvelopeStep({
               onChange={(e) => set("windowCount", e.target.value)}
             />
           </Field>
-          <Field label="Width (m)">
+          <Field label={t("wizard.envelope.width")}>
             <Input
               type="number"
               min={0}
@@ -426,7 +422,7 @@ function EnvelopeStep({
               onChange={(e) => set("windowWidthM", e.target.value)}
             />
           </Field>
-          <Field label="Height (m)">
+          <Field label={t("wizard.envelope.height")}>
             <Input
               type="number"
               min={0}
@@ -435,7 +431,7 @@ function EnvelopeStep({
               onChange={(e) => set("windowHeightM", e.target.value)}
             />
           </Field>
-          <Field label="U-value (W/m²K)">
+          <Field label={t("wizard.envelope.uValue")}>
             <Input
               type="number"
               min={0}
@@ -457,11 +453,11 @@ function EnvelopeStep({
         <Button type="submit" disabled={replaceEnvelope.isPending}>
           {replaceEnvelope.isPending ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Saving...
+              <Loader2 className="h-4 w-4 animate-spin" /> {t("common:saving")}
             </>
           ) : (
             <>
-              Save and continue <ArrowRight className="h-4 w-4" />
+              {t("wizard.envelope.saveAndContinue")} <ArrowRight className="h-4 w-4" />
             </>
           )}
         </Button>
@@ -491,6 +487,7 @@ function QuickCategoryCard({
   onThicknessChange: (v: string) => void;
   materials: { id: string; name: string; thermalConductivityWPerMk: number }[];
 }) {
+  const { t } = useTranslation("audit");
   return (
     <Card>
       <CardHeader>
@@ -506,10 +503,10 @@ function QuickCategoryCard({
             onChange={(e) => onAreaChange(e.target.value)}
           />
         </Field>
-        <Field label="Material">
+        <Field label={t("wizard.envelope.material")}>
           <Select value={materialId} onValueChange={onMaterialChange}>
             <SelectTrigger>
-              <SelectValue placeholder="Select material" />
+              <SelectValue placeholder={t("wizard.envelope.selectMaterial")} />
             </SelectTrigger>
             <SelectContent>
               {materials.map((m) => (
@@ -520,7 +517,7 @@ function QuickCategoryCard({
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Thickness (m)">
+        <Field label={t("wizard.envelope.thickness")}>
           <Input
             type="number"
             min={0}
@@ -560,6 +557,7 @@ function ConsumptionStep({
   onDone: () => void;
   onBack: () => void;
 }) {
+  const { t } = useTranslation("audit");
   const createConsumption = useCreateConsumption(buildingId);
   const currentYear = new Date().getFullYear();
   const [carrier, setCarrier] = useState<(typeof ENERGY_CARRIERS)[number]>("gas");
@@ -574,7 +572,7 @@ function ConsumptionStep({
   function addRow() {
     const value = Number.parseFloat(consumption);
     if (!value || value <= 0) {
-      setError("Enter a positive consumption value first.");
+      setError(t("wizard.consumption.positiveValueRequired"));
       return;
     }
     setAdded((prev) => [...prev, { carrier, year: Number(year), month: Number(month), value }]);
@@ -598,7 +596,7 @@ function ConsumptionStep({
       );
       onDone();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to save utility bills.");
+      setError(err instanceof ApiError ? err.message : t("wizard.consumption.saveFailed"));
     }
   }
 
@@ -606,15 +604,12 @@ function ConsumptionStep({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Historical utility bills (optional)</CardTitle>
-          <CardDescription>
-            Metered bills let the audit reconcile standardized estimates against actual usage. Skip
-            this step if you don't have them handy — you can add them later.
-          </CardDescription>
+          <CardTitle>{t("wizard.consumption.title")}</CardTitle>
+          <CardDescription>{t("wizard.consumption.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-4">
-            <Field label="Energy carrier">
+            <Field label={t("wizard.consumption.energyCarrier")}>
               <Select value={carrier} onValueChange={(v) => setCarrier(v as typeof carrier)}>
                 <SelectTrigger>
                   <SelectValue />
@@ -628,10 +623,10 @@ function ConsumptionStep({
                 </SelectContent>
               </Select>
             </Field>
-            <Field label="Year">
+            <Field label={t("wizard.consumption.year")}>
               <Input type="number" value={year} onChange={(e) => setYear(e.target.value)} />
             </Field>
-            <Field label="Month">
+            <Field label={t("wizard.consumption.month")}>
               <Input
                 type="number"
                 min={1}
@@ -640,7 +635,7 @@ function ConsumptionStep({
                 onChange={(e) => setMonth(e.target.value)}
               />
             </Field>
-            <Field label="Consumption (native units)">
+            <Field label={t("wizard.consumption.consumptionAmount")}>
               <Input
                 type="number"
                 min={0}
@@ -650,7 +645,7 @@ function ConsumptionStep({
             </Field>
           </div>
           <Button type="button" variant="outline" onClick={addRow}>
-            Add bill
+            {t("wizard.consumption.addBill")}
           </Button>
 
           {added.length > 0 && (
@@ -676,7 +671,7 @@ function ConsumptionStep({
 
       <div className="flex justify-between">
         <Button type="button" variant="ghost" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4" /> Back
+          <ArrowLeft className="h-4 w-4" /> {t("wizard.consumption.back")}
         </Button>
         <Button
           type="button"
@@ -685,15 +680,15 @@ function ConsumptionStep({
         >
           {createConsumption.isPending ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Saving...
+              <Loader2 className="h-4 w-4 animate-spin" /> {t("common:saving")}
             </>
           ) : added.length === 0 ? (
             <>
-              Skip <ArrowRight className="h-4 w-4" />
+              {t("wizard.consumption.skip")} <ArrowRight className="h-4 w-4" />
             </>
           ) : (
             <>
-              Save and continue <ArrowRight className="h-4 w-4" />
+              {t("wizard.consumption.saveAndContinue")} <ArrowRight className="h-4 w-4" />
             </>
           )}
         </Button>
@@ -715,6 +710,7 @@ function RunStep({
   onBack: () => void;
   onComplete: () => void;
 }) {
+  const { t } = useTranslation("audit");
   const runAudit = useRunAudit(buildingId);
   const [error, setError] = useState<string | null>(null);
 
@@ -728,23 +724,20 @@ function RunStep({
       }
       onComplete();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to run the audit.");
+      setError(err instanceof ApiError ? err.message : t("wizard.run.runFailed"));
     }
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Ready to run</CardTitle>
-        <CardDescription>
-          This calculates envelope, ventilation, DHW, distribution, generation, and cooling energy
-          use, then evaluates proposed measures — all from the data you've entered so far.
-        </CardDescription>
+        <CardTitle>{t("wizard.run.title")}</CardTitle>
+        <CardDescription>{t("wizard.run.description")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <CheckCircle2 className="h-4 w-4" />
-          Building parameters, envelope, and (optionally) consumption are ready.
+          {t("wizard.run.readyNote")}
         </div>
         {error && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
@@ -754,15 +747,15 @@ function RunStep({
       </CardContent>
       <CardContent className="flex justify-between pt-0">
         <Button type="button" variant="ghost" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4" /> Back
+          <ArrowLeft className="h-4 w-4" /> {t("wizard.run.back")}
         </Button>
         <Button type="button" onClick={handleRun} disabled={runAudit.isPending}>
           {runAudit.isPending ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Running audit...
+              <Loader2 className="h-4 w-4 animate-spin" /> {t("wizard.run.running")}
             </>
           ) : (
-            "Run audit"
+            t("wizard.run.runAudit")
           )}
         </Button>
       </CardContent>

@@ -1,0 +1,197 @@
+{
+  "wizard": {
+    "backTo": "Orqaga: {{name}}",
+    "genericBuilding": "bino",
+    "title": "Energiya auditini ishga tushirish",
+    "subtitle": "Birinchi audit natijasiga tezkor yo'l. Keyinroq bino qobig'i, ventilyatsiya, issiq suv ta'minoti va generatsiya ma'lumotlarini binoning \"Qobiq\" tabida batafsilroq aniqlashtirishingiz mumkin.",
+    "steps": {
+      "envelope": "Qobiq",
+      "consumption": "Iste'mol",
+      "run": "Auditni ishga tushirish"
+    },
+    "envelope": {
+      "saveFailed": "Qobiq ma'lumotlarini saqlab bo'lmadi.",
+      "noMaterialsTitle": "Qurilish materiallari mavjud emas",
+      "noMaterialsDescription": "Ushbu muhitda materiallar ma'lumotnomasi bo'sh, shuning uchun devor/tom/pol konstruksiyasini hali kiritib bo'lmaydi — administrator avval uni to'ldirishi kerak. Baribir davom etib, cheklangan auditni ishga tushirishingiz mumkin (bu tuzatilmaguncha qobiq yo'qotishlari nolga teng bo'lib ko'rinadi).",
+      "skipSetup": "Qobiqni sozlashni o'tkazib yuborish",
+      "replaceWarning": "Bu binoda allaqachon qobiq ma'lumotlari mavjud. Bu yerda saqlash uning \"Oldingi\" stsenariysidagi konstruksiya turlari, ochilma turlari va elementlarini almashtiradi.",
+      "footprintTitle": "Bino gabaritlari",
+      "footprintDescription": "Isitiladigan maydon va hajmni hisoblash uchun ishlatiladi.",
+      "footprintLength": "Asos uzunligi (m)",
+      "footprintWidth": "Asos kengligi (m)",
+      "numberOfFloors": "Qavatlar soni",
+      "floorToFloorHeight": "Qavat balandligi (m)",
+      "externalWalls": "Tashqi devorlar",
+      "netWallArea": "Sof devor maydoni (m²), oynalarsiz",
+      "roof": "Tom",
+      "roofArea": "Tom maydoni (m²)",
+      "groundFloor": "Pol",
+      "floorArea": "Pol maydoni (m²)",
+      "material": "Material",
+      "selectMaterial": "Materialni tanlang",
+      "thickness": "Qalinlik (m)",
+      "windowsTitle": "Oynalar",
+      "windowsDescription": "Deraza U-qiymati to'g'ridan-to'g'ri kiritiladi (manba audit metodologiyasiga mos), qatlamlardan hisoblanmaydi.",
+      "count": "Soni",
+      "width": "Kengligi (m)",
+      "height": "Balandligi (m)",
+      "uValue": "U-qiymati (Vt/m²K)",
+      "saveAndContinue": "Saqlash va davom etish"
+    },
+    "consumption": {
+      "title": "Tarixiy kommunal to'lov hisoblari (ixtiyoriy)",
+      "description": "Hisoblagich ma'lumotlari auditga standartlashtirilgan baholarni haqiqiy iste'mol bilan solishtirish imkonini beradi. Agar hozircha ma'lumotlar qo'lingizda bo'lmasa, bu qadamni o'tkazib yuboring — keyinroq qo'shishingiz mumkin.",
+      "energyCarrier": "Energiya tashuvchisi",
+      "year": "Yil",
+      "month": "Oy",
+      "consumptionAmount": "Iste'mol (natural birliklarda)",
+      "addBill": "Hisob qo'shish",
+      "positiveValueRequired": "Avval musbat iste'mol qiymatini kiriting.",
+      "saveFailed": "Kommunal hisoblarni saqlab bo'lmadi.",
+      "back": "Orqaga",
+      "skip": "O'tkazib yuborish",
+      "saveAndContinue": "Saqlash va davom etish"
+    },
+    "run": {
+      "title": "Ishga tushirishga tayyor",
+      "description": "Bu qobiq, ventilyatsiya, issiq suv ta'minoti, taqsimot, generatsiya va sovutish energiya iste'molini hisoblaydi, so'ngra taklif qilingan chora-tadbirlarni baholaydi — hammasi siz hozirgacha kiritgan ma'lumotlar asosida.",
+      "readyNote": "Bino parametrlari, qobiq va (ixtiyoriy ravishda) iste'mol tayyor.",
+      "runFailed": "Auditni ishga tushirib bo'lmadi.",
+      "back": "Orqaga",
+      "running": "Audit ishga tushirilmoqda...",
+      "runAudit": "Auditni ishga tushirish"
+    }
+  },
+  "results": {
+    "title": "Audit natijalari",
+    "generated": "Yaratilgan: {{date}}",
+    "updating": "Yangilanmoqda…",
+    "financialAnalysis": "Moliyaviy tahlil",
+    "preparing": "Tayyorlanmoqda…",
+    "downloadReport": "Hisobotni yuklab olish",
+    "running": "Ishga tushirilmoqda…",
+    "reRunAudit": "Auditni qayta ishga tushirish",
+    "runFailed": "Auditni ishga tushirib bo'lmadi.",
+    "downloadFailed": "Hisobotni yuklab bo'lmadi.",
+    "kpi": {
+      "currentEnergyUse": "Joriy energiya iste'moli",
+      "potentialEnergyUse": "Potensial energiya iste'moli",
+      "potentialSavings": "Potensial tejamkorlik",
+      "co2Reduction": "CO2 kamayishi",
+      "totalInvestment": "Umumiy investitsiya",
+      "totalAnnualSavings": "Umumiy yillik tejamkorlik",
+      "simplePayback": "Oddiy qoplash muddati"
+    },
+    "endUseChart": {
+      "title": "Foydalanish turlari bo'yicha energiya iste'moli",
+      "description": "Modernizatsiyadan oldin va keyin, yakuniy energiya (kVt·soat/yil).",
+      "noData": "Foydalanish turlari bo'yicha energiya ma'lumotlari mavjud emas.",
+      "beforeRetrofit": "Modernizatsiyadan oldin",
+      "afterRetrofit": "Modernizatsiyadan keyin"
+    },
+    "energyMix": {
+      "title": "Joriy energiya tarkibi",
+      "description": "Modernizatsiyadan oldin, foydalanish turlari bo'yicha yakuniy energiya ulushi."
+    },
+    "balanceBreakdown": {
+      "title": "Energiya balansi tafsiloti",
+      "description": "Komponentlar bo'yicha (kVt·soat/yil) — qobiq va ventilyatsiya qatorlari generatsiya samaradorligidan oldingi yalpi issiqlik ehtiyojini bildiradi; yakuniy energiya esa har bir tashuvchi bo'yicha haqiqatan sotib olinadigan miqdordir.",
+      "noData": "Energiya balansi ma'lumotlari mavjud emas.",
+      "sections": {
+        "envelopeVentilationLoss": "Qobiq va ventilyatsiya orqali issiqlik yo'qotishlari (yalpi issiqlik ehtiyoji)",
+        "finalEnergy": "Yakuniy energiya iste'moli (sotib olinadigan)",
+        "renewableOffset": "Qayta tiklanadigan energiya ishlab chiqarish"
+      },
+      "component": "Komponent",
+      "before": "Oldin (kVt·soat/yil)",
+      "after": "Keyin (kVt·soat/yil)",
+      "savings": "Tejamkorlik (kVt·soat/yil)"
+    },
+    "monthlyBalance": {
+      "title": "Oylik isitish energiya balansi",
+      "description": "EN ISO 13790 balansi — oylar bo'yicha yo'qotishlar, tushumlar va sof energiya ehtiyoji.",
+      "before": "Oldin",
+      "after": "Keyin",
+      "noData": "Oylik balans ma'lumotlari mavjud emas.",
+      "netEnergyNeed": "Sof energiya ehtiyoji",
+      "totalGains": "Jami tushumlar",
+      "totalLosses": "Jami yo'qotishlar"
+    },
+    "measures": {
+      "title": "Tavsiya etilgan chora-tadbirlar",
+      "evaluated_other": "{{count}} ta chora-tadbir ushbu bino uchun baholandi.",
+      "financialDetail": "Moliyaviy tafsilotlar",
+      "columnMeasure": "Chora-tadbir",
+      "columnCategory": "Toifa",
+      "columnSavingsKwh": "Tejamkorlik (kVt·soat/yil)",
+      "columnSavingsUsd": "Tejamkorlik (USD/yil)",
+      "columnPayback": "Qoplash muddati",
+      "columnNpv": "NPV",
+      "columnCo2": "CO2 (t/yil)",
+      "columnStatus": "Holati",
+      "proposed": "Taklif qilingan",
+      "notSelected": "Tanlanmagan"
+    }
+  },
+  "financial": {
+    "title": "Moliyaviy tahlil",
+    "subtitle": "Har bir chora-tadbir bo'yicha investitsiya, tejamkorlik va daromadlilik.",
+    "backToResults": "Natijalarga qaytish",
+    "portfolioSummary": {
+      "title": "Portfel bo'yicha xulosa",
+      "proposed_other": "{{count}} ta chora-tadbir amalga oshirish uchun taklif qilingan.",
+      "totalInvestment": "Umumiy investitsiya",
+      "totalAnnualSavings": "Umumiy yillik tejamkorlik",
+      "blendedPayback": "Aralash qoplash muddati",
+      "co2Reduction": "CO2 kamayishi",
+      "note": "Yuqoridagi investitsiya, yillik tejamkorlik va qoplash muddati audit dvigatelidan olingan bino darajasidagi umumiy ko'rsatkichlar, quyidagi har bir chora-tadbirning o'z NPV qiymatlari yig'indisi emas — chora-tadbirlar bo'yicha NPV'larni qo'shish umumiy ta'sirlarni ikki marta hisoblaydi va to'g'ri portfel NPV'sini bermaydi. Qat'iy portfel NPV/IRR hisobi birlashtirilgan pul oqimini talab qiladi, bu esa backend hisob-kitobi bo'lib, bu sahifa doirasidan tashqarida."
+    },
+    "npvChart": {
+      "title": "Chora-tadbirlar bo'yicha NPV",
+      "description": "Standartlashtirilgan sof joriy qiymat, kattadan kichikka saralangan.",
+      "npv": "NPV",
+      "positiveNpv": "Musbat NPV",
+      "negativeNpv": "Manfiy NPV"
+    },
+    "comparison": {
+      "title": "Chora-tadbirlarni solishtirish",
+      "description": "To'liq moliyaviy tafsilotlarni pastda ko'rish uchun qatorni tanlang.",
+      "columnMeasure": "Chora-tadbir",
+      "columnCategory": "Toifa",
+      "columnInvestment": "Investitsiya",
+      "columnNpv": "NPV",
+      "columnIrr": "IRR",
+      "columnSimplePayback": "Oddiy qoplash muddati",
+      "columnDiscountedPayback": "Diskontlangan qoplash muddati"
+    },
+    "detail": {
+      "subtitle": "{{category}} · investitsiya {{investment}} · xizmat muddati {{years}} yil",
+      "columnIndicator": "Ko'rsatkich",
+      "columnStandardized": "Standartlashtirilgan",
+      "columnActual": "Haqiqiy (hisob-fakturaga kalibrlangan)",
+      "annualSavingsKwh": "Yillik tejamkorlik (kVt·soat)",
+      "annualSavingsUsd": "Yillik tejamkorlik (USD)",
+      "npv": "NPV",
+      "irr": "IRR",
+      "simplePayback": "Oddiy qoplash muddati",
+      "discountedPayback": "Diskontlangan qoplash muddati",
+      "discountRate": "Diskont stavkasi",
+      "analysisHorizon": "Tahlil ufqi",
+      "yearsShort": "yil"
+    }
+  },
+  "shared": {
+    "noMeasuresRecorded": "Bu bino uchun hali chora-tadbirlar qayd etilmagan."
+  },
+  "states": {
+    "notRun": {
+      "title": "Hali yakunlangan audit yo'q",
+      "description": "Natijalarni olish uchun ushbu bino uchun auditni ishga tushiring.",
+      "runAudit": "Auditni ishga tushirish"
+    },
+    "error": {
+      "title": "Audit natijalarini yuklab bo'lmadi",
+      "tryAgain": "Qayta urinish"
+    }
+  }
+}

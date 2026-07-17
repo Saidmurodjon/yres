@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Button, Card, CardContent, Skeleton } from "@yres/ui";
 import { AlertTriangle, ClipboardList } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const KPI_SKELETON_KEYS = [
   "current-use",
@@ -32,19 +33,18 @@ export function AuditResultsSkeleton() {
 
 /** Shown when GET .../audit/results 404s — no completed audit run yet. */
 export function AuditNotRunEmptyState({ buildingId }: { buildingId: string }) {
+  const { t } = useTranslation("audit");
   return (
     <Card>
       <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
         <ClipboardList className="h-10 w-10 text-muted-foreground" />
         <div>
-          <p className="font-medium">No completed audit yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Run the audit for this building to generate results.
-          </p>
+          <p className="font-medium">{t("states.notRun.title")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t("states.notRun.description")}</p>
         </div>
         <Button asChild className="mt-2">
           <Link to="/buildings/$buildingId/audit" params={{ buildingId }}>
-            Run audit
+            {t("states.notRun.runAudit")}
           </Link>
         </Button>
       </CardContent>
@@ -59,16 +59,17 @@ export function AuditErrorState({
   message: string;
   onRetry: () => void;
 }) {
+  const { t } = useTranslation("audit");
   return (
     <Card>
       <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
         <AlertTriangle className="h-10 w-10 text-destructive" />
         <div>
-          <p className="font-medium">Couldn't load audit results</p>
+          <p className="font-medium">{t("states.error.title")}</p>
           <p className="mt-1 text-sm text-muted-foreground">{message}</p>
         </div>
         <Button variant="outline" onClick={onRetry} className="mt-2">
-          Try again
+          {t("states.error.tryAgain")}
         </Button>
       </CardContent>
     </Card>

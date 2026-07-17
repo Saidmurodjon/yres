@@ -17,6 +17,7 @@ import {
 } from "@yres/ui";
 import { ArrowLeft, Clock, DollarSign, Leaf, Wallet } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Bar,
   BarChart,
@@ -51,6 +52,7 @@ export const Route = createFileRoute("/_authenticated/buildings/$buildingId/fina
 });
 
 function FinancialAnalysisPage() {
+  const { t } = useTranslation("audit");
   const { buildingId } = Route.useParams();
   const auditResultsQuery = useAuditResults(buildingId);
   const [selectedMeasureId, setSelectedMeasureId] = useState<string | null>(null);
@@ -58,7 +60,7 @@ function FinancialAnalysisPage() {
   if (auditResultsQuery.isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Financial Analysis</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("financial.title")}</h1>
         <AuditResultsSkeleton />
       </div>
     );
@@ -69,16 +71,16 @@ function FinancialAnalysisPage() {
     if (error instanceof ApiError && error.status === 404) {
       return (
         <div className="space-y-6">
-          <h1 className="text-2xl font-semibold tracking-tight">Financial Analysis</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("financial.title")}</h1>
           <AuditNotRunEmptyState buildingId={buildingId} />
         </div>
       );
     }
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Financial Analysis</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("financial.title")}</h1>
         <AuditErrorState
-          message={error instanceof Error ? error.message : "Unknown error"}
+          message={error instanceof Error ? error.message : t("common:unknownError")}
           onRetry={() => auditResultsQuery.refetch()}
         />
       </div>
@@ -88,7 +90,7 @@ function FinancialAnalysisPage() {
   if (!auditResultsQuery.data) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Financial Analysis</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("financial.title")}</h1>
         <AuditResultsSkeleton />
       </div>
     );
@@ -118,69 +120,60 @@ function FinancialAnalysisPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Financial Analysis</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Investment, savings, and returns per measure.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("financial.title")}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t("financial.subtitle")}</p>
         </div>
         <Button variant="outline" asChild>
           <Link to="/buildings/$buildingId/results" params={{ buildingId }}>
             <ArrowLeft className="h-4 w-4" />
-            Back to results
+            {t("financial.backToResults")}
           </Link>
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Portfolio summary</CardTitle>
+          <CardTitle>{t("financial.portfolioSummary.title")}</CardTitle>
           <CardDescription>
-            {proposedMeasures.length} measure{proposedMeasures.length === 1 ? "" : "s"} proposed for
-            implementation.
+            {t("financial.portfolioSummary.proposed", { count: proposedMeasures.length })}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <MetricCard
-              label="Total investment"
+              label={t("financial.portfolioSummary.totalInvestment")}
               value={formatCurrency(summary.totalInvestmentUsd)}
               icon={<DollarSign className="h-5 w-5" />}
             />
             <MetricCard
-              label="Total annual savings"
+              label={t("financial.portfolioSummary.totalAnnualSavings")}
               value={formatCurrency(summary.totalAnnualSavingsUsd)}
               icon={<Wallet className="h-5 w-5" />}
             />
             <MetricCard
-              label="Blended payback"
+              label={t("financial.portfolioSummary.blendedPayback")}
               value={formatYears(summary.simplePaybackYears)}
               icon={<Clock className="h-5 w-5" />}
             />
             <MetricCard
-              label="CO2 reduction"
+              label={t("financial.portfolioSummary.co2Reduction")}
               value={`${formatNumber(proposedCo2TonnesPerYear, 1)} tCO2/yr`}
               icon={<Leaf className="h-5 w-5" />}
             />
           </div>
-          <p className="text-xs text-muted-foreground">
-            Investment, annual savings, and payback above are building-level totals from the audit
-            engine, not a sum of each measure's own NPV below — summing per-measure NPVs
-            double-counts shared effects and isn't a valid portfolio NPV. A rigorous portfolio
-            NPV/IRR requires a combined cashflow, which is a backend calculation and out of scope
-            here.
-          </p>
+          <p className="text-xs text-muted-foreground">{t("financial.portfolioSummary.note")}</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>NPV by measure</CardTitle>
-          <CardDescription>Standardized net present value, sorted high to low.</CardDescription>
+          <CardTitle>{t("financial.npvChart.title")}</CardTitle>
+          <CardDescription>{t("financial.npvChart.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           {npvRows.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No measures recorded for this building yet.
+              {t("shared.noMeasuresRecorded")}
             </p>
           ) : (
             <>
@@ -211,7 +204,7 @@ function FinancialAnalysisPage() {
                     content={<ChartTooltip formatValue={(v) => formatCurrency(v)} />}
                   />
                   <ReferenceLine x={0} stroke={CHART_COLORS.grid} />
-                  <Bar dataKey="npv" name="NPV" radius={4} maxBarSize={20}>
+                  <Bar dataKey="npv" name={t("financial.npvChart.npv")} radius={4} maxBarSize={20}>
                     {npvRows.map((row) => (
                       <Cell
                         key={row.measureId}
@@ -223,8 +216,8 @@ function FinancialAnalysisPage() {
               </ResponsiveContainer>
               <ChartLegend
                 items={[
-                  { label: "Positive NPV", color: DIVERGING_COLORS.positive },
-                  { label: "Negative NPV", color: DIVERGING_COLORS.negative },
+                  { label: t("financial.npvChart.positiveNpv"), color: DIVERGING_COLORS.positive },
+                  { label: t("financial.npvChart.negativeNpv"), color: DIVERGING_COLORS.negative },
                 ]}
               />
             </>
@@ -234,25 +227,31 @@ function FinancialAnalysisPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Measure comparison</CardTitle>
-          <CardDescription>Select a row to see its full financial detail below.</CardDescription>
+          <CardTitle>{t("financial.comparison.title")}</CardTitle>
+          <CardDescription>{t("financial.comparison.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           {measures.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No measures recorded for this building yet.
+              {t("shared.noMeasuresRecorded")}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Measure</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead className="text-right">Investment</TableHead>
-                  <TableHead className="text-right">NPV</TableHead>
-                  <TableHead className="text-right">IRR</TableHead>
-                  <TableHead className="text-right">Simple payback</TableHead>
-                  <TableHead className="text-right">Discounted payback</TableHead>
+                  <TableHead>{t("financial.comparison.columnMeasure")}</TableHead>
+                  <TableHead>{t("financial.comparison.columnCategory")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("financial.comparison.columnInvestment")}
+                  </TableHead>
+                  <TableHead className="text-right">{t("financial.comparison.columnNpv")}</TableHead>
+                  <TableHead className="text-right">{t("financial.comparison.columnIrr")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("financial.comparison.columnSimplePayback")}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {t("financial.comparison.columnDiscountedPayback")}
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -305,23 +304,27 @@ function FinancialAnalysisPage() {
           <CardHeader>
             <CardTitle>{selectedMeasure.name}</CardTitle>
             <CardDescription>
-              {MEASURE_CATEGORY_LABELS[selectedMeasure.category]} ·{" "}
-              {formatCurrency(selectedMeasure.investmentCostUsd)} investment ·{" "}
-              {selectedMeasure.lifetimeYears}-year lifetime
+              {t("financial.detail.subtitle", {
+                category: MEASURE_CATEGORY_LABELS[selectedMeasure.category],
+                investment: formatCurrency(selectedMeasure.investmentCostUsd),
+                years: selectedMeasure.lifetimeYears,
+              })}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Indicator</TableHead>
-                  <TableHead className="text-right">Standardized</TableHead>
-                  <TableHead className="text-right">Actual (bill-calibrated)</TableHead>
+                  <TableHead>{t("financial.detail.columnIndicator")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("financial.detail.columnStandardized")}
+                  </TableHead>
+                  <TableHead className="text-right">{t("financial.detail.columnActual")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 <TableRow>
-                  <TableCell>Annual savings (kWh)</TableCell>
+                  <TableCell>{t("financial.detail.annualSavingsKwh")}</TableCell>
                   <TableCell className="text-right tabular-nums">
                     {formatNumber(selectedMeasure.standardizedAnnualSavingsKwh, 0)}
                   </TableCell>
@@ -330,7 +333,7 @@ function FinancialAnalysisPage() {
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell>Annual savings (USD)</TableCell>
+                  <TableCell>{t("financial.detail.annualSavingsUsd")}</TableCell>
                   <TableCell className="text-right tabular-nums">
                     {formatCurrency(selectedMeasure.standardizedAnnualSavingsUsd)}
                   </TableCell>
@@ -339,7 +342,7 @@ function FinancialAnalysisPage() {
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell>NPV</TableCell>
+                  <TableCell>{t("financial.detail.npv")}</TableCell>
                   <TableCell className="text-right tabular-nums">
                     {formatCurrency(selectedMeasure.standardized.npv)}
                   </TableCell>
@@ -348,7 +351,7 @@ function FinancialAnalysisPage() {
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell>IRR</TableCell>
+                  <TableCell>{t("financial.detail.irr")}</TableCell>
                   <TableCell className="text-right tabular-nums">
                     {formatPercent(selectedMeasure.standardized.irr)}
                   </TableCell>
@@ -357,7 +360,7 @@ function FinancialAnalysisPage() {
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell>Simple payback</TableCell>
+                  <TableCell>{t("financial.detail.simplePayback")}</TableCell>
                   <TableCell className="text-right tabular-nums">
                     {formatYears(selectedMeasure.standardized.simplePaybackYears)}
                   </TableCell>
@@ -366,7 +369,7 @@ function FinancialAnalysisPage() {
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell>Discounted payback</TableCell>
+                  <TableCell>{t("financial.detail.discountedPayback")}</TableCell>
                   <TableCell className="text-right tabular-nums">
                     {formatYears(selectedMeasure.standardized.discountedPaybackYears)}
                   </TableCell>
@@ -375,7 +378,7 @@ function FinancialAnalysisPage() {
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell>Discount rate</TableCell>
+                  <TableCell>{t("financial.detail.discountRate")}</TableCell>
                   <TableCell className="text-right tabular-nums">
                     {formatPercent(selectedMeasure.standardized.discountRate)}
                   </TableCell>
@@ -384,12 +387,12 @@ function FinancialAnalysisPage() {
                   </TableCell>
                 </TableRow>
                 <TableRow>
-                  <TableCell>Analysis horizon</TableCell>
+                  <TableCell>{t("financial.detail.analysisHorizon")}</TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {selectedMeasure.standardized.analysisHorizonYears} yr
+                    {selectedMeasure.standardized.analysisHorizonYears} {t("financial.detail.yearsShort")}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {selectedMeasure.actual.analysisHorizonYears} yr
+                    {selectedMeasure.actual.analysisHorizonYears} {t("financial.detail.yearsShort")}
                   </TableCell>
                 </TableRow>
               </TableBody>

@@ -33,6 +33,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Bar,
   BarChart,
@@ -77,6 +78,7 @@ export const Route = createFileRoute("/_authenticated/buildings/$buildingId/resu
 });
 
 function AuditResultsPage() {
+  const { t } = useTranslation("audit");
   const { buildingId } = Route.useParams();
   const auditResultsQuery = useAuditResults(buildingId);
   const runAudit = useRunAudit(buildingId);
@@ -86,7 +88,7 @@ function AuditResultsPage() {
   if (auditResultsQuery.isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Audit Results</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("results.title")}</h1>
         <AuditResultsSkeleton />
       </div>
     );
@@ -97,16 +99,16 @@ function AuditResultsPage() {
     if (error instanceof ApiError && error.status === 404) {
       return (
         <div className="space-y-6">
-          <h1 className="text-2xl font-semibold tracking-tight">Audit Results</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("results.title")}</h1>
           <AuditNotRunEmptyState buildingId={buildingId} />
         </div>
       );
     }
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Audit Results</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("results.title")}</h1>
         <AuditErrorState
-          message={error instanceof Error ? error.message : "Unknown error"}
+          message={error instanceof Error ? error.message : t("common:unknownError")}
           onRetry={() => auditResultsQuery.refetch()}
         />
       </div>
@@ -116,7 +118,7 @@ function AuditResultsPage() {
   if (!auditResultsQuery.data) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Audit Results</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("results.title")}</h1>
         <AuditResultsSkeleton />
       </div>
     );
@@ -136,9 +138,9 @@ function AuditResultsPage() {
   }).filter((row) => row.before > 0 || row.after > 0);
 
   const BALANCE_SECTION_LABELS = {
-    envelope_ventilation_loss: "Envelope & ventilation heat losses (gross thermal demand)",
-    final_energy: "Final energy consumption (purchased)",
-    renewable_offset: "Renewable production",
+    envelope_ventilation_loss: t("results.balanceBreakdown.sections.envelopeVentilationLoss"),
+    final_energy: t("results.balanceBreakdown.sections.finalEnergy"),
+    renewable_offset: t("results.balanceBreakdown.sections.renewableOffset"),
   } as const;
   const balanceSections = (
     ["envelope_ventilation_loss", "final_energy", "renewable_offset"] as const
@@ -174,17 +176,17 @@ function AuditResultsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Audit Results</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("results.title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Generated {formatDate(result.generatedAt)}
-            {auditResultsQuery.isFetching && " · Updating…"}
+            {t("results.generated", { date: formatDate(result.generatedAt) })}
+            {auditResultsQuery.isFetching && ` · ${t("results.updating")}`}
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">
           <div className="flex gap-2">
             <Button variant="outline" asChild>
               <Link to="/buildings/$buildingId/financial" params={{ buildingId }}>
-                Financial analysis
+                {t("results.financialAnalysis")}
               </Link>
             </Button>
             <Button
@@ -195,12 +197,12 @@ function AuditResultsPage() {
               {downloadReport.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Preparing…
+                  {t("results.preparing")}
                 </>
               ) : (
                 <>
                   <Download className="h-4 w-4" />
-                  Download report
+                  {t("results.downloadReport")}
                 </>
               )}
             </Button>
@@ -208,26 +210,26 @@ function AuditResultsPage() {
               {runAudit.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Running…
+                  {t("results.running")}
                 </>
               ) : (
                 <>
                   <RefreshCw className="h-4 w-4" />
-                  Re-run audit
+                  {t("results.reRunAudit")}
                 </>
               )}
             </Button>
           </div>
           {runAudit.isError && (
             <p className="max-w-xs text-right text-sm text-destructive">
-              {runAudit.error instanceof ApiError ? runAudit.error.message : "Failed to run audit."}
+              {runAudit.error instanceof ApiError ? runAudit.error.message : t("results.runFailed")}
             </p>
           )}
           {downloadReport.isError && (
             <p className="max-w-xs text-right text-sm text-destructive">
               {downloadReport.error instanceof ApiError
                 ? downloadReport.error.message
-                : "Failed to download report."}
+                : t("results.downloadFailed")}
             </p>
           )}
         </div>
@@ -235,12 +237,12 @@ function AuditResultsPage() {
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         <MetricCard
-          label="Current energy use"
+          label={t("results.kpi.currentEnergyUse")}
           value={`${formatNumber(summary.currentEnergyUseKwhPerM2Year, 0)} kWh/m²/yr`}
           icon={<Zap className="h-5 w-5" />}
         />
         <MetricCard
-          label="Potential energy use"
+          label={t("results.kpi.potentialEnergyUse")}
           value={`${formatNumber(summary.potentialEnergyUseKwhPerM2Year, 0)} kWh/m²/yr`}
           icon={<TrendingDown className="h-5 w-5" />}
           trend={
@@ -251,27 +253,27 @@ function AuditResultsPage() {
           trendIsGood
         />
         <MetricCard
-          label="Potential savings"
+          label={t("results.kpi.potentialSavings")}
           value={`${formatNumber(summary.potentialSavingsKwhPerM2Year, 0)} kWh/m²/yr`}
           icon={<PiggyBank className="h-5 w-5" />}
         />
         <MetricCard
-          label="CO2 reduction"
+          label={t("results.kpi.co2Reduction")}
           value={`${formatNumber(summary.co2ReductionTonnesPerYear, 1)} tCO2/yr`}
           icon={<Leaf className="h-5 w-5" />}
         />
         <MetricCard
-          label="Total investment"
+          label={t("results.kpi.totalInvestment")}
           value={formatCurrency(summary.totalInvestmentUsd)}
           icon={<DollarSign className="h-5 w-5" />}
         />
         <MetricCard
-          label="Total annual savings"
+          label={t("results.kpi.totalAnnualSavings")}
           value={formatCurrency(summary.totalAnnualSavingsUsd)}
           icon={<Wallet className="h-5 w-5" />}
         />
         <MetricCard
-          label="Simple payback"
+          label={t("results.kpi.simplePayback")}
           value={formatYears(summary.simplePaybackYears)}
           icon={<Clock className="h-5 w-5" />}
         />
@@ -280,13 +282,13 @@ function AuditResultsPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Energy use by end-use</CardTitle>
-            <CardDescription>Before vs. after retrofit, final energy (kWh/yr).</CardDescription>
+            <CardTitle>{t("results.endUseChart.title")}</CardTitle>
+            <CardDescription>{t("results.endUseChart.description")}</CardDescription>
           </CardHeader>
           <CardContent>
             {endUseRows.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
-                No end-use energy data available.
+                {t("results.endUseChart.noData")}
               </p>
             ) : (
               <>
@@ -311,14 +313,14 @@ function AuditResultsPage() {
                     />
                     <Bar
                       dataKey="before"
-                      name="Before retrofit"
+                      name={t("results.endUseChart.beforeRetrofit")}
                       fill={SCENARIO_COLORS.before}
                       radius={[4, 4, 0, 0]}
                       maxBarSize={28}
                     />
                     <Bar
                       dataKey="after"
-                      name="After retrofit"
+                      name={t("results.endUseChart.afterRetrofit")}
                       fill={SCENARIO_COLORS.after}
                       radius={[4, 4, 0, 0]}
                       maxBarSize={28}
@@ -327,8 +329,8 @@ function AuditResultsPage() {
                 </ResponsiveContainer>
                 <ChartLegend
                   items={[
-                    { label: "Before retrofit", color: SCENARIO_COLORS.before },
-                    { label: "After retrofit", color: SCENARIO_COLORS.after },
+                    { label: t("results.endUseChart.beforeRetrofit"), color: SCENARIO_COLORS.before },
+                    { label: t("results.endUseChart.afterRetrofit"), color: SCENARIO_COLORS.after },
                   ]}
                 />
               </>
@@ -338,8 +340,8 @@ function AuditResultsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Current energy mix</CardTitle>
-            <CardDescription>Share of final energy by end-use, before retrofit.</CardDescription>
+            <CardTitle>{t("results.energyMix.title")}</CardTitle>
+            <CardDescription>{t("results.energyMix.description")}</CardDescription>
           </CardHeader>
           <CardContent className="flex h-full flex-col justify-center">
             <ShareBar segments={shareSegments} />
@@ -349,16 +351,13 @@ function AuditResultsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Energy balance breakdown</CardTitle>
-          <CardDescription>
-            By component (kWh/yr) — envelope and ventilation rows are gross thermal demand before
-            generation efficiency; final energy is what's actually purchased per carrier.
-          </CardDescription>
+          <CardTitle>{t("results.balanceBreakdown.title")}</CardTitle>
+          <CardDescription>{t("results.balanceBreakdown.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           {balanceSections.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No energy balance data available.
+              {t("results.balanceBreakdown.noData")}
             </p>
           ) : (
             <div className="space-y-6">
@@ -370,10 +369,16 @@ function AuditResultsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Component</TableHead>
-                        <TableHead className="text-right">Before (kWh/yr)</TableHead>
-                        <TableHead className="text-right">After (kWh/yr)</TableHead>
-                        <TableHead className="text-right">Savings (kWh/yr)</TableHead>
+                        <TableHead>{t("results.balanceBreakdown.component")}</TableHead>
+                        <TableHead className="text-right">
+                          {t("results.balanceBreakdown.before")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("results.balanceBreakdown.after")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("results.balanceBreakdown.savings")}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -409,10 +414,8 @@ function AuditResultsPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle>Monthly heating energy balance</CardTitle>
-            <CardDescription>
-              EN ISO 13790 balance — losses, gains, and net energy need by month.
-            </CardDescription>
+            <CardTitle>{t("results.monthlyBalance.title")}</CardTitle>
+            <CardDescription>{t("results.monthlyBalance.description")}</CardDescription>
           </div>
           {availableBalanceScenarios.length > 1 && (
             <Tabs
@@ -421,10 +424,10 @@ function AuditResultsPage() {
             >
               <TabsList>
                 {availableBalanceScenarios.includes("before") && (
-                  <TabsTrigger value="before">Before</TabsTrigger>
+                  <TabsTrigger value="before">{t("results.monthlyBalance.before")}</TabsTrigger>
                 )}
                 {availableBalanceScenarios.includes("after") && (
-                  <TabsTrigger value="after">After</TabsTrigger>
+                  <TabsTrigger value="after">{t("results.monthlyBalance.after")}</TabsTrigger>
                 )}
               </TabsList>
             </Tabs>
@@ -433,7 +436,7 @@ function AuditResultsPage() {
         <CardContent>
           {monthlyRows.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No monthly balance data available.
+              {t("results.monthlyBalance.noData")}
             </p>
           ) : (
             <>
@@ -458,7 +461,7 @@ function AuditResultsPage() {
                   />
                   <Bar
                     dataKey="net"
-                    name="Net energy need"
+                    name={t("results.monthlyBalance.netEnergyNeed")}
                     fill={BALANCE_COLORS.net}
                     radius={[4, 4, 0, 0]}
                     maxBarSize={28}
@@ -466,7 +469,7 @@ function AuditResultsPage() {
                   <Line
                     type="monotone"
                     dataKey="gains"
-                    name="Total gains"
+                    name={t("results.monthlyBalance.totalGains")}
                     stroke={BALANCE_COLORS.gains}
                     strokeWidth={2}
                     dot={{ r: 3 }}
@@ -474,7 +477,7 @@ function AuditResultsPage() {
                   <Line
                     type="monotone"
                     dataKey="losses"
-                    name="Total losses"
+                    name={t("results.monthlyBalance.totalLosses")}
                     stroke={BALANCE_COLORS.losses}
                     strokeWidth={2}
                     dot={{ r: 3 }}
@@ -483,9 +486,9 @@ function AuditResultsPage() {
               </ResponsiveContainer>
               <ChartLegend
                 items={[
-                  { label: "Net energy need", color: BALANCE_COLORS.net },
-                  { label: "Total gains", color: BALANCE_COLORS.gains },
-                  { label: "Total losses", color: BALANCE_COLORS.losses },
+                  { label: t("results.monthlyBalance.netEnergyNeed"), color: BALANCE_COLORS.net },
+                  { label: t("results.monthlyBalance.totalGains"), color: BALANCE_COLORS.gains },
+                  { label: t("results.monthlyBalance.totalLosses"), color: BALANCE_COLORS.losses },
                 ]}
               />
             </>
@@ -496,15 +499,14 @@ function AuditResultsPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div>
-            <CardTitle>Recommended measures</CardTitle>
+            <CardTitle>{t("results.measures.title")}</CardTitle>
             <CardDescription>
-              {result.measures.length} measure{result.measures.length === 1 ? "" : "s"} evaluated
-              for this building.
+              {t("results.measures.evaluated", { count: result.measures.length })}
             </CardDescription>
           </div>
           <Button variant="outline" size="sm" asChild>
             <Link to="/buildings/$buildingId/financial" params={{ buildingId }}>
-              Financial detail
+              {t("results.measures.financialDetail")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
@@ -512,20 +514,24 @@ function AuditResultsPage() {
         <CardContent>
           {result.measures.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              No measures recorded for this building yet.
+              {t("shared.noMeasuresRecorded")}
             </p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Measure</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead className="text-right">Savings (kWh/yr)</TableHead>
-                  <TableHead className="text-right">Savings (USD/yr)</TableHead>
-                  <TableHead className="text-right">Payback</TableHead>
-                  <TableHead className="text-right">NPV</TableHead>
-                  <TableHead className="text-right">CO2 (t/yr)</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>{t("results.measures.columnMeasure")}</TableHead>
+                  <TableHead>{t("results.measures.columnCategory")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("results.measures.columnSavingsKwh")}
+                  </TableHead>
+                  <TableHead className="text-right">
+                    {t("results.measures.columnSavingsUsd")}
+                  </TableHead>
+                  <TableHead className="text-right">{t("results.measures.columnPayback")}</TableHead>
+                  <TableHead className="text-right">{t("results.measures.columnNpv")}</TableHead>
+                  <TableHead className="text-right">{t("results.measures.columnCo2")}</TableHead>
+                  <TableHead>{t("results.measures.columnStatus")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -552,9 +558,9 @@ function AuditResultsPage() {
                     </TableCell>
                     <TableCell>
                       {measure.proposedForImplementation ? (
-                        <Badge variant="success">Proposed</Badge>
+                        <Badge variant="success">{t("results.measures.proposed")}</Badge>
                       ) : (
-                        <Badge variant="secondary">Not selected</Badge>
+                        <Badge variant="secondary">{t("results.measures.notSelected")}</Badge>
                       )}
                     </TableCell>
                   </TableRow>

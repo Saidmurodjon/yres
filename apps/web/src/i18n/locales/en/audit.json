@@ -1,0 +1,199 @@
+{
+  "wizard": {
+    "backTo": "Back to {{name}}",
+    "genericBuilding": "building",
+    "title": "Run Energy Audit",
+    "subtitle": "A quick path to a first audit result. You can always refine envelope, ventilation, DHW, and generation data in more detail from the building's Envelope tab afterward.",
+    "steps": {
+      "envelope": "Envelope",
+      "consumption": "Consumption",
+      "run": "Run audit"
+    },
+    "envelope": {
+      "saveFailed": "Failed to save envelope data.",
+      "noMaterialsTitle": "No construction materials available",
+      "noMaterialsDescription": "The materials reference table is empty in this environment, so wall/roof/floor construction can't be entered yet — an admin needs to seed it first. You can still continue and run a limited audit (envelope losses will read as zero until this is fixed).",
+      "skipSetup": "Skip envelope setup",
+      "replaceWarning": "This building already has envelope data. Saving here will replace its \"before\" construction types, opening types, and elements.",
+      "footprintTitle": "Building footprint",
+      "footprintDescription": "Used to derive heated floor area and volume.",
+      "footprintLength": "Footprint length (m)",
+      "footprintWidth": "Footprint width (m)",
+      "numberOfFloors": "Number of floors",
+      "floorToFloorHeight": "Floor-to-floor height (m)",
+      "externalWalls": "External walls",
+      "netWallArea": "Net wall area (m²), excluding windows",
+      "roof": "Roof",
+      "roofArea": "Roof area (m²)",
+      "groundFloor": "Ground floor",
+      "floorArea": "Floor area (m²)",
+      "material": "Material",
+      "selectMaterial": "Select material",
+      "thickness": "Thickness (m)",
+      "windowsTitle": "Windows",
+      "windowsDescription": "Window U-value is entered directly (matching the source audit methodology), not derived from layers.",
+      "count": "Count",
+      "width": "Width (m)",
+      "height": "Height (m)",
+      "uValue": "U-value (W/m²K)",
+      "saveAndContinue": "Save and continue"
+    },
+    "consumption": {
+      "title": "Historical utility bills (optional)",
+      "description": "Metered bills let the audit reconcile standardized estimates against actual usage. Skip this step if you don't have them handy — you can add them later.",
+      "energyCarrier": "Energy carrier",
+      "year": "Year",
+      "month": "Month",
+      "consumptionAmount": "Consumption (native units)",
+      "addBill": "Add bill",
+      "positiveValueRequired": "Enter a positive consumption value first.",
+      "saveFailed": "Failed to save utility bills.",
+      "back": "Back",
+      "skip": "Skip",
+      "saveAndContinue": "Save and continue"
+    },
+    "run": {
+      "title": "Ready to run",
+      "description": "This calculates envelope, ventilation, DHW, distribution, generation, and cooling energy use, then evaluates proposed measures — all from the data you've entered so far.",
+      "readyNote": "Building parameters, envelope, and (optionally) consumption are ready.",
+      "runFailed": "Failed to run the audit.",
+      "back": "Back",
+      "running": "Running audit...",
+      "runAudit": "Run audit"
+    }
+  },
+  "results": {
+    "title": "Audit Results",
+    "generated": "Generated {{date}}",
+    "updating": "Updating…",
+    "financialAnalysis": "Financial analysis",
+    "preparing": "Preparing…",
+    "downloadReport": "Download report",
+    "running": "Running…",
+    "reRunAudit": "Re-run audit",
+    "runFailed": "Failed to run audit.",
+    "downloadFailed": "Failed to download report.",
+    "kpi": {
+      "currentEnergyUse": "Current energy use",
+      "potentialEnergyUse": "Potential energy use",
+      "potentialSavings": "Potential savings",
+      "co2Reduction": "CO2 reduction",
+      "totalInvestment": "Total investment",
+      "totalAnnualSavings": "Total annual savings",
+      "simplePayback": "Simple payback"
+    },
+    "endUseChart": {
+      "title": "Energy use by end-use",
+      "description": "Before vs. after retrofit, final energy (kWh/yr).",
+      "noData": "No end-use energy data available.",
+      "beforeRetrofit": "Before retrofit",
+      "afterRetrofit": "After retrofit"
+    },
+    "energyMix": {
+      "title": "Current energy mix",
+      "description": "Share of final energy by end-use, before retrofit."
+    },
+    "balanceBreakdown": {
+      "title": "Energy balance breakdown",
+      "description": "By component (kWh/yr) — envelope and ventilation rows are gross thermal demand before generation efficiency; final energy is what's actually purchased per carrier.",
+      "noData": "No energy balance data available.",
+      "sections": {
+        "envelopeVentilationLoss": "Envelope & ventilation heat losses (gross thermal demand)",
+        "finalEnergy": "Final energy consumption (purchased)",
+        "renewableOffset": "Renewable production"
+      },
+      "component": "Component",
+      "before": "Before (kWh/yr)",
+      "after": "After (kWh/yr)",
+      "savings": "Savings (kWh/yr)"
+    },
+    "monthlyBalance": {
+      "title": "Monthly heating energy balance",
+      "description": "EN ISO 13790 balance — losses, gains, and net energy need by month.",
+      "before": "Before",
+      "after": "After",
+      "noData": "No monthly balance data available.",
+      "netEnergyNeed": "Net energy need",
+      "totalGains": "Total gains",
+      "totalLosses": "Total losses"
+    },
+    "measures": {
+      "title": "Recommended measures",
+      "evaluated_one": "{{count}} measure evaluated for this building.",
+      "evaluated_other": "{{count}} measures evaluated for this building.",
+      "financialDetail": "Financial detail",
+      "columnMeasure": "Measure",
+      "columnCategory": "Category",
+      "columnSavingsKwh": "Savings (kWh/yr)",
+      "columnSavingsUsd": "Savings (USD/yr)",
+      "columnPayback": "Payback",
+      "columnNpv": "NPV",
+      "columnCo2": "CO2 (t/yr)",
+      "columnStatus": "Status",
+      "proposed": "Proposed",
+      "notSelected": "Not selected"
+    }
+  },
+  "financial": {
+    "title": "Financial Analysis",
+    "subtitle": "Investment, savings, and returns per measure.",
+    "backToResults": "Back to results",
+    "portfolioSummary": {
+      "title": "Portfolio summary",
+      "proposed_one": "{{count}} measure proposed for implementation.",
+      "proposed_other": "{{count}} measures proposed for implementation.",
+      "totalInvestment": "Total investment",
+      "totalAnnualSavings": "Total annual savings",
+      "blendedPayback": "Blended payback",
+      "co2Reduction": "CO2 reduction",
+      "note": "Investment, annual savings, and payback above are building-level totals from the audit engine, not a sum of each measure's own NPV below — summing per-measure NPVs double-counts shared effects and isn't a valid portfolio NPV. A rigorous portfolio NPV/IRR requires a combined cashflow, which is a backend calculation and out of scope here."
+    },
+    "npvChart": {
+      "title": "NPV by measure",
+      "description": "Standardized net present value, sorted high to low.",
+      "npv": "NPV",
+      "positiveNpv": "Positive NPV",
+      "negativeNpv": "Negative NPV"
+    },
+    "comparison": {
+      "title": "Measure comparison",
+      "description": "Select a row to see its full financial detail below.",
+      "columnMeasure": "Measure",
+      "columnCategory": "Category",
+      "columnInvestment": "Investment",
+      "columnNpv": "NPV",
+      "columnIrr": "IRR",
+      "columnSimplePayback": "Simple payback",
+      "columnDiscountedPayback": "Discounted payback"
+    },
+    "detail": {
+      "subtitle": "{{category}} · {{investment}} investment · {{years}}-year lifetime",
+      "columnIndicator": "Indicator",
+      "columnStandardized": "Standardized",
+      "columnActual": "Actual (bill-calibrated)",
+      "annualSavingsKwh": "Annual savings (kWh)",
+      "annualSavingsUsd": "Annual savings (USD)",
+      "npv": "NPV",
+      "irr": "IRR",
+      "simplePayback": "Simple payback",
+      "discountedPayback": "Discounted payback",
+      "discountRate": "Discount rate",
+      "analysisHorizon": "Analysis horizon",
+      "yearsShort": "yr"
+    }
+  },
+  "shared": {
+    "noMeasuresRecorded": "No measures recorded for this building yet."
+  },
+  "states": {
+    "notRun": {
+      "title": "No completed audit yet",
+      "description": "Run the audit for this building to generate results.",
+      "runAudit": "Run audit"
+    },
+    "error": {
+      "title": "Couldn't load audit results",
+      "tryAgain": "Try again"
+    }
+  }
+}
