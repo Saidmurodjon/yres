@@ -168,7 +168,16 @@ Endi `docs/social-features.md`dagi "Qurish tartibi" bosqichlariga o'tildi:
   type-check/build/lint orqali tekshirildi. Haqiqiy deploy'dan keyin
   brauzerda ko'rib chiqish tavsiya etiladi.
 
-**Navbatda**: Social Phase 4 (Profil tahrirlash + parol almashtirish).
+- **Social Phase 4 (Profil + parol)**: `GET`/`PATCH /api/users/me` (ism/
+  username/rasm, username to'qnashuvida 409) + yangi `/profile` sahifasi.
+  Parolni almashtirish uchun maxsus backend yozilmadi — Better Auth'ning
+  o'z `authClient.changePassword`i ishlatildi (joriy parolni tekshirish,
+  xeshlash, `revokeOtherSessions` orqali boshqa sessiyalarni bekor qilish
+  — bularning barchasini Better Auth allaqachon boshqaradi). `ProfileMenu`
+  endi `/profile`ga havola qiladi (Phase 3'da route hali yo'q edi).
+
+**Navbatda**: Social Phase 5 (Rollar/admin — `require-role` middleware,
+`/admin/users` sahifasi).
 
 ## Ma'lum bo'shliqlar
 
