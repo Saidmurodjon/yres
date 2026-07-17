@@ -229,8 +229,32 @@ Endi `docs/social-features.md`dagi "Qurish tartibi" bosqichlariga o'tildi:
   proksi qilinadi). Ataylab xabar-yaratish REST route'i yo'q — haqiqiy
   yuborish faqat `ConversationRoom` WebSocket orqali (Phase 10).
 
-**Navbatda**: Social Phase 10 (Chat real-time + frontend) — bu bosqichning
-eng kattasi, Telegram-uslubidagi UI'ni ham o'z ichiga oladi.
+- **Social Phase 10 (Chat real-time + frontend) — YAKUNIY BOSQICH**:
+  `ConversationRoom`ning `webSocketMessage()`i endi haqiqiy ishlaydi
+  (Phase 7'dan beri skelet edi) — xabar/tahrirlash/o'chirish/yozayotganlik/
+  o'qildi hodisalarini qayta ishlaydi, `@yres/db` orqali Postgres'ga yozadi,
+  Hibernation API'ning `getWebSockets()`i orqali barcha ulangan socket'larga
+  translatsiya qiladi. Yuboruvchining `userId`si Worker route'i tomonidan
+  query-param sifatida qo'shiladi (DO'da session konteksti yo'q) va
+  `serializeAttachment` orqali socket'ga biriktiriladi (hibernation'dan
+  keyin ham saqlanadi). Hozir ulanmagan a'zolar haqiqiy `notification`
+  qatori + jonli bell push oladi. Frontend: `/chat` (suhbatlar ro'yxati +
+  "yangi chat" dialogi) va `/chat/$conversationId` (thread — pufakchalar,
+  reply, hover'da tahrirlash/o'chirish, rasm/fayl biriktirma, yozayotganlik
+  ko'rsatkichi, o'qilganlik). **Ma'lum bo'shliqlar**: thread sarlavhasida
+  online/oxirgi-ko'rilgan indikatori yo'q (qo'shimcha infratuzilma talab
+  qiladi, hozircha qoldirilgan); WebSocket protokoli uchtan-uchgacha
+  tekshirilmagan (bu sandbox'da Cloudflare runtime yo'q) — haqiqiy
+  deploy'dan keyin xabar yuborish/qabul qilish/tahrirlash/o'chirish/
+  yozayotganlik/o'qildi barchasini qo'lda tasdiqlash kerak.
+
+**`docs/social-features.md`ning barcha 10 bosqichi yakunlandi.** Endi
+`docs/i18n-and-appearance.md`ning bosqichlariga o'tildi (`docs/
+ui-guidelines.md`dagi qoidalar — Zustand, responsive, unumdorlik — allaqachon
+qurilgan koddа amal qilindi; alohida "bosqich"i yo'q edi, standart qoidalar
+sifatida amal qildi).
+
+**Navbatda**: i18n Phase 1 (infratuzilma + bloklovchi tema-skripti).
 
 ## Ma'lum bo'shliqlar
 
