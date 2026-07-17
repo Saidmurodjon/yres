@@ -109,10 +109,18 @@ fayllari o'zbek tiliga o'girildi:
   mexanik ventilyatsiyaning sovutish-mavsumi entalpiya yuki (`Heat gains Mec Vent` varag'i)
   hech qayerda hisoblanmaydi — kerakli uch kirish qiymati saqlanadi, lekin ishlatilmaydi.
 
-**Navbatda**: to'rtta hujjat ham loyiha egasi tomonidan tasdiqlandi; keyingi qadam — avval
-ikkita hisoblash kamchiligini tuzatish, keyin `docs/social-features.md`/`ui-guidelines.md`/
-`i18n-and-appearance.md`dagi "Qurish tartibi" bosqichlariga o'tish (har bir bosqich —
-tekshiruv + alohida commit).
+To'rtta hujjat ham loyiha egasi tomonidan tasdiqlandi; audit'da topilgan ikkita kamchilikni
+tuzatish boshlandi:
+
+- **Tuzatildi**: `non_ee_measure` (yordamchi renovatsiya xarajatlari) endi to'liq ulangan — CRUD
+  route'lari qo'shildi, `audit.engine.ts` ularni so'raydi va `AuditSummary.totalInvestmentUsd`ga
+  (alohida `totalNonEeMeasureCostUsd` sifatida ham) qo'shadi, Chora-tadbirlar tab'iga "Ancillary
+  costs" bo'limi va PDF hisobotga tegishli jadval qo'shildi. Tekshirildi:
+  `apps/api`/`apps/web` type-check, `apps/api` unit testlari (51/51 o'tdi), biome lint.
+
+**Navbatda**: mexanik ventilyatsiya sovutish-entalpiya kamchiligini tuzatish, keyin
+`docs/social-features.md`/`ui-guidelines.md`/`i18n-and-appearance.md`dagi "Qurish tartibi"
+bosqichlariga o'tish (har bir bosqich — tekshiruv + alohida commit).
 
 ## Ma'lum bo'shliqlar
 
