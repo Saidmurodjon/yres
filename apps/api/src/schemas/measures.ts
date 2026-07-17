@@ -16,3 +16,12 @@ export const createMeasureSchema = z.object({
 });
 
 export type CreateMeasureInput = z.infer<typeof createMeasureSchema>;
+
+export const createNonEeMeasureSchema = z.object({
+  description: z.string().min(1),
+  unit: z.string().min(1).nullable().optional(),
+  quantity: z.number().positive().default(1),
+  unitCostUsd: z.number().nonnegative(),
+});
+
+export type CreateNonEeMeasureInput = z.infer<typeof createNonEeMeasureSchema>;

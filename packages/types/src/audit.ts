@@ -9,7 +9,7 @@ import type {
   VentilationLossResult,
 } from "./heatbalance";
 import type { LightingResult } from "./lighting";
-import type { EnergyMeasureResult } from "./measures";
+import type { EnergyMeasureResult, NonEeMeasureResult } from "./measures";
 import type { RenewableProductionResult } from "./renewable";
 
 export interface AuditSummary {
@@ -17,7 +17,10 @@ export interface AuditSummary {
   potentialEnergyUseKwhPerM2Year: number;
   potentialSavingsKwhPerM2Year: number;
   co2ReductionTonnesPerYear: number;
+  /** Proposed EE measures' investment plus every non-EE measure's cost (`Measures_summary!D31` includes both — see `docs/calculation-engine-audit.md`). */
   totalInvestmentUsd: number;
+  /** Broken out of `totalInvestmentUsd` for transparency — non-EE costs generate no savings, so they aren't optional in the way "proposed for implementation" EE measures are. */
+  totalNonEeMeasureCostUsd: number;
   totalAnnualSavingsUsd: number;
   simplePaybackYears: number | null;
 }
@@ -62,4 +65,5 @@ export interface AuditResult {
   finalEnergyByEndUse: EndUseEnergyTotals[];
   energyBalanceBreakdown: EnergyBalanceRow[];
   measures: EnergyMeasureResult[];
+  nonEeMeasures: NonEeMeasureResult[];
 }

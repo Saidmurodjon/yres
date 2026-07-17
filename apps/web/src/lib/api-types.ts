@@ -210,6 +210,22 @@ export interface CreateMeasureInput {
   maintenanceCostPercent?: number;
 }
 
+export interface NonEeMeasure {
+  id: string;
+  buildingId: string;
+  description: string;
+  unit: string | null;
+  quantity: number;
+  unitCostUsd: number;
+}
+
+export interface CreateNonEeMeasureInput {
+  description: string;
+  unit?: string | null;
+  quantity?: number;
+  unitCostUsd: number;
+}
+
 export type EnergyCarrier = "gas" | "electricity" | "district_heat" | "coal";
 
 export interface UtilityBill {

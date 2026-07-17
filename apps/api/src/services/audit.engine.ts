@@ -14,6 +14,7 @@ import {
   generationSource,
   lampType,
   lightingZone,
+  nonEeMeasure,
   openingType,
   pipeLossReference,
   renewableSystem,
@@ -36,6 +37,7 @@ import type {
   HeatingEnergyBalanceResult,
   LampPowerDensityWPerM2,
   LightingResult,
+  NonEeMeasureResult,
   RenewableProductionResult,
   Scenario,
   VentilationLossResult,
@@ -695,6 +697,21 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
   const measureRows = await db.query.energyMeasure.findMany({
     where: eq(energyMeasure.buildingId, buildingId),
   });
+
+  // Non-EE (ancillary) measures: `Non-EE measures` sheet — costs that add to
+  // total project investment (`Measures_summary!D30/D31`) but never
+  // generate energy savings, so they get no financial-indicator treatment.
+  const nonEeMeasureRows = await db.query.nonEeMeasure.findMany({
+    where: eq(nonEeMeasure.buildingId, buildingId),
+  });
+  const nonEeMeasures: NonEeMeasureResult[] = nonEeMeasureRows.map((row) => ({
+    id: row.id,
+    description: row.description,
+    unit: row.unit,
+    quantity: row.quantity,
+    unitCostUsd: row.unitCostUsd,
+    totalCostUsd: row.quantity * row.unitCostUsd,
+  }));
   const tariffRows = await db.select().from(energyTariff).orderBy(desc(energyTariff.effectiveDate));
   const latestTariffByCarrier = new Map<string, (typeof tariffRows)[number]>();
   for (const tariff of tariffRows) {
@@ -766,6 +783,7 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
 
   const summary = buildAuditSummary(
     measures,
+    nonEeMeasures,
     heatedFloorAreaM2,
     finalEnergyByEndUse,
     lighting,
@@ -791,6 +809,7 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     finalEnergyByEndUse,
     energyBalanceBreakdown,
     measures,
+    nonEeMeasures,
   };
 }
 
@@ -971,6 +990,7 @@ function resolveMeasureStandardizedSavingsKwh(
 
 function buildAuditSummary(
   measures: EnergyMeasureResult[],
+  nonEeMeasures: NonEeMeasureResult[],
   heatedFloorAreaM2: number,
   finalEnergyByEndUse: EndUseEnergyTotals[],
   lighting: LightingResult[],
@@ -1004,9 +1024,15 @@ function buildAuditSummary(
       renewableOffsetKwh,
   );
 
-  const totalInvestmentUsd = measures
-    .filter((m) => m.proposedForImplementation)
-    .reduce((sum, m) => sum + m.investmentCostUsd, 0);
+  // `Measures_summary!D31`: total investment for the proposed package
+  // includes every non-EE (ancillary) cost unconditionally — those rows have
+  // no "proposed for implementation" flag in the source sheet, they're
+  // simply necessary side-effect work, not an optional energy-saving choice.
+  const totalNonEeMeasureCostUsd = nonEeMeasures.reduce((sum, m) => sum + m.totalCostUsd, 0);
+  const totalInvestmentUsd =
+    measures
+      .filter((m) => m.proposedForImplementation)
+      .reduce((sum, m) => sum + m.investmentCostUsd, 0) + totalNonEeMeasureCostUsd;
   const totalAnnualSavingsUsd = measures
     .filter((m) => m.proposedForImplementation)
     .reduce((sum, m) => sum + m.standardizedAnnualSavingsUsd, 0);
@@ -1022,6 +1048,7 @@ function buildAuditSummary(
       heatedFloorAreaM2 > 0 ? (currentTotalKwh - potentialTotalKwh) / heatedFloorAreaM2 : 0,
     co2ReductionTonnesPerYear,
     totalInvestmentUsd,
+    totalNonEeMeasureCostUsd,
     totalAnnualSavingsUsd,
     simplePaybackYears:
       totalAnnualSavingsUsd > 0 ? totalInvestmentUsd / totalAnnualSavingsUsd : null,

@@ -15,6 +15,21 @@ export type MeasureCategory =
   | "ems"
   | "other";
 
+/**
+ * `Non-EE measures` sheet: ancillary renovation costs (cable replacement,
+ * re-plastering, pipe demolition) that add to total project investment but
+ * never generate energy savings, so they carry no CO2/NPV/IRR/payback
+ * figures the way `EnergyMeasureResult` does.
+ */
+export interface NonEeMeasureResult {
+  id: string;
+  description: string;
+  unit: string | null;
+  quantity: number;
+  unitCostUsd: number;
+  totalCostUsd: number;
+}
+
 export interface EnergyMeasureResult {
   measureId: string;
   name: string;

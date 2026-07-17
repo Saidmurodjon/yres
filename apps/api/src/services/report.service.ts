@@ -199,6 +199,7 @@ export async function generateAuditReportPdf(
       ["Potential savings", `${fmt(summary.potentialSavingsKwhPerM2Year, 0)} kWh/m²/yr`],
       ["CO2 reduction", `${fmt(summary.co2ReductionTonnesPerYear, 1)} tCO2/yr`],
       ["Total investment", fmtUsd(summary.totalInvestmentUsd)],
+      ["  of which ancillary (non-energy-saving)", fmtUsd(summary.totalNonEeMeasureCostUsd)],
       ["Total annual savings", fmtUsd(summary.totalAnnualSavingsUsd)],
       [
         "Simple payback",
@@ -264,6 +265,20 @@ export async function generateAuditReportPdf(
         fmt(m.co2ReductionTonnesPerYear, 1),
       ]),
       [140, 80, 160, 80, 60],
+    );
+  }
+
+  if (result.nonEeMeasures.length > 0) {
+    layout.heading("Ancillary costs (non-energy-saving)");
+    layout.table(
+      ["Description", "Quantity", "Unit cost", "Total cost"],
+      result.nonEeMeasures.map((m) => [
+        m.description,
+        `${fmt(m.quantity, 1)}${m.unit ? ` ${m.unit}` : ""}`,
+        fmtUsd(m.unitCostUsd),
+        fmtUsd(m.totalCostUsd),
+      ]),
+      [200, 100, 80, 80],
     );
   }
 

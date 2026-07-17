@@ -10,12 +10,14 @@ import type {
   ClimateRegionWithNormals,
   CreateBuildingInput,
   CreateMeasureInput,
+  CreateNonEeMeasureInput,
   CreateUtilityBillInput,
   EnergyMeasure,
   EnvelopeData,
   InviteMemberInput,
   LampType,
   Material,
+  NonEeMeasure,
   ReplaceCoolingSystemsPayload,
   ReplaceCoolingWindowsPayload,
   ReplaceDhwPayload,
@@ -128,6 +130,20 @@ export const api = {
       }),
     delete: (buildingId: string, measureId: string) =>
       request<void>(`/api/buildings/${buildingId}/measures/${measureId}`, { method: "DELETE" }),
+  },
+
+  nonEeMeasures: {
+    list: (buildingId: string) =>
+      request<{ nonEeMeasures: NonEeMeasure[] }>(`/api/buildings/${buildingId}/non-ee-measures`),
+    create: (buildingId: string, data: CreateNonEeMeasureInput) =>
+      request<{ nonEeMeasure: NonEeMeasure }>(`/api/buildings/${buildingId}/non-ee-measures`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+    delete: (buildingId: string, measureId: string) =>
+      request<void>(`/api/buildings/${buildingId}/non-ee-measures/${measureId}`, {
+        method: "DELETE",
+      }),
   },
 
   consumption: {
