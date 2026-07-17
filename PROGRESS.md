@@ -217,7 +217,20 @@ Endi `docs/social-features.md`dagi "Qurish tartibi" bosqichlariga o'tildi:
   mobil+desktop). **Bu sandbox'da WebSocket ulanishini haqiqatan sinab
   bo'lmadi** — haqiqiy deploy'dan keyin tasdiqlash kerak.
 
-**Navbatda**: Social Phase 9 (Chat backend).
+- **Social Phase 9 (Chat backend)**: `GET`/`POST /api/chat/conversations`
+  (to'g'ridan-to'g'ri — username bo'yicha, mavjudini qayta ishlatadi,
+  takrorlamaydi — yoki guruh), `GET .../:id/messages` (sahifalangan),
+  `PATCH .../:id/read`, `PATCH .../:id` (qayta nomlash/a'zo qo'shish-
+  olib tashlash, faqat guruh egasi), `PATCH`/`DELETE
+  /api/chat/messages/:id` (tahrirlash/soft-delete, faqat yuboruvchi),
+  `GET /api/chat/users/search` (username qidiruvi), va biriktirma
+  yuklash/o'qish (`CHAT_ATTACHMENTS_BUCKET` — hech qachon ochiq
+  ko'rsatilmaydi, faqat suhbat a'zoligi tekshirilgan holda API orqali
+  proksi qilinadi). Ataylab xabar-yaratish REST route'i yo'q — haqiqiy
+  yuborish faqat `ConversationRoom` WebSocket orqali (Phase 10).
+
+**Navbatda**: Social Phase 10 (Chat real-time + frontend) — bu bosqichning
+eng kattasi, Telegram-uslubidagi UI'ni ham o'z ichiga oladi.
 
 ## Ma'lum bo'shliqlar
 
