@@ -11,6 +11,7 @@ import { UserNotificationChannel } from "./durable-objects/user-notification-cha
 import { adminUsersRoutes } from "./routes/admin-users";
 import { auditRoutes } from "./routes/audit";
 import { buildingRoutes } from "./routes/buildings";
+import { chatRoutes } from "./routes/chat";
 import { climateRoutes } from "./routes/climate";
 import { consumptionRoutes } from "./routes/consumption";
 import { envelopeRoutes } from "./routes/envelope";
@@ -29,6 +30,8 @@ export interface Env {
   API_URL: string;
   WEB_URL: string;
   REPORTS_BUCKET: R2Bucket;
+  /** Chat attachments (docs/social-features.md) — never served publicly, see routes/chat.ts. */
+  CHAT_ATTACHMENTS_BUCKET: R2Bucket;
   /** Resend API key for transactional email (password reset, verification). Empty in dev — sendEmail() logs and no-ops without it. */
   RESEND_API_KEY: string;
   /** "From" address for outgoing email, e.g. "YRES <noreply@yourdomain.com>". Falls back to Resend's shared sandbox sender if unset. */
@@ -97,6 +100,7 @@ app.route("/api/reference", referenceRoutes);
 app.route("/api/users", usersRoutes);
 app.route("/api/admin", adminUsersRoutes);
 app.route("/api/notifications", notificationsRoutes);
+app.route("/api/chat", chatRoutes);
 
 // Reports uncaught exceptions (route bugs, calculation-engine errors,
 // unexpected DB failures) to Sentry with request context. A blank

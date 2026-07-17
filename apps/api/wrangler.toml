@@ -19,6 +19,14 @@ EMAIL_FROM = "YRES <onboarding@resend.dev>"
 binding = "REPORTS_BUCKET"
 bucket_name = "yres-reports-dev"
 
+# Chat attachments (docs/social-features.md) — separate from REPORTS_BUCKET
+# since this holds user-uploaded content with different size/retention
+# concerns. Never served publicly — routes/chat.ts proxies reads through
+# the API so only conversation members can fetch a given attachment.
+[[r2_buckets]]
+binding = "CHAT_ATTACHMENTS_BUCKET"
+bucket_name = "yres-chat-attachments-dev"
+
 # Real-time notifications/chat (docs/social-features.md) — ConversationRoom
 # is one DO instance per chat conversation (fan-out point for that
 # conversation's WebSocket connections, Postgres stays the source of
@@ -78,6 +86,10 @@ EMAIL_FROM = "YRES <noreply@saidmurod.com>"
 [[env.production.r2_buckets]]
 binding = "REPORTS_BUCKET"
 bucket_name = "yres-reports"
+
+[[env.production.r2_buckets]]
+binding = "CHAT_ATTACHMENTS_BUCKET"
+bucket_name = "yres-chat-attachments"
 
 [[env.production.durable_objects.bindings]]
 name = "CONVERSATION_ROOM"

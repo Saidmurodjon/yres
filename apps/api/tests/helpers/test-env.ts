@@ -38,6 +38,7 @@ export const testEnv: Env = {
   // CORS requires an exact origin match, not just "some localhost".
   WEB_URL: process.env.E2E_WEB_URL ?? "http://localhost:5173",
   REPORTS_BUCKET: fakeReportsBucket,
+  CHAT_ATTACHMENTS_BUCKET: fakeReportsBucket as unknown as Env["CHAT_ATTACHMENTS_BUCKET"],
   // Blank in tests: sendEmail()/Sentry both no-op on a blank key/DSN rather
   // than erroring (see src/lib/email.ts and the withSentry call in
   // src/index.ts), so tests never send real email or report to Sentry.
