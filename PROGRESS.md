@@ -205,8 +205,19 @@ Endi `docs/social-features.md`dagi "Qurish tartibi" bosqichlariga o'tildi:
   xatti-harakatini tekshirib bo'lmaydi** — faqat type-check/lint orqali
   tekshirildi, haqiqiy `wrangler deploy`dan keyin qo'lda tasdiqlash kerak.
 
-**Navbatda**: Social Phase 8 (Bildirishnomalar backend + real-time +
-frontend).
+- **Social Phase 8 (Bildirishnomalar)**: `notify.ts`ning `notifyUser()`i
+  `notification` qatorini kiritadi + `UserNotificationChannel`ga RPC orqali
+  fire-and-forget push yuboradi (DO xatosi hech qachon chaqiruvchi amalni
+  buzmaydi — logga yozilib yutiladi). Birinchi haqiqiy tetikchi sifatida
+  `members.ts`ning bino-taklif route'iga ulandi. `GET /api/notifications`
+  (sahifalangan + o'qilmagan soni), `PATCH .../read-all`, `PATCH
+  .../:id/read`, `GET .../ws` qo'shildi. Frontend'da `NotificationBell`
+  endi haqiqiy ma'lumot bilan ishlaydi — WebSocket `AppShell` darajasida bir
+  marta ulanadi (`NotificationBell` ikki marta render bo'lgani uchun,
+  mobil+desktop). **Bu sandbox'da WebSocket ulanishini haqiqatan sinab
+  bo'lmadi** — haqiqiy deploy'dan keyin tasdiqlash kerak.
+
+**Navbatda**: Social Phase 9 (Chat backend).
 
 ## Ma'lum bo'shliqlar
 
