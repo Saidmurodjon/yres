@@ -254,7 +254,18 @@ ui-guidelines.md`dagi qoidalar — Zustand, responsive, unumdorlik — allaqacho
 qurilgan koddа amal qilindi; alohida "bosqich"i yo'q edi, standart qoidalar
 sifatida amal qildi).
 
-**Navbatda**: i18n Phase 1 (infratuzilma + bloklovchi tema-skripti).
+- **i18n Phase 1 (infratuzilma)**: `react-i18next` + `i18next` +
+  `i18next-browser-languagedetector` qo'shildi (brauzer tilini aniqlaydi,
+  qo'llab-quvvatlanmasa o'zbek tiliga tushadi). Hozircha faqat minimal
+  `common` namespace urug'lantirildi — to'liq ~30 fayl migratsiyasi
+  Phase 4. `index.html`ga bloklovchi tema-skripti qo'shildi (birinchi
+  chizishdan oldin `data-theme`ni o'rnatadi, noto'g'ri tema
+  yarq etishining oldini oladi). `zustand` ham qo'shildi (Phase 2'dan
+  boshlab ishlatiladi — social-features ishida kerak bo'lmagan edi, oddiy
+  komponent holati va react-query yetarli edi).
+
+**Navbatda**: i18n Phase 2 (`useTheme` + sozlamalar sahifasining ko'rinish
+bo'limi).
 
 ## Ma'lum bo'shliqlar
 
