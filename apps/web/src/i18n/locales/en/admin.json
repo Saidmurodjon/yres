@@ -1,0 +1,12 @@
+{
+  "title": "Users",
+  "subtitle": "Manage every account's global role.",
+  "failedToLoad": "Failed to load users:",
+  "allUsers": "All users",
+  "columnName": "Name",
+  "columnUsername": "Username",
+  "columnEmail": "Email",
+  "columnRole": "Role",
+  "columnJoined": "Joined",
+  "roleUpdateFailed": "Failed to update role."
+}

@@ -1,0 +1,12 @@
+{
+  "title": "Foydalanuvchilar",
+  "subtitle": "Har bir akkauntning global rolini boshqaring.",
+  "failedToLoad": "Foydalanuvchilarni yuklab bo'lmadi:",
+  "allUsers": "Barcha foydalanuvchilar",
+  "columnName": "Ismi",
+  "columnUsername": "Foydalanuvchi nomi",
+  "columnEmail": "Email",
+  "columnRole": "Roli",
+  "columnJoined": "Qo'shilgan sana",
+  "roleUpdateFailed": "Rolni o'zgartirib bo'lmadi."
+}

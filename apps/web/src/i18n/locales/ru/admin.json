@@ -1,0 +1,12 @@
+{
+  "title": "Пользователи",
+  "subtitle": "Управляйте глобальной ролью каждого аккаунта.",
+  "failedToLoad": "Не удалось загрузить пользователей:",
+  "allUsers": "Все пользователи",
+  "columnName": "Имя",
+  "columnUsername": "Имя пользователя",
+  "columnEmail": "Email",
+  "columnRole": "Роль",
+  "columnJoined": "Дата регистрации",
+  "roleUpdateFailed": "Не удалось изменить роль."
+}

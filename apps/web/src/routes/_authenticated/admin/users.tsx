@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@yres/ui";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAdminUsers, useUpdateUserRole } from "../../../hooks";
 import { ApiError } from "../../../lib/api";
 import type { SessionUser, UserRole } from "../../../lib/auth-types";
@@ -36,6 +37,7 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
 });
 
 function AdminUsersPage() {
+  const { t } = useTranslation("admin");
   const { data, isLoading, isError, error } = useAdminUsers({ pageSize: 200 });
   const updateRole = useUpdateUserRole();
   const [roleError, setRoleError] = useState<string | null>(null);
@@ -47,28 +49,29 @@ function AdminUsersPage() {
     try {
       await updateRole.mutateAsync({ userId, role });
     } catch (err) {
-      setRoleError(err instanceof ApiError ? err.message : "Failed to update role.");
+      setRoleError(err instanceof ApiError ? err.message : t("roleUpdateFailed"));
     }
   }
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
-        <p className="mt-1 text-muted-foreground">Manage every account's global role.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+        <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
       </div>
 
       {isError && (
         <Card className="border-destructive/50">
           <CardContent className="p-6 text-sm text-destructive">
-            Failed to load users: {error instanceof ApiError ? error.message : "Unknown error"}
+            {t("failedToLoad")}{" "}
+            {error instanceof ApiError ? error.message : t("common:unknownError")}
           </CardContent>
         </Card>
       )}
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">All users</CardTitle>
+          <CardTitle className="text-base">{t("allUsers")}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -81,11 +84,11 @@ function AdminUsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Joined</TableHead>
+                  <TableHead>{t("columnName")}</TableHead>
+                  <TableHead>{t("columnUsername")}</TableHead>
+                  <TableHead>{t("columnEmail")}</TableHead>
+                  <TableHead>{t("columnRole")}</TableHead>
+                  <TableHead>{t("columnJoined")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
