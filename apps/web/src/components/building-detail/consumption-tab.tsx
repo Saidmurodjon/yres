@@ -22,6 +22,7 @@ import {
 } from "@yres/ui";
 import { Receipt, Save } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useConsumption, useReplaceConsumption } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import type { EnergyCarrier, MonthlyBillInput, UtilityBill } from "../../lib/api-types";
@@ -65,6 +66,7 @@ export function ConsumptionTab({
   buildingId,
   readOnly = false,
 }: { buildingId: string; readOnly?: boolean }) {
+  const { t } = useTranslation("consumption");
   const { data, isLoading, isError, error } = useConsumption(buildingId, { pageSize: 500 });
   const replaceConsumption = useReplaceConsumption(buildingId);
 
@@ -106,7 +108,7 @@ export function ConsumptionTab({
       if (!row.consumptionNative.trim()) continue;
       const consumptionNative = Number(row.consumptionNative);
       if (Number.isNaN(consumptionNative)) {
-        setSaveError(`${MONTH_LABELS[idx]}: consumption must be a number.`);
+        setSaveError(t("consumptionMustBeNumber", { month: MONTH_LABELS[idx] }));
         return;
       }
       monthlyBills.push({
@@ -122,7 +124,7 @@ export function ConsumptionTab({
       await replaceConsumption.mutateAsync({ energyCarrier: carrier, year, bills: monthlyBills });
       setSaved(true);
     } catch (err) {
-      setSaveError(err instanceof ApiError ? err.message : "Failed to save consumption data.");
+      setSaveError(err instanceof ApiError ? err.message : t("saveFailed"));
     }
   }
 
@@ -137,17 +139,13 @@ export function ConsumptionTab({
       {!readOnly && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Enter monthly bills</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Pick a carrier and year, fill in whichever months you have bills for, then save them
-              all at once — matching the source spreadsheet's one-table-per-carrier layout instead
-              of adding one month at a time.
-            </p>
+            <CardTitle className="text-base">{t("enterMonthlyBills")}</CardTitle>
+            <p className="text-sm text-muted-foreground">{t("enterMonthlyBillsDescription")}</p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2 sm:max-w-md">
               <div className="space-y-1.5">
-                <Label>Energy carrier</Label>
+                <Label>{t("energyCarrier")}</Label>
                 <Select value={carrier} onValueChange={(v) => setCarrier(v as EnergyCarrier)}>
                   <SelectTrigger>
                     <SelectValue />
@@ -162,7 +160,7 @@ export function ConsumptionTab({
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Year</Label>
+                <Label>{t("year")}</Label>
                 <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
                   <SelectTrigger>
                     <SelectValue />
@@ -182,16 +180,16 @@ export function ConsumptionTab({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Month</TableHead>
-                    <TableHead>Consumption</TableHead>
-                    <TableHead>Consumption (kWh)</TableHead>
-                    <TableHead>Expense</TableHead>
-                    <TableHead>Tariff</TableHead>
+                    <TableHead>{t("columnMonth")}</TableHead>
+                    <TableHead>{t("columnConsumption")}</TableHead>
+                    <TableHead>{t("columnConsumptionKwh")}</TableHead>
+                    <TableHead>{t("columnExpense")}</TableHead>
+                    <TableHead>{t("columnTariff")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {grid.map((row, idx) => {
-                    const label = MONTH_LABELS[idx] ?? `Month ${idx + 1}`;
+                    const label = MONTH_LABELS[idx] ?? t("monthFallback", { n: idx + 1 });
                     return (
                       <TableRow key={label}>
                         <TableCell className="font-medium">{label}</TableCell>
@@ -200,7 +198,7 @@ export function ConsumptionTab({
                             type="number"
                             step="any"
                             className="w-32"
-                            aria-label={`${label} consumption`}
+                            aria-label={t("ariaConsumption", { month: label })}
                             value={row.consumptionNative}
                             onChange={(e) => updateCell(idx, "consumptionNative", e.target.value)}
                           />
@@ -210,7 +208,7 @@ export function ConsumptionTab({
                             type="number"
                             step="any"
                             className="w-32"
-                            aria-label={`${label} consumption in kWh`}
+                            aria-label={t("ariaConsumptionKwh", { month: label })}
                             value={row.consumptionKwh}
                             onChange={(e) => updateCell(idx, "consumptionKwh", e.target.value)}
                           />
@@ -220,7 +218,7 @@ export function ConsumptionTab({
                             type="number"
                             step="any"
                             className="w-32"
-                            aria-label={`${label} expense`}
+                            aria-label={t("ariaExpense", { month: label })}
                             value={row.expenseLocal}
                             onChange={(e) => updateCell(idx, "expenseLocal", e.target.value)}
                           />
@@ -230,7 +228,7 @@ export function ConsumptionTab({
                             type="number"
                             step="any"
                             className="w-32"
-                            aria-label={`${label} tariff`}
+                            aria-label={t("ariaTariff", { month: label })}
                             value={row.tariffLocal}
                             onChange={(e) => updateCell(idx, "tariffLocal", e.target.value)}
                           />
@@ -245,7 +243,10 @@ export function ConsumptionTab({
             {saveError && <p className="text-sm text-destructive">{saveError}</p>}
             {saved && !saveError && (
               <p className="text-sm text-muted-foreground">
-                Saved {ENERGY_CARRIER_LABELS[carrier].toLowerCase()} bills for {year}.
+                {t("savedMessage", {
+                  carrier: ENERGY_CARRIER_LABELS[carrier].toLowerCase(),
+                  year,
+                })}
               </p>
             )}
           </CardContent>
@@ -253,8 +254,8 @@ export function ConsumptionTab({
             <Button onClick={handleSave} disabled={replaceConsumption.isPending}>
               <Save className="h-4 w-4" />
               {replaceConsumption.isPending
-                ? "Saving..."
-                : `Save ${ENERGY_CARRIER_LABELS[carrier].toLowerCase()} — ${year}`}
+                ? t("saving")
+                : t("saveButton", { carrier: ENERGY_CARRIER_LABELS[carrier].toLowerCase(), year })}
             </Button>
           </CardFooter>
         </Card>
@@ -262,7 +263,7 @@ export function ConsumptionTab({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">All utility bills</CardTitle>
+          <CardTitle className="text-base">{t("allUtilityBills")}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -272,28 +273,26 @@ export function ConsumptionTab({
             </div>
           ) : isError ? (
             <p className="text-sm text-destructive">
-              Failed to load consumption data:{" "}
-              {error instanceof ApiError ? error.message : "Unknown error"}
+              {t("failedToLoad")}{" "}
+              {error instanceof ApiError ? error.message : t("common:unknownError")}
             </p>
           ) : sortedBills.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
               <Receipt className="h-10 w-10 text-muted-foreground" />
-              <p className="font-medium">No utility bills recorded yet</p>
-              <p className="max-w-sm text-sm text-muted-foreground">
-                Use the grid above to add a carrier's monthly bills for a year.
-              </p>
+              <p className="font-medium">{t("noBillsYet")}</p>
+              <p className="max-w-sm text-sm text-muted-foreground">{t("noBillsDescription")}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Carrier</TableHead>
-                  <TableHead>Year</TableHead>
-                  <TableHead>Month</TableHead>
-                  <TableHead>Consumption</TableHead>
-                  <TableHead>Consumption (kWh)</TableHead>
-                  <TableHead>Expense</TableHead>
-                  <TableHead>Tariff</TableHead>
+                  <TableHead>{t("columnCarrier")}</TableHead>
+                  <TableHead>{t("columnYear")}</TableHead>
+                  <TableHead>{t("columnMonth")}</TableHead>
+                  <TableHead>{t("columnConsumption")}</TableHead>
+                  <TableHead>{t("columnConsumptionKwh")}</TableHead>
+                  <TableHead>{t("columnExpense")}</TableHead>
+                  <TableHead>{t("columnTariff")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
