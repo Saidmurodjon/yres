@@ -53,6 +53,18 @@ export function createAuth(env: Env, db: Database) {
         clientSecret: env.GOOGLE_CLIENT_SECRET,
       },
     },
+    // Exposes these DB columns through Better Auth's session/user responses
+    // (Better Auth otherwise only serializes its own core fields). `input:
+    // false` on both — role is admin-only (see requireRole middleware,
+    // apps/api/src/routes/admin-users.ts) and username has its own PATCH
+    // /api/users/me route with a uniqueness check; neither should be
+    // settable through Better Auth's generic update-user endpoint.
+    user: {
+      additionalFields: {
+        role: { type: "string", required: false, defaultValue: "auditor", input: false },
+        username: { type: "string", required: true, input: false },
+      },
+    },
     account: {
       accountLinking: {
         // Google verifies the email itself, so it shouldn't matter whether

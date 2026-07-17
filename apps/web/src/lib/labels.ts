@@ -7,6 +7,13 @@ import type {
   RenewableSystemType,
   VentilationSystemType,
 } from "./api-types";
+import type { UserRole } from "./auth-types";
+
+export const USER_ROLE_LABELS: Record<UserRole, string> = {
+  admin: "Admin",
+  auditor: "Auditor",
+  viewer: "Viewer",
+};
 
 export const BUILDING_TYPE_LABELS: Record<BuildingType, string> = {
   residential_mfh: "Residential (multi-family)",
