@@ -342,9 +342,39 @@ yuklanishini ta'minlaydi, shundan keyin testlar `testing-and-
 verification.md` kutgan hujjatlashtirilgan tarzda (haqiqiy Postgres
 yo'qligi sababli) muvaffaqiyatsiz bo'ladi.
 
-**Navbatda**: yakuniy umumiy tekshiruv (repo bo'ylab type-check/build/
-lint/test o'tkazildi — barchasi toza) va `.claude/rules/`/`docs/`
-fayllarining izchilligini tasdiqlash.
+**Yakuniy umumiy tekshiruv o'tkazildi** (repo bo'ylab): `bun run type-check`
+(barcha workspace, shu jumladan `apps/web`ning haqiqiy Vite build'i orqali),
+`bun run build`, `bunx biome lint` (5 ta workspace) — barchasi toza.
+`bun run test`: 55/55 unit test o'tdi; 47 ta integratsiya testi kutilgan
+`ECONNREFUSED` bilan muvaffaqiyatsiz bo'ldi (lokal Postgres yo'qligi
+sababli, hujjatlashtirilgan holat — `testing-and-verification.md`ga
+qarang) — haqiqiy regressiya yo'q.
+
+`.claude/rules/`/`docs/` izchilligini tasdiqlashda bitta haqiqiy bo'shliq
+topildi: `docs/social-features.md`ning "Qurish tartibi" 11-bosqichi
+("Yakunlash") qurish davomida haqiqatan duch kelingan nozik jihatlar bilan
+yangi `.claude/rules/realtime.md` yaratishni va uni `CLAUDE.md`ning
+qoidalar jadvaliga qo'shishni talab qilar edi — bu qadam Phase 7–10 orqali
+o'tkazib yuborilgan edi. Endi qo'shildi: `serializeAttachment` vs xotiradagi
+holat, `getWebSockets()` orqali broadcast, `WebSocketPair`ni `[0]`/`[1]`
+bilan to'g'ridan-to'g'ri indekslash (`Object.values()` emas), RPC metodlar
+(`pushNotification()`), bildirishnoma push'ining fire-and-forget tabiati,
+Postgres yagona-haqiqat-manbai qoidasi, va Vitest'ning `cloudflare:workers`
+shim'i haqida — hammasi mavjud kod/izohlarga qarshi tekshirilgan holda.
+`docs/i18n-and-appearance.md`ning 6-bosqichi ("barcha namespace'lar uchala
+tilda to'liqligini tekshirish") ham qo'lda tasdiqlandi: har bir namespace
+fayli (uz/ru/en) dasturiy ravishda taqqoslandi — yagona farqlar i18next'ning
+til-bo'yicha CLDR ko'plik-suffikslari (o'zbekcha faqat `_other`, inglizcha
+`_one`/`_other`, ruscha to'rttala shakl) bo'lib, bular kutilgan, kalit
+yetishmasligi emas.
+
+**Joriy sessiya yakunlandi**: barcha to'rtta tashabbus (navbar/rollar/chat,
+UI qoidalari, i18n/kun-tun, hisoblash dvigateli auditi) to'liq qurildi,
+tekshirildi va hujjatlashtirildi. Qolgan yagona element — bu sandbox'da
+tekshirib bo'lmaydigan narsalar (haqiqiy WebSocket/DO xatti-harakati,
+brauzerda vizual ko'rib chiqish, signup/OAuth oqimlari) — haqiqiy
+`wrangler deploy`dan keyin qo'lda tasdiqlanishi kerak, `realtime.md`/
+`social-features.md`da ochiq qayd etilgan.
 
 ## Ma'lum bo'shliqlar
 
