@@ -31,6 +31,8 @@ import type {
   ReplaceVentilationPayload,
   SystemsData,
   UpdateBuildingInput,
+  UpdateUserInput,
+  UserProfile,
   UtilityBill,
 } from "./api-types";
 
@@ -82,6 +84,15 @@ function toQueryString(params?: ListParams): string {
 }
 
 export const api = {
+  users: {
+    me: () => request<{ user: UserProfile }>("/api/users/me"),
+    updateMe: (data: UpdateUserInput) =>
+      request<{ user: UserProfile }>("/api/users/me", {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+  },
+
   buildings: {
     list: (params?: ListParams) =>
       request<{ buildings: BuildingWithRole[]; page: number; pageSize: number }>(

@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
   Toaster,
 } from "@yres/ui";
-import { Bell, Building2, LayoutDashboard, LogOut } from "lucide-react";
+import { Bell, Building2, LayoutDashboard, LogOut, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { signOut, useSession } from "../lib/auth-client";
 import type { SessionUser, UserRole } from "../lib/auth-types";
@@ -91,6 +91,13 @@ function ProfileMenu({ user, onSignOut }: { user: SessionUser; onSignOut: () => 
             )}
           </div>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to="/profile">
+            <UserRound className="mr-2 h-4 w-4" />
+            Profile
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignOut}>
           <LogOut className="mr-2 h-4 w-4" />

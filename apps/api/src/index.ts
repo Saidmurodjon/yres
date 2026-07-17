@@ -15,6 +15,7 @@ import { measuresRoutes } from "./routes/measures";
 import { membersRoutes } from "./routes/members";
 import { referenceRoutes } from "./routes/reference";
 import { systemsRoutes } from "./routes/systems";
+import { usersRoutes } from "./routes/users";
 
 export interface Env {
   DATABASE_URL: string;
@@ -81,6 +82,7 @@ app.route("/api/buildings", systemsRoutes);
 app.route("/api/buildings", membersRoutes);
 app.route("/api/climate", climateRoutes);
 app.route("/api/reference", referenceRoutes);
+app.route("/api/users", usersRoutes);
 
 // Reports uncaught exceptions (route bugs, calculation-engine errors,
 // unexpected DB failures) to Sentry with request context. A blank

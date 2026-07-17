@@ -1,4 +1,22 @@
 import type { BuildingType, Orientation, Scenario } from "@yres/types";
+import type { UserRole } from "./auth-types";
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+  image: string | null;
+  role: UserRole;
+  username: string;
+  createdAt: string;
+}
+
+export interface UpdateUserInput {
+  name?: string;
+  username?: string;
+  image?: string | null;
+}
 
 export interface Building {
   id: string;
