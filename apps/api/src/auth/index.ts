@@ -25,6 +25,18 @@ export function createAuth(env: Env, db: Database) {
           before: async (user) => {
             return { data: { ...user, username: user.email } };
           },
+          // Register-only welcome email — deliberately *not* mirrored for
+          // login (session.create), per docs/social-features.md: the
+          // scope was narrowed from "every login" to "new device only" to
+          // "no login email at all" across several rounds of confirmation
+          // with the project owner. Don't reintroduce a login-email hook.
+          after: async (user) => {
+            await sendEmail(env, {
+              to: user.email,
+              subject: "Welcome to YRES",
+              html: `<p>Welcome to YRES, ${user.name}!</p><p>Your account is ready — sign in to start auditing buildings.</p>`,
+            });
+          },
         },
       },
     },
