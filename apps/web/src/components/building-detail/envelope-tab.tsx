@@ -15,6 +15,7 @@ import {
 } from "@yres/ui";
 import { Layers, Pencil } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useEnvelope } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import {
@@ -28,6 +29,7 @@ export function EnvelopeTab({
   buildingId,
   readOnly = false,
 }: { buildingId: string; readOnly?: boolean }) {
+  const { t } = useTranslation("envelope");
   const { data, isLoading, isError, error } = useEnvelope(buildingId);
   const [editorOpen, setEditorOpen] = useState(false);
 
@@ -44,8 +46,8 @@ export function EnvelopeTab({
     return (
       <Card className="border-destructive/50">
         <CardContent className="p-6 text-sm text-destructive">
-          Failed to load envelope data:{" "}
-          {error instanceof ApiError ? error.message : "Unknown error"}
+          {t("tab.failedToLoad")}{" "}
+          {error instanceof ApiError ? error.message : t("common:unknownError")}
         </CardContent>
       </Card>
     );
@@ -59,14 +61,11 @@ export function EnvelopeTab({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Construction assemblies, opening types, and the elements that reference them. The editor
-          manages the "before" (baseline) scenario.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("tab.description")}</p>
         {!readOnly && (
           <Button size="sm" onClick={() => setEditorOpen(true)}>
             <Pencil className="h-4 w-4" />
-            Edit envelope
+            {t("tab.editEnvelope")}
           </Button>
         )}
       </div>
@@ -75,15 +74,12 @@ export function EnvelopeTab({
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <Layers className="h-10 w-10 text-muted-foreground" />
-            <p className="font-medium">No envelope data yet</p>
-            <p className="max-w-sm text-sm text-muted-foreground">
-              Define construction types, opening types, and envelope elements to enable heat-loss
-              calculations for this building.
-            </p>
+            <p className="font-medium">{t("tab.emptyTitle")}</p>
+            <p className="max-w-sm text-sm text-muted-foreground">{t("tab.emptyDescription")}</p>
             {!readOnly && (
               <Button className="mt-2" onClick={() => setEditorOpen(true)}>
                 <Pencil className="h-4 w-4" />
-                Add envelope data
+                {t("tab.addEnvelopeData")}
               </Button>
             )}
           </CardContent>
@@ -92,20 +88,20 @@ export function EnvelopeTab({
         <>
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Construction types</CardTitle>
+              <CardTitle className="text-base">{t("tab.constructionTypes")}</CardTitle>
             </CardHeader>
             <CardContent>
               {data.constructionTypes.length === 0 ? (
-                <p className="text-sm text-muted-foreground">None defined.</p>
+                <p className="text-sm text-muted-foreground">{t("tab.noneDefined")}</p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Code</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Scenario</TableHead>
-                      <TableHead>Layers</TableHead>
-                      <TableHead>Description</TableHead>
+                      <TableHead>{t("tab.columnCode")}</TableHead>
+                      <TableHead>{t("tab.columnCategory")}</TableHead>
+                      <TableHead>{t("tab.columnScenario")}</TableHead>
+                      <TableHead>{t("tab.columnLayers")}</TableHead>
+                      <TableHead>{t("tab.columnDescription")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -123,12 +119,13 @@ export function EnvelopeTab({
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {ct.layers.length} layer{ct.layers.length === 1 ? "" : "s"} (
-                          {formatNumber(
-                            ct.layers.reduce((sum, l) => sum + l.thicknessM, 0) * 100,
-                            1,
-                          )}{" "}
-                          cm)
+                          {t("tab.layersSummary", {
+                            count: ct.layers.length,
+                            cm: formatNumber(
+                              ct.layers.reduce((sum, l) => sum + l.thicknessM, 0) * 100,
+                              1,
+                            ),
+                          })}
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           {ct.description ?? "—"}
@@ -143,20 +140,20 @@ export function EnvelopeTab({
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Opening types</CardTitle>
+              <CardTitle className="text-base">{t("tab.openingTypes")}</CardTitle>
             </CardHeader>
             <CardContent>
               {data.openingTypes.length === 0 ? (
-                <p className="text-sm text-muted-foreground">None defined.</p>
+                <p className="text-sm text-muted-foreground">{t("tab.noneDefined")}</p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Code</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Scenario</TableHead>
-                      <TableHead>U-value (W/m²K)</TableHead>
-                      <TableHead>Size (m)</TableHead>
+                      <TableHead>{t("tab.columnCode")}</TableHead>
+                      <TableHead>{t("tab.columnCategory")}</TableHead>
+                      <TableHead>{t("tab.columnScenario")}</TableHead>
+                      <TableHead>{t("tab.columnUValue")}</TableHead>
+                      <TableHead>{t("tab.columnSize")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -185,20 +182,20 @@ export function EnvelopeTab({
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Envelope elements</CardTitle>
+              <CardTitle className="text-base">{t("tab.envelopeElements")}</CardTitle>
             </CardHeader>
             <CardContent>
               {data.envelopeElements.length === 0 ? (
-                <p className="text-sm text-muted-foreground">None defined.</p>
+                <p className="text-sm text-muted-foreground">{t("tab.noneDefined")}</p>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Block</TableHead>
-                      <TableHead>Orientation</TableHead>
-                      <TableHead>Construction</TableHead>
-                      <TableHead>Length (m)</TableHead>
-                      <TableHead>Openings</TableHead>
+                      <TableHead>{t("tab.columnBlock")}</TableHead>
+                      <TableHead>{t("tab.columnOrientation")}</TableHead>
+                      <TableHead>{t("tab.columnConstruction")}</TableHead>
+                      <TableHead>{t("tab.columnLength")}</TableHead>
+                      <TableHead>{t("tab.columnOpenings")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

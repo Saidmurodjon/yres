@@ -15,8 +15,10 @@ import {
   SelectValue,
   Separator,
 } from "@yres/ui";
+import type { TFunction } from "i18next";
 import { Plus, Trash2 } from "lucide-react";
 import { type ReactNode, useEffect, useId, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useMaterials, useReplaceEnvelope } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import type { EnvelopeData, ReplaceEnvelopePayload } from "../../lib/api-types";
@@ -184,7 +186,10 @@ function toEditorState(data: EnvelopeData): EditorState {
   return { constructionTypes, openingTypes, envelopeElements };
 }
 
-function parseEditorState(state: EditorState): {
+function parseEditorState(
+  state: EditorState,
+  t: TFunction,
+): {
   payload: ReplaceEnvelopePayload | null;
   errors: string[];
 } {
@@ -192,59 +197,81 @@ function parseEditorState(state: EditorState): {
   const ctCodes = new Set<string>();
 
   for (const ct of state.constructionTypes) {
-    if (!ct.code.trim()) errors.push("Every construction type needs a code.");
+    if (!ct.code.trim()) errors.push(t("envelope:editor.errors.constructionTypeCodeRequired"));
     else if (ctCodes.has(ct.code.trim()))
-      errors.push(`Construction type code "${ct.code}" is duplicated.`);
+      errors.push(t("envelope:editor.errors.constructionTypeCodeDuplicate", { code: ct.code }));
     else ctCodes.add(ct.code.trim());
     for (const layer of ct.layers) {
       if (!layer.materialId)
-        errors.push(`Construction type "${ct.code || "?"}" has a layer with no material selected.`);
+        errors.push(
+          t("envelope:editor.errors.layerMaterialRequired", { code: ct.code || "?" }),
+        );
       if (
         !layer.thicknessM ||
         Number.isNaN(Number(layer.thicknessM)) ||
         Number(layer.thicknessM) <= 0
       ) {
-        errors.push(`Construction type "${ct.code || "?"}" has a layer with an invalid thickness.`);
+        errors.push(
+          t("envelope:editor.errors.layerThicknessInvalid", { code: ct.code || "?" }),
+        );
       }
     }
   }
 
   const otCodes = new Set<string>();
   for (const ot of state.openingTypes) {
-    if (!ot.code.trim()) errors.push("Every opening type needs a code.");
+    if (!ot.code.trim()) errors.push(t("envelope:editor.errors.openingTypeCodeRequired"));
     else if (otCodes.has(ot.code.trim()))
-      errors.push(`Opening type code "${ot.code}" is duplicated.`);
+      errors.push(t("envelope:editor.errors.openingTypeCodeDuplicate", { code: ot.code }));
     else otCodes.add(ot.code.trim());
     if (!ot.uValueWm2k || Number.isNaN(Number(ot.uValueWm2k)) || Number(ot.uValueWm2k) <= 0) {
-      errors.push(`Opening type "${ot.code || "?"}" needs a positive U-value.`);
+      errors.push(
+        t("envelope:editor.errors.openingTypeUValueInvalid", { code: ot.code || "?" }),
+      );
     }
   }
 
   for (const el of state.envelopeElements) {
-    if (!el.blockName.trim()) errors.push("Every envelope element needs a block name.");
+    if (!el.blockName.trim()) errors.push(t("envelope:editor.errors.elementBlockNameRequired"));
     if (!el.constructionTypeCode)
-      errors.push(`Envelope element "${el.blockName || "?"}" must reference a construction type.`);
+      errors.push(
+        t("envelope:editor.errors.elementConstructionTypeRequired", {
+          blockName: el.blockName || "?",
+        }),
+      );
     else if (!ctCodes.has(el.constructionTypeCode)) {
       errors.push(
-        `Envelope element "${el.blockName || "?"}" references unknown construction type "${el.constructionTypeCode}".`,
+        t("envelope:editor.errors.elementConstructionTypeUnknown", {
+          blockName: el.blockName || "?",
+          code: el.constructionTypeCode,
+        }),
       );
     }
     if (!el.lengthM || Number.isNaN(Number(el.lengthM)) || Number(el.lengthM) <= 0) {
-      errors.push(`Envelope element "${el.blockName || "?"}" needs a positive length.`);
+      errors.push(
+        t("envelope:editor.errors.elementLengthInvalid", { blockName: el.blockName || "?" }),
+      );
     }
     for (const o of el.openings) {
       if (!o.openingTypeCode)
         errors.push(
-          `Envelope element "${el.blockName || "?"}" has an opening with no type selected.`,
+          t("envelope:editor.errors.elementOpeningTypeRequired", {
+            blockName: el.blockName || "?",
+          }),
         );
       else if (!otCodes.has(o.openingTypeCode)) {
         errors.push(
-          `Envelope element "${el.blockName || "?"}" references unknown opening type "${o.openingTypeCode}".`,
+          t("envelope:editor.errors.elementOpeningTypeUnknown", {
+            blockName: el.blockName || "?",
+            code: o.openingTypeCode,
+          }),
         );
       }
       if (!o.count || Number.isNaN(Number(o.count)) || Number(o.count) <= 0) {
         errors.push(
-          `Envelope element "${el.blockName || "?"}" has an opening with an invalid count.`,
+          t("envelope:editor.errors.elementOpeningCountInvalid", {
+            blockName: el.blockName || "?",
+          }),
         );
       }
     }
@@ -310,6 +337,7 @@ export function EnvelopeEditorDialog({
   open,
   onOpenChange,
 }: EnvelopeEditorDialogProps) {
+  const { t } = useTranslation("envelope");
   const { data: materialsData, isLoading: materialsLoading } = useMaterials();
   const replaceEnvelope = useReplaceEnvelope(buildingId);
   const materials = materialsData?.materials ?? [];
@@ -329,7 +357,7 @@ export function EnvelopeEditorDialog({
 
   async function handleSubmit() {
     setApiError(null);
-    const { payload, errors: validationErrors } = parseEditorState(state);
+    const { payload, errors: validationErrors } = parseEditorState(state, t);
     setErrors(validationErrors);
     if (!payload) return;
 
@@ -337,7 +365,7 @@ export function EnvelopeEditorDialog({
       await replaceEnvelope.mutateAsync(payload);
       onOpenChange(false);
     } catch (err) {
-      setApiError(err instanceof ApiError ? err.message : "Failed to save envelope.");
+      setApiError(err instanceof ApiError ? err.message : t("editor.saveFailed"));
     }
   }
 
@@ -345,14 +373,10 @@ export function EnvelopeEditorDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit envelope — "Before" scenario</DialogTitle>
+          <DialogTitle>{t("editor.title")}</DialogTitle>
         </DialogHeader>
 
-        <p className="text-sm text-muted-foreground">
-          Saving replaces all "before" scenario construction types, opening types, and envelope
-          elements for this building. Construction and opening types are referenced by the code you
-          give them below — element rows and openings pick their type from those codes.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("editor.description")}</p>
 
         <div className="space-y-8">
           <ConstructionTypesSection
@@ -377,7 +401,7 @@ export function EnvelopeEditorDialog({
 
         {errors.length > 0 && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-            <p className="font-medium">Please fix the following:</p>
+            <p className="font-medium">{t("editor.pleaseFix")}</p>
             <ul className="mt-1 list-inside list-disc">
               {errors.map((msg) => (
                 <li key={msg}>{msg}</li>
@@ -389,10 +413,10 @@ export function EnvelopeEditorDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("common:cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={replaceEnvelope.isPending}>
-            {replaceEnvelope.isPending ? "Saving..." : "Save envelope"}
+            {replaceEnvelope.isPending ? t("common:saving") : t("editor.saveEnvelope")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -401,12 +425,13 @@ export function EnvelopeEditorDialog({
 }
 
 function RowCard({ children, onRemove }: { children: ReactNode; onRemove: () => void }) {
+  const { t } = useTranslation("envelope");
   return (
     <div className="space-y-3 rounded-md border border-border p-4">
       <div className="flex justify-end">
         <Button type="button" variant="ghost" size="sm" onClick={onRemove}>
           <Trash2 className="h-4 w-4" />
-          Remove
+          {t("editor.remove")}
         </Button>
       </div>
       {children}
@@ -425,6 +450,7 @@ function ConstructionTypesSection({
   materialsLoading: boolean;
   onChange: (rows: ConstructionTypeRow[]) => void;
 }) {
+  const { t } = useTranslation("envelope");
   const formId = useId();
 
   function updateRow(rowId: string, patch: Partial<ConstructionTypeRow>) {
@@ -468,7 +494,7 @@ function ConstructionTypesSection({
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Construction types</h3>
+        <h3 className="text-sm font-semibold">{t("editor.constructionTypes.title")}</h3>
         <Button
           type="button"
           size="sm"
@@ -476,12 +502,12 @@ function ConstructionTypesSection({
           onClick={() => onChange([...rows, emptyConstructionType()])}
         >
           <Plus className="h-4 w-4" />
-          Add construction type
+          {t("editor.constructionTypes.add")}
         </Button>
       </div>
 
       {rows.length === 0 && (
-        <p className="text-sm text-muted-foreground">No construction types yet.</p>
+        <p className="text-sm text-muted-foreground">{t("editor.constructionTypes.empty")}</p>
       )}
 
       {rows.map((row) => (
@@ -491,16 +517,18 @@ function ConstructionTypesSection({
         >
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
-              <Label htmlFor={`${formId}-${row.rowId}-code`}>Code *</Label>
+              <Label htmlFor={`${formId}-${row.rowId}-code`}>
+                {t("editor.constructionTypes.code")}
+              </Label>
               <Input
                 id={`${formId}-${row.rowId}-code`}
-                placeholder="e.g. W1"
+                placeholder={t("editor.constructionTypes.codePlaceholder")}
                 value={row.code}
                 onChange={(e) => updateRow(row.rowId, { code: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Element category *</Label>
+              <Label>{t("editor.constructionTypes.elementCategory")}</Label>
               <Select
                 value={row.elementCategory}
                 onValueChange={(v) =>
@@ -520,7 +548,9 @@ function ConstructionTypesSection({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor={`${formId}-${row.rowId}-desc`}>Description</Label>
+              <Label htmlFor={`${formId}-${row.rowId}-desc`}>
+                {t("editor.constructionTypes.description")}
+              </Label>
               <Input
                 id={`${formId}-${row.rowId}-desc`}
                 value={row.description}
@@ -531,14 +561,18 @@ function ConstructionTypesSection({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">Layers (outside → inside)</Label>
+              <Label className="text-xs text-muted-foreground">
+                {t("editor.constructionTypes.layersLabel")}
+              </Label>
               <Button type="button" size="sm" variant="ghost" onClick={() => addLayer(row.rowId)}>
                 <Plus className="h-3.5 w-3.5" />
-                Add layer
+                {t("editor.constructionTypes.addLayer")}
               </Button>
             </div>
             {row.layers.length === 0 && (
-              <p className="text-xs text-muted-foreground">No layers yet.</p>
+              <p className="text-xs text-muted-foreground">
+                {t("editor.constructionTypes.noLayers")}
+              </p>
             )}
             {row.layers.map((layer) => (
               <div key={layer.rowId} className="flex items-center gap-2">
@@ -549,7 +583,11 @@ function ConstructionTypesSection({
                 >
                   <SelectTrigger className="flex-1">
                     <SelectValue
-                      placeholder={materialsLoading ? "Loading materials..." : "Select material"}
+                      placeholder={
+                        materialsLoading
+                          ? t("editor.constructionTypes.loadingMaterials")
+                          : t("editor.constructionTypes.selectMaterial")
+                      }
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -564,7 +602,7 @@ function ConstructionTypesSection({
                   className="w-32"
                   type="number"
                   step="any"
-                  placeholder="Thickness (m)"
+                  placeholder={t("editor.constructionTypes.thicknessPlaceholder")}
                   value={layer.thicknessM}
                   onChange={(e) =>
                     updateLayer(row.rowId, layer.rowId, { thicknessM: e.target.value })
@@ -582,8 +620,7 @@ function ConstructionTypesSection({
             ))}
             {materials.length === 0 && !materialsLoading && (
               <p className="text-xs text-muted-foreground">
-                No materials in the reference catalog yet — layers can't be added until materials
-                are seeded.
+                {t("editor.constructionTypes.noMaterials")}
               </p>
             )}
           </div>
@@ -600,6 +637,7 @@ function OpeningTypesSection({
   rows: OpeningTypeRow[];
   onChange: (rows: OpeningTypeRow[]) => void;
 }) {
+  const { t } = useTranslation("envelope");
   const formId = useId();
 
   function updateRow(rowId: string, patch: Partial<OpeningTypeRow>) {
@@ -609,7 +647,7 @@ function OpeningTypesSection({
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Opening types</h3>
+        <h3 className="text-sm font-semibold">{t("editor.openingTypes.title")}</h3>
         <Button
           type="button"
           size="sm"
@@ -617,11 +655,13 @@ function OpeningTypesSection({
           onClick={() => onChange([...rows, emptyOpeningType()])}
         >
           <Plus className="h-4 w-4" />
-          Add opening type
+          {t("editor.openingTypes.add")}
         </Button>
       </div>
 
-      {rows.length === 0 && <p className="text-sm text-muted-foreground">No opening types yet.</p>}
+      {rows.length === 0 && (
+        <p className="text-sm text-muted-foreground">{t("editor.openingTypes.empty")}</p>
+      )}
 
       {rows.map((row) => (
         <RowCard
@@ -630,16 +670,16 @@ function OpeningTypesSection({
         >
           <div className="grid gap-3 sm:grid-cols-4">
             <div className="space-y-1.5">
-              <Label htmlFor={`${formId}-${row.rowId}-code`}>Code *</Label>
+              <Label htmlFor={`${formId}-${row.rowId}-code`}>{t("editor.openingTypes.code")}</Label>
               <Input
                 id={`${formId}-${row.rowId}-code`}
-                placeholder="e.g. Win1"
+                placeholder={t("editor.openingTypes.codePlaceholder")}
                 value={row.code}
                 onChange={(e) => updateRow(row.rowId, { code: e.target.value })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Category *</Label>
+              <Label>{t("editor.openingTypes.category")}</Label>
               <Select
                 value={row.category}
                 onValueChange={(v) => updateRow(row.rowId, { category: v as "window" | "door" })}
@@ -657,7 +697,7 @@ function OpeningTypesSection({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor={`${formId}-${row.rowId}-u`}>U-value (W/m²K) *</Label>
+              <Label htmlFor={`${formId}-${row.rowId}-u`}>{t("editor.openingTypes.uValue")}</Label>
               <Input
                 id={`${formId}-${row.rowId}-u`}
                 type="number"
@@ -667,7 +707,9 @@ function OpeningTypesSection({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor={`${formId}-${row.rowId}-shading`}>Shading factor</Label>
+              <Label htmlFor={`${formId}-${row.rowId}-shading`}>
+                {t("editor.openingTypes.shadingFactor")}
+              </Label>
               <Input
                 id={`${formId}-${row.rowId}-shading`}
                 type="number"
@@ -677,7 +719,9 @@ function OpeningTypesSection({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor={`${formId}-${row.rowId}-width`}>Width (m)</Label>
+              <Label htmlFor={`${formId}-${row.rowId}-width`}>
+                {t("editor.openingTypes.width")}
+              </Label>
               <Input
                 id={`${formId}-${row.rowId}-width`}
                 type="number"
@@ -687,7 +731,9 @@ function OpeningTypesSection({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor={`${formId}-${row.rowId}-height`}>Height (m)</Label>
+              <Label htmlFor={`${formId}-${row.rowId}-height`}>
+                {t("editor.openingTypes.height")}
+              </Label>
               <Input
                 id={`${formId}-${row.rowId}-height`}
                 type="number"
@@ -699,7 +745,9 @@ function OpeningTypesSection({
             {row.category === "window" && (
               <>
                 <div className="space-y-1.5">
-                  <Label htmlFor={`${formId}-${row.rowId}-g`}>g-value</Label>
+                  <Label htmlFor={`${formId}-${row.rowId}-g`}>
+                    {t("editor.openingTypes.gValue")}
+                  </Label>
                   <Input
                     id={`${formId}-${row.rowId}-g`}
                     type="number"
@@ -709,7 +757,9 @@ function OpeningTypesSection({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor={`${formId}-${row.rowId}-frame`}>Frame factor</Label>
+                  <Label htmlFor={`${formId}-${row.rowId}-frame`}>
+                    {t("editor.openingTypes.frameFactor")}
+                  </Label>
                   <Input
                     id={`${formId}-${row.rowId}-frame`}
                     type="number"
@@ -721,7 +771,9 @@ function OpeningTypesSection({
               </>
             )}
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor={`${formId}-${row.rowId}-desc`}>Description</Label>
+              <Label htmlFor={`${formId}-${row.rowId}-desc`}>
+                {t("editor.openingTypes.description")}
+              </Label>
               <Input
                 id={`${formId}-${row.rowId}-desc`}
                 value={row.description}
@@ -746,6 +798,7 @@ function EnvelopeElementsSection({
   openingTypeCodes: string[];
   onChange: (rows: EnvelopeElementRow[]) => void;
 }) {
+  const { t } = useTranslation("envelope");
   const formId = useId();
 
   function updateRow(rowId: string, patch: Partial<EnvelopeElementRow>) {
@@ -786,7 +839,7 @@ function EnvelopeElementsSection({
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">Envelope elements</h3>
+        <h3 className="text-sm font-semibold">{t("editor.elements.title")}</h3>
         <Button
           type="button"
           size="sm"
@@ -794,12 +847,12 @@ function EnvelopeElementsSection({
           onClick={() => onChange([...rows, emptyEnvelopeElement()])}
         >
           <Plus className="h-4 w-4" />
-          Add element
+          {t("editor.elements.add")}
         </Button>
       </div>
 
       {rows.length === 0 && (
-        <p className="text-sm text-muted-foreground">No envelope elements yet.</p>
+        <p className="text-sm text-muted-foreground">{t("editor.elements.empty")}</p>
       )}
 
       {rows.map((row) => (
@@ -809,7 +862,9 @@ function EnvelopeElementsSection({
         >
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
-              <Label htmlFor={`${formId}-${row.rowId}-block`}>Block name *</Label>
+              <Label htmlFor={`${formId}-${row.rowId}-block`}>
+                {t("editor.elements.blockName")}
+              </Label>
               <Input
                 id={`${formId}-${row.rowId}-block`}
                 value={row.blockName}
@@ -817,7 +872,7 @@ function EnvelopeElementsSection({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Orientation *</Label>
+              <Label>{t("editor.elements.orientation")}</Label>
               <Select
                 value={row.orientation}
                 onValueChange={(v) => updateRow(row.rowId, { orientation: v as Orientation })}
@@ -835,7 +890,7 @@ function EnvelopeElementsSection({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor={`${formId}-${row.rowId}-side`}>Side code</Label>
+              <Label htmlFor={`${formId}-${row.rowId}-side`}>{t("editor.elements.sideCode")}</Label>
               <Input
                 id={`${formId}-${row.rowId}-side`}
                 value={row.sideCode}
@@ -843,7 +898,7 @@ function EnvelopeElementsSection({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Construction type *</Label>
+              <Label>{t("editor.elements.constructionType")}</Label>
               <Select
                 value={row.constructionTypeCode || undefined}
                 onValueChange={(v) => updateRow(row.rowId, { constructionTypeCode: v })}
@@ -853,8 +908,8 @@ function EnvelopeElementsSection({
                   <SelectValue
                     placeholder={
                       constructionTypeCodes.length === 0
-                        ? "Add a construction type first"
-                        : "Select"
+                        ? t("editor.elements.addConstructionTypeFirst")
+                        : t("editor.elements.select")
                     }
                   />
                 </SelectTrigger>
@@ -868,7 +923,7 @@ function EnvelopeElementsSection({
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor={`${formId}-${row.rowId}-length`}>Length (m) *</Label>
+              <Label htmlFor={`${formId}-${row.rowId}-length`}>{t("editor.elements.length")}</Label>
               <Input
                 id={`${formId}-${row.rowId}-length`}
                 type="number"
@@ -879,7 +934,7 @@ function EnvelopeElementsSection({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor={`${formId}-${row.rowId}-heightEnv`}>
-                Height, envelope contact (m)
+                {t("editor.elements.heightEnvContact")}
               </Label>
               <Input
                 id={`${formId}-${row.rowId}-heightEnv`}
@@ -891,7 +946,7 @@ function EnvelopeElementsSection({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor={`${formId}-${row.rowId}-heightGround`}>
-                Height, ground contact (m)
+                {t("editor.elements.heightGroundContact")}
               </Label>
               <Input
                 id={`${formId}-${row.rowId}-heightGround`}
@@ -902,7 +957,9 @@ function EnvelopeElementsSection({
               />
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor={`${formId}-${row.rowId}-desc`}>Description</Label>
+              <Label htmlFor={`${formId}-${row.rowId}-desc`}>
+                {t("editor.elements.description")}
+              </Label>
               <Input
                 id={`${formId}-${row.rowId}-desc`}
                 value={row.description}
@@ -913,14 +970,16 @@ function EnvelopeElementsSection({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">Openings (windows/doors)</Label>
+              <Label className="text-xs text-muted-foreground">
+                {t("editor.elements.openingsLabel")}
+              </Label>
               <Button type="button" size="sm" variant="ghost" onClick={() => addOpening(row.rowId)}>
                 <Plus className="h-3.5 w-3.5" />
-                Add opening
+                {t("editor.elements.addOpening")}
               </Button>
             </div>
             {row.openings.length === 0 && (
-              <p className="text-xs text-muted-foreground">No openings on this element.</p>
+              <p className="text-xs text-muted-foreground">{t("editor.elements.noOpenings")}</p>
             )}
             {row.openings.map((opening) => (
               <div key={opening.rowId} className="flex items-center gap-2">
@@ -935,8 +994,8 @@ function EnvelopeElementsSection({
                     <SelectValue
                       placeholder={
                         openingTypeCodes.length === 0
-                          ? "Add an opening type first"
-                          : "Select opening type"
+                          ? t("editor.elements.addOpeningTypeFirst")
+                          : t("editor.elements.selectOpeningType")
                       }
                     />
                   </SelectTrigger>
@@ -951,7 +1010,7 @@ function EnvelopeElementsSection({
                 <Input
                   className="w-24"
                   type="number"
-                  placeholder="Count"
+                  placeholder={t("editor.elements.countPlaceholder")}
                   value={opening.count}
                   onChange={(e) =>
                     updateOpening(row.rowId, opening.rowId, { count: e.target.value })
