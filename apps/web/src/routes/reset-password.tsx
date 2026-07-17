@@ -10,6 +10,7 @@ import {
   Label,
 } from "@yres/ui";
 import { type FormEvent, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { authClient } from "../lib/auth-client";
 
 interface ResetPasswordSearch {
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/reset-password")({
 });
 
 function ResetPasswordPage() {
+  const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const { token } = Route.useSearch();
   const [password, setPassword] = useState("");
@@ -34,7 +36,7 @@ function ResetPasswordPage() {
     setError(null);
 
     if (!token) {
-      setError("This reset link is invalid or expired. Request a new one.");
+      setError(t("resetPassword.invalidOrExpired"));
       return;
     }
 
@@ -43,7 +45,7 @@ function ResetPasswordPage() {
     setIsSubmitting(false);
 
     if (resetError) {
-      setError(resetError.message ?? "Could not reset your password. The link may have expired.");
+      setError(resetError.message ?? t("resetPassword.resetFailed"));
       return;
     }
 
@@ -54,22 +56,22 @@ function ResetPasswordPage() {
     <main className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>{token ? "Choose a new password" : "Invalid reset link"}</CardTitle>
-          {token && <CardDescription>Your reset link has been verified.</CardDescription>}
+          <CardTitle>{token ? t("resetPassword.chooseNewPassword") : t("resetPassword.invalidLink")}</CardTitle>
+          {token && <CardDescription>{t("resetPassword.verified")}</CardDescription>}
         </CardHeader>
         <CardContent>
           {!token ? (
             <p className="text-sm text-destructive">
-              This reset link is invalid or expired.{" "}
+              {t("resetPassword.invalidLink")}.{" "}
               <Link to="/forgot-password" className="font-medium underline-offset-4 hover:underline">
-                Request a new one
+                {t("resetPassword.requestNewOne")}
               </Link>
               .
             </p>
           ) : (
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <Label htmlFor="password">New password</Label>
+                <Label htmlFor="password">{t("resetPassword.newPassword")}</Label>
                 <Input
                   id="password"
                   type="password"
@@ -82,7 +84,7 @@ function ResetPasswordPage() {
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save new password"}
+                {isSubmitting ? t("resetPassword.saving") : t("resetPassword.saveNewPassword")}
               </Button>
             </form>
           )}

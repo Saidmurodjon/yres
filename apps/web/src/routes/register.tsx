@@ -11,6 +11,7 @@ import {
   Separator,
 } from "@yres/ui";
 import { type FormEvent, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { signIn, signUp } from "../lib/auth-client";
 
 export const Route = createFileRoute("/register")({
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/register")({
 });
 
 function RegisterPage() {
+  const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -35,7 +37,7 @@ function RegisterPage() {
 
     setIsSubmitting(false);
     if (signUpError) {
-      setError(signUpError.message ?? "Could not create an account with those details.");
+      setError(signUpError.message ?? t("register.createFailed"));
       return;
     }
 
@@ -60,9 +62,9 @@ function RegisterPage() {
       // A successful call navigates the browser away to Google before this
       // line runs — only an error (rejected API call, no redirect issued)
       // reaches here, so it's safe to always re-enable the button below.
-      if (signInError) setError(signInError.message ?? "Could not start Google sign-in.");
+      if (signInError) setError(signInError.message ?? t("login.googleStartFailed"));
     } catch {
-      setError("Could not reach the server. Check your connection and try again.");
+      setError(t("login.connectionError"));
     } finally {
       setIsGoogleSubmitting(false);
     }
@@ -72,13 +74,13 @@ function RegisterPage() {
     <main className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Create your YRES account</CardTitle>
-          <CardDescription>For building owners, ESCOs, auditors, and banks.</CardDescription>
+          <CardTitle>{t("register.title")}</CardTitle>
+          <CardDescription>{t("register.subtitle")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <Label htmlFor="name">Full name</Label>
+              <Label htmlFor="name">{t("register.fullName")}</Label>
               <Input
                 id="name"
                 autoComplete="name"
@@ -88,7 +90,7 @@ function RegisterPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("register.email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -99,7 +101,7 @@ function RegisterPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t("register.password")}</Label>
               <Input
                 id="password"
                 type="password"
@@ -112,12 +114,12 @@ function RegisterPage() {
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Creating account..." : "Create account"}
+              {isSubmitting ? t("register.creatingAccount") : t("register.createAccount")}
             </Button>
           </form>
           <div className="my-4 flex items-center gap-3">
             <Separator className="flex-1" />
-            <span className="text-xs text-muted-foreground">OR</span>
+            <span className="text-xs text-muted-foreground">{t("login.or")}</span>
             <Separator className="flex-1" />
           </div>
           <Button
@@ -127,15 +129,15 @@ function RegisterPage() {
             disabled={isGoogleSubmitting}
             onClick={handleGoogleSignIn}
           >
-            {isGoogleSubmitting ? "Redirecting…" : "Continue with Google"}
+            {isGoogleSubmitting ? t("login.redirecting") : t("login.continueWithGoogle")}
           </Button>
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
+            {t("register.alreadyHaveAccount")}{" "}
             <Link
               to="/login"
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
-              Sign in
+              {t("register.signIn")}
             </Link>
           </p>
         </CardContent>

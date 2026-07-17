@@ -11,6 +11,7 @@ import {
   Separator,
 } from "@yres/ui";
 import { type FormEvent, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { signIn } from "../lib/auth-client";
 
 interface LoginSearch {
@@ -27,12 +28,13 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginPage() {
+  const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const search = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(
-    search.error ? "Google sign-in failed. Please try again." : null,
+    search.error ? t("login.googleFailed") : null,
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
@@ -46,7 +48,7 @@ function LoginPage() {
 
     setIsSubmitting(false);
     if (signInError) {
-      setError(signInError.message ?? "Could not sign in with those credentials.");
+      setError(signInError.message ?? t("login.invalidCredentials"));
       return;
     }
 
@@ -72,9 +74,9 @@ function LoginPage() {
       // A successful call navigates the browser away to Google before this
       // line runs — only an error (rejected API call, no redirect issued)
       // reaches here, so it's safe to always re-enable the button below.
-      if (signInError) setError(signInError.message ?? "Could not start Google sign-in.");
+      if (signInError) setError(signInError.message ?? t("login.googleStartFailed"));
     } catch {
-      setError("Could not reach the server. Check your connection and try again.");
+      setError(t("login.connectionError"));
     } finally {
       setIsGoogleSubmitting(false);
     }
@@ -84,13 +86,13 @@ function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Sign in to YRES</CardTitle>
-          <CardDescription>Energy efficiency audits, five minutes to bank-ready.</CardDescription>
+          <CardTitle>{t("login.title")}</CardTitle>
+          <CardDescription>{t("login.subtitle")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t("login.email")}</Label>
               <Input
                 id="email"
                 type="email"
@@ -102,12 +104,12 @@ function LoginPage() {
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("login.password")}</Label>
                 <Link
                   to="/forgot-password"
                   className="text-xs font-medium text-primary underline-offset-4 hover:underline"
                 >
-                  Forgot password?
+                  {t("login.forgotPassword")}
                 </Link>
               </div>
               <Input
@@ -121,12 +123,12 @@ function LoginPage() {
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "Signing in..." : "Sign in"}
+              {isSubmitting ? t("login.signingIn") : t("login.signIn")}
             </Button>
           </form>
           <div className="my-4 flex items-center gap-3">
             <Separator className="flex-1" />
-            <span className="text-xs text-muted-foreground">OR</span>
+            <span className="text-xs text-muted-foreground">{t("login.or")}</span>
             <Separator className="flex-1" />
           </div>
           <Button
@@ -136,15 +138,15 @@ function LoginPage() {
             disabled={isGoogleSubmitting}
             onClick={handleGoogleSignIn}
           >
-            {isGoogleSubmitting ? "Redirecting…" : "Continue with Google"}
+            {isGoogleSubmitting ? t("login.redirecting") : t("login.continueWithGoogle")}
           </Button>
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            No account?{" "}
+            {t("login.noAccount")}{" "}
             <Link
               to="/register"
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
-              Create one
+              {t("login.createOne")}
             </Link>
           </p>
         </CardContent>
