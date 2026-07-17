@@ -264,8 +264,25 @@ sifatida amal qildi).
   boshlab ishlatiladi — social-features ishida kerak bo'lmagan edi, oddiy
   komponent holati va react-query yetarli edi).
 
-**Navbatda**: i18n Phase 2 (`useTheme` + sozlamalar sahifasining ko'rinish
-bo'limi).
+- **i18n Phase 2 (`useTheme` + ko'rinish)**: `useThemeStore` (Zustand'ning
+  loyihadagi birinchi haqiqiy ishlatilishi) light/dark/system'ni sof-mijoz
+  holat sifatida saqlaydi (`ui-guidelines.md`ga muvofiq, hech qachon
+  serverga yozilmaydi). `index.html`ning bloklovchi skripti allaqachon
+  qo'llagan qiymatni o'qiydi, birinchi render'da qayta qo'llash shart
+  emas — faqat aniq o'zgartirishda. Yangi `/settings` sahifasi (hozircha
+  faqat ko'rinish bo'limi), `ProfileMenu`dan havola qilingan.
+- **i18n Phase 3 (til selektori)**: Yangi `settings` namespace (uz/ru/en),
+  `settings.tsx` endi o'z matni uchun `useTranslation()`dan foydalanadi,
+  `i18n.changeLanguage()`ga ulangan til tanlovchisi qo'shildi.
+- **i18n Phase 4 (namespace bo'yicha ko'chirish) — davom etmoqda**:
+  - ✅ `nav` — navbar (`app-shell.tsx`)
+  - ✅ `auth` — login/register/forgot-password/reset-password
+  - ⏳ Navbatda: `buildings`, `envelope`, `systems`, `consumption`,
+    `measures`, `audit`, `financial`, `admin`, `chat`, `notifications`,
+    `dashboard`, `profile` — yana ~20+ fayl, har biri alohida commit.
+
+**Navbatda**: i18n Phase 4'ni davom ettirish (`buildings` namespace'idan
+boshlab).
 
 ## Ma'lum bo'shliqlar
 
