@@ -3,14 +3,17 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 import enAuth from "./locales/en/auth.json";
 import enCommon from "./locales/en/common.json";
+import enDashboard from "./locales/en/dashboard.json";
 import enNav from "./locales/en/nav.json";
 import enSettings from "./locales/en/settings.json";
 import ruAuth from "./locales/ru/auth.json";
 import ruCommon from "./locales/ru/common.json";
+import ruDashboard from "./locales/ru/dashboard.json";
 import ruNav from "./locales/ru/nav.json";
 import ruSettings from "./locales/ru/settings.json";
 import uzAuth from "./locales/uz/auth.json";
 import uzCommon from "./locales/uz/common.json";
+import uzDashboard from "./locales/uz/dashboard.json";
 import uzNav from "./locales/uz/nav.json";
 import uzSettings from "./locales/uz/settings.json";
 
@@ -28,11 +31,11 @@ i18n
   .use(initReactI18next)
   .init({
     resources: {
-      uz: { common: uzCommon, settings: uzSettings, nav: uzNav, auth: uzAuth },
-      ru: { common: ruCommon, settings: ruSettings, nav: ruNav, auth: ruAuth },
-      en: { common: enCommon, settings: enSettings, nav: enNav, auth: enAuth },
+      uz: { common: uzCommon, settings: uzSettings, nav: uzNav, auth: uzAuth, dashboard: uzDashboard },
+      ru: { common: ruCommon, settings: ruSettings, nav: ruNav, auth: ruAuth, dashboard: ruDashboard },
+      en: { common: enCommon, settings: enSettings, nav: enNav, auth: enAuth, dashboard: enDashboard },
     },
-    ns: ["common", "settings", "nav", "auth"],
+    ns: ["common", "settings", "nav", "auth", "dashboard"],
     // Uzbek is the project's primary language (CLAUDE.md) — used when the
     // browser's language isn't one of the three supported ones.
     fallbackLng: "uz",

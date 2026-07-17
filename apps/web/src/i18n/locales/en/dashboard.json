@@ -1,0 +1,11 @@
+{
+  "title": "Dashboard",
+  "subtitle": "An overview of your building portfolio and audit activity.",
+  "newBuilding": "New Building",
+  "failedToLoad": "Failed to load buildings",
+  "totalBuildings": "Total Buildings",
+  "totalFloorArea": "Total Floor Area (m²)",
+  "recentBuildings": "Recent buildings",
+  "noBuildingsYet": "No buildings yet",
+  "noBuildingsDescription": "Add your first building to start tracking its envelope, consumption, and energy-saving measures."
+}

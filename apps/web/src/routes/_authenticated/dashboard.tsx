@@ -10,6 +10,7 @@ import {
   Skeleton,
 } from "@yres/ui";
 import { Building2, PlusCircle, Ruler } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useBuildings } from "../../hooks";
 import { BUILDING_TYPE_LABELS, formatDate, formatNumber } from "../../lib/labels";
 
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 function DashboardPage() {
+  const { t } = useTranslation("dashboard");
   const { data, isLoading, isError, error } = useBuildings({ pageSize: 100 });
   const buildings = data?.buildings ?? [];
 
@@ -30,15 +32,13 @@ function DashboardPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
-          <p className="mt-1 text-muted-foreground">
-            An overview of your building portfolio and audit activity.
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+          <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
         </div>
         <Button asChild>
           <Link to="/buildings/new">
             <PlusCircle className="h-4 w-4" />
-            New Building
+            {t("newBuilding")}
           </Link>
         </Button>
       </div>
@@ -46,7 +46,7 @@ function DashboardPage() {
       {isError && (
         <Card className="border-destructive/50">
           <CardContent className="p-6 text-sm text-destructive">
-            Failed to load buildings: {error instanceof Error ? error.message : "Unknown error"}
+            {t("failedToLoad")}: {error instanceof Error ? error.message : t("common:unknownError")}
           </CardContent>
         </Card>
       )}
@@ -61,12 +61,12 @@ function DashboardPage() {
         !isError && (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard
-              label="Total Buildings"
+              label={t("totalBuildings")}
               value={String(buildings.length)}
               icon={<Building2 className="h-5 w-5" />}
             />
             <MetricCard
-              label="Total Floor Area (m²)"
+              label={t("totalFloorArea")}
               value={formatNumber(totalFloorArea, 0)}
               icon={<Ruler className="h-5 w-5" />}
             />
@@ -76,7 +76,7 @@ function DashboardPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent buildings</CardTitle>
+          <CardTitle>{t("recentBuildings")}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -88,15 +88,12 @@ function DashboardPage() {
           ) : recentBuildings.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
               <Building2 className="h-10 w-10 text-muted-foreground" />
-              <p className="font-medium">No buildings yet</p>
-              <p className="max-w-sm text-sm text-muted-foreground">
-                Add your first building to start tracking its envelope, consumption, and
-                energy-saving measures.
-              </p>
+              <p className="font-medium">{t("noBuildingsYet")}</p>
+              <p className="max-w-sm text-sm text-muted-foreground">{t("noBuildingsDescription")}</p>
               <Button asChild className="mt-2">
                 <Link to="/buildings/new">
                   <PlusCircle className="h-4 w-4" />
-                  New Building
+                  {t("newBuilding")}
                 </Link>
               </Button>
             </div>

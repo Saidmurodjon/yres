@@ -1,6 +1,7 @@
 import { Button } from "@yres/ui";
 import { Outlet, createRootRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 const RELOAD_GUARD_KEY = "yres-chunk-reload-attempted";
 
@@ -16,6 +17,7 @@ function isStaleChunkError(error: unknown): boolean {
 }
 
 function RootErrorComponent({ error }: { error: Error }) {
+  const { t } = useTranslation();
   // Only auto-reload the *first* time this tab hits a stale-chunk error —
   // if it were guaranteed to happen again (already tried once this session),
   // silently reloading forever would hide a genuine, unrelated failure
@@ -32,18 +34,16 @@ function RootErrorComponent({ error }: { error: Error }) {
   if (staleChunk) {
     return (
       <main className="flex min-h-screen items-center justify-center p-4 text-center">
-        <p className="text-sm text-muted-foreground">Updating to the latest version…</p>
+        <p className="text-sm text-muted-foreground">{t("updating")}</p>
       </main>
     );
   }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-4 text-center">
-      <h1 className="text-lg font-semibold">Something went wrong</h1>
-      <p className="max-w-sm text-sm text-muted-foreground">
-        An unexpected error occurred. Reloading the page usually fixes it.
-      </p>
-      <Button onClick={() => window.location.reload()}>Reload</Button>
+      <h1 className="text-lg font-semibold">{t("somethingWrong")}</h1>
+      <p className="max-w-sm text-sm text-muted-foreground">{t("unexpectedError")}</p>
+      <Button onClick={() => window.location.reload()}>{t("reload")}</Button>
     </main>
   );
 }
