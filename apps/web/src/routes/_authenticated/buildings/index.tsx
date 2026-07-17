@@ -15,6 +15,7 @@ import {
 } from "@yres/ui";
 import { Building2, PlusCircle, Search } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useBuildings } from "../../../hooks";
 import { BUILDING_TYPE_LABELS, formatNumber } from "../../../lib/labels";
 
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/_authenticated/buildings/")({
 });
 
 function BuildingsListPage() {
+  const { t } = useTranslation("buildings");
   const { data, isLoading, isError, error } = useBuildings({ pageSize: 100 });
   const [search, setSearch] = useState("");
 
@@ -39,13 +41,13 @@ function BuildingsListPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Buildings</h1>
-          <p className="mt-1 text-muted-foreground">Manage your building portfolio.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("list.title")}</h1>
+          <p className="mt-1 text-muted-foreground">{t("list.subtitle")}</p>
         </div>
         <Button asChild>
           <Link to="/buildings/new">
             <PlusCircle className="h-4 w-4" />
-            New Building
+            {t("list.newBuilding")}
           </Link>
         </Button>
       </div>
@@ -53,7 +55,7 @@ function BuildingsListPage() {
       <div className="relative max-w-sm">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Search by name or location..."
+          placeholder={t("list.searchPlaceholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9"
@@ -63,7 +65,7 @@ function BuildingsListPage() {
       {isError ? (
         <Card className="border-destructive/50">
           <CardContent className="p-6 text-sm text-destructive">
-            Failed to load buildings: {error instanceof Error ? error.message : "Unknown error"}
+            {t("list.failedToLoad")}: {error instanceof Error ? error.message : t("common:unknownError")}
           </CardContent>
         </Card>
       ) : isLoading ? (
@@ -76,14 +78,12 @@ function BuildingsListPage() {
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <Building2 className="h-10 w-10 text-muted-foreground" />
-            <p className="font-medium">No buildings yet</p>
-            <p className="max-w-sm text-sm text-muted-foreground">
-              Add your first building to start an energy audit.
-            </p>
+            <p className="font-medium">{t("list.noBuildingsYet")}</p>
+            <p className="max-w-sm text-sm text-muted-foreground">{t("list.noBuildingsDescription")}</p>
             <Button asChild className="mt-2">
               <Link to="/buildings/new">
                 <PlusCircle className="h-4 w-4" />
-                New Building
+                {t("list.newBuilding")}
               </Link>
             </Button>
           </CardContent>
@@ -91,7 +91,7 @@ function BuildingsListPage() {
       ) : filtered.length === 0 ? (
         <Card>
           <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            No buildings match "{search}".
+            {t("list.noMatch", { search })}
           </CardContent>
         </Card>
       ) : (
@@ -99,11 +99,11 @@ function BuildingsListPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Location</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Floor area (m²)</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead>{t("list.columnName")}</TableHead>
+                <TableHead>{t("list.columnLocation")}</TableHead>
+                <TableHead>{t("list.columnType")}</TableHead>
+                <TableHead>{t("list.columnFloorArea")}</TableHead>
+                <TableHead className="text-right">{t("list.columnActions")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -126,7 +126,7 @@ function BuildingsListPage() {
                   <TableCell className="text-right">
                     <Button asChild variant="ghost" size="sm">
                       <Link to="/buildings/$buildingId" params={{ buildingId: building.id }}>
-                        View
+                        {t("list.view")}
                       </Link>
                     </Button>
                   </TableCell>

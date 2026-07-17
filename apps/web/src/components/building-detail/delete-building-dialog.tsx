@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@yres/ui";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useDeleteBuilding } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import type { Building } from "../../lib/api-types";
@@ -20,6 +21,7 @@ interface DeleteBuildingDialogProps {
 }
 
 export function DeleteBuildingDialog({ building, open, onOpenChange }: DeleteBuildingDialogProps) {
+  const { t } = useTranslation("buildings");
   const navigate = useNavigate();
   const deleteBuilding = useDeleteBuilding();
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +32,7 @@ export function DeleteBuildingDialog({ building, open, onOpenChange }: DeleteBui
       await deleteBuilding.mutateAsync(building.id);
       navigate({ to: "/buildings" });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to delete building.");
+      setError(err instanceof ApiError ? err.message : t("delete.deleteFailed"));
     }
   }
 
@@ -38,21 +40,18 @@ export function DeleteBuildingDialog({ building, open, onOpenChange }: DeleteBui
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete "{building.name}"?</DialogTitle>
-          <DialogDescription>
-            This permanently deletes the building along with its envelope, consumption, and measure
-            data. This action cannot be undone.
-          </DialogDescription>
+          <DialogTitle>{t("delete.title", { name: building.name })}</DialogTitle>
+          <DialogDescription>{t("delete.description")}</DialogDescription>
         </DialogHeader>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("delete.cancel")}
           </Button>
           <Button variant="destructive" onClick={handleDelete} disabled={deleteBuilding.isPending}>
-            {deleteBuilding.isPending ? "Deleting..." : "Delete building"}
+            {deleteBuilding.isPending ? t("delete.deleting") : t("delete.deleteBuilding")}
           </Button>
         </DialogFooter>
       </DialogContent>

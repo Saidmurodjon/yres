@@ -2,6 +2,7 @@ import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Button, Card, CardContent, CardFooter, CardHeader, CardTitle } from "@yres/ui";
 import { ArrowLeft } from "lucide-react";
 import { type FormEvent, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   BuildingFormFields,
   DEFAULT_BUILDING_FORM_VALUES,
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/buildings/new")({
 });
 
 function NewBuildingPage() {
+  const { t } = useTranslation("buildings");
   const navigate = useNavigate();
   const { data: climateData, isLoading: climateLoading } = useClimateRegions({ pageSize: 100 });
   const createBuilding = useCreateBuilding();
@@ -30,7 +32,7 @@ function NewBuildingPage() {
     event.preventDefault();
     setApiError(null);
 
-    const { data, errors } = parseBuildingFormValues(values);
+    const { data, errors } = parseBuildingFormValues(values, t);
     setValidationErrors(errors);
     if (!data) return;
 
@@ -41,7 +43,7 @@ function NewBuildingPage() {
       if (err instanceof ApiError) {
         setApiError({ message: err.message, details: err.details });
       } else {
-        setApiError({ message: err instanceof Error ? err.message : "Failed to create building." });
+        setApiError({ message: err instanceof Error ? err.message : t("new.createFailed") });
       }
     }
   }
@@ -52,20 +54,17 @@ function NewBuildingPage() {
         <Button asChild variant="ghost" size="sm" className="-ml-2">
           <Link to="/buildings">
             <ArrowLeft className="h-4 w-4" />
-            Back to buildings
+            {t("new.backToBuildings")}
           </Link>
         </Button>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">New Building</h1>
-        <p className="mt-1 text-muted-foreground">
-          Enter the building's parameters. Defaults are provided for common heating-season
-          assumptions — adjust anything that doesn't match your building.
-        </p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">{t("new.title")}</h1>
+        <p className="mt-1 text-muted-foreground">{t("new.subtitle")}</p>
       </div>
 
       <form onSubmit={handleSubmit}>
         <Card>
           <CardHeader>
-            <CardTitle>Building details</CardTitle>
+            <CardTitle>{t("new.buildingDetails")}</CardTitle>
           </CardHeader>
           <CardContent>
             <BuildingFormFields
@@ -78,7 +77,7 @@ function NewBuildingPage() {
 
             {validationErrors.length > 0 && (
               <div className="mt-6 rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-                <p className="font-medium">Please fix the following:</p>
+                <p className="font-medium">{t("new.pleaseFix")}</p>
                 <ul className="mt-1 list-inside list-disc">
                   {validationErrors.map((msg) => (
                     <li key={msg}>{msg}</li>
@@ -102,10 +101,10 @@ function NewBuildingPage() {
           </CardContent>
           <CardFooter className="justify-end gap-2">
             <Button asChild variant="outline" type="button">
-              <Link to="/buildings">Cancel</Link>
+              <Link to="/buildings">{t("new.cancel")}</Link>
             </Button>
             <Button type="submit" disabled={createBuilding.isPending}>
-              {createBuilding.isPending ? "Creating..." : "Create building"}
+              {createBuilding.isPending ? t("new.creating") : t("new.createBuilding")}
             </Button>
           </CardFooter>
         </Card>

@@ -8,6 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@yres/ui";
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 import type { Building, ClimateRegion, CreateBuildingInput } from "../../lib/api-types";
 import { BUILDING_TYPES, BUILDING_TYPE_LABELS } from "../../lib/labels";
 
@@ -86,92 +88,134 @@ export function buildingToFormValues(building: Building): BuildingFormValues {
   };
 }
 
-function parseRequiredNumber(value: string, label: string, errors: string[]): number {
+function parseRequiredNumber(
+  value: string,
+  fieldLabel: string,
+  errors: string[],
+  t: TFunction,
+): number {
   const n = Number(value);
   if (value.trim() === "" || Number.isNaN(n)) {
-    errors.push(`${label} must be a number.`);
+    errors.push(t("buildings:form.fieldMustBeNumber", { field: fieldLabel }));
     return 0;
   }
   return n;
 }
 
-function parseOptionalNumber(value: string, label: string, errors: string[]): number | undefined {
+function parseOptionalNumber(
+  value: string,
+  fieldLabel: string,
+  errors: string[],
+  t: TFunction,
+): number | undefined {
   if (value.trim() === "") return undefined;
   const n = Number(value);
   if (Number.isNaN(n)) {
-    errors.push(`${label} must be a number.`);
+    errors.push(t("buildings:form.fieldMustBeNumber", { field: fieldLabel }));
     return undefined;
   }
   return n;
 }
 
-export function parseBuildingFormValues(values: BuildingFormValues): {
+export function parseBuildingFormValues(
+  values: BuildingFormValues,
+  t: TFunction,
+): {
   data: CreateBuildingInput | null;
   errors: string[];
 } {
   const errors: string[] = [];
 
-  if (!values.name.trim()) errors.push("Name is required.");
-  if (!values.location.trim()) errors.push("Location is required.");
-  if (!values.climateRegionId) errors.push("Climate region is required.");
+  if (!values.name.trim()) {
+    errors.push(t("buildings:form.fieldRequired", { field: t("buildings:form.fieldNameLabel") }));
+  }
+  if (!values.location.trim()) {
+    errors.push(t("buildings:form.fieldRequired", { field: t("buildings:form.fieldLocationLabel") }));
+  }
+  if (!values.climateRegionId) {
+    errors.push(
+      t("buildings:form.fieldRequired", { field: t("buildings:form.fieldClimateRegionLabel") }),
+    );
+  }
 
   const heatingSeasonDurationDays = parseRequiredNumber(
     values.heatingSeasonDurationDays,
-    "Heating season duration",
+    t("buildings:form.fieldHeatingSeasonDurationLabel"),
     errors,
+    t,
   );
   const indoorTempNonOperationC = parseRequiredNumber(
     values.indoorTempNonOperationC,
-    "Indoor temperature (non-operation)",
+    t("buildings:form.fieldIndoorTempNonOperationLabel"),
     errors,
+    t,
   );
   const indoorTempOperationC = parseRequiredNumber(
     values.indoorTempOperationC,
-    "Indoor temperature (operation)",
+    t("buildings:form.fieldIndoorTempOperationLabel"),
     errors,
+    t,
   );
   const outdoorAvgHeatingSeasonTempC = parseRequiredNumber(
     values.outdoorAvgHeatingSeasonTempC,
-    "Average outdoor heating-season temperature",
+    t("buildings:form.fieldAvgOutdoorTempLabel"),
     errors,
+    t,
   );
   const outdoorDesignTempC = parseRequiredNumber(
     values.outdoorDesignTempC,
-    "Outdoor design temperature",
+    t("buildings:form.fieldOutdoorDesignTempLabel"),
     errors,
+    t,
   );
   const nonOperationHoursPerDay = parseRequiredNumber(
     values.nonOperationHoursPerDay,
-    "Non-operation hours/day",
+    t("buildings:form.fieldNonOperationHoursLabel"),
     errors,
+    t,
   );
   const operationHoursPerDay = parseRequiredNumber(
     values.operationHoursPerDay,
-    "Operation hours/day",
+    t("buildings:form.fieldOperationHoursLabel"),
     errors,
+    t,
   );
 
-  const yearBuilt = parseOptionalNumber(values.yearBuilt, "Year built", errors);
+  const yearBuilt = parseOptionalNumber(
+    values.yearBuilt,
+    t("buildings:form.fieldYearBuiltLabel"),
+    errors,
+    t,
+  );
   const netCooledFloorAreaM2 = parseOptionalNumber(
     values.netCooledFloorAreaM2,
-    "Net cooled floor area",
+    t("buildings:form.fieldFloorAreaLabel"),
     errors,
+    t,
   );
-  const occupantCount = parseOptionalNumber(values.occupantCount, "Occupant count", errors);
+  const occupantCount = parseOptionalNumber(
+    values.occupantCount,
+    t("buildings:form.fieldOccupantCountLabel"),
+    errors,
+    t,
+  );
   const coolingEnthalpyInsideKjKg = parseOptionalNumber(
     values.coolingEnthalpyInsideKjKg,
-    "Cooling enthalpy (inside)",
+    t("buildings:form.fieldEnthalpyInsideLabel"),
     errors,
+    t,
   );
   const coolingEnthalpyOutsideKjKg = parseOptionalNumber(
     values.coolingEnthalpyOutsideKjKg,
-    "Cooling enthalpy (outside)",
+    t("buildings:form.fieldEnthalpyOutsideLabel"),
     errors,
+    t,
   );
   const coolingEnthalpyHottestDayKjKg = parseOptionalNumber(
     values.coolingEnthalpyHottestDayKjKg,
-    "Cooling enthalpy (hottest day)",
+    t("buildings:form.fieldEnthalpyHottestLabel"),
     errors,
+    t,
   );
 
   if (errors.length > 0) return { data: null, errors };
@@ -215,6 +259,8 @@ export function BuildingFormFields({
   climateRegionsLoading,
   idPrefix = "building",
 }: BuildingFormFieldsProps) {
+  const { t } = useTranslation("buildings");
+
   function set<K extends keyof BuildingFormValues>(key: K, value: BuildingFormValues[K]) {
     onChange({ ...values, [key]: value });
   }
@@ -224,10 +270,10 @@ export function BuildingFormFields({
   return (
     <div className="space-y-8">
       <fieldset className="space-y-4">
-        <legend className="text-sm font-semibold">Location &amp; type</legend>
+        <legend className="text-sm font-semibold">{t("form.locationAndType")}</legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor={id("name")}>Name *</Label>
+            <Label htmlFor={id("name")}>{t("form.name")}</Label>
             <Input
               id={id("name")}
               required
@@ -236,7 +282,7 @@ export function BuildingFormFields({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={id("location")}>Location *</Label>
+            <Label htmlFor={id("location")}>{t("form.location")}</Label>
             <Input
               id={id("location")}
               required
@@ -245,7 +291,7 @@ export function BuildingFormFields({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={id("climateRegion")}>Climate region *</Label>
+            <Label htmlFor={id("climateRegion")}>{t("form.climateRegion")}</Label>
             <Select
               value={values.climateRegionId || undefined}
               onValueChange={(v) => set("climateRegionId", v)}
@@ -255,10 +301,10 @@ export function BuildingFormFields({
                 <SelectValue
                   placeholder={
                     climateRegionsLoading
-                      ? "Loading regions..."
+                      ? t("form.loadingRegions")
                       : climateRegions.length === 0
-                        ? "No climate regions available"
-                        : "Select a region"
+                        ? t("form.noClimateRegions")
+                        : t("form.selectRegion")
                   }
                 />
               </SelectTrigger>
@@ -271,14 +317,11 @@ export function BuildingFormFields({
               </SelectContent>
             </Select>
             {!climateRegionsLoading && climateRegions.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                No climate regions available yet. Ask an administrator to seed climate data before
-                creating buildings.
-              </p>
+              <p className="text-xs text-muted-foreground">{t("form.noClimateRegionsHelp")}</p>
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor={id("buildingType")}>Building type</Label>
+            <Label htmlFor={id("buildingType")}>{t("form.buildingType")}</Label>
             <Select
               value={values.buildingType}
               onValueChange={(v) => set("buildingType", v as BuildingType)}
@@ -296,7 +339,7 @@ export function BuildingFormFields({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor={id("yearBuilt")}>Year built</Label>
+            <Label htmlFor={id("yearBuilt")}>{t("form.yearBuilt")}</Label>
             <Input
               id={id("yearBuilt")}
               type="number"
@@ -305,7 +348,7 @@ export function BuildingFormFields({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={id("floorArea")}>Net cooled floor area (m²)</Label>
+            <Label htmlFor={id("floorArea")}>{t("form.floorArea")}</Label>
             <Input
               id={id("floorArea")}
               type="number"
@@ -315,7 +358,7 @@ export function BuildingFormFields({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={id("occupantCount")}>Occupant count</Label>
+            <Label htmlFor={id("occupantCount")}>{t("form.occupantCount")}</Label>
             <Input
               id={id("occupantCount")}
               type="number"
@@ -327,12 +370,10 @@ export function BuildingFormFields({
       </fieldset>
 
       <fieldset className="space-y-4">
-        <legend className="text-sm font-semibold">Heating season configuration</legend>
+        <legend className="text-sm font-semibold">{t("form.heatingSeasonConfig")}</legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor={id("heatingSeasonDurationDays")}>
-              Heating season duration (days) *
-            </Label>
+            <Label htmlFor={id("heatingSeasonDurationDays")}>{t("form.heatingSeasonDuration")}</Label>
             <Input
               id={id("heatingSeasonDurationDays")}
               type="number"
@@ -342,9 +383,7 @@ export function BuildingFormFields({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={id("outdoorAvgHeatingSeasonTempC")}>
-              Avg. outdoor temp, heating season (°C) *
-            </Label>
+            <Label htmlFor={id("outdoorAvgHeatingSeasonTempC")}>{t("form.avgOutdoorTemp")}</Label>
             <Input
               id={id("outdoorAvgHeatingSeasonTempC")}
               type="number"
@@ -355,7 +394,7 @@ export function BuildingFormFields({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={id("outdoorDesignTempC")}>Outdoor design temperature (°C) *</Label>
+            <Label htmlFor={id("outdoorDesignTempC")}>{t("form.outdoorDesignTemp")}</Label>
             <Input
               id={id("outdoorDesignTempC")}
               type="number"
@@ -369,10 +408,10 @@ export function BuildingFormFields({
       </fieldset>
 
       <fieldset className="space-y-4">
-        <legend className="text-sm font-semibold">Indoor temperatures &amp; operating hours</legend>
+        <legend className="text-sm font-semibold">{t("form.indoorTempsAndHours")}</legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor={id("indoorTempOperationC")}>Indoor temp, operation hours (°C) *</Label>
+            <Label htmlFor={id("indoorTempOperationC")}>{t("form.indoorTempOperation")}</Label>
             <Input
               id={id("indoorTempOperationC")}
               type="number"
@@ -383,9 +422,7 @@ export function BuildingFormFields({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={id("indoorTempNonOperationC")}>
-              Indoor temp, non-operation hours (°C) *
-            </Label>
+            <Label htmlFor={id("indoorTempNonOperationC")}>{t("form.indoorTempNonOperation")}</Label>
             <Input
               id={id("indoorTempNonOperationC")}
               type="number"
@@ -396,7 +433,7 @@ export function BuildingFormFields({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={id("operationHoursPerDay")}>Operation hours/day *</Label>
+            <Label htmlFor={id("operationHoursPerDay")}>{t("form.operationHours")}</Label>
             <Input
               id={id("operationHoursPerDay")}
               type="number"
@@ -407,7 +444,7 @@ export function BuildingFormFields({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={id("nonOperationHoursPerDay")}>Non-operation hours/day *</Label>
+            <Label htmlFor={id("nonOperationHoursPerDay")}>{t("form.nonOperationHours")}</Label>
             <Input
               id={id("nonOperationHoursPerDay")}
               type="number"
@@ -422,12 +459,12 @@ export function BuildingFormFields({
 
       <fieldset className="space-y-4">
         <legend className="text-sm font-semibold">
-          Cooling enthalpies (kJ/kg){" "}
-          <span className="font-normal text-muted-foreground">— optional</span>
+          {t("form.coolingEnthalpies")}{" "}
+          <span className="font-normal text-muted-foreground">{t("form.optional")}</span>
         </legend>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
-            <Label htmlFor={id("enthalpyInside")}>Inside</Label>
+            <Label htmlFor={id("enthalpyInside")}>{t("form.inside")}</Label>
             <Input
               id={id("enthalpyInside")}
               type="number"
@@ -437,7 +474,7 @@ export function BuildingFormFields({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={id("enthalpyOutside")}>Outside</Label>
+            <Label htmlFor={id("enthalpyOutside")}>{t("form.outside")}</Label>
             <Input
               id={id("enthalpyOutside")}
               type="number"
@@ -447,7 +484,7 @@ export function BuildingFormFields({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={id("enthalpyHottest")}>Hottest day</Label>
+            <Label htmlFor={id("enthalpyHottest")}>{t("form.hottestDay")}</Label>
             <Input
               id={id("enthalpyHottest")}
               type="number"

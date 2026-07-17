@@ -1,5 +1,6 @@
 import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@yres/ui";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useClimateRegions, useUpdateBuilding } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import type { Building } from "../../lib/api-types";
@@ -17,6 +18,7 @@ interface EditBuildingDialogProps {
 }
 
 export function EditBuildingDialog({ building, open, onOpenChange }: EditBuildingDialogProps) {
+  const { t } = useTranslation("buildings");
   const { data: climateData, isLoading: climateLoading } = useClimateRegions({ pageSize: 100 });
   const updateBuilding = useUpdateBuilding(building.id);
 
@@ -36,7 +38,7 @@ export function EditBuildingDialog({ building, open, onOpenChange }: EditBuildin
 
   async function handleSubmit() {
     setApiError(null);
-    const { data, errors } = parseBuildingFormValues(values);
+    const { data, errors } = parseBuildingFormValues(values, t);
     setValidationErrors(errors);
     if (!data) return;
 
@@ -47,7 +49,7 @@ export function EditBuildingDialog({ building, open, onOpenChange }: EditBuildin
       if (err instanceof ApiError) {
         setApiError({ message: err.message, details: err.details });
       } else {
-        setApiError({ message: err instanceof Error ? err.message : "Failed to update building." });
+        setApiError({ message: err instanceof Error ? err.message : t("edit.updateFailed") });
       }
     }
   }
@@ -56,7 +58,7 @@ export function EditBuildingDialog({ building, open, onOpenChange }: EditBuildin
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit building</DialogTitle>
+          <DialogTitle>{t("edit.title")}</DialogTitle>
         </DialogHeader>
 
         <BuildingFormFields
@@ -69,7 +71,7 @@ export function EditBuildingDialog({ building, open, onOpenChange }: EditBuildin
 
         {validationErrors.length > 0 && (
           <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-            <p className="font-medium">Please fix the following:</p>
+            <p className="font-medium">{t("edit.pleaseFix")}</p>
             <ul className="mt-1 list-inside list-disc">
               {validationErrors.map((msg) => (
                 <li key={msg}>{msg}</li>
@@ -86,10 +88,10 @@ export function EditBuildingDialog({ building, open, onOpenChange }: EditBuildin
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t("edit.cancel")}
           </Button>
           <Button onClick={handleSubmit} disabled={updateBuilding.isPending}>
-            {updateBuilding.isPending ? "Saving..." : "Save changes"}
+            {updateBuilding.isPending ? t("edit.saving") : t("edit.saveChanges")}
           </Button>
         </DialogFooter>
       </DialogContent>

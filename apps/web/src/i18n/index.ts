@@ -2,16 +2,19 @@ import i18n from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 import enAuth from "./locales/en/auth.json";
+import enBuildings from "./locales/en/buildings.json";
 import enCommon from "./locales/en/common.json";
 import enDashboard from "./locales/en/dashboard.json";
 import enNav from "./locales/en/nav.json";
 import enSettings from "./locales/en/settings.json";
 import ruAuth from "./locales/ru/auth.json";
+import ruBuildings from "./locales/ru/buildings.json";
 import ruCommon from "./locales/ru/common.json";
 import ruDashboard from "./locales/ru/dashboard.json";
 import ruNav from "./locales/ru/nav.json";
 import ruSettings from "./locales/ru/settings.json";
 import uzAuth from "./locales/uz/auth.json";
+import uzBuildings from "./locales/uz/buildings.json";
 import uzCommon from "./locales/uz/common.json";
 import uzDashboard from "./locales/uz/dashboard.json";
 import uzNav from "./locales/uz/nav.json";
@@ -31,11 +34,32 @@ i18n
   .use(initReactI18next)
   .init({
     resources: {
-      uz: { common: uzCommon, settings: uzSettings, nav: uzNav, auth: uzAuth, dashboard: uzDashboard },
-      ru: { common: ruCommon, settings: ruSettings, nav: ruNav, auth: ruAuth, dashboard: ruDashboard },
-      en: { common: enCommon, settings: enSettings, nav: enNav, auth: enAuth, dashboard: enDashboard },
+      uz: {
+        common: uzCommon,
+        settings: uzSettings,
+        nav: uzNav,
+        auth: uzAuth,
+        dashboard: uzDashboard,
+        buildings: uzBuildings,
+      },
+      ru: {
+        common: ruCommon,
+        settings: ruSettings,
+        nav: ruNav,
+        auth: ruAuth,
+        dashboard: ruDashboard,
+        buildings: ruBuildings,
+      },
+      en: {
+        common: enCommon,
+        settings: enSettings,
+        nav: enNav,
+        auth: enAuth,
+        dashboard: enDashboard,
+        buildings: enBuildings,
+      },
     },
-    ns: ["common", "settings", "nav", "auth", "dashboard"],
+    ns: ["common", "settings", "nav", "auth", "dashboard", "buildings"],
     // Uzbek is the project's primary language (CLAUDE.md) — used when the
     // browser's language isn't one of the three supported ones.
     fallbackLng: "uz",
