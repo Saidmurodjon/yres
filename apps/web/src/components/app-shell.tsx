@@ -23,6 +23,7 @@ import {
   LayoutDashboard,
   LogOut,
   MessageCircle,
+  Settings,
   ShieldCheck,
   UserRound,
 } from "lucide-react";
@@ -155,6 +156,12 @@ function ProfileMenu({ user, onSignOut }: { user: SessionUser; onSignOut: () => 
           <Link to="/profile">
             <UserRound className="mr-2 h-4 w-4" />
             Profile
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/settings">
+            <Settings className="mr-2 h-4 w-4" />
+            Settings
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
