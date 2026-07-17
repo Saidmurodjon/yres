@@ -4,21 +4,33 @@ import { initReactI18next } from "react-i18next";
 import enAuth from "./locales/en/auth.json";
 import enBuildings from "./locales/en/buildings.json";
 import enCommon from "./locales/en/common.json";
+import enConsumption from "./locales/en/consumption.json";
 import enDashboard from "./locales/en/dashboard.json";
+import enEnvelope from "./locales/en/envelope.json";
+import enMeasures from "./locales/en/measures.json";
 import enNav from "./locales/en/nav.json";
 import enSettings from "./locales/en/settings.json";
+import enSystems from "./locales/en/systems.json";
 import ruAuth from "./locales/ru/auth.json";
 import ruBuildings from "./locales/ru/buildings.json";
 import ruCommon from "./locales/ru/common.json";
+import ruConsumption from "./locales/ru/consumption.json";
 import ruDashboard from "./locales/ru/dashboard.json";
+import ruEnvelope from "./locales/ru/envelope.json";
+import ruMeasures from "./locales/ru/measures.json";
 import ruNav from "./locales/ru/nav.json";
 import ruSettings from "./locales/ru/settings.json";
+import ruSystems from "./locales/ru/systems.json";
 import uzAuth from "./locales/uz/auth.json";
 import uzBuildings from "./locales/uz/buildings.json";
 import uzCommon from "./locales/uz/common.json";
+import uzConsumption from "./locales/uz/consumption.json";
 import uzDashboard from "./locales/uz/dashboard.json";
+import uzEnvelope from "./locales/uz/envelope.json";
+import uzMeasures from "./locales/uz/measures.json";
 import uzNav from "./locales/uz/nav.json";
 import uzSettings from "./locales/uz/settings.json";
+import uzSystems from "./locales/uz/systems.json";
 
 export const SUPPORTED_LANGUAGES = ["uz", "ru", "en"] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
@@ -41,6 +53,10 @@ i18n
         auth: uzAuth,
         dashboard: uzDashboard,
         buildings: uzBuildings,
+        consumption: uzConsumption,
+        measures: uzMeasures,
+        envelope: uzEnvelope,
+        systems: uzSystems,
       },
       ru: {
         common: ruCommon,
@@ -49,6 +65,10 @@ i18n
         auth: ruAuth,
         dashboard: ruDashboard,
         buildings: ruBuildings,
+        consumption: ruConsumption,
+        measures: ruMeasures,
+        envelope: ruEnvelope,
+        systems: ruSystems,
       },
       en: {
         common: enCommon,
@@ -57,9 +77,24 @@ i18n
         auth: enAuth,
         dashboard: enDashboard,
         buildings: enBuildings,
+        consumption: enConsumption,
+        measures: enMeasures,
+        envelope: enEnvelope,
+        systems: enSystems,
       },
     },
-    ns: ["common", "settings", "nav", "auth", "dashboard", "buildings"],
+    ns: [
+      "common",
+      "settings",
+      "nav",
+      "auth",
+      "dashboard",
+      "buildings",
+      "consumption",
+      "measures",
+      "envelope",
+      "systems",
+    ],
     // Uzbek is the project's primary language (CLAUDE.md) — used when the
     // browser's language isn't one of the three supported ones.
     fallbackLng: "uz",
