@@ -190,9 +190,23 @@ Endi `docs/social-features.md`dagi "Qurish tartibi" bosqichlariga o'tildi:
   qo'shilmadi — bu qaror ikki marta o'zgargani ("har safar" → "faqat
   yangi qurilma" → "umuman yo'q") uchun ayniqsa ochiq qayd etilmoqda.
 
-**Navbatda**: Social Phase 7 (Durable Objects infratuzilmasi) — bu loyiha
-uchun mutlaqo yangi infratuzilma, `docs/social-features.md`da belgilanganidek
-haqiqiy deploy'siz to'liq tekshirib bo'lmaydi.
+- **Social Phase 7 (Durable Objects infratuzilmasi)**: `wrangler.toml`ga
+  `ConversationRoom` (suhbat-bo'yicha) va `UserNotificationChannel`
+  (foydalanuvchi-bo'yicha) DO binding'lari + `new_sqlite_classes` migratsiya
+  bloki qo'shildi (Workers Free rejasida ham ishlashi mumkin — akkauntga
+  nisbatan tasdiqlanmagan). Ikkalasi ham hozircha faqat skelet (WebSocket
+  Hibernation API orqali ulanishni qabul qiladi, xabar/broadcast mantig'i
+  Phase 8/10'da). `UserNotificationChannel`ning `pushNotification()`i RPC
+  metod sifatida yozilgan (Cloudflare'ning zamonaviy `DurableObject` bazaviy
+  klassi buni ichki fetch route'isiz qo'llab-quvvatlaydi). Yo'lda haqiqiy
+  `noUncheckedIndexedAccess` xatosi topildi va tuzatildi (`WebSocketPair`ni
+  `Object.values()` orqali emas, to'g'ridan-to'g'ri `[0]`/`[1]` bilan
+  indekslash kerak edi). **Bu sandbox'da hech qanday DO/WebSocket
+  xatti-harakatini tekshirib bo'lmaydi** — faqat type-check/lint orqali
+  tekshirildi, haqiqiy `wrangler deploy`dan keyin qo'lda tasdiqlash kerak.
+
+**Navbatda**: Social Phase 8 (Bildirishnomalar backend + real-time +
+frontend).
 
 ## Ma'lum bo'shliqlar
 
