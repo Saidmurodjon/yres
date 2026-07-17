@@ -1,0 +1,28 @@
+{
+  "title": "Profile",
+  "subtitle": "Manage your account details and password.",
+  "details": {
+    "title": "Profile details",
+    "nameLabel": "Name",
+    "usernameLabel": "Username",
+    "usernameHint": "Used to find you when starting a chat.",
+    "emailLabel": "Email",
+    "nameRequired": "Name is required.",
+    "usernameRequired": "Username is required.",
+    "updateFailed": "Failed to update profile. Please try again.",
+    "updated": "Profile updated.",
+    "saveChanges": "Save changes"
+  },
+  "password": {
+    "title": "Change password",
+    "currentLabel": "Current password",
+    "newLabel": "New password",
+    "confirmLabel": "Confirm new password",
+    "tooShort": "New password must be at least 8 characters.",
+    "mismatch": "New password and confirmation do not match.",
+    "changeFailed": "Failed to change password.",
+    "changed": "Password changed.",
+    "changing": "Changing...",
+    "changePassword": "Change password"
+  }
+}

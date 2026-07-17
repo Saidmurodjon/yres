@@ -1,0 +1,28 @@
+{
+  "title": "Profil",
+  "subtitle": "Akkaunt ma'lumotlari va parolingizni boshqaring.",
+  "details": {
+    "title": "Profil ma'lumotlari",
+    "nameLabel": "Ismi",
+    "usernameLabel": "Foydalanuvchi nomi",
+    "usernameHint": "Suhbat boshlashda sizni topish uchun ishlatiladi.",
+    "emailLabel": "Email",
+    "nameRequired": "Ism kiritilishi shart.",
+    "usernameRequired": "Foydalanuvchi nomi kiritilishi shart.",
+    "updateFailed": "Profilni yangilab bo'lmadi. Qayta urinib ko'ring.",
+    "updated": "Profil yangilandi.",
+    "saveChanges": "O'zgarishlarni saqlash"
+  },
+  "password": {
+    "title": "Parolni almashtirish",
+    "currentLabel": "Joriy parol",
+    "newLabel": "Yangi parol",
+    "confirmLabel": "Yangi parolni tasdiqlang",
+    "tooShort": "Yangi parol kamida 8 ta belgidan iborat bo'lishi kerak.",
+    "mismatch": "Yangi parol va tasdiqlash mos kelmadi.",
+    "changeFailed": "Parolni almashtirib bo'lmadi.",
+    "changed": "Parol almashtirildi.",
+    "changing": "Almashtirilmoqda...",
+    "changePassword": "Parolni almashtirish"
+  }
+}
