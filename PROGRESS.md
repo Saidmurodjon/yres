@@ -143,8 +143,18 @@ Endi `docs/social-features.md`dagi "Qurish tartibi" bosqichlariga o'tildi:
   type-check orqali tekshirilgan, haqiqiy deploy'dan keyin signup oqimini
   qo'lda tekshirish tavsiya etiladi.
 
-**Navbatda**: Social Phase 2 (`packages/ui` primitivlari: dropdown-menu,
-popover, avatar, toast).
+- **Social Phase 2 (`packages/ui` primitivlari)**: `DropdownMenu`, `Popover`,
+  `Avatar`, `Toaster`/`toast` (sonner) qo'shildi, mavjud Radix-o'ram+`cn()`
+  andozasida. Bularni build'da tekshirish (`frontend.md`ning `@source`
+  qoidasi) haqiqiy, oldindan mavjud kamchilikni ochdi: `dialog.tsx`dagi
+  `animate-in`/`fade-in-0`/`zoom-in-95` klasslari Tailwind v4'da hech qachon
+  haqiqiy utility bo'lmagan (mos plagin yo'q edi) — sezdirmasdan hech qanday
+  CSS ishlab chiqarmagan, ya'ni Dialog animatsiyasi hech qachon ishlamagan.
+  `tw-animate-css` qo'shilib, ham yangi komponentlar, ham mavjud Dialog uchun
+  tuzatildi (build'da `zoom-in-95`/`fade-in-0` endi haqiqatan CSS'da bor deb
+  tekshirildi).
+
+**Navbatda**: Social Phase 3 (Navbar — bell + profil menyusi).
 
 ## Ma'lum bo'shliqlar
 
