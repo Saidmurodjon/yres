@@ -2,10 +2,13 @@ import i18n from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 import enCommon from "./locales/en/common.json";
+import enNav from "./locales/en/nav.json";
 import enSettings from "./locales/en/settings.json";
 import ruCommon from "./locales/ru/common.json";
+import ruNav from "./locales/ru/nav.json";
 import ruSettings from "./locales/ru/settings.json";
 import uzCommon from "./locales/uz/common.json";
+import uzNav from "./locales/uz/nav.json";
 import uzSettings from "./locales/uz/settings.json";
 
 export const SUPPORTED_LANGUAGES = ["uz", "ru", "en"] as const;
@@ -22,11 +25,11 @@ i18n
   .use(initReactI18next)
   .init({
     resources: {
-      uz: { common: uzCommon, settings: uzSettings },
-      ru: { common: ruCommon, settings: ruSettings },
-      en: { common: enCommon, settings: enSettings },
+      uz: { common: uzCommon, settings: uzSettings, nav: uzNav },
+      ru: { common: ruCommon, settings: ruSettings, nav: ruNav },
+      en: { common: enCommon, settings: enSettings, nav: enNav },
     },
-    ns: ["common", "settings"],
+    ns: ["common", "settings", "nav"],
     // Uzbek is the project's primary language (CLAUDE.md) — used when the
     // browser's language isn't one of the three supported ones.
     fallbackLng: "uz",

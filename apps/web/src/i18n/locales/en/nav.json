@@ -1,0 +1,13 @@
+{
+  "dashboard": "Dashboard",
+  "buildings": "Buildings",
+  "chat": "Chat",
+  "users": "Users",
+  "notifications": "Notifications",
+  "noNotifications": "No notifications yet.",
+  "markAllRead": "Mark all read",
+  "profileMenu": "Profile menu",
+  "profile": "Profile",
+  "settings": "Settings",
+  "signOut": "Sign out"
+}

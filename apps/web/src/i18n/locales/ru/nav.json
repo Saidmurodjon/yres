@@ -1,0 +1,13 @@
+{
+  "dashboard": "Панель управления",
+  "buildings": "Здания",
+  "chat": "Чат",
+  "users": "Пользователи",
+  "notifications": "Уведомления",
+  "noNotifications": "Пока нет уведомлений.",
+  "markAllRead": "Отметить все как прочитанные",
+  "profileMenu": "Меню профиля",
+  "profile": "Профиль",
+  "settings": "Настройки",
+  "signOut": "Выйти"
+}

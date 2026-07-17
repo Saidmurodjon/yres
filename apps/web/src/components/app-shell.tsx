@@ -28,6 +28,7 @@ import {
   UserRound,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
@@ -40,17 +41,17 @@ import { USER_ROLE_LABELS } from "../lib/labels";
 
 interface NavItem {
   to: "/dashboard" | "/buildings" | "/chat" | "/admin/users";
-  label: string;
+  labelKey: "dashboard" | "buildings" | "chat" | "users";
   icon: typeof LayoutDashboard;
   /** Omit to show for every role. */
   roles?: UserRole[];
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/buildings", label: "Buildings", icon: Building2 },
-  { to: "/chat", label: "Chat", icon: MessageCircle },
-  { to: "/admin/users", label: "Users", icon: ShieldCheck, roles: ["admin"] },
+  { to: "/dashboard", labelKey: "dashboard", icon: LayoutDashboard },
+  { to: "/buildings", labelKey: "buildings", icon: Building2 },
+  { to: "/chat", labelKey: "chat", icon: MessageCircle },
+  { to: "/admin/users", labelKey: "users", icon: ShieldCheck, roles: ["admin"] },
 ];
 
 function visibleNavItems(role: UserRole | undefined) {
@@ -64,6 +65,7 @@ function initialsFor(name: string) {
 }
 
 function NotificationBell() {
+  const { t } = useTranslation("nav");
   const { data } = useNotifications({ pageSize: 10 });
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
@@ -74,7 +76,7 @@ function NotificationBell() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" aria-label="Notifications" className="relative">
+        <Button variant="ghost" size="sm" aria-label={t("notifications")} className="relative">
           <Bell className="h-4 w-4" />
           {unreadCount > 0 && (
             <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
@@ -85,7 +87,7 @@ function NotificationBell() {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
-          <p className="text-sm font-medium">Notifications</p>
+          <p className="text-sm font-medium">{t("notifications")}</p>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
@@ -93,13 +95,13 @@ function NotificationBell() {
               onClick={() => markAllRead.mutate()}
               disabled={markAllRead.isPending}
             >
-              Mark all read
+              {t("markAllRead")}
             </Button>
           )}
         </div>
         <div className="max-h-80 overflow-y-auto">
           {notifications.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">No notifications yet.</p>
+            <p className="p-4 text-sm text-muted-foreground">{t("noNotifications")}</p>
           ) : (
             notifications.map((n) => (
               <button
@@ -123,13 +125,15 @@ function NotificationBell() {
 }
 
 function ProfileMenu({ user, onSignOut }: { user: SessionUser; onSignOut: () => void }) {
+  const { t } = useTranslation("nav");
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
           className="flex items-center gap-2 rounded-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          aria-label="Profile menu"
+          aria-label={t("profileMenu")}
         >
           <Avatar className="h-8 w-8">
             <AvatarImage src={user.image ?? undefined} alt={user.name} />
@@ -155,19 +159,19 @@ function ProfileMenu({ user, onSignOut }: { user: SessionUser; onSignOut: () => 
         <DropdownMenuItem asChild>
           <Link to="/profile">
             <UserRound className="mr-2 h-4 w-4" />
-            Profile
+            {t("profile")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link to="/settings">
             <Settings className="mr-2 h-4 w-4" />
-            Settings
+            {t("settings")}
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
-          Sign out
+          {t("signOut")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -176,6 +180,7 @@ function ProfileMenu({ user, onSignOut }: { user: SessionUser; onSignOut: () => 
 
 export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
+  const { t } = useTranslation("nav");
   const { data: session } = useSession();
   const user = session?.user as SessionUser | undefined;
   const navItems = visibleNavItems(user?.role);
@@ -204,7 +209,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Link
               key={item.to}
               to={item.to}
-              aria-label={item.label}
+              aria-label={t(item.labelKey)}
               className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground [&.active]:bg-accent [&.active]:text-accent-foreground"
               activeProps={{ className: "active" }}
             >
@@ -228,7 +233,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               activeProps={{ className: "active" }}
             >
               <item.icon className="h-4 w-4" />
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           ))}
         </nav>
