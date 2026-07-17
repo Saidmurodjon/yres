@@ -154,7 +154,21 @@ Endi `docs/social-features.md`dagi "Qurish tartibi" bosqichlariga o'tildi:
   tuzatildi (build'da `zoom-in-95`/`fade-in-0` endi haqiqatan CSS'da bor deb
   tekshirildi).
 
-**Navbatda**: Social Phase 3 (Navbar — bell + profil menyusi).
+- **Social Phase 3 (Navbar)**: `NAV_ITEMS`ga ixtiyoriy `roles` filtri qo'shildi
+  (mobil header va desktop sidebar ikkalasida ham o'qiladi). Oddiy
+  email+chiqish blokini `DropdownMenu`-asoslangan `ProfileMenu` (Avatar,
+  ism/email/rol belgisi, chiqish) va `Popover`-asoslangan `NotificationBell`
+  (hozircha statik — haqiqiy ma'lumot Phase 8'da) almashtirdi. Better Auth'ga
+  `user.additionalFields` (`role`, `username`, ikkalasi `input:false`)
+  qo'shildi, shunda ular session javobida haqiqatan qaytariladi; klient
+  tomonida `SessionUser` turi orqali assert qilinadi (`createAuthClient()`
+  bu yerda server turi bilan avtomatik bog'lanmagan). **Diqqat**: bu
+  sandbox'da Preview MCP vositasi (`testing-and-verification.md`da
+  tasvirlangan) mavjud emas edi — vizual tekshiruv qilib bo'lmadi, faqat
+  type-check/build/lint orqali tekshirildi. Haqiqiy deploy'dan keyin
+  brauzerda ko'rib chiqish tavsiya etiladi.
+
+**Navbatda**: Social Phase 4 (Profil tahrirlash + parol almashtirish).
 
 ## Ma'lum bo'shliqlar
 
