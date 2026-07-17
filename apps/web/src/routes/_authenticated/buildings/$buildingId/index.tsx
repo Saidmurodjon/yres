@@ -11,6 +11,7 @@ import {
   TabsTrigger,
 } from "@yres/ui";
 import { ArrowLeft, Eye } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { ConsumptionTab } from "../../../../components/building-detail/consumption-tab";
 import { EnvelopeTab } from "../../../../components/building-detail/envelope-tab";
 import { MeasuresTab } from "../../../../components/building-detail/measures-tab";
@@ -25,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/buildings/$buildingId/")({
 });
 
 function BuildingDetailPage() {
+  const { t } = useTranslation("buildings");
   const { buildingId } = Route.useParams();
   const { data, isLoading, isError, error } = useBuilding(buildingId);
 
@@ -44,13 +46,13 @@ function BuildingDetailPage() {
         <Button asChild variant="ghost" size="sm" className="-ml-2">
           <Link to="/buildings">
             <ArrowLeft className="h-4 w-4" />
-            Back to buildings
+            {t("detail.backToBuildings")}
           </Link>
         </Button>
         <Card className="border-destructive/50">
           <CardContent className="p-6 text-sm text-destructive">
-            Failed to load building:{" "}
-            {error instanceof ApiError ? error.message : "This building could not be found."}
+            {t("detail.failedToLoad")}{" "}
+            {error instanceof ApiError ? error.message : t("detail.notFound")}
           </CardContent>
         </Card>
       </div>
@@ -66,14 +68,14 @@ function BuildingDetailPage() {
         <Button asChild variant="ghost" size="sm" className="-ml-2">
           <Link to="/buildings">
             <ArrowLeft className="h-4 w-4" />
-            Back to buildings
+            {t("detail.backToBuildings")}
           </Link>
         </Button>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">{building.name}</h1>
           {role !== "owner" && (
             <Badge variant={isReadOnly ? "secondary" : "outline"} className="capitalize">
-              {role} access
+              {role} {t("detail.access")}
             </Badge>
           )}
         </div>
@@ -81,19 +83,19 @@ function BuildingDetailPage() {
         {isReadOnly && (
           <div className="mt-3 flex items-center gap-2 rounded-md border border-border bg-muted/30 p-3 text-sm text-muted-foreground">
             <Eye className="h-4 w-4 shrink-0" />
-            You have view-only access to this building — changes are disabled.
+            {t("detail.viewOnlyAccess")}
           </div>
         )}
       </div>
 
       <Tabs defaultValue="overview">
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="envelope">Envelope</TabsTrigger>
-          <TabsTrigger value="systems">Systems</TabsTrigger>
-          <TabsTrigger value="consumption">Consumption</TabsTrigger>
-          <TabsTrigger value="measures">Measures</TabsTrigger>
-          <TabsTrigger value="sharing">Sharing</TabsTrigger>
+          <TabsTrigger value="overview">{t("detail.tabOverview")}</TabsTrigger>
+          <TabsTrigger value="envelope">{t("detail.tabEnvelope")}</TabsTrigger>
+          <TabsTrigger value="systems">{t("detail.tabSystems")}</TabsTrigger>
+          <TabsTrigger value="consumption">{t("detail.tabConsumption")}</TabsTrigger>
+          <TabsTrigger value="measures">{t("detail.tabMeasures")}</TabsTrigger>
+          <TabsTrigger value="sharing">{t("detail.tabSharing")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">

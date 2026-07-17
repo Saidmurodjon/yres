@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 export interface ShareBarSegment {
   key: string;
   label: string;
@@ -13,10 +15,11 @@ export interface ShareBarSegment {
  * a stroke.
  */
 export function ShareBar({ segments }: { segments: ShareBarSegment[] }) {
+  const { t } = useTranslation("common");
   const total = segments.reduce((sum, segment) => sum + segment.value, 0);
 
   if (total <= 0) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">No data available.</p>;
+    return <p className="py-8 text-center text-sm text-muted-foreground">{t("noDataAvailable")}</p>;
   }
 
   return (

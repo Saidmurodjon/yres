@@ -24,17 +24,14 @@ import {
 } from "@yres/ui";
 import { Trash2, UserPlus, Users } from "lucide-react";
 import { type FormEvent, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useInviteMember, useMembers, useRemoveMember, useUpdateMemberRole } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import type { BuildingRole } from "../../lib/api-types";
 import { formatDate } from "../../lib/labels";
 
-const ROLE_LABELS: Record<"editor" | "viewer", string> = {
-  editor: "Editor — can view and change everything",
-  viewer: "Viewer — can view, but not change anything",
-};
-
 export function SharingTab({ buildingId, role }: { buildingId: string; role: BuildingRole }) {
+  const { t } = useTranslation("buildings");
   const { data, isLoading, isError, error } = useMembers(buildingId);
   const inviteMember = useInviteMember(buildingId);
   const updateRole = useUpdateMemberRole(buildingId);
@@ -51,14 +48,14 @@ export function SharingTab({ buildingId, role }: { buildingId: string; role: Bui
     event.preventDefault();
     setInviteError(null);
     if (!email.trim()) {
-      setInviteError("Email is required.");
+      setInviteError(t("sharing.emailRequired"));
       return;
     }
     try {
       await inviteMember.mutateAsync({ email: email.trim(), role: inviteRole });
       setEmail("");
     } catch (err) {
-      setInviteError(err instanceof ApiError ? err.message : "Failed to invite that person.");
+      setInviteError(err instanceof ApiError ? err.message : t("sharing.inviteFailed"));
     }
   }
 
@@ -67,7 +64,7 @@ export function SharingTab({ buildingId, role }: { buildingId: string; role: Bui
     try {
       await updateRole.mutateAsync({ memberId, role: newRole });
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : "Failed to change role.");
+      setActionError(err instanceof ApiError ? err.message : t("sharing.roleChangeFailed"));
     }
   }
 
@@ -76,7 +73,7 @@ export function SharingTab({ buildingId, role }: { buildingId: string; role: Bui
     try {
       await removeMember.mutateAsync(memberId);
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : "Failed to remove that person.");
+      setActionError(err instanceof ApiError ? err.message : t("sharing.removeFailed"));
     }
   }
 
@@ -93,7 +90,8 @@ export function SharingTab({ buildingId, role }: { buildingId: string; role: Bui
     return (
       <Card className="border-destructive/50">
         <CardContent className="p-6 text-sm text-destructive">
-          Failed to load members: {error instanceof ApiError ? error.message : "Unknown error"}
+          {t("sharing.failedToLoad")}{" "}
+          {error instanceof ApiError ? error.message : t("common:unknownError")}
         </CardContent>
       </Card>
     );
@@ -105,31 +103,26 @@ export function SharingTab({ buildingId, role }: { buildingId: string; role: Bui
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Shared access</CardTitle>
-          <CardDescription>
-            People invited here (owners, ESCOs, auditors, banks) can view this building. Editors can
-            also change its data; viewers cannot.
-          </CardDescription>
+          <CardTitle className="text-base">{t("sharing.title")}</CardTitle>
+          <CardDescription>{t("sharing.description")}</CardDescription>
         </CardHeader>
         <CardContent>
           {members.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-10 text-center">
               <Users className="h-10 w-10 text-muted-foreground" />
-              <p className="font-medium">Not shared with anyone yet</p>
+              <p className="font-medium">{t("sharing.notSharedYet")}</p>
               {isOwner && (
-                <p className="max-w-sm text-sm text-muted-foreground">
-                  Invite a collaborator below — they need an existing YRES account.
-                </p>
+                <p className="max-w-sm text-sm text-muted-foreground">{t("sharing.inviteHint")}</p>
               )}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Added</TableHead>
+                  <TableHead>{t("sharing.columnName")}</TableHead>
+                  <TableHead>{t("sharing.columnEmail")}</TableHead>
+                  <TableHead>{t("sharing.columnRole")}</TableHead>
+                  <TableHead>{t("sharing.columnAdded")}</TableHead>
                   {isOwner && <TableHead />}
                 </TableRow>
               </TableHeader>
@@ -142,14 +135,16 @@ export function SharingTab({ buildingId, role }: { buildingId: string; role: Bui
                       {isOwner ? (
                         <Select
                           value={member.role}
-                          onValueChange={(v) => handleRoleChange(member.id, v as "editor" | "viewer")}
+                          onValueChange={(v) =>
+                            handleRoleChange(member.id, v as "editor" | "viewer")
+                          }
                         >
                           <SelectTrigger className="h-8 w-28">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="editor">Editor</SelectItem>
-                            <SelectItem value="viewer">Viewer</SelectItem>
+                            <SelectItem value="editor">{t("sharing.roleEditor")}</SelectItem>
+                            <SelectItem value="viewer">{t("sharing.roleViewer")}</SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (
@@ -169,7 +164,7 @@ export function SharingTab({ buildingId, role }: { buildingId: string; role: Bui
                           size="sm"
                           onClick={() => handleRemove(member.id)}
                           disabled={removeMember.isPending}
-                          aria-label={`Remove ${member.name}`}
+                          aria-label={t("sharing.removeAria", { name: member.name })}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -188,15 +183,13 @@ export function SharingTab({ buildingId, role }: { buildingId: string; role: Bui
         <form onSubmit={handleInvite}>
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Invite someone</CardTitle>
-              <CardDescription>
-                They must already have a YRES account — this doesn't send an email invite.
-              </CardDescription>
+              <CardTitle className="text-base">{t("sharing.inviteSomeone")}</CardTitle>
+              <CardDescription>{t("sharing.inviteDescription")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-1.5 sm:col-span-2">
-                  <Label htmlFor="invite-email">Email</Label>
+                  <Label htmlFor="invite-email">{t("sharing.email")}</Label>
                   <Input
                     id="invite-email"
                     type="email"
@@ -205,14 +198,17 @@ export function SharingTab({ buildingId, role }: { buildingId: string; role: Bui
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Role</Label>
-                  <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as "editor" | "viewer")}>
+                  <Label>{t("sharing.role")}</Label>
+                  <Select
+                    value={inviteRole}
+                    onValueChange={(v) => setInviteRole(v as "editor" | "viewer")}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="editor">{ROLE_LABELS.editor}</SelectItem>
-                      <SelectItem value="viewer">{ROLE_LABELS.viewer}</SelectItem>
+                      <SelectItem value="editor">{t("sharing.roleEditorDescription")}</SelectItem>
+                      <SelectItem value="viewer">{t("sharing.roleViewerDescription")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -222,7 +218,7 @@ export function SharingTab({ buildingId, role }: { buildingId: string; role: Bui
             <CardFooter className="justify-end">
               <Button type="submit" disabled={inviteMember.isPending}>
                 <UserPlus className="h-4 w-4" />
-                {inviteMember.isPending ? "Inviting..." : "Invite"}
+                {inviteMember.isPending ? t("sharing.inviting") : t("sharing.invite")}
               </Button>
             </CardFooter>
           </Card>

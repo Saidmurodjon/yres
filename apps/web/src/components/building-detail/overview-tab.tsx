@@ -3,6 +3,7 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@yres/u
 import { BarChart3, ClipboardCheck, LineChart, Pencil, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Building, BuildingRole } from "../../lib/api-types";
 import { BUILDING_TYPE_LABELS, formatDate, formatNumber } from "../../lib/labels";
 import { DeleteBuildingDialog } from "./delete-building-dialog";
@@ -23,6 +24,7 @@ function Field({ label, value }: FieldProps) {
 }
 
 export function OverviewTab({ building, role }: { building: Building; role: BuildingRole }) {
+  const { t } = useTranslation("buildings");
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const canEdit = role === "owner" || role === "editor";
@@ -35,19 +37,19 @@ export function OverviewTab({ building, role }: { building: Building; role: Buil
           <Button asChild size="sm">
             <Link to="/buildings/$buildingId/audit" params={{ buildingId: building.id }}>
               <ClipboardCheck className="h-4 w-4" />
-              Run Audit
+              {t("overview.runAudit")}
             </Link>
           </Button>
           <Button asChild size="sm" variant="outline">
             <Link to="/buildings/$buildingId/results" params={{ buildingId: building.id }}>
               <BarChart3 className="h-4 w-4" />
-              Audit Results
+              {t("overview.auditResults")}
             </Link>
           </Button>
           <Button asChild size="sm" variant="outline">
             <Link to="/buildings/$buildingId/financial" params={{ buildingId: building.id }}>
               <LineChart className="h-4 w-4" />
-              Financial Analysis
+              {t("overview.financialAnalysis")}
             </Link>
           </Button>
         </div>
@@ -56,13 +58,13 @@ export function OverviewTab({ building, role }: { building: Building; role: Buil
             {canEdit && (
               <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
                 <Pencil className="h-4 w-4" />
-                Edit
+                {t("common:edit")}
               </Button>
             )}
             {canDelete && (
               <Button size="sm" variant="destructive" onClick={() => setDeleteOpen(true)}>
                 <Trash2 className="h-4 w-4" />
-                Delete
+                {t("common:delete")}
               </Button>
             )}
           </div>
@@ -72,47 +74,47 @@ export function OverviewTab({ building, role }: { building: Building; role: Buil
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Location &amp; type</CardTitle>
+            <CardTitle className="text-base">{t("overview.locationAndType")}</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-2 gap-4">
-              <Field label="Location" value={building.location} />
+              <Field label={t("overview.location")} value={building.location} />
               <Field
-                label="Building type"
+                label={t("overview.buildingType")}
                 value={
                   <Badge variant="secondary">{BUILDING_TYPE_LABELS[building.buildingType]}</Badge>
                 }
               />
               <Field
-                label="Year built"
+                label={t("overview.yearBuilt")}
                 value={building.yearBuilt ? String(building.yearBuilt) : "—"}
               />
               <Field
-                label="Net cooled floor area"
+                label={t("overview.floorArea")}
                 value={`${formatNumber(building.netCooledFloorAreaM2)} m²`}
               />
-              <Field label="Occupant count" value={String(building.occupantCount)} />
-              <Field label="Created" value={formatDate(building.createdAt)} />
+              <Field label={t("overview.occupantCount")} value={String(building.occupantCount)} />
+              <Field label={t("overview.created")} value={formatDate(building.createdAt)} />
             </dl>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Heating season configuration</CardTitle>
+            <CardTitle className="text-base">{t("overview.heatingSeasonConfig")}</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-2 gap-4">
               <Field
-                label="Heating season duration"
-                value={`${formatNumber(building.heatingSeasonDurationDays, 0)} days`}
+                label={t("overview.heatingSeasonDuration")}
+                value={`${formatNumber(building.heatingSeasonDurationDays, 0)} ${t("overview.days")}`}
               />
               <Field
-                label="Avg. outdoor temp (heating season)"
+                label={t("overview.avgOutdoorTemp")}
                 value={`${formatNumber(building.outdoorAvgHeatingSeasonTempC)} °C`}
               />
               <Field
-                label="Outdoor design temp"
+                label={t("overview.outdoorDesignTemp")}
                 value={`${formatNumber(building.outdoorDesignTempC)} °C`}
               />
             </dl>
@@ -121,24 +123,24 @@ export function OverviewTab({ building, role }: { building: Building; role: Buil
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Indoor temperatures &amp; hours</CardTitle>
+            <CardTitle className="text-base">{t("overview.indoorTempsAndHours")}</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-2 gap-4">
               <Field
-                label="Indoor temp (operation)"
+                label={t("overview.indoorTempOperation")}
                 value={`${formatNumber(building.indoorTempOperationC)} °C`}
               />
               <Field
-                label="Indoor temp (non-operation)"
+                label={t("overview.indoorTempNonOperation")}
                 value={`${formatNumber(building.indoorTempNonOperationC)} °C`}
               />
               <Field
-                label="Operation hours/day"
+                label={t("overview.operationHours")}
                 value={formatNumber(building.operationHoursPerDay)}
               />
               <Field
-                label="Non-operation hours/day"
+                label={t("overview.nonOperationHours")}
                 value={formatNumber(building.nonOperationHoursPerDay)}
               />
             </dl>
@@ -147,20 +149,20 @@ export function OverviewTab({ building, role }: { building: Building; role: Buil
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Cooling enthalpies</CardTitle>
+            <CardTitle className="text-base">{t("overview.coolingEnthalpies")}</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-2 gap-4">
               <Field
-                label="Inside"
+                label={t("overview.inside")}
                 value={`${formatNumber(building.coolingEnthalpyInsideKjKg)} kJ/kg`}
               />
               <Field
-                label="Outside"
+                label={t("overview.outside")}
                 value={`${formatNumber(building.coolingEnthalpyOutsideKjKg)} kJ/kg`}
               />
               <Field
-                label="Hottest day"
+                label={t("overview.hottestDay")}
                 value={`${formatNumber(building.coolingEnthalpyHottestDayKjKg)} kJ/kg`}
               />
             </dl>

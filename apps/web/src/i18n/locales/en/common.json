@@ -18,5 +18,6 @@
   "updating": "Updating to the latest version…",
   "somethingWrong": "Something went wrong",
   "unexpectedError": "An unexpected error occurred. Reloading the page usually fixes it.",
-  "reload": "Reload"
+  "reload": "Reload",
+  "noDataAvailable": "No data available."
 }

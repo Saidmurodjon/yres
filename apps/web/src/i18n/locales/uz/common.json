@@ -18,5 +18,6 @@
   "updating": "Eng so'nggi versiyaga yangilanmoqda…",
   "somethingWrong": "Nimadir xato ketdi",
   "unexpectedError": "Kutilmagan xatolik yuz berdi. Odatda sahifani qayta yuklash yordam beradi.",
-  "reload": "Qayta yuklash"
+  "reload": "Qayta yuklash",
+  "noDataAvailable": "Ma'lumot mavjud emas."
 }
