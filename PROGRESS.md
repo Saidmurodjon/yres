@@ -376,6 +376,45 @@ brauzerda vizual ko'rib chiqish, signup/OAuth oqimlari) — haqiqiy
 `wrangler deploy`dan keyin qo'lda tasdiqlanishi kerak, `realtime.md`/
 `social-features.md`da ochiq qayd etilgan.
 
+## To'liq lokal ishga tushirish (API + web, haqiqiy Neon bazasi bilan)
+
+Birinchi marta sinaldi va ishlaydigan holga keltirildi: `apps/api/.dev.vars`da
+allaqachon haqiqiy Neon ulanish satri bor edi (`ep-crimson-tree-adsgnc1o`),
+`apps/api/wrangler.toml` API'ni port 3000'ga mahkamlagan (OAuth
+`redirect_uri` bilan mos kelishi uchun), `apps/web/.env`ning standart
+`VITE_API_URL=http://localhost:3000` shu bilan mos — `bun run dev` ikkala
+`apps/api`/`apps/web`da qo'shimcha sozlashsiz ishga tushdi.
+
+**Topilgan va tuzatilgan haqiqiy bug**: Google orqali kirish
+`/api/auth/error?error=internal_server_error`ga tushib qolardi — sabab shu
+`.dev.vars` Neon bazasida faqat `0000`–`0002` migratsiyalari qo'llangan
+ekan, `0003` (`ventilation_system.cooling_season_hours`) va `0004`
+(`user.username`/`role`/`last_seen_at`, `notification`/`conversation`/
+`message` jadvallari — Social Phase 1) hech qachon qo'llanilmagan edi.
+Production/deploy'lar bu migratsiyalarni ko'rgan bo'lishi mumkin (turli
+Neon instansiyasi/branch), lekin bu aniq `.dev.vars` bazasi ko'rmagan edi.
+`database.md`dagi hujjatlashtirilgan qo'lda-qo'llash tartibi bilan (`pg`
+paketining `Client`i, non-pooler host, tranzaksiya ichida, so'ng
+`drizzle.__drizzle_migrations`ga hash+timestamp yozib qo'yildi) ikkalasi
+ham qo'llandi — foydalanuvchi tasdig'idan keyin. Bir martalik skript
+ishlatilgandan so'ng o'chirildi (`database.md` qoidasiga muvofiq).
+
+**Diqqat — keyingi sessiyada eslab qolish kerak**: agar shu `.dev.vars`
+bazasiga qarshi yana boshqa muammo chiqsa, avval
+`select id, hash, created_at from drizzle.__drizzle_migrations` bilan
+qaysi migratsiyalar qo'llanganini tekshiring — `drizzle-kit migrate` bu
+sandbox/muhitda ishonchli emasligi allaqachon `database.md`da qayd etilgan.
+Yangi migratsiya (`packages/db/drizzle/000N_*.sql`) yozilsa, uni ushbu
+`.dev.vars` bazasiga ham qo'lda qo'llash kerakligini unutmang — u avtomatik
+sodir bo'lmaydi.
+
+Log buferlash bilan bog'liq amaliy eslatma: Windows'da `bun run dev > file
+2>&1 &` orqali fonga yuborilgan `wrangler dev`ning chiqishi faylga darhol
+yozilmasligi mumkin (hech qanday so'rov logi ko'rinmaydi, garchi server
+haqiqatan javob berayotgan bo'lsa ham) — `stdbuf -oL -eL bun run dev ...`
+bilan qayta ishga tushirish buni tuzatdi va real vaqtli so'rov/xato
+loglarini ko'rsatishni boshladi. Kelajakda shu andozaga ergashing.
+
 ## Ma'lum bo'shliqlar
 
 - **Multi-tenant/tashkilot modeli yo'q.** Binolar bitta foydalanuvchiga tegishli, jamoa
