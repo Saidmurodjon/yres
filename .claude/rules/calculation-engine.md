@@ -46,11 +46,10 @@ qarshi bevosita tekshirildi va joriy kod bilan solishtirildi — to'liq natija
 `docs/calculation-engine-audit.md`da. Qisqacha:
 - **8 tasi allaqachon to'g'ri hal qilingan** (yo ataylab Excel bilan bir xil qoldirilgan aniq
   izoh bilan, yo to'g'ri tuzatilgan aniq izoh bilan) — qayta ko'rib chiqishga hojat yo'q.
-- **2 ta haqiqiy kamchilik topildi va hali tuzatilmagan**: (1) `non_ee_measure` jadvali sxemada
-  bor, lekin hech qanday route/servis uni ishlatmaydi — yordamchi (energiya-tejamkor bo'lmagan)
-  chora-tadbir xarajatlari umumiy investitsiya raqamiga qo'shilmayapti; (2) mexanik ventilyatsiyaning
-  sovutish-mavsumi entalpiya yuki (`Heat gains Mec Vent` varag'i) hech qayerda hisoblanmaydi —
-  kerakli uchta kirish qiymati (`building.ts`dagi `coolingEnthalpy*` ustunlari) saqlanadi, lekin
-  ishlatilmaydi, shuning uchun mexanik ventilyatsiyasi bor binolar uchun sovutish yuki kam
-  baholanadi. Ikkalasi ham `docs/calculation-engine-audit.md`da tuzatish tavsiyasi bilan
-  hujjatlashtirilgan — tuzatishdan oldin loyiha egasining tasdig'i kutilmoqda.
+- **2 ta haqiqiy kamchilik topildi, ikkalasi ham tuzatildi**: (1) `non_ee_measure` (yordamchi
+  renovatsiya xarajatlari) endi `apps/api/src/routes/measures.ts`dagi CRUD route'lari orqali
+  boshqariladi va `audit.engine.ts` uni `AuditSummary.totalInvestmentUsd`ga qo'shadi; (2) mexanik
+  ventilyatsiyaning sovutish-mavsumi entalpiya yuki `ventilation.service.ts`ning
+  `calculateMechanicalVentilationCoolingGainKwh()`i orqali hisoblanib, `CoolingResult`ga
+  uchinchi had sifatida qo'shildi (buning uchun `ventilation_system.cooling_season_hours`
+  ustuni ham qo'shildi). To'liq tafsilot: `docs/calculation-engine-audit.md`.

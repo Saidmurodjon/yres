@@ -1376,17 +1376,21 @@ Per-item status is noted inline below.
     by the `climate_region`/`climate_monthly_normal` tables) — the broken
     cell was never a candidate for replication.
 
-## Real gaps found (not in the original ambiguities list)
+## Real gaps found (not in the original ambiguities list) — both fixed
 
 Two genuine missing-calculation gaps were found while cross-checking service
 coverage against this dictionary (not formula bugs carried over from Excel —
-things the reimplementation simply hasn't built yet):
-1. **Non-EE (ancillary) measure costs never reach the reported total
-   investment** — `non_ee_measure` exists as a DB table but has no route and
-   is never queried by `audit.engine.ts`.
+things the reimplementation simply hadn't built yet). Both have since been
+fixed:
+1. **Non-EE (ancillary) measure costs never reached the reported total
+   investment** — `non_ee_measure` existed as a DB table but had no route and
+   was never queried by `audit.engine.ts`. Fixed: CRUD routes added, engine
+   now folds these costs into `AuditSummary.totalInvestmentUsd`.
 2. **Mechanical ventilation's cooling-season enthalpy load
-   (`Heat gains Mec Vent` sheet) is never computed** — the three required
-   building-level enthalpy inputs are stored but unused, so cooling energy
-   is understated for any building with mechanical ventilation.
+   (`Heat gains Mec Vent` sheet) was never computed** — the three required
+   building-level enthalpy inputs were stored but unused, understating
+   cooling energy for any building with mechanical ventilation. Fixed:
+   `calculateMechanicalVentilationCoolingGainKwh()` added and wired into
+   `CoolingResult`.
 
-Full detail and recommended fixes: `docs/calculation-engine-audit.md`.
+Full detail: `docs/calculation-engine-audit.md`.

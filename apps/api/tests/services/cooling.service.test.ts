@@ -21,14 +21,26 @@ describe("CoolingService", () => {
   });
 
   it("divides cooling load by SEER to get electrical energy for cooling", () => {
-    const result = calculateCoolingResult("before", 3000, 1000, 3.2);
+    const result = calculateCoolingResult("before", 3000, 1000, 0, 3.2);
     expect(result.totalCoolingLoadKwh).toBeCloseTo(4000, 6);
     expect(result.electricalEnergyForCoolingKwh).toBeCloseTo(4000 / 3.2, 6);
   });
 
   it("a higher SEER after renovation reduces electrical energy for the same load", () => {
-    const before = calculateCoolingResult("before", 3000, 1000, 3.2);
-    const after = calculateCoolingResult("after", 3000, 1000, 8.5);
+    const before = calculateCoolingResult("before", 3000, 1000, 0, 3.2);
+    const after = calculateCoolingResult("after", 3000, 1000, 0, 8.5);
     expect(after.electricalEnergyForCoolingKwh).toBeLessThan(before.electricalEnergyForCoolingKwh);
+  });
+
+  it("adds mechanical ventilation's enthalpy gain into the total cooling load", () => {
+    const withoutMechVent = calculateCoolingResult("before", 3000, 1000, 0, 3.2);
+    const withMechVent = calculateCoolingResult("before", 3000, 1000, 500, 3.2);
+    expect(withMechVent.totalCoolingLoadKwh).toBeCloseTo(
+      withoutMechVent.totalCoolingLoadKwh + 500,
+      6,
+    );
+    expect(withMechVent.electricalEnergyForCoolingKwh).toBeGreaterThan(
+      withoutMechVent.electricalEnergyForCoolingKwh,
+    );
   });
 });

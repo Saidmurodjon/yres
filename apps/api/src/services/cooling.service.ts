@@ -24,20 +24,27 @@ export function calculateCoolingSolarGainsKwh(
   return total;
 }
 
-/** `Cooling` sheet's `H37 = F37/G37`: cooling load ÷ SEER = electrical energy for cooling. */
+/**
+ * `Cooling` sheet's `H37 = F37/G37`: cooling load ÷ SEER = electrical energy
+ * for cooling. `mechanicalVentilationGainKwh` (`Heat gains Mec Vent` sheet)
+ * adds a third gain term for buildings with mechanical ventilation — pass 0
+ * for buildings without it.
+ */
 export function calculateCoolingResult(
   scenario: Scenario,
   solarGainsKwh: number,
   internalGainsKwh: number,
+  mechanicalVentilationGainKwh: number,
   seer: number,
 ): CoolingResult {
-  const totalCoolingLoadKwh = solarGainsKwh + internalGainsKwh;
+  const totalCoolingLoadKwh = solarGainsKwh + internalGainsKwh + mechanicalVentilationGainKwh;
   const electricalEnergyForCoolingKwh = seer > 0 ? totalCoolingLoadKwh / seer : 0;
 
   return {
     scenario,
     solarGainsKwh,
     internalGainsKwh,
+    mechanicalVentilationGainKwh,
     totalCoolingLoadKwh,
     seer,
     electricalEnergyForCoolingKwh,

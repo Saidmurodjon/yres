@@ -302,6 +302,7 @@ export interface VentilationSystem {
   freshAirPerPersonM3h: number | null;
   heatRecoveryEfficiency: number | null;
   fanElectricalPowerKw: number | null;
+  coolingSeasonHours: number | null;
 }
 
 export interface DhwSource {
@@ -442,6 +443,7 @@ export interface ReplaceVentilationPayload {
     freshAirPerPersonM3h?: number | null;
     heatRecoveryEfficiency?: number | null;
     fanElectricalPowerKw?: number | null;
+    coolingSeasonHours?: number | null;
   }[];
 }
 

@@ -17,6 +17,7 @@ const ventilationSystemInputSchema = z.object({
   freshAirPerPersonM3h: z.number().nonnegative().nullable().optional(),
   heatRecoveryEfficiency: z.number().min(0).max(1).nullable().optional(),
   fanElectricalPowerKw: z.number().nonnegative().nullable().optional(),
+  coolingSeasonHours: z.number().nonnegative().nullable().optional(),
 });
 export const replaceVentilationSchema = scenarioBodySchema.extend({
   systems: z.array(ventilationSystemInputSchema).default([]),

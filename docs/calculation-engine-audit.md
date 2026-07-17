@@ -65,9 +65,9 @@ mustaqil ravishda to'g'ri amalga oshirgan — tasdiqlash uchun ikkalasini
 solishtirib ko'rish kifoya edi. Bu band endi `data-dictionary.md`da
 "hal qilindi" deb belgilanadi.
 
-## Topilgan haqiqiy kamchiliklar (2 ta)
+## Topilgan haqiqiy kamchiliklar (2 ta — ikkalasi ham tuzatildi)
 
-### 1. Energiya-tejamkor bo'lmagan (Non-EE) chora-tadbir xarajatlari umumiy investitsiyaga qo'shilmayapti
+### 1. Energiya-tejamkor bo'lmagan (Non-EE) chora-tadbir xarajatlari umumiy investitsiyaga qo'shilmayapti — TUZATILDI
 
 **Manba**: `Measures_summary!D30/D31` — umumiy investitsiya har doim
 `Non-EE measures` varag'idagi yordamchi xarajatlarni (kabel almashtirish,
@@ -101,7 +101,14 @@ ko'rsatiladigan **"umumiy investitsiya" raqami kam ko'rsatiladi** — bu
   kiritish uchun kichik jadval/forma qo'shish (hozircha yo'q ko'rinadi —
   tekshirish kerak).
 
-### 2. Mexanik ventilyatsiyaning sovutish-mavsumi entalpiya yuki hisoblanmayapti
+**Amalga oshirildi**: `apps/api/src/routes/measures.ts`ga CRUD
+endpoint'lari (`GET`/`POST`/`DELETE /:id/non-ee-measures`), `audit.engine.ts`
+`nonEeMeasure` qatorlarini so'raydi va yangi `totalNonEeMeasureCostUsd`
+(shaffoflik uchun alohida) + `totalInvestmentUsd`ga qo'shiladi. Chora-tadbirlar
+tab'iga "Ancillary costs" bo'limi, PDF hisobotga tegishli jadval va
+"of which ancillary" qatori qo'shildi.
+
+### 2. Mexanik ventilyatsiyaning sovutish-mavsumi entalpiya yuki hisoblanmayapti — TUZATILDI
 
 **Manba**: `Heat gains Mec Vent` varag'i — mexanik ventilyatsiya (AHU)
 tomonidan olib kirilgan tashqi havoning sovutish mavsumidagi issiqlik
@@ -139,16 +146,25 @@ olinmagan had.
   D15/D16/D17`ning namunaviy qiymatlari (48.4/59.5/69.13 kJ/kg) bilan
   Excel'ning natijasiga solishtirilgan holda.
 
-## Qurish tartibi (tasdiqlangandan so'ng)
+**Amalga oshirildi**: `ventilation.service.ts`ga
+`calculateMechanicalVentilationCoolingGainKwh()` qo'shildi (namunaviy
+48.4/59.5 kJ/kg qiymatlari bilan unit test qilingan), `CoolingResult`ga
+`mechanicalVentilationGainKwh` maydoni qo'shildi, `audit.engine.ts`
+uni hisoblab `calculateCoolingResult()`ga uchinchi had sifatida uzatadi.
+"Operatsiya soatlari" uchun yangi `ventilation_system.cooling_season_hours`
+ustuni qo'shildi (migratsiya `0003_giant_mandrill.sql`) va Systems tab'iga
+tegishli kirish maydoni qo'shildi.
+
+## Qurish tartibi (tasdiqlangandan so'ng) — YAKUNLANDI
 
 1. Non-EE chora-tadbirlar: sxema allaqachon tayyor → route qo'shish →
    `audit.engine.ts`ga ulash → frontend forma. Type-check, `bun run test`,
-   commit.
+   commit. ✅
 2. Mexanik ventilyatsiya entalpiya yuki: yangi hisoblash funksiyasi + unit
-   test → `audit.engine.ts`ga ulash → `bun run test`, commit.
+   test → `audit.engine.ts`ga ulash → `bun run test`, commit. ✅
 3. `docs/data-dictionary.md`ning "Ambiguities" bo'limini yuqoridagi jadvalga
    mos yangilash (har bir band uchun "hal qilindi"/"ahamiyatsiz" holatini
-   qayd etish) — alohida, kichik commit.
+   qayd etish) — alohida, kichik commit. ✅
 
 ## Tekshirish
 

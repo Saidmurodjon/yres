@@ -364,6 +364,7 @@ function VentilationSection({
         freshAirPerPersonM3h: s.freshAirPerPersonM3h?.toString() ?? "",
         heatRecoveryEfficiency: s.heatRecoveryEfficiency?.toString() ?? "",
         fanElectricalPowerKw: s.fanElectricalPowerKw?.toString() ?? "",
+        coolingSeasonHours: s.coolingSeasonHours?.toString() ?? "",
       })),
     );
     setError(null);
@@ -380,6 +381,7 @@ function VentilationSection({
           freshAirPerPersonM3h: numOrNull(r, "freshAirPerPersonM3h"),
           heatRecoveryEfficiency: numOrNull(r, "heatRecoveryEfficiency"),
           fanElectricalPowerKw: numOrNull(r, "fanElectricalPowerKw"),
+          coolingSeasonHours: numOrNull(r, "coolingSeasonHours"),
         })),
       });
     } catch (err) {
@@ -405,6 +407,7 @@ function VentilationSection({
         { key: "freshAirPerPersonM3h", label: "Fresh air/person (m³/h)", type: "number" },
         { key: "heatRecoveryEfficiency", label: "Heat recovery eff. (0-1)", type: "number" },
         { key: "fanElectricalPowerKw", label: "Fan power (kW)", type: "number" },
+        { key: "coolingSeasonHours", label: "Cooling season hours (h/yr)", type: "number" },
       ]}
       rows={rows}
       onRowsChange={setRows}

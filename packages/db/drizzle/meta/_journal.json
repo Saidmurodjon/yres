@@ -22,6 +22,13 @@
       "when": 1783943071858,
       "tag": "0002_handy_silver_samurai",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784273018836,
+      "tag": "0003_giant_mandrill",
+      "breakpoints": true
     }
   ]
 }

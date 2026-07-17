@@ -1,0 +1,1 @@
+ALTER TABLE "ventilation_system" ADD COLUMN "cooling_season_hours" numeric;

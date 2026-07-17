@@ -14,6 +14,12 @@ export const ventilationSystem = pgTable("ventilation_system", {
   freshAirPerPersonM3h: numeric("fresh_air_per_person_m3h", { mode: "number" }),
   heatRecoveryEfficiency: numeric("heat_recovery_efficiency", { mode: "number" }),
   fanElectricalPowerKw: numeric("fan_electrical_power_kw", { mode: "number" }),
+  /** Mechanical-only: hours the AHU actually runs during the cooling season
+   * (`Heat gains Mec Vent` sheet's `Equipment!H*J` operation-hours ×
+   * utilization-factor product, collapsed into one input) — drives the
+   * fresh-air enthalpy cooling load, see `ventilation.service.ts`'s
+   * `calculateMechanicalVentilationCoolingGainKwh`. */
+  coolingSeasonHours: numeric("cooling_season_hours", { mode: "number" }),
 });
 
 export const ventilationSystemRelations = relations(ventilationSystem, ({ one }) => ({

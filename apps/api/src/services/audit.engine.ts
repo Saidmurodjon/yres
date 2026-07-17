@@ -85,6 +85,7 @@ import { type LightingZoneInput, calculateLightingResult } from "./lighting.serv
 import { type RenewableSystemInput, calculateRenewableProduction } from "./renewable.service";
 import {
   calculateMechanicalAirFlowM3h,
+  calculateMechanicalVentilationCoolingGainKwh,
   calculateMechanicalVentilationElectricalKwh,
   calculateNaturalAirFlowM3h,
   calculateVentilationLoss,
@@ -505,11 +506,24 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
       coolingRadiationByOrientation,
     );
     const coolingSeer = coolingSystemRows.find((c) => c.scenario === scenario)?.seer ?? 1;
+    const mechVentCoolingGainKwh =
+      mechanicalSystem?.coolingSeasonHours &&
+      buildingRecord.coolingEnthalpyInsideKjKg != null &&
+      buildingRecord.coolingEnthalpyOutsideKjKg != null
+        ? calculateMechanicalVentilationCoolingGainKwh(
+            mechanicalAirFlowM3h,
+            buildingRecord.coolingEnthalpyInsideKjKg,
+            buildingRecord.coolingEnthalpyOutsideKjKg,
+            mechanicalSystem.coolingSeasonHours,
+            heatRecoveryEfficiency,
+          )
+        : 0;
     cooling.push(
       calculateCoolingResult(
         scenario,
         coolingSolarGainsKwh,
         equipmentResult.coolingSeasonConsumptionKwh,
+        mechVentCoolingGainKwh,
         coolingSeer,
       ),
     );

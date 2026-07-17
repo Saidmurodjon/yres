@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   calculateMechanicalAirFlowM3h,
+  calculateMechanicalVentilationCoolingGainKwh,
   calculateNaturalAirFlowM3h,
   calculateVentilationLoss,
 } from "../../src/services/ventilation.service";
@@ -42,5 +43,24 @@ describe("VentilationService", () => {
 
     expect(withRecovery.naturalAnnualKwh).toBeCloseTo(noRecovery.naturalAnnualKwh, 6);
     expect(withRecovery.mechanicalAnnualKwh).toBeCloseTo(noRecovery.mechanicalAnnualKwh * 0.15, 6);
+  });
+
+  describe("calculateMechanicalVentilationCoolingGainKwh", () => {
+    // Building_data's own sample enthalpies: inside 48.4, outside 59.5 kJ/kg (Δ = 11.1).
+    it("matches the `Heat gains Mec Vent` sheet's enthalpy-difference formula", () => {
+      const gain = calculateMechanicalVentilationCoolingGainKwh(1000, 48.4, 59.5, 500, 0);
+      expect(gain).toBeCloseTo((1000 * 1.2 * 0.277778 * 11.1 * 500) / 1000, 3);
+    });
+
+    it("heat recovery reduces the cooling-season gain the same way it reduces heating loss", () => {
+      const noRecovery = calculateMechanicalVentilationCoolingGainKwh(1000, 48.4, 59.5, 500, 0);
+      const withRecovery = calculateMechanicalVentilationCoolingGainKwh(1000, 48.4, 59.5, 500, 0.85);
+      expect(withRecovery).toBeCloseTo(noRecovery * 0.15, 6);
+    });
+
+    it("never returns a negative gain if outside enthalpy is somehow below inside", () => {
+      const gain = calculateMechanicalVentilationCoolingGainKwh(1000, 59.5, 48.4, 500, 0);
+      expect(gain).toBe(0);
+    });
   });
 });
