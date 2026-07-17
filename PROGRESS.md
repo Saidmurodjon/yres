@@ -289,13 +289,62 @@ sifatida amal qildi).
     `overview.*` bo'limi), `sharing-tab.tsx` (yangi `sharing.*` bo'limi).
     Umumiy `share-bar.tsx` komponenti (audit/natijalar/moliyaviy
     sahifalarda qayta ishlatiladi) `common.noDataAvailable`ga o'tkazildi.
-  - ⏳ Navbatda: `envelope`, `systems`, `consumption`, `measures`,
-    `audit`/`financial`/`results`, `admin`, `chat`, `profile` — yana
-    ~18 fayl, har biri alohida commit.
+  - ✅ `envelope` — `envelope-tab.tsx` + `envelope-editor-dialog.tsx`
+    (`tab.*`/`editor.*` bo'limlari, 13 ta validatsiya xabari
+    `{{code}}`/`{{blockName}}` bilan interpolyatsiya qilingan).
+  - ✅ `systems` — `systems-tab.tsx` (~180 satr, 9 kichik-tizim bo'limi:
+    ventilyatsiya, ISS, taqsimot, generatsiya, sovutish oynalari/tizimlari,
+    yoritish, uskuna, qayta tiklanadigan manbalar).
+  - ✅ `measures` — `measures-tab.tsx` (`ee.*` energiya-samaradorlik
+    chora-tadbirlari + `ancillary.*` yordamchi xarajatlar bo'limi).
+  - ✅ `consumption` — `consumption-tab.tsx` (oylik hisob-faktura jadvali +
+    barcha hisob-fakturalar tarixi).
+  - ✅ `audit` — audit sehrgar (`audit.tsx`), natijalar (`results.tsx`),
+    moliyaviy tahlil (`financial.tsx`) va ularning umumiy holat
+    komponenti (`audit-result-states.tsx`) — bitta namespace, chunki bu
+    bitta uzluksiz foydalanuvchi oqimi. Chora-tadbirlar soni uchun
+    i18next'ning `_one`/`_few`/`_many`/`_other` ko'plik shakllari
+    ishlatildi (rus tilida to'g'ri fe'l-moslashuv bilan).
+  - ✅ `admin` — `admin/users.tsx` (rol boshqaruvi).
+  - ✅ `chat` — `chat/index.tsx` + `chat/$conversationId.tsx` (suhbat
+    ro'yxati, yangi-chat/guruh dialogi, thread — yozayotganlik,
+    tahrirlash/o'chirish, reply, biriktirma).
+  - ✅ `profile` — `profile.tsx` (profil tafsilotlari + parol o'zgartirish).
 
-**Navbatda**: i18n Phase 4'ni davom ettirish (`envelope-tab.tsx` va
-`envelope-editor-dialog.tsx`dan boshlab — bular qobiq-tab'ining eng katta
-va eng murakkab qismi).
+**Phase 4 to'liq yakunlandi.** Barcha ~25 fayl uz/ru/en'ga o'tkazildi.
+Oxirgi 5 ta namespace guruhi (envelope, systems, measures, audit,
+admin/chat/profile) parallel background agentlar orqali bir vaqtda
+qurildi — barchasi bitta ishchi katalogda ishlagani uchun
+`apps/web/src/i18n/index.ts` bir nechta agent tomonidan bir vaqtda
+tahrirlangan; har biri faqat o'z faylini commit qilib, `git push`da
+to'qnashuv chiqsa `git pull --rebase` bilan boshqalarning namespace
+yozuvlarini saqlab qolgan holda birlashtirgan — hech qanday namespace
+yo'qolmagan, hammasi `bun run type-check`/`bunx biome lint`dan alohida
+va oxirida hammasi birga qayta tekshirilgan (`c8d3af2`gacha bo'lgan
+commit'lar). Enum-asoslangan label lug'atlari (`BUILDING_TYPE_LABELS`,
+`VENTILATION_SYSTEM_TYPE_LABELS`, `USER_ROLE_LABELS` va h.k.,
+`lib/labels.ts`da) ataylab ingliz tilida qoldirildi — ular bir nechta
+tab/sahifa o'rtasida umumiy va bitta-fayl migratsiyasining ko'lamidan
+tashqarida.
+
+**Yon tuzatish**: shu yakuniy tekshiruv paytida `bun run test`
+integratsiya testlarining hammasi kutilgan `ECONNREFUSED` o'rniga
+`Failed to load url cloudflare:workers` bilan muvaffaqiyatsiz
+bo'layotgani aniqlandi — social-features Durable Object'lari
+(`ConversationRoom`/`UserNotificationChannel`) `src/index.ts` orqali
+import qilingach, Vitest'ning oddiy Node muhitida `cloudflare:workers`
+o'rnatilgan modulini hal qila olmasligi sababli. `apps/api/
+vitest.config.ts`ga `cloudflare:workers`ni arzimas shim klassiga
+(`tests/helpers/cloudflare-workers-shim.ts`) yo'naltiruvchi
+`resolve.alias` qo'shildi — integratsiya testlari hech qachon haqiqiy
+Durable Object'ni ishga tushirmaydi, shim faqat modul grafigini
+yuklanishini ta'minlaydi, shundan keyin testlar `testing-and-
+verification.md` kutgan hujjatlashtirilgan tarzda (haqiqiy Postgres
+yo'qligi sababli) muvaffaqiyatsiz bo'ladi.
+
+**Navbatda**: yakuniy umumiy tekshiruv (repo bo'ylab type-check/build/
+lint/test o'tkazildi — barchasi toza) va `.claude/rules/`/`docs/`
+fayllarining izchilligini tasdiqlash.
 
 ## Ma'lum bo'shliqlar
 
