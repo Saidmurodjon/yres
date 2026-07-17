@@ -1,28 +1,32 @@
-# Stack & monorepo conventions
+# Stack va monorepo konventsiyalari
 
-- **Package manager is `bun`, always.** Never `npm install`/`npx` unless a tool genuinely has no
-  bun-compatible path (rare — `npx wrangler` is used because `bun x wrangler` has had issues in
-  this repo's history; check existing scripts before assuming). Run workspace scripts as
-  `bun run <script>` from repo root, or `bun run --cwd apps/api <script>` to target one workspace.
-- **Turborepo + bun workspaces**: `apps/*` and `packages/*`. Root `package.json` scripts
-  (`dev`, `build`, `lint`, `type-check`, `test`) fan out via `turbo run <script>` — prefer these
-  over `cd`-ing into a package, except when iterating on one package's typecheck/build loop where
-  the scoped command is faster.
-- **TypeScript strict mode with `noUncheckedIndexedAccess: true`** (see `tsconfig.base.json`).
-  Array/record indexing (`arr[i]`, `record[key]`) types as possibly-`undefined` — don't add `!`
-  to silence it; either restructure the loop (`.map((item, i) => ...)` over the array itself
-  instead of indexing by a separate index variable) or add a real fallback.
-- **Biome, not ESLint/Prettier.** Double-quote strings, semicolons always, 2-space indent,
-  100-char line width (`biome.json`). Run `bunx biome lint <files>` on anything you touch;
-  `bun run format` (`biome format --write .`) fixes formatting repo-wide if needed.
-- **Repository layout**:
+- **Paket menejeri har doim `bun`.** Vositaning haqiqatan ham bun-mos yo'li bo'lmasa (kamdan-kam —
+  `npx wrangler` ishlatiladi, chunki `bun x wrangler` bu repo tarixida muammolar bergan; taxmin
+  qilishdan oldin mavjud skriptlarni tekshiring), hech qachon `npm install`/`npx` ishlatmang.
+  Workspace skriptlarini repo ildizidan `bun run <script>` sifatida, yoki bitta workspace'ni
+  nishonlash uchun `bun run --cwd apps/api <script>` sifatida ishga tushiring.
+- **Turborepo + bun workspaces**: `apps/*` va `packages/*`. Root `package.json` skriptlari
+  (`dev`, `build`, `lint`, `type-check`, `test`) `turbo run <script>` orqali tarqaladi — bularni
+  paketga `cd` qilishdan afzal ko'ring, faqat bitta paketning typecheck/build siklida takrorlanib
+  ishlaganda scope qilingan buyruq tezroq bo'lgan holatlar bundan mustasno.
+- **`noUncheckedIndexedAccess: true` bilan TypeScript strict rejimi** (`tsconfig.base.json`ga
+  qarang). Massiv/record indekslashi (`arr[i]`, `record[key]`) mumkin-bo'lgan-`undefined` deb
+  tiplanadi — buni jimjitlash uchun `!` qo'shmang; siklni qayta tuzing (alohida indeks o'zgaruvchisi
+  bilan indekslash o'rniga massivning o'ziga `.map((item, i) => ...)`) yoki haqiqiy fallback
+  qo'shing.
+- **ESLint/Prettier emas, Biome.** Ikki tirnoqli satrlar, har doim nuqta-vergul, 2-bo'shliqli
+  indent, 100-belgili qator kengligi (`biome.json`). Tegilgan har qanday narsaga
+  `bunx biome lint <fayllar>` ishga tushiring; kerak bo'lsa `bun run format`
+  (`biome format --write .`) butun repo bo'ylab formatlashni tuzatadi.
+- **Repozitoriya tuzilishi**:
   ```
   apps/web/     React 19 + Vite + TanStack Router/Query, Tailwind v4
-  apps/api/     Hono on Cloudflare Workers — src/services/ is the calculation engine
-  packages/ui/  Shared shadcn/Radix-style components (see frontend.md for a Tailwind gotcha)
-  packages/db/  Drizzle schemas, migrations, reference-data seed (see database.md)
-  packages/types/  Shared TypeScript types for calculation result shapes
+  apps/api/     Cloudflare Workers'da Hono — src/services/ hisob-kitob dvigateli
+  packages/ui/  Umumiy shadcn/Radix-uslubidagi komponentlar (Tailwind nozik jihati uchun frontend.md'ga qarang)
+  packages/db/  Drizzle sxemalari, migratsiyalar, ma'lumotnoma-ma'lumot seed'i (database.md'ga qarang)
+  packages/types/  Hisob-kitob natija shakllari uchun umumiy TypeScript turlari
   docs/         data-dictionary.md, er-diagram.md, deployment.md
   ```
-- Don't invent new top-level packages or restructure `apps/`/`packages/` without being asked —
-  the split is deliberate (web/api/ui/types/db each have a single clear responsibility).
+- So'ralmasdan yangi yuqori darajali paketlar o'ylab topmang yoki `apps/`/`packages/`ni qayta
+  tuzmang — bu bo'linish ataylab qilingan (web/api/ui/types/db har birining bitta aniq
+  vazifasi bor).

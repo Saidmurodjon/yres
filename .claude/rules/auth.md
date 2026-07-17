@@ -1,28 +1,31 @@
 # Auth (Better Auth)
 
-`apps/api/src/auth/index.ts` configures Better Auth (email/password + Google OAuth). Three
-non-obvious things that have each caused a real production bug once — don't regress them:
+`apps/api/src/auth/index.ts` Better Auth'ni sozlaydi (email/parol + Google OAuth). Har biri bir
+marta haqiqiy production bug'iga sabab bo'lgan uchta aniq bo'lmagan narsa — ularni orqaga
+qaytarmang:
 
-- **`crossSubDomainCookies` is required when the web app and API are on sibling subdomains** of
-  the same registrable domain (e.g. `yres.saidmurod.com` / `yres-api.saidmurod.com`). It's
-  conditionally enabled only when `WEB_URL` ends in `saidmurod.com` — `*.pages.dev`/
-  `*.workers.dev` are *different* public suffixes with no shared registrable domain, so cookies
-  can never be shared between those regardless of attributes, and forcing the cross-subdomain
-  cookie domain there would just break auth. Don't hardcode the domain string elsewhere; derive
-  it the same way this code does.
-- **Every `signIn.social(...)` call on the frontend must pass `errorCallbackURL`.** Without it,
-  any OAuth failure (state mismatch, account-linking error, etc.) redirects the user to Better
-  Auth's own bare error page on the *API's* origin — a dead end with no way back into the app.
-  Point it at a route on the web app that can show a real error and a way to retry
-  (`apps/web/src/routes/login.tsx` is the reference implementation).
-- **`account.accountLinking.requireLocalEmailVerified` is set to `false` deliberately.** Better
-  Auth's default requires an *existing* local (email/password) account's `emailVerified` to
-  already be `true` before it will link a new Google identity onto it — since Google verifies the
-  email itself, that extra local-verification requirement just silently bounces real users back
-  to `/login` with an opaque `account_not_linked` error in the server logs and nothing visible to
-  the user. Don't re-enable this without also building a real "resend verification" flow for the
-  case it's meant to guard.
-- When an OAuth bug is reported and the failure mode is vague ("it just goes back to the login
-  page"), the fastest real diagnosis is `wrangler tail --env production` while the user reproduces
-  it live — Better Auth logs a specific error code (`account_not_linked`, `state_mismatch`, etc.)
-  that curl-based reproduction of the flow usually can't surface on its own.
+- **`crossSubDomainCookies`** veb-ilova va API bir xil registrable domenning qo'shni
+  subdomenlarida bo'lganda kerak (masalan `yres.saidmurod.com` / `yres-api.saidmurod.com`). U
+  faqat `WEB_URL` `saidmurod.com` bilan tugaganda shartli ravishda yoqiladi — `*.pages.dev`/
+  `*.workers.dev` *turli* ommaviy suffikslar bo'lib, umumiy registrable domeni yo'q, shuning
+  uchun cookie'lar ular orasida hech qanday atributlar bilan ham hech qachon ulasha olmaydi, va
+  u yerda cross-subdomain cookie domenini majburlash shunchaki auth'ni buzardi. Domen satrini
+  boshqa joyda qattiq kodlamang; uni xuddi shu kod qilganidek hosil qiling.
+- **Frontend'dagi har bir `signIn.social(...)` chaqiruvi `errorCallbackURL` uzatishi shart.**
+  Bunisiz, har qanday OAuth muvaffaqiyatsizligi (state mismatch, account-linking xatosi, va h.k.)
+  foydalanuvchini Better Auth'ning *API*ning o'z manbasidagi yalang'och xato sahifasiga
+  yo'naltiradi — ilovaga qaytish imkonisiz tor ko'cha. Uni haqiqiy xatoni va qayta urinish yo'lini
+  ko'rsata oladigan veb-ilovadagi route'ga yo'naltiring (`apps/web/src/routes/login.tsx`
+  namunaviy amalga oshirish).
+- **`account.accountLinking.requireLocalEmailVerified` ataylab `false` qilib qo'yilgan.** Better
+  Auth'ning standart holati unga yangi Google identifikatsiyasini ulashdan oldin *mavjud* lokal
+  (email/parol) akkauntning `emailVerified`i allaqachon `true` bo'lishini talab qiladi — Google
+  email'ni o'zi tasdiqlagani uchun, bu qo'shimcha lokal-tasdiqlash talabi haqiqiy foydalanuvchilarni
+  server loglarida noaniq `account_not_linked` xatosi bilan `/login`ga sezdirmasdan qaytarib
+  yuboradi, foydalanuvchiga esa hech narsa ko'rinmaydi. Buni himoya qilishi kerak bo'lgan holat
+  uchun haqiqiy "tasdiqlashni qayta yuborish" oqimini qurmasdan qayta yoqmang.
+- OAuth bug'i haqida xabar berilganda va muvaffaqiyatsizlik holati noaniq bo'lsa ("shunchaki
+  login sahifasiga qaytib qolyapti"), foydalanuvchi uni jonli qayta hosil qilayotganda
+  `wrangler tail --env production`ni ishga tushirish eng tez haqiqiy diagnostikadir — Better Auth
+  aniq xato kodini (`account_not_linked`, `state_mismatch`, va h.k.) logga yozadi, buni curl
+  orqali oqimni qayta hosil qilish odatda o'zi topa olmaydi.

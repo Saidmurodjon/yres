@@ -1,19 +1,23 @@
-# Git conventions in this repo
+# Ushbu repo'dagi git konventsiyalari
 
-- **One logical fix per commit.** This history is made of small, independently-revertable commits
-  (`git log --oneline` reads like a changelog) — e.g. the Tailwind `@source` fix, the table
-  `whitespace-nowrap` fix, and the mobile nav bar landed as three separate commits even though
-  they were found in the same review pass, because they're three independent bugs. Don't bundle
-  unrelated fixes into one commit for convenience. It's fine for one commit to touch multiple
-  files when they're genuinely one change (a type + its one consumer + its one test).
-- **Commit message body explains *why*, matched to the actual root cause** — not a changelog of
-  which files changed. Follow the existing style: first line is an imperative summary; the body
-  names the symptom a user would have seen, the actual mechanism that caused it (with a file/line
-  reference where useful), and what the fix does differently. See any commit from
-  `git log --oneline` for the register this repo writes in.
-- Windows checkout: `git status`/`git commit` printing
-  `warning: ... LF will be replaced by CRLF ...` is normal (`core.autocrlf` on a Windows checkout)
-  and not something to fix.
-- Only commit when asked, or when it's the obvious next step of a task the user explicitly framed
-  as "fix these and commit each one" (as happened in the design-review pass this repo's history
-  came from). When in doubt, finish the change, verify it, and ask.
+- **Har bir commit'da bitta mantiqiy tuzatish.** Bu tarix kichik, mustaqil-ravishda
+  qaytarilishi mumkin bo'lgan commit'lardan iborat (`git log --oneline` changelog kabi
+  o'qiladi) — masalan Tailwind `@source` tuzatishi, jadval `whitespace-nowrap` tuzatishi va
+  mobil nav bar bitta ko'rib chiqish o'tishida topilgan bo'lsa ham, uchta alohida commit
+  sifatida qo'shildi, chunki ular uchta mustaqil bug. Bir nechta bog'liq bo'lmagan tuzatishlarni
+  qulaylik uchun bitta commit'ga birlashtirmang. Bitta commit bir nechta faylga tegishi
+  mumkin, agar ular haqiqatan bitta o'zgarish bo'lsa (bir tur + uning bitta iste'molchisi +
+  uning bitta testi).
+- **Commit xabari matni haqiqiy ildiz sababga mos ravishda *nima uchun*ni tushuntiradi** —
+  qaysi fayllar o'zgargani ro'yxati emas. Mavjud uslubga ergashing: birinchi qator — buyruq
+  maylidagi qisqacha xulosa; matn foydalanuvchi ko'rgan bo'lardigan alomatni, unga sabab bo'lgan
+  haqiqiy mexanizmni (kerak bo'lsa fayl/qator havolasi bilan), va tuzatish nimani boshqacha
+  qilishini nomlaydi. Bu repo yozadigan registr uchun `git log --oneline`dagi istalgan commit'ga
+  qarang.
+- Windows checkout: `git status`/`git commit`ning
+  `warning: ... LF will be replaced by CRLF ...` chiqarishi normal (Windows checkout'da
+  `core.autocrlf`) va tuzatishga arzimaydi.
+- Faqat so'ralganda, yoki foydalanuvchi ochiq ravishda "shularni tuzat va har birini commit
+  qil" deb belgilagan topshiriqning aniq keyingi qadami bo'lganda commit qiling (bu repo
+  tarixi kelib chiqqan dizayn-ko'rib-chiqish o'tishida sodir bo'lganidek). Shubha bo'lsa,
+  o'zgarishni tugallang, tekshiring, va so'rang.

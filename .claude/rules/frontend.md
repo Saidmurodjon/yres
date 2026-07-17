@@ -1,68 +1,72 @@
 # Frontend (React / TanStack Router / Tailwind v4 / `@yres/ui`)
 
-## The `packages/ui` Tailwind content-scanning gotcha
+## `packages/ui`ning Tailwind kontent-skanerlash nozik jihati
 
-**This is the single most important frontend rule in this repo.** Tailwind v4's automatic content
-scan treats `packages/ui` as vendor code once `apps/web` resolves it through
-`node_modules/@yres/ui` (the bun workspace symlink) — so any utility class used *only* inside a
-shared component in `packages/ui`, and never duplicated verbatim in `apps/web`'s own source, is
-silently dropped from the built CSS. This isn't a dev-only cache artifact — it reproduces in a
-fresh production build too.
+**Bu repo'dagi eng muhim frontend qoidasi.** Tailwind v4'ning avtomatik kontent skani, `apps/web`
+uni `node_modules/@yres/ui` orqali (bun workspace symlink'i) hal qilgach, `packages/ui`ni vendor
+kod deb hisoblaydi — shuning uchun `packages/ui`dagi umumiy komponent ichida **faqat** ishlatilgan
+va `apps/web`ning o'z manba kodida so'zma-so'z takrorlanmagan har qanday utility klass, quriladigan
+CSS'dan sezdirmasdan yo'qolib qoladi. Bu shunchaki dev-rejimidagi kesh artefakti emas — bu yangi
+production build'da ham takrorlanadi.
 
-It already broke `inline-flex`/`whitespace-nowrap` on the shared `Button` once, which made every
-icon button in the app render `display: block` (icon stacked above the label) in production for
-an unknown length of time before it was caught. The fix is the `@source` directive in
-`packages/ui/src/styles/globals.css`:
+Bu bir marta umumiy `Button`dagi `inline-flex`/`whitespace-nowrap`ni buzgan edi, bu esa
+production'da ilovadagi barcha icon tugmalarni (icon label ustida to'planib) `display: block`
+ko'rinishida chizdirgan — qancha vaqt davomida sezilmay qolgan edi. Tuzatish
+`packages/ui/src/styles/globals.css`dagi `@source` direktivasi:
 ```css
 @import "tailwindcss";
 @source "../**/*.{ts,tsx}";
 ```
-If you add a new component to `packages/ui` that introduces classes not otherwise used anywhere
-in `apps/web`, **verify they actually appear in a real build's output CSS** —
-`grep -o '\.your-class{[^}]*}' apps/web/dist/assets/*.css` after a `bun run build` — don't trust
-that "it's in the className string" means it made it into the stylesheet. A dev-server visual
-check isn't sufficient proof either; check the built CSS.
+Agar `packages/ui`ga `apps/web`ning boshqa hech qayerida ishlatilmaydigan klasslarni kiritadigan
+yangi komponent qo'shsangiz, **ular haqiqatan ham haqiqiy build'ning chiqish CSS'ida paydo
+bo'lishini tekshiring** — `bun run build`dan keyin
+`grep -o '\.your-class{[^}]*}' apps/web/dist/assets/*.css` — "u className satrida bor" degani
+stylesheet'ga tushdi degani emas, bunga ishonmang. Dev-server'dagi vizual tekshiruv ham yetarli
+dalil emas — quriladigan CSS'ni tekshiring.
 
-## TanStack Router — stale chunks after a deploy
+## TanStack Router — deploy'dan keyingi eskirgan chunk'lar
 
-Every route is a separate content-hashed JS chunk. A browser tab left open across a deploy holds
-route-manifest references to the *previous* deployment's hashes, which the new deployment doesn't
-serve — the next lazy-loaded route throws `Failed to fetch dynamically imported module` straight
-into the router's default (raw, technical) error screen. `apps/web/src/routes/__root.tsx`'s
-`errorComponent` already handles this: it detects that specific error and reloads the tab once
-(guarded by a `sessionStorage` flag so a *persistent* failure doesn't reload forever), falling
-back to a plain "Something went wrong" + Reload button for anything else. Don't remove or bypass
-this — it's the difference between "the app just quietly recovers" and "every deploy shows a raw
-stack trace to whoever has a tab open."
+Har bir route alohida kontent-xeshlangan JS chunk'i. Deploy paytida ochiq qolgan brauzer tab'i
+*oldingi* deploy'ning xesh qiymatlariga route-manifest havolalarini saqlab qoladi, yangi deploy
+ularni bermaydi — keyingi lazy-yuklanadigan route to'g'ridan-to'g'ri router'ning standart (xom,
+texnik) xato ekraniga `Failed to fetch dynamically imported module` xatosini otadi.
+`apps/web/src/routes/__root.tsx`ning `errorComponent`i buni allaqachon boshqaradi: u shu aniq
+xatoni aniqlaydi va tab'ni bir marta qayta yuklaydi (*doimiy* muvaffaqiyatsizlik cheksiz qayta
+yuklanmasligi uchun `sessionStorage` bayrog'i bilan himoyalangan), boshqa har qanday narsa uchun
+oddiy "Nimadir xato ketdi" + Qayta yuklash tugmasiga qaytadi. Buni olib tashlamang yoki chetlab
+o'tmang — bu "ilova shunchaki sezdirmasdan tiklanadi" bilan "har bir deploy'da tab'i ochiq bo'lgan
+har kimga xom stack trace ko'rsatiladi" o'rtasidagi farq.
 
-## Data tables and tab bars — narrow-viewport overflow
+## Jadval va tab panellari — tor viewport'da overflow
 
-- `packages/ui/src/components/table.tsx`'s `TableCell`/`TableHead` carry `whitespace-nowrap`.
-  Without it, a table narrower than its natural content width wraps cell text across 2–3 lines
-  instead of using the horizontal scroll the `Table` wrapper's `overflow-auto` already provides.
-  Keep this on any new table-rendering component; don't remove it to "fix" wrapping — the fix is
-  scrolling, not shrinking columns.
-- `packages/ui/src/components/tabs.tsx`'s `TabsList` carries `max-w-full overflow-x-auto` for the
-  same reason — the building-detail page has 6 tabs, and without this the trailing ones (Measures,
-  Sharing) ran off the right edge on phone-width viewports with no way to reach them.
+- `packages/ui/src/components/table.tsx`ning `TableCell`/`TableHead`si `whitespace-nowrap`ni
+  o'zida saqlaydi. Busiz, tabiiy kontent kengligidan tor jadval, `Table` o'ramining `overflow-auto`
+  allaqachon ta'minlaydigan gorizontal scroll'dan foydalanish o'rniga katak matnini 2–3 qatorga
+  o'raydi. Buni yangi jadval-chizuvchi komponentda saqlang; o'ralishni "tuzatish" uchun olib
+  tashlamang — tuzatish scroll qilish, ustunlarni kichraytirish emas.
+- `packages/ui/src/components/tabs.tsx`ning `TabsList`si xuddi shu sababdan `max-w-full
+  overflow-x-auto`ni o'zida saqlaydi — bino-tafsilot sahifasida 6 ta tab bor, va busiz oxirgilari
+  (Chora-tadbirlar, Ulashish) telefon-kengligidagi viewport'larda o'ng chetdan chiqib ketardi,
+  ularga yetish imkonisiz.
 
-## Mobile navigation
+## Mobil navigatsiya
 
-`apps/web/src/components/app-shell.tsx`'s sidebar is `hidden ... sm:flex` — completely absent
-below the `sm` breakpoint. There's a separate compact icon-only `<header>` for that range (logo,
-nav icons, sign-out). If you add a new top-level nav destination, add it to both — the shared
-`NAV_ITEMS` array feeds the desktop sidebar, but the mobile header renders its own markup from the
-same array. Don't reintroduce a `hidden ... sm:flex` pattern anywhere else in the shell without
-also providing a below-`sm` fallback; it's exactly how the sidebar bug happened the first time.
+`apps/web/src/components/app-shell.tsx`ning sidebar'i `hidden ... sm:flex` — `sm` breakpoint'idan
+past butunlay yo'q. O'sha oralig' uchun alohida ixcham icon-only `<header>` bor (logotip, nav
+icon'lari, chiqish). Yangi yuqori-darajali nav manzilini qo'shsangiz, ikkalasiga ham qo'shing —
+umumiy `NAV_ITEMS` massivi desktop sidebar'ini ta'minlaydi, lekin mobil header o'sha massivdan
+o'zining alohida markup'ini chizadi. Shell'ning boshqa hech qayerida `hidden ... sm:flex`
+naqshini past-`sm` fallback'isiz qayta kiritmang — sidebar bug'i aynan shu tarzda sodir bo'lgan.
 
-## General
+## Umumiy
 
-- Prefer the existing `@yres/ui` primitives (`Button`, `Card`, `Table`, `Tabs`, `Select`, `Dialog`,
-  etc. — see `packages/ui/src/components/`) over ad hoc markup. There is no `Sheet`/`Drawer`
-  component yet; don't assume one exists.
-- Route files under `apps/web/src/routes/` are TanStack Router file-based routes — the file path
-  determines the URL. `_authenticated.tsx`'s `beforeLoad` is what gates every route under
-  `_authenticated/` on a valid session; don't duplicate that check inside individual route
-  components.
-- `formatNumber`/`formatCurrency`/`formatDate`/labels helpers live in `apps/web/src/lib/labels.ts`
-  — add new enum-to-label maps there rather than inlining a switch/ternary in a component.
+- Ad hoc markup o'rniga mavjud `@yres/ui` primitivlarini (`Button`, `Card`, `Table`, `Tabs`,
+  `Select`, `Dialog` va h.k. — `packages/ui/src/components/`ga qarang) afzal ko'ring. Hali
+  `Sheet`/`Drawer` komponenti yo'q; mavjud deb taxmin qilmang.
+- `apps/web/src/routes/` ostidagi route fayllari TanStack Router'ning fayl-asoslangan
+  route'lari — fayl yo'li URL'ni belgilaydi. `_authenticated.tsx`ning `beforeLoad`i
+  `_authenticated/` ostidagi har bir route'ni haqiqiy sessiyaga bog'laydi; bu tekshiruvni
+  alohida route komponentlari ichida takrorlamang.
+- `formatNumber`/`formatCurrency`/`formatDate`/label yordamchilari `apps/web/src/lib/labels.ts`da
+  yashaydi — komponentda switch/ternary yozish o'rniga yangi enum-ga-label xaritalarini shu
+  yerga qo'shing.

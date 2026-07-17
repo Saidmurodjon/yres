@@ -1,58 +1,63 @@
-# Testing & verification
+# Testlash va tekshirish
 
-## Test suite split
+## Test to'plamining bo'linishi
 
-`apps/api` uses Vitest (`bun run test`, from repo root or `apps/api`).
+`apps/api` Vitest'dan foydalanadi (`bun run test`, repo ildizidan yoki `apps/api`dan).
 
-- **`apps/api/tests/services/*.test.ts`** — pure unit tests of individual calculation functions
-  (heat loss, ventilation, financial, generation, etc.). No database needed. These should always
-  pass; a failure here is a real regression.
-- **`apps/api/tests/integration/*.test.ts`** — full HTTP-route tests against a real Postgres via
-  `tests/helpers/test-db.ts`'s `resetTestDb()`, which `TRUNCATE`s every table between tests. They
-  need a local Postgres listening on `127.0.0.1:5432`. **This sandbox has no local Postgres**, so
-  every integration test fails with `ECONNREFUSED` here — that is expected and not a signal of a
-  real regression. Don't "fix" this by pointing `DATABASE_URL` at the real Neon database; that
-  would `TRUNCATE` production data (see database.md).
-- When you change calculation logic in `apps/api/src/services/`, run `bun run test` anyway — the
-  service-level unit tests still catch real breakage even though the integration suite can't run
-  here. If you need end-to-end confidence a unit test can't give you (e.g. a change that only
-  shows up through the full HTTP route + DB), the honest thing is to say so explicitly rather than
-  claim full coverage.
+- **`apps/api/tests/services/*.test.ts`** — alohida hisoblash funksiyalarining (issiqlik
+  yo'qotish, ventilyatsiya, moliya, generatsiya va h.k.) sof unit testlari. Baza kerak emas.
+  Bular doim o'tishi kerak; bu yerdagi muvaffaqiyatsizlik haqiqiy regressiya.
+- **`apps/api/tests/integration/*.test.ts`** — `tests/helpers/test-db.ts`ning har testlar orasida
+  har bir jadvalni `TRUNCATE` qiladigan `resetTestDb()`i orqali haqiqiy Postgres'ga qarshi to'liq
+  HTTP-route testlari. Ularga `127.0.0.1:5432`da tinglayotgan lokal Postgres kerak. **Bu sandbox'da
+  lokal Postgres yo'q**, shuning uchun bu yerda har bir integratsiya testi `ECONNREFUSED` bilan
+  muvaffaqiyatsiz bo'ladi — bu kutilgan holat, haqiqiy regressiya belgisi emas. Buni
+  `DATABASE_URL`ni haqiqiy Neon bazasiga yo'naltirib "tuzatishga" urinmang; bu production
+  ma'lumotlarini `TRUNCATE` qilib yuboradi (database.md'ga qarang).
+- `apps/api/src/services/`da hisoblash logikasini o'zgartirganda, baribir `bun run test`ni ishga
+  tushiring — servis darajasidagi unit testlar integratsiya to'plami bu yerda ishlay olmasa ham
+  haqiqiy buzilishni tutib qoladi. Agar unit test bera olmaydigan end-to-end ishonch kerak bo'lsa
+  (masalan faqat to'liq HTTP route + baza orqali ko'rinadigan o'zgarish), to'liq qamrov haqida
+  da'vo qilish o'rniga buni ochiq aytish halol yo'l.
 
-## Before calling any change done
+## Har qanday o'zgarishni tugallangan deb hisoblashdan oldin
 
-1. `bun run type-check` in the affected workspace(s) (or from root for a cross-cutting change).
-2. `bun run build` for `apps/web` — it runs `vite build && tsc --noEmit`, and a real Vite build
-   catches things a bare `tsc` pass won't (see the Tailwind `@source` gotcha in frontend.md, which
-   only shows up in built CSS output).
-3. `bunx biome lint <files you touched>`.
-4. For backend calculation changes: `bun run test` (service unit tests).
+1. Tegilgan workspace(lar)da `bun run type-check` (yoki keng qamrovli o'zgarish uchun ildizdan).
+2. `apps/web` uchun `bun run build` — u `vite build && tsc --noEmit`ni ishga tushiradi, va haqiqiy
+   Vite build faqat quriladigan CSS chiqishida ko'rinadigan narsalarni (frontend.md'dagi Tailwind
+   `@source` nozik jihatiga qarang) yalang'och `tsc` o'tishi tutib bermaydigan holda tutib oladi.
+3. Tegilgan fayllarga `bunx biome lint <fayllar>`.
+4. Backend hisoblash o'zgarishlari uchun: `bun run test` (servis unit testlari).
 
-## Verifying UI changes without a local database
+## Lokal bazasiz UI o'zgarishlarini tekshirish
 
-There is normally no database available in this sandbox, which blocks the authenticated app
-(dashboard, buildings, results, etc.) from rendering real data through the normal dev server. The
-established workaround:
+Odatda bu sandbox'da baza mavjud emas, bu autentifikatsiyalangan ilovaning (dashboard, binolar,
+natijalar va h.k.) oddiy dev-server orqali haqiqiy ma'lumotni ko'rsatishiga to'sqinlik qiladi.
+O'rnatilgan yechim:
 
-1. `.claude/launch.json` defines two dev-server configs: `web` (`vite` dev server, port 5173) and
-   `web-preview` (`vite preview` against the production `dist/` build, port 4173 — use this one
-   specifically to test production-build-only behavior like the stale-chunk error boundary).
-2. Start one with the Preview MCP tool's `preview_start`, not raw `Bash` — the tool description
-   says this explicitly, and it's what gives you `preview_screenshot`/`preview_eval`/etc.
-3. Point the app at a throwaway local mock API instead of the real one: write a small
-   `Bun.serve()` script (a scratch file *outside* the repo, e.g. `~/mock-api-server.mjs` — don't
-   commit it) that answers `/api/auth/get-session`, `/api/buildings/...`, and whatever else the
-   page under test needs, with CORS headers allowing `http://localhost:5173` and
-   `Access-Control-Allow-Credentials: true`. Set `apps/web/.env.local` (gitignored) to
-   `VITE_API_URL=http://localhost:4001` (or whatever port), restart the dev server so Vite picks
-   up the new env var, and delete both the mock server and `.env.local` when done.
-4. Mock data must match the real shape closely enough not to trigger false findings — e.g. an
-   invalid enum value in mock data (a `buildingType` not in the real union) can make a real UI bug
-   look like it's there when it's actually just bad fixture data. Double check the mock against
-   `apps/web/src/lib/api-types.ts` / `packages/types` before trusting what renders.
-5. `preview_screenshot` occasionally hangs/times out after a page navigation for reasons unrelated
-   to the app itself. If it times out twice in a row, stop and restart the preview server
-   (`preview_stop` then `preview_start`) rather than continuing to retry the same call.
-6. Clean up: kill the mock server process, delete the scratch mock-server file and
-   `apps/web/.env.local` once verification is done — don't leave them for the next session to trip
-   over.
+1. `.claude/launch.json` ikkita dev-server konfiguratsiyasini belgilaydi: `web` (`vite` dev-server,
+   5173-port) va `web-preview` (production `dist/` build'ga qarshi `vite preview`, 4173-port —
+   buni maxsus faqat production-build'ga xos xatti-harakatni, masalan eskirgan-chunk xato
+   chegarasini, sinash uchun ishlating).
+2. Birini xom `Bash` emas, Preview MCP vositasining `preview_start`i bilan ishga tushiring —
+   vosita tavsifi buni ochiq aytadi, va bu sizga `preview_screenshot`/`preview_eval`/va h.k.ni
+   beradi.
+3. Ilovani haqiqiy API o'rniga bir martalik lokal mock API'ga yo'naltiring: kichik `Bun.serve()`
+   skripti yozing (repo'dan *tashqarida* joylashgan scratch fayl, masalan `~/mock-api-server.mjs`
+   — commit qilmang) — u `/api/auth/get-session`, `/api/buildings/...` va sinovdagi sahifaga
+   kerak bo'lgan boshqa narsalarga `http://localhost:5173`ga ruxsat beruvchi CORS sarlavhalari
+   (`Access-Control-Allow-Credentials: true`) bilan javob beradi. `apps/web/.env.local`ni
+   (gitignore qilingan) `VITE_API_URL=http://localhost:4001`ga (yoki qaysi port bo'lsa) o'rnating,
+   Vite yangi env o'zgaruvchisini ilg'ashi uchun dev-server'ni qayta ishga tushiring, va tugagach
+   ham mock server'ni, ham `.env.local`ni o'chiring.
+4. Mock ma'lumot yolg'on topilmalarni keltirib chiqarmasligi uchun haqiqiy shaklga yetarlicha
+   yaqin bo'lishi kerak — masalan mock ma'lumotdagi yaroqsiz enum qiymati (haqiqiy union'da
+   yo'q `buildingType`) haqiqiy UI bug'i shu yerda bordek ko'rsatishi mumkin, aslida bu shunchaki
+   yomon fixture ma'lumoti. Nima chizilganiga ishonishdan oldin mock'ni `apps/web/src/lib/
+   api-types.ts` / `packages/types`ga qarshi qayta tekshiring.
+5. `preview_screenshot` sahifa navigatsiyasidan keyin ilovaga bog'liq bo'lmagan sabablarga ko'ra
+   ba'zan osilib qoladi/vaqti tugaydi. Ketma-ket ikki marta vaqti tugasa, xuddi shu chaqiruvni
+   qayta urinishda davom etish o'rniga preview server'ni to'xtatib qayta ishga tushiring
+   (`preview_stop`, keyin `preview_start`).
+6. Tozalash: mock server jarayonini o'ldiring, tekshiruv tugagach scratch mock-server faylini va
+   `apps/web/.env.local`ni o'chiring — ularni keyingi sessiya uchun qoldirmang.
