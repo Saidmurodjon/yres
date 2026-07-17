@@ -1,0 +1,48 @@
+{
+  "list": {
+    "title": "Chat",
+    "subtitle": "Message other YRES users directly or in a group.",
+    "failedToLoad": "Failed to load conversations:",
+    "noConversationsYet": "No conversations yet",
+    "noConversationsDescription": "Start a direct chat by username, or create a group with a few people.",
+    "messageDeleted": "Message deleted",
+    "noMessagesYet": "No messages yet",
+    "unreadOverflow": "9+"
+  },
+  "newChat": {
+    "trigger": "New chat",
+    "title": "New chat",
+    "direct": "Direct",
+    "group": "Group",
+    "usernameLabel": "Username",
+    "usernamePlaceholder": "jdoe",
+    "groupNameLabel": "Group name",
+    "groupUsernamesLabel": "Usernames (comma-separated)",
+    "groupUsernamesPlaceholder": "jdoe, asmith",
+    "usernameRequired": "Enter a username.",
+    "groupRequired": "Enter a group name and at least one username.",
+    "startFailed": "Failed to start conversation.",
+    "starting": "Starting...",
+    "startChat": "Start chat"
+  },
+  "thread": {
+    "defaultTitle": "Chat",
+    "loading": "Loading...",
+    "typing": "{{name}} is typing...",
+    "someone": "Someone",
+    "unknownSender": "Unknown",
+    "messageDeleted": "Message deleted",
+    "downloadAttachment": "Download attachment",
+    "edited": "edited",
+    "reply": "Reply",
+    "edit": "Edit",
+    "delete": "Delete",
+    "editingMessage": "Editing message",
+    "replyingTo": "Replying to: {{body}}",
+    "cancelAria": "Cancel",
+    "removeAttachmentAria": "Remove attachment",
+    "attachFileAria": "Attach a file",
+    "sendAria": "Send",
+    "placeholder": "Type a message..."
+  }
+}

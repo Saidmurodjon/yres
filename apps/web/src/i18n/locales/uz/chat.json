@@ -1,0 +1,48 @@
+{
+  "list": {
+    "title": "Chat",
+    "subtitle": "Boshqa YRES foydalanuvchilari bilan bevosita yoki guruhda yozishing.",
+    "failedToLoad": "Suhbatlarni yuklab bo'lmadi:",
+    "noConversationsYet": "Hali suhbatlar yo'q",
+    "noConversationsDescription": "Foydalanuvchi nomi orqali shaxsiy suhbat boshlang yoki bir nechta kishi bilan guruh yarating.",
+    "messageDeleted": "Xabar o'chirilgan",
+    "noMessagesYet": "Hali xabarlar yo'q",
+    "unreadOverflow": "9+"
+  },
+  "newChat": {
+    "trigger": "Yangi suhbat",
+    "title": "Yangi suhbat",
+    "direct": "Shaxsiy",
+    "group": "Guruh",
+    "usernameLabel": "Foydalanuvchi nomi",
+    "usernamePlaceholder": "jdoe",
+    "groupNameLabel": "Guruh nomi",
+    "groupUsernamesLabel": "Foydalanuvchi nomlari (vergul bilan ajrating)",
+    "groupUsernamesPlaceholder": "jdoe, asmith",
+    "usernameRequired": "Foydalanuvchi nomini kiriting.",
+    "groupRequired": "Guruh nomini va kamida bitta foydalanuvchi nomini kiriting.",
+    "startFailed": "Suhbatni boshlab bo'lmadi.",
+    "starting": "Boshlanmoqda...",
+    "startChat": "Suhbatni boshlash"
+  },
+  "thread": {
+    "defaultTitle": "Chat",
+    "loading": "Yuklanmoqda...",
+    "typing": "{{name}} yozmoqda...",
+    "someone": "Kimdir",
+    "unknownSender": "Noma'lum",
+    "messageDeleted": "Xabar o'chirilgan",
+    "downloadAttachment": "Ilovani yuklab olish",
+    "edited": "tahrirlangan",
+    "reply": "Javob berish",
+    "edit": "Tahrirlash",
+    "delete": "O'chirish",
+    "editingMessage": "Xabar tahrirlanmoqda",
+    "replyingTo": "Javob: {{body}}",
+    "cancelAria": "Bekor qilish",
+    "removeAttachmentAria": "Ilovani olib tashlash",
+    "attachFileAria": "Fayl biriktirish",
+    "sendAria": "Yuborish",
+    "placeholder": "Xabar yozing..."
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "list": {
+    "title": "Чат",
+    "subtitle": "Переписывайтесь с другими пользователями YRES напрямую или в группе.",
+    "failedToLoad": "Не удалось загрузить беседы:",
+    "noConversationsYet": "Пока нет бесед",
+    "noConversationsDescription": "Начните личный чат по имени пользователя или создайте группу с несколькими людьми.",
+    "messageDeleted": "Сообщение удалено",
+    "noMessagesYet": "Пока нет сообщений",
+    "unreadOverflow": "9+"
+  },
+  "newChat": {
+    "trigger": "Новый чат",
+    "title": "Новый чат",
+    "direct": "Личный",
+    "group": "Группа",
+    "usernameLabel": "Имя пользователя",
+    "usernamePlaceholder": "jdoe",
+    "groupNameLabel": "Название группы",
+    "groupUsernamesLabel": "Имена пользователей (через запятую)",
+    "groupUsernamesPlaceholder": "jdoe, asmith",
+    "usernameRequired": "Введите имя пользователя.",
+    "groupRequired": "Введите название группы и хотя бы одно имя пользователя.",
+    "startFailed": "Не удалось начать беседу.",
+    "starting": "Начинаем...",
+    "startChat": "Начать чат"
+  },
+  "thread": {
+    "defaultTitle": "Чат",
+    "loading": "Загрузка...",
+    "typing": "{{name}} печатает...",
+    "someone": "Кто-то",
+    "unknownSender": "Неизвестно",
+    "messageDeleted": "Сообщение удалено",
+    "downloadAttachment": "Скачать вложение",
+    "edited": "изменено",
+    "reply": "Ответить",
+    "edit": "Изменить",
+    "delete": "Удалить",
+    "editingMessage": "Редактирование сообщения",
+    "replyingTo": "Ответ на: {{body}}",
+    "cancelAria": "Отмена",
+    "removeAttachmentAria": "Удалить вложение",
+    "attachFileAria": "Прикрепить файл",
+    "sendAria": "Отправить",
+    "placeholder": "Введите сообщение..."
+  }
+}
