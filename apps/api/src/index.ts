@@ -16,6 +16,7 @@ import { consumptionRoutes } from "./routes/consumption";
 import { envelopeRoutes } from "./routes/envelope";
 import { measuresRoutes } from "./routes/measures";
 import { membersRoutes } from "./routes/members";
+import { notificationsRoutes } from "./routes/notifications";
 import { referenceRoutes } from "./routes/reference";
 import { systemsRoutes } from "./routes/systems";
 import { usersRoutes } from "./routes/users";
@@ -95,6 +96,7 @@ app.route("/api/climate", climateRoutes);
 app.route("/api/reference", referenceRoutes);
 app.route("/api/users", usersRoutes);
 app.route("/api/admin", adminUsersRoutes);
+app.route("/api/notifications", notificationsRoutes);
 
 // Reports uncaught exceptions (route bugs, calculation-engine errors,
 // unexpected DB failures) to Sentry with request context. A blank

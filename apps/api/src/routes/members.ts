@@ -2,6 +2,7 @@ import { buildingMember, user } from "@yres/db";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { findAccessibleBuilding, findOwnedBuilding } from "../lib/building-access";
+import { notifyUser } from "../lib/notify";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import { inviteMemberSchema, updateMemberRoleSchema } from "../schemas/members";
 
@@ -85,6 +86,13 @@ membersRoutes.post("/:id/members", async (c) => {
     .insert(buildingMember)
     .values({ buildingId, userId: invitedUser.id, role, invitedByUserId: currentUser.id })
     .returning();
+
+  await notifyUser(c.env, db, {
+    userId: invitedUser.id,
+    type: "building_shared",
+    title: `${currentUser.name} shared "${owned.name}" with you`,
+    linkUrl: `/buildings/${buildingId}`,
+  });
 
   return c.json(
     {

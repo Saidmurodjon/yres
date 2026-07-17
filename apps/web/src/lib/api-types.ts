@@ -18,6 +18,17 @@ export interface UpdateUserInput {
   image?: string | null;
 }
 
+export interface Notification {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  body: string | null;
+  linkUrl: string | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
 export interface AdminUser {
   id: string;
   name: string;

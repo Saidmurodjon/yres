@@ -5,6 +5,7 @@ import {
   AvatarImage,
   Badge,
   Button,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -18,6 +19,12 @@ import {
 } from "@yres/ui";
 import { Bell, Building2, LayoutDashboard, LogOut, ShieldCheck, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
+import {
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotifications,
+  useNotificationSocket,
+} from "../hooks";
 import { signOut, useSession } from "../lib/auth-client";
 import type { SessionUser, UserRole } from "../lib/auth-types";
 import { USER_ROLE_LABELS } from "../lib/labels";
@@ -46,18 +53,60 @@ function initialsFor(name: string) {
   return initials.toUpperCase() || "?";
 }
 
-/** Stubbed for now — real unread count/list lands with the notifications backend (docs/social-features.md Phase 8). */
 function NotificationBell() {
+  const { data } = useNotifications({ pageSize: 10 });
+  const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
+
+  const notifications = data?.notifications ?? [];
+  const unreadCount = data?.unreadCount ?? 0;
+
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" aria-label="Notifications">
+        <Button variant="ghost" size="sm" aria-label="Notifications" className="relative">
           <Bell className="h-4 w-4" />
+          {unreadCount > 0 && (
+            <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80">
-        <p className="text-sm font-medium">Notifications</p>
-        <p className="mt-2 text-sm text-muted-foreground">No notifications yet.</p>
+      <PopoverContent align="end" className="w-80 p-0">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <p className="text-sm font-medium">Notifications</p>
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => markAllRead.mutate()}
+              disabled={markAllRead.isPending}
+            >
+              Mark all read
+            </Button>
+          )}
+        </div>
+        <div className="max-h-80 overflow-y-auto">
+          {notifications.length === 0 ? (
+            <p className="p-4 text-sm text-muted-foreground">No notifications yet.</p>
+          ) : (
+            notifications.map((n) => (
+              <button
+                key={n.id}
+                type="button"
+                onClick={() => !n.isRead && markRead.mutate(n.id)}
+                className={cn(
+                  "block w-full border-b border-border px-4 py-3 text-left text-sm last:border-0 hover:bg-accent",
+                  !n.isRead && "bg-accent/50",
+                )}
+              >
+                <p className="font-medium">{n.title}</p>
+                {n.body && <p className="mt-0.5 text-muted-foreground">{n.body}</p>}
+              </button>
+            ))
+          )}
+        </div>
       </PopoverContent>
     </Popover>
   );
@@ -114,6 +163,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
   const user = session?.user as SessionUser | undefined;
   const navItems = visibleNavItems(user?.role);
+  // Called once here rather than inside NotificationBell, which renders
+  // twice (mobile header + desktop sidebar, only one visible at a time via
+  // CSS) — calling it there would open two redundant sockets.
+  useNotificationSocket();
 
   async function handleSignOut() {
     await signOut();

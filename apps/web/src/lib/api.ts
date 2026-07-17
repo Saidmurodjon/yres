@@ -19,6 +19,7 @@ import type {
   LampType,
   Material,
   NonEeMeasure,
+  Notification,
   ReplaceCoolingSystemsPayload,
   ReplaceCoolingWindowsPayload,
   ReplaceDhwPayload,
@@ -38,7 +39,7 @@ import type {
 } from "./api-types";
 import type { UserRole } from "./auth-types";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
+export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
 export class ApiError extends Error {
   status: number;
@@ -93,6 +94,18 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify(data),
       }),
+  },
+
+  notifications: {
+    list: (params?: ListParams) =>
+      request<{ notifications: Notification[]; unreadCount: number; page: number; pageSize: number }>(
+        `/api/notifications${toQueryString(params)}`,
+      ),
+    markRead: (id: string) =>
+      request<{ notification: Notification }>(`/api/notifications/${id}/read`, {
+        method: "PATCH",
+      }),
+    markAllRead: () => request<{ ok: true }>("/api/notifications/read-all", { method: "PATCH" }),
   },
 
   adminUsers: {
