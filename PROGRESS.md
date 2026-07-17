@@ -176,8 +176,15 @@ Endi `docs/social-features.md`dagi "Qurish tartibi" bosqichlariga o'tildi:
   — bularning barchasini Better Auth allaqachon boshqaradi). `ProfileMenu`
   endi `/profile`ga havola qiladi (Phase 3'da route hali yo'q edi).
 
-**Navbatda**: Social Phase 5 (Rollar/admin — `require-role` middleware,
-`/admin/users` sahifasi).
+- **Social Phase 5 (Rollar/admin)**: `requireRole()` middleware
+  (bino-bo'yicha `building-access.ts`dan mustaqil), `GET`/`PATCH
+  /api/admin/users` faqat admin uchun (o'z-o'zini "admin"dan pasaytirish
+  bloklangan — bo'lmasa barcha adminlar tashqarida qolib ketishi mumkin).
+  Yangi `/admin/users` sahifasi, `beforeLoad`da admin-gated (admin bo'lmasa
+  `/dashboard`ga qaytaradi). `NAV_ITEMS`ga `roles: ["admin"]` bilan "Users"
+  qo'shildi.
+
+**Navbatda**: Social Phase 6 (ro'yxatdan o'tganda xush kelibsiz emaili).
 
 ## Ma'lum bo'shliqlar
 
