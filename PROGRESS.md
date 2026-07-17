@@ -277,12 +277,25 @@ sifatida amal qildi).
 - **i18n Phase 4 (namespace bo'yicha ko'chirish) — davom etmoqda**:
   - ✅ `nav` — navbar (`app-shell.tsx`)
   - ✅ `auth` — login/register/forgot-password/reset-password
-  - ⏳ Navbatda: `buildings`, `envelope`, `systems`, `consumption`,
-    `measures`, `audit`, `financial`, `admin`, `chat`, `notifications`,
-    `dashboard`, `profile` — yana ~20+ fayl, har biri alohida commit.
+  - ✅ `dashboard` — `dashboard.tsx`, `__root.tsx`ning umumiy qismlari
+  - ✅ `buildings` (ro'yxat/yaratish/tahrirlash/o'chirish) —
+    `buildings/index.tsx`, `buildings/new.tsx`, `building-form-fields.tsx`
+    (`parseBuildingFormValues()` endi `TFunction`ni parametr sifatida
+    qabul qiladi — validatsiya funksiyasi komponent emas, hook chaqira
+    olmaydi), `edit-building-dialog.tsx`, `delete-building-dialog.tsx`.
+  - ✅ `buildings` kengaytmasi — bino-tafsiloti sahifasining qobig'i
+    (`$buildingId/index.tsx`: orqaga havola, xatolik holati, tab
+    yorliqlari — yangi `detail.*` bo'limi), `overview-tab.tsx` (yangi
+    `overview.*` bo'limi), `sharing-tab.tsx` (yangi `sharing.*` bo'limi).
+    Umumiy `share-bar.tsx` komponenti (audit/natijalar/moliyaviy
+    sahifalarda qayta ishlatiladi) `common.noDataAvailable`ga o'tkazildi.
+  - ⏳ Navbatda: `envelope`, `systems`, `consumption`, `measures`,
+    `audit`/`financial`/`results`, `admin`, `chat`, `profile` — yana
+    ~18 fayl, har biri alohida commit.
 
-**Navbatda**: i18n Phase 4'ni davom ettirish (`buildings` namespace'idan
-boshlab).
+**Navbatda**: i18n Phase 4'ni davom ettirish (`envelope-tab.tsx` va
+`envelope-editor-dialog.tsx`dan boshlab — bular qobiq-tab'ining eng katta
+va eng murakkab qismi).
 
 ## Ma'lum bo'shliqlar
 
