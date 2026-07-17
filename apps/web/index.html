@@ -2,6 +2,23 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Blocks before first paint so a page load never flashes the wrong
+         theme: reads the same localStorage key useTheme() (docs/
+         i18n-and-appearance.md's Phase 2) writes to and sets data-theme on
+         <html> before any CSS renders. "system" (or no stored preference)
+         intentionally sets nothing — packages/ui/src/styles/globals.css's
+         `@media (prefers-color-scheme: dark)` fallback already handles
+         that case on its own. -->
+    <script>
+      (function () {
+        try {
+          var theme = localStorage.getItem("yres-theme");
+          if (theme === "light" || theme === "dark") {
+            document.documentElement.setAttribute("data-theme", theme);
+          }
+        } catch (e) {}
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>YRES — Energy Efficiency Audit Platform</title>
   </head>

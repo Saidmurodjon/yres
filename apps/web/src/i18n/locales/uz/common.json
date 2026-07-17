@@ -1,0 +1,18 @@
+{
+  "save": "Saqlash",
+  "saving": "Saqlanmoqda...",
+  "cancel": "Bekor qilish",
+  "delete": "O'chirish",
+  "edit": "Tahrirlash",
+  "add": "Qo'shish",
+  "close": "Yopish",
+  "loading": "Yuklanmoqda...",
+  "error": "Xatolik",
+  "unknownError": "Noma'lum xatolik",
+  "retry": "Qayta urinish",
+  "confirm": "Tasdiqlash",
+  "yes": "Ha",
+  "no": "Yo'q",
+  "search": "Qidirish",
+  "noResults": "Natija topilmadi"
+}
