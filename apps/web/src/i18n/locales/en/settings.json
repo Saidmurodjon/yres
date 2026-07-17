@@ -1,0 +1,10 @@
+{
+  "title": "Settings",
+  "description": "Manage your appearance and language preferences.",
+  "appearance": "Appearance",
+  "light": "Light",
+  "dark": "Dark",
+  "system": "System",
+  "language": "Language",
+  "languageDescription": "Choose the interface language."
+}
