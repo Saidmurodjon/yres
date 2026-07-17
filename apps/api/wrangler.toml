@@ -19,6 +19,31 @@ EMAIL_FROM = "YRES <onboarding@resend.dev>"
 binding = "REPORTS_BUCKET"
 bucket_name = "yres-reports-dev"
 
+# Real-time notifications/chat (docs/social-features.md) — ConversationRoom
+# is one DO instance per chat conversation (fan-out point for that
+# conversation's WebSocket connections, Postgres stays the source of
+# truth); UserNotificationChannel is one instance per user (pushes live
+# bell updates). Both classes are exported from src/index.ts — Cloudflare
+# binds `class_name` to whatever the Worker's entry module exports under
+# that name, they aren't separate files it discovers on its own.
+# `new_sqlite_classes` (vs. the older `new_classes`) uses the
+# SQLite-backed storage backend, which is available on Cloudflare's Workers
+# Free plan — confirm this is still the case for your account before
+# deploying (see docs/calculation-engine-audit.md-style caveat in
+# docs/social-features.md: this is genuinely new infra for the project,
+# untested against a real Cloudflare account here).
+[[durable_objects.bindings]]
+name = "CONVERSATION_ROOM"
+class_name = "ConversationRoom"
+
+[[durable_objects.bindings]]
+name = "USER_CHANNEL"
+class_name = "UserNotificationChannel"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ConversationRoom", "UserNotificationChannel"]
+
 # Cloudflare's native Rate Limiting binding, used by src/middleware/rate-limit.ts
 # to throttle sign-in/sign-up/password-reset requests at the edge. `limit`/
 # `period` apply uniformly to every key the middleware passes it (it
@@ -53,6 +78,14 @@ EMAIL_FROM = "YRES <noreply@saidmurod.com>"
 [[env.production.r2_buckets]]
 binding = "REPORTS_BUCKET"
 bucket_name = "yres-reports"
+
+[[env.production.durable_objects.bindings]]
+name = "CONVERSATION_ROOM"
+class_name = "ConversationRoom"
+
+[[env.production.durable_objects.bindings]]
+name = "USER_CHANNEL"
+class_name = "UserNotificationChannel"
 
 [[env.production.unsafe.bindings]]
 name = "RATE_LIMITER"

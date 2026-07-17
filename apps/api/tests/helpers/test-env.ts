@@ -10,6 +10,18 @@ const fakeReportsBucket = {
 } as unknown as Env["REPORTS_BUCKET"];
 
 /**
+ * No route exercised by these tests calls into either Durable Object
+ * binding yet (Phase 7 of docs/social-features.md is infra-only — no
+ * websocket/RPC route wired up to a real request path), so this stub only
+ * needs to satisfy `Env`'s shape, not behave like a real
+ * `DurableObjectNamespace`. Note this file lives outside apps/api's
+ * tsconfig `include` (tests/ isn't type-checked by `tsc --noEmit`), so a
+ * type mismatch here wouldn't actually be caught by `bun run type-check` —
+ * kept accurate anyway rather than relying on that gap.
+ */
+const fakeDurableObjectNamespace = {} as unknown as Env["CONVERSATION_ROOM"];
+
+/**
  * Fake Worker bindings for `app.request(path, init, env)` in tests.
  * `DATABASE_URL` is never actually used to connect (see test-db.ts —
  * `createDb` is mocked to ignore its argument) but Better Auth's config
@@ -32,4 +44,6 @@ export const testEnv: Env = {
   RESEND_API_KEY: "",
   EMAIL_FROM: "",
   SENTRY_DSN: "",
+  CONVERSATION_ROOM: fakeDurableObjectNamespace,
+  USER_CHANNEL: fakeDurableObjectNamespace,
 };

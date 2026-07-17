@@ -6,6 +6,8 @@ import { createAuth } from "./auth";
 import type { AppEnv } from "./middleware/auth";
 import { dbMiddleware } from "./middleware/db";
 import { rateLimit } from "./middleware/rate-limit";
+import { ConversationRoom } from "./durable-objects/conversation-room";
+import { UserNotificationChannel } from "./durable-objects/user-notification-channel";
 import { adminUsersRoutes } from "./routes/admin-users";
 import { auditRoutes } from "./routes/audit";
 import { buildingRoutes } from "./routes/buildings";
@@ -39,7 +41,15 @@ export interface Env {
    * leave unset locally/in tests.
    */
   RATE_LIMITER?: RateLimit;
+  /** Real-time chat/notifications (docs/social-features.md) — see wrangler.toml's durable_objects.bindings. */
+  CONVERSATION_ROOM: DurableObjectNamespace<ConversationRoom>;
+  USER_CHANNEL: DurableObjectNamespace<UserNotificationChannel>;
 }
+
+// Cloudflare binds wrangler.toml's `class_name` to whatever this entry
+// module exports under that name — these re-exports are what makes the
+// CONVERSATION_ROOM/USER_CHANNEL bindings above resolve to real classes.
+export { ConversationRoom, UserNotificationChannel };
 
 const app = new Hono<AppEnv>();
 
