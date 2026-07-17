@@ -1,4 +1,14 @@
 @import "tailwindcss";
+/* Defines the `animate-in`/`animate-out`/`fade-in-0`/`zoom-in-95`/etc.
+   utilities Dialog/DropdownMenu/Popover use for open/close transitions.
+   Tailwind v4 has no built-in equivalent (the old `tailwindcss-animate` v3
+   plugin doesn't work here) — without this import those class names aren't
+   real utilities and silently produce no CSS at all, exactly the failure
+   mode described below, just via a missing plugin instead of a missing
+   `@source` entry. Discovered while adding dropdown-menu/popover: grep the
+   built CSS for e.g. `zoom-in-95` after `bun run build` if this ever
+   regresses. */
+@import "tw-animate-css";
 
 /* Tailwind's automatic content scan treats this package as vendor code once
    it's resolved through a consuming app's node_modules (workspace symlink),
