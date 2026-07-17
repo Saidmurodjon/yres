@@ -1,4 +1,5 @@
 import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { userRoleEnum } from "./enums";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -6,7 +7,11 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
-  role: text("role").notNull().default("auditor"),
+  role: userRoleEnum("role").notNull().default("auditor"),
+  /** Defaults to `email` at signup (see auth.ts's `user.create.before` hook); editable afterward in profile settings. See docs/social-features.md. */
+  username: text("username").notNull().unique(),
+  /** Chat presence "last seen" — updated when the user's UserNotificationChannel socket disconnects, not tied to login/session. */
+  lastSeenAt: timestamp("last_seen_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

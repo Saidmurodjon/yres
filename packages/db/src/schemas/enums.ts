@@ -84,10 +84,19 @@ export const auditRunStatusEnum = pgEnum("audit_run_status", [
 ]);
 
 /**
- * Per-building collaborator access level (separate from `user.role`, which
- * is an unused Better Auth scaffolding column and not this feature). The
- * building's creator (`building.userId`) is always an implicit "owner" and
- * never appears as a `buildingMember` row — this enum only covers people
- * *invited* to a building they don't own.
+ * Per-building collaborator access level (separate from the global
+ * `userRoleEnum` below). The building's creator (`building.userId`) is
+ * always an implicit "owner" and never appears as a `buildingMember` row —
+ * this enum only covers people *invited* to a building they don't own.
  */
 export const buildingMemberRoleEnum = pgEnum("building_member_role", ["editor", "viewer"]);
+
+/**
+ * Global user role — separate from `buildingMemberRoleEnum` above, which is
+ * scoped to a single building's sharing permissions. `admin` unlocks
+ * site-wide user management (`/admin/users`); `auditor` is the normal
+ * working role; `viewer` is a read-only global tier layered on top of
+ * whatever buildings are explicitly shared with the user. See
+ * `docs/social-features.md` for the full design.
+ */
+export const userRoleEnum = pgEnum("user_role", ["admin", "auditor", "viewer"]);

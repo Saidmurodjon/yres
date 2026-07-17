@@ -14,6 +14,20 @@ export function createAuth(env: Env, db: Database) {
     trustedOrigins: [env.WEB_URL],
     database: drizzleAdapter(db, { provider: "pg" }),
     secret: env.BETTER_AUTH_SECRET,
+    // `user.username` is NOT NULL with no DB-level default (see
+    // packages/db/src/schemas/auth.ts) — every signup must set it, and email
+    // is the agreed default (docs/social-features.md). This hook only
+    // covers *this*; the separate welcome-email hook is a later phase, not
+    // bundled here so this commit stays scoped to "don't break signup."
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (user) => {
+            return { data: { ...user, username: user.email } };
+          },
+        },
+      },
+    },
     emailAndPassword: {
       enabled: true,
       sendResetPassword: async ({ user, url }) => {

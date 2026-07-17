@@ -16,3 +16,5 @@ export * from "./financial";
 export * from "./consumption";
 export * from "./audits";
 export * from "./collaboration";
+export * from "./notifications";
+export * from "./chat";

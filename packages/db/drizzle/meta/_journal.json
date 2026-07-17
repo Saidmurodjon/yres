@@ -29,6 +29,13 @@
       "when": 1784273018836,
       "tag": "0003_giant_mandrill",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784278825890,
+      "tag": "0004_dark_thunderbolt",
+      "breakpoints": true
     }
   ]
 }
