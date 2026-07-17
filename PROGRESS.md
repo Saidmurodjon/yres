@@ -128,8 +128,23 @@ tuzatish boshlandi:
 Ikkala hisoblash kamchiligi ham tuzatildi va `docs/calculation-engine-audit.md`/
 `docs/data-dictionary.md` "hal qilindi" deb yangilandi.
 
-**Navbatda**: `docs/social-features.md`/`ui-guidelines.md`/`i18n-and-appearance.md`dagi "Qurish
-tartibi" bosqichlariga o'tish (har bir bosqich — tekshiruv + alohida commit).
+Endi `docs/social-features.md`dagi "Qurish tartibi" bosqichlariga o'tildi:
+
+- **Social Phase 1 (sxema)**: `user.role` endi haqiqiy `userRoleEnum`
+  (admin/auditor/viewer); `user.username` (NOT NULL UNIQUE, email'dan backfill —
+  migratsiya qo'lda xavfsiz ketma-ketlikka o'tkazildi: nullable qo'shish →
+  backfill → NOT NULL, bittalik `ADD COLUMN NOT NULL` emas); `user.lastSeenAt`;
+  yangi `notification`/`conversation`/`conversation_member`/`message` jadvallari.
+  Better Auth'ga minimal `databaseHooks.user.create.before` qo'shildi
+  (username=email — yangi ustunda DB-darajasidagi standart qiymat yo'qligi
+  uchun zarur, ro'yxatdan o'tishni buzmasligi uchun). **Diqqat**: bu hook'ning
+  aniq shakli Better Auth hujjatlariga qarshi tasdiqlanmagan (bu sandbox'da
+  integratsiya testi/haqiqiy signup ishga tushirib bo'lmaydi) — faqat
+  type-check orqali tekshirilgan, haqiqiy deploy'dan keyin signup oqimini
+  qo'lda tekshirish tavsiya etiladi.
+
+**Navbatda**: Social Phase 2 (`packages/ui` primitivlari: dropdown-menu,
+popover, avatar, toast).
 
 ## Ma'lum bo'shliqlar
 
