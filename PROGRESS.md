@@ -118,9 +118,18 @@ tuzatish boshlandi:
   costs" bo'limi va PDF hisobotga tegishli jadval qo'shildi. Tekshirildi:
   `apps/api`/`apps/web` type-check, `apps/api` unit testlari (51/51 o'tdi), biome lint.
 
-**Navbatda**: mexanik ventilyatsiya sovutish-entalpiya kamchiligini tuzatish, keyin
-`docs/social-features.md`/`ui-guidelines.md`/`i18n-and-appearance.md`dagi "Qurish tartibi"
-bosqichlariga o'tish (har bir bosqich — tekshiruv + alohida commit).
+- **Tuzatildi**: mexanik ventilyatsiyaning sovutish-mavsumi entalpiya yuki endi hisoblanadi —
+  `ventilation.service.ts`ga `calculateMechanicalVentilationCoolingGainKwh()` qo'shildi (manba
+  jadvalning namunaviy 48.4/59.5 kJ/kg qiymatlari bilan tasdiqlangan), `CoolingResult`ga uchinchi
+  had sifatida ulandi. Buning uchun yangi `ventilation_system.cooling_season_hours` ustuni
+  qo'shildi (migratsiya `0003_giant_mandrill.sql`) va Systems tab'iga kirish maydoni qo'shildi.
+  Tekshirildi: `apps/api`/`apps/web` type-check, unit testlar (55/55 o'tdi), biome lint.
+
+Ikkala hisoblash kamchiligi ham tuzatildi va `docs/calculation-engine-audit.md`/
+`docs/data-dictionary.md` "hal qilindi" deb yangilandi.
+
+**Navbatda**: `docs/social-features.md`/`ui-guidelines.md`/`i18n-and-appearance.md`dagi "Qurish
+tartibi" bosqichlariga o'tish (har bir bosqich — tekshiruv + alohida commit).
 
 ## Ma'lum bo'shliqlar
 
