@@ -184,7 +184,15 @@ Endi `docs/social-features.md`dagi "Qurish tartibi" bosqichlariga o'tildi:
   `/dashboard`ga qaytaradi). `NAV_ITEMS`ga `roles: ["admin"]` bilan "Users"
   qo'shildi.
 
-**Navbatda**: Social Phase 6 (ro'yxatdan o'tganda xush kelibsiz emaili).
+- **Social Phase 6 (Xush kelibsiz emaili)**: `user.create.after` hook'i
+  qo'shildi (Phase 1'dagi `username=email` hook'i bilan bir joyda),
+  mavjud `sendEmail()` orqali. Kirishda (login) hech qanday email
+  qo'shilmadi — bu qaror ikki marta o'zgargani ("har safar" → "faqat
+  yangi qurilma" → "umuman yo'q") uchun ayniqsa ochiq qayd etilmoqda.
+
+**Navbatda**: Social Phase 7 (Durable Objects infratuzilmasi) — bu loyiha
+uchun mutlaqo yangi infratuzilma, `docs/social-features.md`da belgilanganidek
+haqiqiy deploy'siz to'liq tekshirib bo'lmaydi.
 
 ## Ma'lum bo'shliqlar
 
