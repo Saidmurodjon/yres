@@ -26,6 +26,7 @@ import {
 } from "@yres/ui";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useReplaceCoolingSystems,
   useReplaceCoolingWindows,
@@ -122,6 +123,8 @@ function EditableRowsCard({
     onRowsChange(rows.filter((r) => r.id !== rowId));
   }
 
+  const { t } = useTranslation("systems");
+
   return (
     <Card>
       <CardHeader>
@@ -130,7 +133,7 @@ function EditableRowsCard({
       </CardHeader>
       <CardContent>
         {rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">None defined for this scenario.</p>
+          <p className="text-sm text-muted-foreground">{t("common.noneDefined")}</p>
         ) : (
           <Table>
             <TableHeader>
@@ -182,7 +185,7 @@ function EditableRowsCard({
                         variant="ghost"
                         size="sm"
                         onClick={() => removeRow(row.id)}
-                        aria-label="Remove row"
+                        aria-label={t("common.removeRow")}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -204,10 +207,10 @@ function EditableRowsCard({
             onClick={() => onRowsChange([...rows, onAddRow()])}
           >
             <Plus className="h-4 w-4" />
-            Add row
+            {t("common.addRow")}
           </Button>
           <Button type="button" size="sm" onClick={onSave} disabled={saving}>
-            {saving ? "Saving..." : "Save"}
+            {saving ? t("common:saving") : t("common:save")}
           </Button>
         </CardFooter>
       )}
@@ -243,6 +246,7 @@ export function SystemsTab({
 }: { buildingId: string; readOnly?: boolean }) {
   const { data, isLoading, isError, error } = useSystems(buildingId);
   const [scenario, setScenario] = useState<Scenario>("before");
+  const { t } = useTranslation("systems");
 
   if (isLoading) {
     return (
@@ -257,7 +261,9 @@ export function SystemsTab({
     return (
       <Card className="border-destructive/50">
         <CardContent className="p-6 text-sm text-destructive">
-          Failed to load systems data: {error instanceof ApiError ? error.message : "Unknown error"}
+          {t("loadError", {
+            message: error instanceof ApiError ? error.message : t("common:unknownError"),
+          })}
         </CardContent>
       </Card>
     );
@@ -266,18 +272,13 @@ export function SystemsTab({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Ventilation, DHW, distribution, generation, and cooling systems that AuditEngine reads to
-          compute purchased energy. Configure "before" (baseline) and, once retrofit measures are
-          decided, "after" (proposed) — without at least one heating generation source, purchased
-          energy will read as zero on the Results page.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("description")}</p>
       </div>
 
       <Tabs value={scenario} onValueChange={(v) => setScenario(v as Scenario)}>
         <TabsList>
-          <TabsTrigger value="before">Before (baseline)</TabsTrigger>
-          <TabsTrigger value="after">After (proposed)</TabsTrigger>
+          <TabsTrigger value="before">{t("scenarioBefore")}</TabsTrigger>
+          <TabsTrigger value="after">{t("scenarioAfter")}</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -331,10 +332,7 @@ export function SystemsTab({
       />
 
       <div className="border-t border-border pt-6">
-        <p className="mb-4 text-sm text-muted-foreground">
-          Renewables (solar PV / solar DHW) aren't tied to a scenario — they represent a proposed
-          addition with no "before" state, so this list applies regardless of the tab above.
-        </p>
+        <p className="mb-4 text-sm text-muted-foreground">{t("renewables.intro")}</p>
         <RenewablesSection
           buildingId={buildingId}
           systems={data.renewableSystems}
@@ -354,6 +352,7 @@ function VentilationSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceVentilation(buildingId);
+  const { t } = useTranslation("systems");
 
   useEffect(() => {
     setRows(
@@ -385,29 +384,41 @@ function VentilationSection({
         })),
       });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to save ventilation systems.");
+      setError(err instanceof ApiError ? err.message : t("ventilation.saveError"));
     }
   }
 
   return (
     <EditableRowsCard
-      title="Ventilation"
-      description="At most one natural and one mechanical system are used per scenario."
+      title={t("ventilation.title")}
+      description={t("ventilation.description")}
       columns={[
         {
           key: "systemType",
-          label: "Type",
+          label: t("ventilation.columnType"),
           type: "select",
           options: Object.entries(VENTILATION_SYSTEM_TYPE_LABELS).map(([value, label]) => ({
             value,
             label,
           })),
         },
-        { key: "airChangeRatePerHour", label: "Air change rate (1/h)", type: "number" },
-        { key: "freshAirPerPersonM3h", label: "Fresh air/person (m³/h)", type: "number" },
-        { key: "heatRecoveryEfficiency", label: "Heat recovery eff. (0-1)", type: "number" },
-        { key: "fanElectricalPowerKw", label: "Fan power (kW)", type: "number" },
-        { key: "coolingSeasonHours", label: "Cooling season hours (h/yr)", type: "number" },
+        { key: "airChangeRatePerHour", label: t("ventilation.columnAirChangeRate"), type: "number" },
+        {
+          key: "freshAirPerPersonM3h",
+          label: t("ventilation.columnFreshAirPerPerson"),
+          type: "number",
+        },
+        {
+          key: "heatRecoveryEfficiency",
+          label: t("ventilation.columnHeatRecoveryEff"),
+          type: "number",
+        },
+        { key: "fanElectricalPowerKw", label: t("ventilation.columnFanPower"), type: "number" },
+        {
+          key: "coolingSeasonHours",
+          label: t("ventilation.columnCoolingSeasonHours"),
+          type: "number",
+        },
       ]}
       rows={rows}
       onRowsChange={setRows}
@@ -429,6 +440,7 @@ function DhwSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceDhw(buildingId);
+  const { t } = useTranslation("systems");
 
   useEffect(() => {
     setRows(
@@ -449,31 +461,31 @@ function DhwSection({
       await replace.mutateAsync({
         scenario,
         sources: rows.map((r) => ({
-          sourceName: r.sourceName || "DHW source",
+          sourceName: r.sourceName || t("dhw.defaultName"),
           energyCarrier: (r.energyCarrier || "gas") as EnergyCarrier,
           specificConsumptionLPersonDay: num(r, "specificConsumptionLPersonDay"),
           personsServed: Math.round(num(r, "personsServed")),
         })),
       });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to save DHW sources.");
+      setError(err instanceof ApiError ? err.message : t("dhw.saveError"));
     }
   }
 
   return (
     <EditableRowsCard
-      title="Domestic hot water (DHW)"
-      description="Sources feeding the building's hot water demand."
+      title={t("dhw.title")}
+      description={t("dhw.description")}
       columns={[
-        { key: "sourceName", label: "Name", type: "text" },
+        { key: "sourceName", label: t("dhw.columnName"), type: "text" },
         {
           key: "energyCarrier",
-          label: "Carrier",
+          label: t("dhw.columnCarrier"),
           type: "select",
           options: ENERGY_CARRIERS.map((c) => ({ value: c, label: ENERGY_CARRIER_LABELS[c] })),
         },
-        { key: "specificConsumptionLPersonDay", label: "L/person/day", type: "number" },
-        { key: "personsServed", label: "Persons served", type: "number" },
+        { key: "specificConsumptionLPersonDay", label: t("dhw.columnConsumption"), type: "number" },
+        { key: "personsServed", label: t("dhw.columnPersonsServed"), type: "number" },
       ]}
       rows={rows}
       onRowsChange={setRows}
@@ -501,6 +513,7 @@ function DistributionSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceDistribution(buildingId);
+  const { t } = useTranslation("systems");
 
   useEffect(() => {
     setRows(
@@ -530,28 +543,32 @@ function DistributionSection({
         })),
       });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to save distribution systems.");
+      setError(err instanceof ApiError ? err.message : t("distribution.saveError"));
     }
   }
 
   return (
     <EditableRowsCard
-      title="Distribution (pipework)"
-      description="Heating and DHW pipe runs, used to compute distribution losses. Diameter class must match a seeded pipe-loss reference (e.g. 15-25, 32-50, 65-100)."
+      title={t("distribution.title")}
+      description={t("distribution.description")}
       columns={[
         {
           key: "systemType",
-          label: "Serves",
+          label: t("distribution.columnServes"),
           type: "select",
           options: Object.entries(DISTRIBUTION_SYSTEM_TYPE_LABELS).map(([value, label]) => ({
             value,
             label,
           })),
         },
-        { key: "pipeDiameterClass", label: "Diameter class", type: "text" },
-        { key: "lengthM", label: "Length (m)", type: "number" },
-        { key: "insulatedFraction", label: "Insulated fraction (0-1)", type: "number" },
-        { key: "meanFluidTempC", label: "Mean fluid temp (°C)", type: "number" },
+        { key: "pipeDiameterClass", label: t("distribution.columnDiameterClass"), type: "text" },
+        { key: "lengthM", label: t("distribution.columnLength"), type: "number" },
+        {
+          key: "insulatedFraction",
+          label: t("distribution.columnInsulatedFraction"),
+          type: "number",
+        },
+        { key: "meanFluidTempC", label: t("distribution.columnMeanFluidTemp"), type: "number" },
       ]}
       rows={rows}
       onRowsChange={setRows}
@@ -580,6 +597,7 @@ function GenerationSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceGeneration(buildingId);
+  const { t } = useTranslation("systems");
 
   useEffect(() => {
     setRows(
@@ -607,32 +625,32 @@ function GenerationSection({
         })),
       });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to save generation sources.");
+      setError(err instanceof ApiError ? err.message : t("generation.saveError"));
     }
   }
 
   return (
     <EditableRowsCard
-      title="Generation sources"
-      description="What converts distributed heating/DHW need into purchased final energy — without at least one 'heating' row here, the Results page's purchased-energy KPIs stay at zero. Cooling's electricity is computed directly from the cooling system's SEER below, so cooling-endUse rows here are ignored by the engine."
+      title={t("generation.title")}
+      description={t("generation.description")}
       columns={[
         {
           key: "endUse",
-          label: "End use",
+          label: t("generation.columnEndUse"),
           type: "select",
           options: END_USES.map((v) => ({ value: v, label: END_USE_LABELS[v] })),
         },
         {
           key: "sourceType",
-          label: "Source type",
+          label: t("generation.columnSourceType"),
           type: "select",
           options: GENERATION_SOURCE_TYPES.map((v) => ({
             value: v,
             label: GENERATION_SOURCE_TYPE_LABELS[v],
           })),
         },
-        { key: "efficiencyOrSeer", label: "Efficiency (0-1) or SEER", type: "number" },
-        { key: "shareOfDemand", label: "Share of demand (0-1)", type: "number" },
+        { key: "efficiencyOrSeer", label: t("generation.columnEfficiency"), type: "number" },
+        { key: "shareOfDemand", label: t("generation.columnShareOfDemand"), type: "number" },
       ]}
       rows={rows}
       onRowsChange={setRows}
@@ -660,6 +678,7 @@ function CoolingWindowsSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceCoolingWindows(buildingId);
+  const { t } = useTranslation("systems");
 
   useEffect(() => {
     setRows(
@@ -687,24 +706,24 @@ function CoolingWindowsSection({
         })),
       });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to save cooling windows.");
+      setError(err instanceof ApiError ? err.message : t("coolingWindows.saveError"));
     }
   }
 
   return (
     <EditableRowsCard
-      title="Cooling — solar-gain windows"
-      description="Windows contributing solar gains to the cooling-season load, by orientation."
+      title={t("coolingWindows.title")}
+      description={t("coolingWindows.description")}
       columns={[
         {
           key: "orientation",
-          label: "Orientation",
+          label: t("coolingWindows.columnOrientation"),
           type: "select",
           options: ORIENTATIONS.map((v) => ({ value: v, label: ORIENTATION_LABELS[v] })),
         },
-        { key: "areaM2", label: "Area (m²)", type: "number" },
-        { key: "gValue", label: "g-value (0-1)", type: "number" },
-        { key: "shadingFactor", label: "Shading factor (0-1)", type: "number" },
+        { key: "areaM2", label: t("coolingWindows.columnArea"), type: "number" },
+        { key: "gValue", label: t("coolingWindows.columnGValue"), type: "number" },
+        { key: "shadingFactor", label: t("coolingWindows.columnShadingFactor"), type: "number" },
       ]}
       rows={rows}
       onRowsChange={setRows}
@@ -732,6 +751,7 @@ function CoolingSystemsSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceCoolingSystems(buildingId);
+  const { t } = useTranslation("systems");
 
   useEffect(() => {
     setRows(
@@ -755,17 +775,17 @@ function CoolingSystemsSection({
         })),
       });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to save cooling systems.");
+      setError(err instanceof ApiError ? err.message : t("coolingSystems.saveError"));
     }
   }
 
   return (
     <EditableRowsCard
-      title="Cooling systems"
-      description="AC/chiller equipment; only the first row per scenario is used to convert cooling load into electrical energy via its SEER."
+      title={t("coolingSystems.title")}
+      description={t("coolingSystems.description")}
       columns={[
-        { key: "description", label: "Description", type: "text" },
-        { key: "seer", label: "SEER", type: "number" },
+        { key: "description", label: t("coolingSystems.columnDescription"), type: "text" },
+        { key: "seer", label: t("coolingSystems.columnSeer"), type: "number" },
       ]}
       rows={rows}
       onRowsChange={setRows}
@@ -787,6 +807,7 @@ function LightingSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceLighting(buildingId);
+  const { t } = useTranslation("systems");
 
   useEffect(() => {
     setRows(
@@ -811,7 +832,7 @@ function LightingSection({
       await replace.mutateAsync({
         scenario,
         zones: rows.map((r) => ({
-          name: r.name || "Zone",
+          name: r.name || t("lighting.defaultName"),
           areaM2: num(r, "areaM2"),
           technologyMix: {
             incandescentFraction: num(r, "incandescentFraction"),
@@ -823,26 +844,34 @@ function LightingSection({
         })),
       });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to save lighting zones.");
+      setError(err instanceof ApiError ? err.message : t("lighting.saveError"));
     }
   }
 
   return (
     <EditableRowsCard
-      title="Lighting"
-      description="Technology-mix fractions should sum to ~1 per zone. Utilization factor reflects control strategy (e.g. 0.3 always-on, 0.55 with presence/daylight sensors)."
+      title={t("lighting.title")}
+      description={t("lighting.description")}
       columns={[
-        { key: "name", label: "Zone", type: "text" },
-        { key: "areaM2", label: "Area (m²)", type: "number" },
-        { key: "incandescentFraction", label: "Incandescent (0-1)", type: "number" },
+        { key: "name", label: t("lighting.columnZone"), type: "text" },
+        { key: "areaM2", label: t("lighting.columnArea"), type: "number" },
+        { key: "incandescentFraction", label: t("lighting.columnIncandescent"), type: "number" },
         {
           key: "fluorescentElectromagneticFraction",
-          label: "Fluor. magnetic (0-1)",
+          label: t("lighting.columnFluorMagnetic"),
           type: "number",
         },
-        { key: "fluorescentElectronicFraction", label: "Fluor. electronic (0-1)", type: "number" },
-        { key: "ledFraction", label: "LED (0-1)", type: "number" },
-        { key: "utilizationFactor", label: "Utilization factor (0-1)", type: "number" },
+        {
+          key: "fluorescentElectronicFraction",
+          label: t("lighting.columnFluorElectronic"),
+          type: "number",
+        },
+        { key: "ledFraction", label: t("lighting.columnLed"), type: "number" },
+        {
+          key: "utilizationFactor",
+          label: t("lighting.columnUtilizationFactor"),
+          type: "number",
+        },
       ]}
       rows={rows}
       onRowsChange={setRows}
@@ -873,6 +902,7 @@ function EquipmentSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceEquipment(buildingId);
+  const { t } = useTranslation("systems");
 
   useEffect(() => {
     setRows(
@@ -897,7 +927,7 @@ function EquipmentSection({
       await replace.mutateAsync({
         scenario,
         items: rows.map((r) => ({
-          name: r.name || "Equipment",
+          name: r.name || t("equipment.defaultName"),
           category: r.category || null,
           unitPowerKw: num(r, "unitPowerKw"),
           quantity: Math.round(num(r, "quantity")),
@@ -908,23 +938,39 @@ function EquipmentSection({
         })),
       });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to save equipment items.");
+      setError(err instanceof ApiError ? err.message : t("equipment.saveError"));
     }
   }
 
   return (
     <EditableRowsCard
-      title="Equipment"
-      description="Electrical appliances/devices. Cooling-season consumption also feeds the cooling load below as an internal heat gain."
+      title={t("equipment.title")}
+      description={t("equipment.description")}
       columns={[
-        { key: "name", label: "Name", type: "text" },
-        { key: "category", label: "Category", type: "text" },
-        { key: "unitPowerKw", label: "Unit power (kW)", type: "number" },
-        { key: "quantity", label: "Qty", type: "number" },
-        { key: "heatingSeasonHours", label: "Heating-season hours", type: "number" },
-        { key: "coolingSeasonHours", label: "Cooling-season hours", type: "number" },
-        { key: "heatingUtilizationFactor", label: "Heating util. (0-1)", type: "number" },
-        { key: "coolingUtilizationFactor", label: "Cooling util. (0-1)", type: "number" },
+        { key: "name", label: t("equipment.columnName"), type: "text" },
+        { key: "category", label: t("equipment.columnCategory"), type: "text" },
+        { key: "unitPowerKw", label: t("equipment.columnUnitPower"), type: "number" },
+        { key: "quantity", label: t("equipment.columnQuantity"), type: "number" },
+        {
+          key: "heatingSeasonHours",
+          label: t("equipment.columnHeatingSeasonHours"),
+          type: "number",
+        },
+        {
+          key: "coolingSeasonHours",
+          label: t("equipment.columnCoolingSeasonHours"),
+          type: "number",
+        },
+        {
+          key: "heatingUtilizationFactor",
+          label: t("equipment.columnHeatingUtil"),
+          type: "number",
+        },
+        {
+          key: "coolingUtilizationFactor",
+          label: t("equipment.columnCoolingUtil"),
+          type: "number",
+        },
       ]}
       rows={rows}
       onRowsChange={setRows}
@@ -955,6 +1001,7 @@ function RenewablesSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceRenewables(buildingId);
+  const { t } = useTranslation("systems");
 
   useEffect(() => {
     setRows(
@@ -995,29 +1042,33 @@ function RenewablesSection({
         }),
       });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to save renewable systems.");
+      setError(err instanceof ApiError ? err.message : t("renewables.saveError"));
     }
   }
 
   return (
     <EditableRowsCard
-      title="Renewables — solar PV & solar DHW"
-      description="Production is entered as an annual total (spread evenly across months for storage) rather than a month-by-month PVGIS table. It displaces purchased electricity (PV) or DHW energy (Solar DHW) — see the Results page's 'Potential energy use' KPI."
+      title={t("renewables.title")}
+      description={t("renewables.description")}
       columns={[
         {
           key: "systemType",
-          label: "Type",
+          label: t("renewables.columnType"),
           type: "select",
           options: RENEWABLE_SYSTEM_TYPES.map((v) => ({
             value: v,
             label: RENEWABLE_SYSTEM_TYPE_LABELS[v],
           })),
         },
-        { key: "capacityKw", label: "Capacity (kW, PV)", type: "number" },
-        { key: "collectorCount", label: "Collectors (Solar DHW)", type: "number" },
-        { key: "availableAreaM2", label: "Available roof area (m²)", type: "number" },
-        { key: "unitCostUsd", label: "Cost (USD)", type: "number" },
-        { key: "annualProductionKwh", label: "Annual production (kWh/y)", type: "number" },
+        { key: "capacityKw", label: t("renewables.columnCapacity"), type: "number" },
+        { key: "collectorCount", label: t("renewables.columnCollectors"), type: "number" },
+        { key: "availableAreaM2", label: t("renewables.columnAvailableArea"), type: "number" },
+        { key: "unitCostUsd", label: t("renewables.columnCost"), type: "number" },
+        {
+          key: "annualProductionKwh",
+          label: t("renewables.columnAnnualProduction"),
+          type: "number",
+        },
       ]}
       rows={rows}
       onRowsChange={setRows}

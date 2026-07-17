@@ -1,0 +1,106 @@
+{
+  "description": "Ventilation, DHW, distribution, generation, and cooling systems that AuditEngine reads to compute purchased energy. Configure \"before\" (baseline) and, once retrofit measures are decided, \"after\" (proposed) — without at least one heating generation source, purchased energy will read as zero on the Results page.",
+  "scenarioBefore": "Before (baseline)",
+  "scenarioAfter": "After (proposed)",
+  "loadError": "Failed to load systems data: {{message}}",
+  "common": {
+    "noneDefined": "None defined for this scenario.",
+    "addRow": "Add row",
+    "removeRow": "Remove row"
+  },
+  "ventilation": {
+    "title": "Ventilation",
+    "description": "At most one natural and one mechanical system are used per scenario.",
+    "columnType": "Type",
+    "columnAirChangeRate": "Air change rate (1/h)",
+    "columnFreshAirPerPerson": "Fresh air/person (m³/h)",
+    "columnHeatRecoveryEff": "Heat recovery eff. (0-1)",
+    "columnFanPower": "Fan power (kW)",
+    "columnCoolingSeasonHours": "Cooling season hours (h/yr)",
+    "saveError": "Failed to save ventilation systems."
+  },
+  "dhw": {
+    "title": "Domestic hot water (DHW)",
+    "description": "Sources feeding the building's hot water demand.",
+    "columnName": "Name",
+    "columnCarrier": "Carrier",
+    "columnConsumption": "L/person/day",
+    "columnPersonsServed": "Persons served",
+    "defaultName": "DHW source",
+    "saveError": "Failed to save DHW sources."
+  },
+  "distribution": {
+    "title": "Distribution (pipework)",
+    "description": "Heating and DHW pipe runs, used to compute distribution losses. Diameter class must match a seeded pipe-loss reference (e.g. 15-25, 32-50, 65-100).",
+    "columnServes": "Serves",
+    "columnDiameterClass": "Diameter class",
+    "columnLength": "Length (m)",
+    "columnInsulatedFraction": "Insulated fraction (0-1)",
+    "columnMeanFluidTemp": "Mean fluid temp (°C)",
+    "saveError": "Failed to save distribution systems."
+  },
+  "generation": {
+    "title": "Generation sources",
+    "description": "What converts distributed heating/DHW need into purchased final energy — without at least one 'heating' row here, the Results page's purchased-energy KPIs stay at zero. Cooling's electricity is computed directly from the cooling system's SEER below, so cooling-endUse rows here are ignored by the engine.",
+    "columnEndUse": "End use",
+    "columnSourceType": "Source type",
+    "columnEfficiency": "Efficiency (0-1) or SEER",
+    "columnShareOfDemand": "Share of demand (0-1)",
+    "saveError": "Failed to save generation sources."
+  },
+  "coolingWindows": {
+    "title": "Cooling — solar-gain windows",
+    "description": "Windows contributing solar gains to the cooling-season load, by orientation.",
+    "columnOrientation": "Orientation",
+    "columnArea": "Area (m²)",
+    "columnGValue": "g-value (0-1)",
+    "columnShadingFactor": "Shading factor (0-1)",
+    "saveError": "Failed to save cooling windows."
+  },
+  "coolingSystems": {
+    "title": "Cooling systems",
+    "description": "AC/chiller equipment; only the first row per scenario is used to convert cooling load into electrical energy via its SEER.",
+    "columnDescription": "Description",
+    "columnSeer": "SEER",
+    "saveError": "Failed to save cooling systems."
+  },
+  "lighting": {
+    "title": "Lighting",
+    "description": "Technology-mix fractions should sum to ~1 per zone. Utilization factor reflects control strategy (e.g. 0.3 always-on, 0.55 with presence/daylight sensors).",
+    "columnZone": "Zone",
+    "columnArea": "Area (m²)",
+    "columnIncandescent": "Incandescent (0-1)",
+    "columnFluorMagnetic": "Fluor. magnetic (0-1)",
+    "columnFluorElectronic": "Fluor. electronic (0-1)",
+    "columnLed": "LED (0-1)",
+    "columnUtilizationFactor": "Utilization factor (0-1)",
+    "defaultName": "Zone",
+    "saveError": "Failed to save lighting zones."
+  },
+  "equipment": {
+    "title": "Equipment",
+    "description": "Electrical appliances/devices. Cooling-season consumption also feeds the cooling load below as an internal heat gain.",
+    "columnName": "Name",
+    "columnCategory": "Category",
+    "columnUnitPower": "Unit power (kW)",
+    "columnQuantity": "Qty",
+    "columnHeatingSeasonHours": "Heating-season hours",
+    "columnCoolingSeasonHours": "Cooling-season hours",
+    "columnHeatingUtil": "Heating util. (0-1)",
+    "columnCoolingUtil": "Cooling util. (0-1)",
+    "defaultName": "Equipment",
+    "saveError": "Failed to save equipment items."
+  },
+  "renewables": {
+    "intro": "Renewables (solar PV / solar DHW) aren't tied to a scenario — they represent a proposed addition with no \"before\" state, so this list applies regardless of the tab above.",
+    "title": "Renewables — solar PV & solar DHW",
+    "description": "Production is entered as an annual total (spread evenly across months for storage) rather than a month-by-month PVGIS table. It displaces purchased electricity (PV) or DHW energy (Solar DHW) — see the Results page's 'Potential energy use' KPI.",
+    "columnType": "Type",
+    "columnCapacity": "Capacity (kW, PV)",
+    "columnCollectors": "Collectors (Solar DHW)",
+    "columnAvailableArea": "Available roof area (m²)",
+    "columnCost": "Cost (USD)",
+    "columnAnnualProduction": "Annual production (kWh/y)",
+    "saveError": "Failed to save renewable systems."
+  }
+}

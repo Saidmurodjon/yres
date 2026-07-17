@@ -1,0 +1,106 @@
+{
+  "description": "AuditEngine sotib olingan energiyani hisoblash uchun o'qiydigan ventilyatsiya, ISS, taqsimot, generatsiya va sovutish tizimlari. \"Oldingi\" (bazaviy) holatni, va rekonstruksiya chora-tadbirlari belgilangach \"keyingi\" (taklif etilayotgan) holatni sozlang — kamida bitta isitish generatsiya manbai bo'lmasa, Natijalar sahifasida sotib olingan energiya nolga teng ko'rsatiladi.",
+  "scenarioBefore": "Oldingi (bazaviy)",
+  "scenarioAfter": "Keyingi (taklif etilgan)",
+  "loadError": "Tizimlar ma'lumotlarini yuklab bo'lmadi: {{message}}",
+  "common": {
+    "noneDefined": "Ushbu stsenariy uchun hech narsa belgilanmagan.",
+    "addRow": "Qator qo'shish",
+    "removeRow": "Qatorni o'chirish"
+  },
+  "ventilation": {
+    "title": "Ventilyatsiya",
+    "description": "Har bir stsenariy uchun ko'pi bilan bitta tabiiy va bitta mexanik tizim ishlatiladi.",
+    "columnType": "Turi",
+    "columnAirChangeRate": "Havo almashinuvi tezligi (1/soat)",
+    "columnFreshAirPerPerson": "Bir kishiga toza havo (m³/soat)",
+    "columnHeatRecoveryEff": "Issiqlik qaytarish samaradorligi (0-1)",
+    "columnFanPower": "Ventilyator quvvati (kVt)",
+    "columnCoolingSeasonHours": "Sovutish mavsumi soatlari (soat/yil)",
+    "saveError": "Ventilyatsiya tizimlarini saqlab bo'lmadi."
+  },
+  "dhw": {
+    "title": "Issiq suv ta'minoti (ISS)",
+    "description": "Binoning issiq suvga bo'lgan talabini qondiruvchi manbalar.",
+    "columnName": "Nomi",
+    "columnCarrier": "Energiya tashuvchi",
+    "columnConsumption": "L/kishi/kun",
+    "columnPersonsServed": "Xizmat ko'rsatiladigan kishilar soni",
+    "defaultName": "ISS manbai",
+    "saveError": "ISS manbalarini saqlab bo'lmadi."
+  },
+  "distribution": {
+    "title": "Taqsimot (quvurlar tizimi)",
+    "description": "Isitish va ISS quvur liniyalari, taqsimot yo'qotishlarini hisoblash uchun ishlatiladi. Diametr klassi oldindan kiritilgan quvur yo'qotish ma'lumotnomasiga mos kelishi kerak (masalan, 15-25, 32-50, 65-100).",
+    "columnServes": "Xizmat turi",
+    "columnDiameterClass": "Diametr klassi",
+    "columnLength": "Uzunligi (m)",
+    "columnInsulatedFraction": "Izolyatsiyalangan qismi (0-1)",
+    "columnMeanFluidTemp": "O'rtacha suyuqlik harorati (°C)",
+    "saveError": "Taqsimot tizimlarini saqlab bo'lmadi."
+  },
+  "generation": {
+    "title": "Generatsiya manbalari",
+    "description": "Taqsimlangan isitish/ISS ehtiyojini sotib olinadigan yakuniy energiyaga aylantiruvchi manba — bu yerda kamida bitta 'isitish' qatori bo'lmasa, Natijalar sahifasidagi sotib olingan energiya ko'rsatkichlari nolga teng bo'lib qoladi. Sovutish uchun elektr energiyasi quyidagi sovutish tizimining SEER ko'rsatkichidan to'g'ridan-to'g'ri hisoblanadi, shuning uchun bu yerdagi 'sovutish' maqsadli qatorlar dvigatel tomonidan e'tiborga olinmaydi.",
+    "columnEndUse": "Maqsad",
+    "columnSourceType": "Manba turi",
+    "columnEfficiency": "Samaradorlik (0-1) yoki SEER",
+    "columnShareOfDemand": "Ehtiyoj ulushi (0-1)",
+    "saveError": "Generatsiya manbalarini saqlab bo'lmadi."
+  },
+  "coolingWindows": {
+    "title": "Sovutish — quyosh nuri tushadigan derazalar",
+    "description": "Yo'nalishi bo'yicha sovutish mavsumi yukiga quyosh issiqlik tushumini qo'shadigan derazalar.",
+    "columnOrientation": "Yo'nalish",
+    "columnArea": "Maydoni (m²)",
+    "columnGValue": "g-qiymati (0-1)",
+    "columnShadingFactor": "Soyalanish koeffitsienti (0-1)",
+    "saveError": "Sovutish derazalarini saqlab bo'lmadi."
+  },
+  "coolingSystems": {
+    "title": "Sovutish tizimlari",
+    "description": "Konditsioner/chiller uskunasi; har bir stsenariy uchun faqat birinchi qator sovutish yukini uning SEER ko'rsatkichi orqali elektr energiyasiga aylantirish uchun ishlatiladi.",
+    "columnDescription": "Tavsif",
+    "columnSeer": "SEER",
+    "saveError": "Sovutish tizimlarini saqlab bo'lmadi."
+  },
+  "lighting": {
+    "title": "Yoritish",
+    "description": "Texnologiyalar aralashmasi ulushlari har bir zona uchun taxminan 1 ga teng bo'lishi kerak. Foydalanish koeffitsienti boshqarish strategiyasini aks ettiradi (masalan, doimo yoniq bo'lsa 0.3, harakat/kunduzgi yorug'lik sensorlari bilan 0.55).",
+    "columnZone": "Zona",
+    "columnArea": "Maydoni (m²)",
+    "columnIncandescent": "Cho'g'lanma lampalar (0-1)",
+    "columnFluorMagnetic": "Lyuminessent (magnit drossel) (0-1)",
+    "columnFluorElectronic": "Lyuminessent (elektron drossel) (0-1)",
+    "columnLed": "LED (0-1)",
+    "columnUtilizationFactor": "Foydalanish koeffitsienti (0-1)",
+    "defaultName": "Zona",
+    "saveError": "Yoritish zonalarini saqlab bo'lmadi."
+  },
+  "equipment": {
+    "title": "Uskunalar",
+    "description": "Elektr asboblari/qurilmalari. Sovutish mavsumidagi iste'mol shuningdek quyidagi sovutish yukiga ichki issiqlik tushumi sifatida qo'shiladi.",
+    "columnName": "Nomi",
+    "columnCategory": "Toifasi",
+    "columnUnitPower": "Birlik quvvati (kVt)",
+    "columnQuantity": "Soni",
+    "columnHeatingSeasonHours": "Isitish mavsumi soatlari",
+    "columnCoolingSeasonHours": "Sovutish mavsumi soatlari",
+    "columnHeatingUtil": "Isitish foydalanish k. (0-1)",
+    "columnCoolingUtil": "Sovutish foydalanish k. (0-1)",
+    "defaultName": "Uskuna",
+    "saveError": "Uskunalarni saqlab bo'lmadi."
+  },
+  "renewables": {
+    "intro": "Qayta tiklanuvchi manbalar (quyosh FEM / quyosh ISS) stsenariyga bog'liq emas — ular \"oldingi\" holati bo'lmagan taklif etilayotgan qo'shimchani ifodalaydi, shuning uchun bu ro'yxat yuqoridagi tabdan qat'i nazar qo'llaniladi.",
+    "title": "Qayta tiklanuvchi manbalar — quyosh FEM va quyosh ISS",
+    "description": "Ishlab chiqarish oylik PVGIS jadvali sifatida emas, balki yillik umumiy qiymat sifatida kiritiladi (saqlash uchun oylar bo'yicha teng taqsimlanadi). U sotib olinadigan elektr energiyasini (FEM) yoki ISS energiyasini (quyosh ISS) o'rnini bosadi — Natijalar sahifasidagi 'Potensial energiya sarfi' ko'rsatkichiga qarang.",
+    "columnType": "Turi",
+    "columnCapacity": "Quvvat (kVt, FEM)",
+    "columnCollectors": "Kollektorlar (quyosh ISS)",
+    "columnAvailableArea": "Mavjud tom maydoni (m²)",
+    "columnCost": "Narxi (USD)",
+    "columnAnnualProduction": "Yillik ishlab chiqarish (kVt·soat/yil)",
+    "saveError": "Qayta tiklanuvchi tizimlarni saqlab bo'lmadi."
+  }
+}
