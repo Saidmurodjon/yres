@@ -1241,6 +1241,14 @@ indicators` (investment & savings source for every block) and by
 
 ## Ambiguities / items requiring manual review of the original .xlsx
 
+**Update:** all 10 items below were directly re-verified against the source
+`.xlsx` (via `openpyxl`, reading actual formula text rather than cached
+values) and cross-checked against the current `apps/api/src/services/`
+implementation. 8 of 10 are resolved or moot; 2 real implementation gaps
+were found as a result of this review. Full findings, the decoded array
+formula for item 2, and recommended fixes: `docs/calculation-engine-audit.md`.
+Per-item status is noted inline below.
+
 1. **`Losses env. before/after`, `gains`, `Overall gener. & distrib. eff.`,
    `Ventilation losses` — cross-sheet references into specific single
    cells** (e.g. `'Losses env. before'!$H$68`) are structurally correct
@@ -1250,6 +1258,12 @@ indicators` (investment & savings source for every block) and by
    before final implementation, especially around row offsets in the
    "before" vs "after" monthly sub-tables (they are NOT at identical row
    numbers between the two sheets).
+   **STATUS: moot.** The reimplementation doesn't read fixed cell
+   addresses at all — `heatloss.service.ts`/`gain.service.ts`/
+   `ventilation.service.ts` recompute the degree-hour method generically
+   from stored inputs per month. Spot-checked against the documented
+   formula pattern and confirmed matching. See `docs/
+   calculation-engine-audit.md`.
 
 2. **`Financial indicators` discounted-payback-period formulas (rows
    `3.7`/`3.8` in every block, e.g. `D19`, `D20`, `D403`, `D404`)** are
@@ -1258,6 +1272,15 @@ indicators` (investment & savings source for every block) and by
    `#N/A`, were captured). **Needs direct inspection of the source
    workbook** (e.g. via `openpyxl`'s `.text` on the `ArrayFormula` object,
    or opening in Excel) to replicate exactly.
+   **STATUS: resolved.** Direct inspection recovered the full formula:
+   `=MATCH(TRUE,INDEX($E17:$X17>0,0),0)+(-LOOKUP(9.99...E307,
+   IF($E17:$X17<0,$E17:$X17))/LOOKUP(9.99...E307,IF($E17:$X17<0,
+   OFFSET($E13:$X13,0,1))))` — decodes to "last year with negative
+   cumulative discounted cash flow, plus that year's remaining negative
+   balance divided by the following year's discounted savings" (standard
+   linear within-year interpolation). `financial.service.ts`'s
+   `calculateDiscountedPaybackYears()` already implements exactly this.
+   Full derivation in `docs/calculation-engine-audit.md`.
 
 3. **`Financial indicators` — 5 of 17 measure blocks contain `#REF!`
    errors** (blocks starting at rows 74, 146, 242, 314, and partially 362)
@@ -1269,6 +1292,10 @@ indicators` (investment & savings source for every block) and by
    expert which measures used to occupy those slots (candidates given the
    gaps: floor/socle insulation, DHW piping, and 1–2 others not otherwise
    modeled elsewhere in the workbook).
+   **STATUS: moot.** The reimplementation builds financial indicators
+   fresh per current measure rather than reading fixed row positions from
+   a cloned sheet, so "which measure used to occupy this now-deleted row"
+   has no equivalent question to answer.
 
 4. **`Cooling!U47`** (centralized cooling system sizing formula) references
    `Building_data!E17` and `E15`, cells outside `Building_data`'s
@@ -1276,10 +1303,19 @@ indicators` (investment & savings source for every block) and by
    producing `#DIV/0!`. The intended source cells are unclear (possibly a
    stale reference from before the `Building_data` sheet was
    restructured); needs manual review.
+   **STATUS: moot.** Confirmed via direct read of the source file. CAPEX
+   for a proposed system is a stored auditor input in the reimplementation
+   (not auto-derived from a sizing formula), so this broken sizing formula
+   was never ported and doesn't need to be.
 
 5. **`Heat distr. efficiency!Z15:AF15`** contain `Building_data!#REF!`
    errors (broken reference, likely a deleted `Building_data` row) — same
    class of issue as #4.
+   **STATUS: moot.** Confirmed via direct read of the source file
+   (the `#REF!` is baked into the stored formula text itself, unrecoverable
+   from the source). `distribution.service.ts` uses an annual
+   operating-hours aggregate rather than this monthly duplicate table, so
+   it was never needed.
 
 6. **`DHW distr. efficiency`'s pipe-loss rescaling formula**
    (`=W/75*'DHW generation'!$D$5`) divides by a literal `75` and multiplies
@@ -1289,6 +1325,10 @@ indicators` (investment & savings source for every block) and by
    temperature") does not match the cell actually referenced. Needs
    verification against the original spreadsheet's intent — likely a
    copy/paste error where the temperature cell reference was not updated.
+   **STATUS: confirmed bug, already fixed in reimplementation.** Direct
+   read confirms the literal `=W9/75*'DHW generation'!$D$5` formula in the
+   source. `dhw.service.ts` uses a correct fixed `DHW_TARGET_TEMP_C = 60`
+   constant instead — the bug was not replicated.
 
 7. **`Financial indicators` — the "Gross standard/actual savings"
    escalation rate varies by block** (observed 8% for the walls/heating-
@@ -1297,6 +1337,11 @@ indicators` (investment & savings source for every block) and by
    figure does not match any rate documented in the sheet's footnotes
    (which only mention 2.8% gas / 2% electricity) and should be confirmed
    as intentional or corrected.
+   **STATUS: confirmed anomaly, already fixed in reimplementation.** Direct
+   read confirms the walls block literally uses `1.08+0.08*(...)` vs. the
+   windows block's `1.028+0.028*(...)`. `financial.service.ts`'s
+   `ENERGY_ESCALATION_RATES` uses the documented footnote rates uniformly;
+   the 8% figure was not replicated.
 
 8. **`Financial indicators` — maintenance-cost formula in later blocks
    references `$D$5` (first block's investment) instead of the current
@@ -1307,14 +1352,41 @@ indicators` (investment & savings source for every block) and by
    is a known issue or should be "fixed" during reimplementation (i.e.
    should the new system replicate the bug for parity with existing
    reports, or correct it?).
+   **STATUS: confirmed bug, already fixed in reimplementation.** Direct
+   read confirms block 2 (windows) literally uses `=4%*$D$5` (block 1's
+   investment). `financial.service.ts` always uses the current measure's
+   own `investmentCostUsd` — the bug was not replicated.
 
 9. **`Shading` sheet does not appear to have a corresponding row in
    `Measures_summary`** — unclear whether shading-element installation is
    meant to be bundled into another measure's cost/savings (e.g. windows)
    or was simply omitted. Needs clarification from the auditor.
+   **STATUS: carried forward, not a reimplementation gap.** The
+   reimplementation likewise has no standalone "shading" measure category
+   — consistent with the source's own incomplete state, not a new
+   omission. Could become an optional future measure category if the
+   auditor wants it modeled separately.
 
 10. **`Sheet1`'s column `O` (minimum absolute temperature)** is stored as
     a broken formula (`=-29.5/1930` etc.) that Excel evaluates as a tiny
     fraction instead of the intended "-29.5°C recorded in 1930" text. Not
     used elsewhere in the workbook, so low risk, but flagged in case a
     future version wires it in.
+    **STATUS: moot.** This entire reference sheet was not ported (superseded
+    by the `climate_region`/`climate_monthly_normal` tables) — the broken
+    cell was never a candidate for replication.
+
+## Real gaps found (not in the original ambiguities list)
+
+Two genuine missing-calculation gaps were found while cross-checking service
+coverage against this dictionary (not formula bugs carried over from Excel —
+things the reimplementation simply hasn't built yet):
+1. **Non-EE (ancillary) measure costs never reach the reported total
+   investment** — `non_ee_measure` exists as a DB table but has no route and
+   is never queried by `audit.engine.ts`.
+2. **Mechanical ventilation's cooling-season enthalpy load
+   (`Heat gains Mec Vent` sheet) is never computed** — the three required
+   building-level enthalpy inputs are stored but unused, so cooling energy
+   is understated for any building with mechanical ventilation.
+
+Full detail and recommended fixes: `docs/calculation-engine-audit.md`.
