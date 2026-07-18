@@ -133,7 +133,15 @@ export class ConversationRoom extends DurableObject<Env> {
   }
 
   async webSocketClose(ws: WebSocket, code: number, reason: string): Promise<void> {
-    ws.close(code, reason);
+    // 1004/1005/1006/1015 are reserved "status-only" codes the WebSocket API
+    // forbids passing back into close() — echoing them through throws an
+    // uncaught TypeError on every abnormal disconnect (page reload, tab
+    // close, StrictMode's double-mount). Just close our end in that case.
+    if (code === 1004 || code === 1005 || code === 1006 || code === 1015) {
+      ws.close();
+    } else {
+      ws.close(code, reason);
+    }
   }
 
   private broadcast(payload: unknown, exclude?: WebSocket): void {

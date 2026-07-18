@@ -206,12 +206,17 @@ Excel-hisobot PDF'lari `REPORTS_BUCKET`da saqlangani kabi andoza.
 
 ### Ma'lum cheklovlar, ochiq aytilgan
 
-- **Bu sandbox hech qaysi DO'ni integratsion tekshira olmaydi.** Bu yerda
-  Cloudflare runtime yo'q va lokal Postgres yo'q
-  (`.claude/rules/testing-and-verification.md`ga qarang). Haqiqiy
-  WebSocket/broadcast xatti-harakati haqiqiy `wrangler deploy`dan keyin
-  qo'lda tekshirilishi kerak — xuddi UI o'zgarishlari o'sha qoidalar
-  faylida qo'lda tekshirilgani kabi.
+- **Bu sandbox hech qaysi DO'ni integratsion tekshira olmaydi** (Claude Code
+  sessiyasining o'zi to'g'ridan-to'g'ri brauzer WebSocket'ini yura olmaydi —
+  Preview MCP mavjud bo'lmasa). **Lekin foydalanuvchining haqiqiy mashinasida
+  `bun run dev` (`apps/api`) haqiqiy WebSocket/DO xatti-harakatini Miniflare
+  orqali to'liq mahalliy simulyatsiya qiladi** — Cloudflare hisobiga yoki
+  deploy'ga hojat yo'q, faqat haqiqiy Neon `DATABASE_URL` kerak
+  (`.claude/rules/realtime.md`ga qarang, u yerda shu tarzda haqiqiy bug —
+  `webSocketClose()`ning 1005/1006 kodlarni noto'g'ri qaytarishi — topilgan
+  va tuzatilgan). Faqat production'ga xos narsalar (haqiqiy Cloudflare
+  hisobidagi Workers Free reja cheklovlari) hali ham faqat haqiqiy
+  `wrangler deploy`dan keyin tasdiqlanadi.
 - **7-bosqichdagi deploy'dan oldin Cloudflare akkaunt/rejasi Durable
   Objects'ni qo'llab-quvvatlashini tasdiqlang** — bu loyiha hech qachon DO
   ishlatmagan, shuning uchun bu allaqachon ishlayotgan narsani qayta

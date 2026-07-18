@@ -415,6 +415,37 @@ haqiqatan javob berayotgan bo'lsa ham) — `stdbuf -oL -eL bun run dev ...`
 bilan qayta ishga tushirish buni tuzatdi va real vaqtli so'rov/xato
 loglarini ko'rsatishni boshladi. Kelajakda shu andozaga ergashing.
 
+## Haqiqiy chat bug'i topildi va tuzatildi (`webSocketClose` noto'g'ri kod)
+
+Yuqoridagi to'liq lokal ishga tushirish (real Neon bazasi + `stdbuf` bilan
+to'g'ri loglash) tufayli birinchi marta haqiqiy chat xatosi topildi:
+foydalanuvchi "chat ishlamayapti" deb xabar berdi, `apps/api/.dev-server.log`
+esa har bir anormal WebSocket uzilishida (sahifa yopilishi, qayta yuklash,
+React StrictMode'ning ikkinchi marta effect ishga tushirishi)
+`Uncaught TypeError: Invalid WebSocket close code: 1006`/`1005` bilan
+ushlanmagan xatoni ko'rsatdi. Sabab: `ConversationRoom` va
+`UserNotificationChannel`ning ikkalasi ham `webSocketClose(ws, code, reason)`da
+runtime bergan `code`ni tekshirmasdan `ws.close(code, reason)`ga qaytarib
+uzatardi — `1004`/`1005`/`1006`/`1015` WebSocket spetsifikatsiyasida
+"faqat-hisobot-uchun" qiymatlar bo'lib, `.close()`ga argument sifatida
+berish taqiqlangan. Bu haqiqiy production'da ham mavjud bo'lgan bug edi
+(bu sandbox'ga xos emas). Tuzatildi: shu to'rtta kod aniqlansa argumentsiz
+`ws.close()`, aks holda `code`/`reason` bilan yopiladi
+(`.claude/rules/realtime.md`ga batafsil yozildi).
+
+Yo'l-yo'lakay `.claude/rules/realtime.md`, `docs/social-features.md` va
+`use-chat.ts`dagi eskirgan "bu sandbox'da WebSocket/DO xatti-harakatini
+hech qachon tekshirib bo'lmaydi" da'vosi tuzatildi — bu Claude Code
+sessiyasining o'ziga (brauzer yo'q) to'g'ri, lekin foydalanuvchining haqiqiy
+mashinasida `bun run dev` Miniflare orqali DO/WebSocket'ni to'liq mahalliy
+simulyatsiya qiladi, deploy shart emas — bu bug ham aynan shu tarzda,
+haqiqiy `wrangler dev`ga real brauzerdan ulanib topildi.
+
+Tekshirildi: `bun run type-check` (barcha workspace), `bunx biome lint`
+(tegilgan fayllar) — toza. `wrangler dev` fayl o'zgarishini avtomatik
+qayta yukladi ("Reloading local server..."), qayta yuklashdan keyin log
+faylida yangi `Invalid WebSocket close code` xatosi ko'rinmadi.
+
 ## Ma'lum bo'shliqlar
 
 - **Multi-tenant/tashkilot modeli yo'q.** Binolar bitta foydalanuvchiga tegishli, jamoa

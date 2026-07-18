@@ -4,6 +4,15 @@ To'liq dizayn `docs/social-features.md`da (sxema, API sirti, qurish tartibi). Bu
 `ConversationRoom`/`UserNotificationChannel`ni qurishda haqiqatan duch kelingan, kod ichidagi
 izohlardan oldindan bilib bo'lmaydigan nozik jihatlarni qamrab oladi.
 
+- **`webSocketClose(ws, code, reason)`da `code`ni sinab ko'rmasdan `ws.close(code, reason)`ga
+  qaytarib uzatmang.** Runtime abnormal uzilishni (sahifa yopilishi, qayta yuklash, StrictMode'ning
+  ikkinchi marta effect ishga tushirishi) xabar qilganda `code` `1005`/`1006` (ba'zan `1004`/`1015`)
+  bo'ladi — bular WebSocket spetsifikatsiyasidagi "faqat-hisobot-uchun" qiymatlar, `.close()`ga
+  argument sifatida berish taqiqlangan va `Uncaught TypeError: Invalid WebSocket close code`
+  bilan yiqiladi. Bu haqiqiy production/lokal-dev bug'i edi — har bir abnormal uzilishda DO ichida
+  ushlanmagan xato hosil qilib, chatni beqaror qilardi (`ConversationRoom`/`UserNotificationChannel`
+  ikkalasida ham bor edi). Tuzatish: shu to'rtta kodni tekshirib, ular bo'lsa argumentsiz
+  `ws.close()` chaqiring, aks holda `code`/`reason`ni o'tkazing.
 - **DO'da session/cookie konteksti yo'q.** Worker route'i (`routes/chat.ts`ning
   `/conversations/:id/ws`i) a'zolikni tekshiradi va WebSocket upgrade so'rovini `?userId=`
   query-param bilan `ConversationRoom`ga uzatadi. `UserNotificationChannel` uchun ham xuddi shu
@@ -56,9 +65,17 @@ izohlardan oldindan bilib bo'lmaydigan nozik jihatlarni qamrab oladi.
   (`testing-and-verification.md`ga qarang) — bu haqiqiy regressiya emas. Yangi DO klassi
   qo'shsangiz va u `src/index.ts`dan eksportlansa, shim'ga qo'shimcha narsa qo'shish shart emas
   (shim faqat `cloudflare:workers`ning o'zini, `DurableObject` bazaviy klassini taqlid qiladi).
-- **Bu sandbox'da haqiqiy WebSocket/DO xatti-harakatini hech qachon tekshirib bo'lmaydi**
-  (Cloudflare runtime yo'q). Faqat type-check/build/lint orqali tekshirilgan; xabar yuborish/
-  qabul qilish/tahrirlash/o'chirish/yozayotganlik/o'qildi va online/oxirgi-ko'rilgan (hali
-  ulanmagan — `user.lastSeenAt` yozish joyi `user-notification-channel.ts`ning
-  `webSocketClose()`ida izoh sifatida belgilangan, lekin amalga oshirilmagan) haqiqiy
-  `wrangler deploy`dan keyin qo'lda tasdiqlanishi kerak.
+- **Yangilanish**: avvalgi versiyada bu yerda "Cloudflare runtime yo'qligi sababli WebSocket/DO
+  xatti-harakatini hech qachon tekshirib bo'lmaydi" deb yozilgan edi — bu **haqiqiy `wrangler dev`ga
+  nisbatan noto'g'ri** ekan. `bun run dev` (`apps/api`) Miniflare orqali DO'larni, Hibernation
+  API'ni va WebSocket upgrade'ni to'liq mahalliy simulyatsiya qiladi (Cloudflare hisobiga/deploy'ga
+  hojat yo'q) — `webSocketClose()`ning yuqoridagi `1005`/`1006` bug'i aynan shu tarzda, real
+  brauzerdan real `ws://localhost:3000/...`ga ulanib, `apps/api`ning stdout logidan topildi.
+  Cheklov faqat: (1) bu Claude Code sessiyasi o'zi to'g'ridan-to'g'ri brauzer WebSocket'ni yura
+  olmaydi (Preview MCP mavjud bo'lmasa) — foydalanuvchi haqiqiy brauzerda sinab, server logini
+  (`testing-and-verification.md`dagi buferlash eslatmasiga qarang — `stdbuf -oL -eL` kerak) birga
+  tekshirish kerak; (2) production'ga xos narsalar (haqiqiy Cloudflare hisobidagi Workers Free
+  reja cheklovlari, `new_sqlite_classes`ning haqiqiy akkauntda ishlashi) hali ham faqat
+  `wrangler deploy`dan keyin tasdiqlanadi. Online/oxirgi-ko'rilgan (`user.lastSeenAt`) hamon
+  ulanmagan — `user-notification-channel.ts`ning `webSocketClose()`ida izoh sifatida belgilangan,
+  amalga oshirilmagan.

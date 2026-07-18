@@ -86,8 +86,6 @@ type IncomingSocketEvent =
  * without a refetch) and tracks a short-lived "who's typing" set. Sending
  * a message goes out over this same socket rather than a REST call — see
  * docs/social-features.md's Durable Objects architecture section for why.
- * Unverified in this sandbox — no way to open a real WebSocket against a
- * deployed Worker here; confirm after a real deploy.
  */
 export function useConversationSocket(conversationId: string | undefined) {
   const queryClient = useQueryClient();

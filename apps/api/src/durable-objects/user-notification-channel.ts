@@ -31,7 +31,15 @@ export class UserNotificationChannel extends DurableObject<Env> {
     // Phase 8+: also update user.lastSeenAt here (docs/social-features.md's
     // chat presence design) — needs a @yres/db client constructed from
     // env.DATABASE_URL, not wired yet since this is the infra skeleton only.
-    ws.close(code, reason);
+    //
+    // 1004/1005/1006/1015 are reserved "status-only" codes the WebSocket API
+    // forbids passing back into close() — echoing them through throws an
+    // uncaught TypeError on every abnormal disconnect (see conversation-room.ts).
+    if (code === 1004 || code === 1005 || code === 1006 || code === 1015) {
+      ws.close();
+    } else {
+      ws.close(code, reason);
+    }
   }
 
   /** Called via RPC from notify.ts (Phase 8): `env.USER_CHANNEL.get(id).pushNotification(payload)`. */
