@@ -6,6 +6,7 @@
     "emptyTitle": "No envelope data yet",
     "emptyDescription": "Define construction types, opening types, and envelope elements to enable heat-loss calculations for this building.",
     "addEnvelopeData": "Add envelope data",
+    "buildingBlocks": "Building blocks",
     "constructionTypes": "Construction types",
     "openingTypes": "Opening types",
     "envelopeElements": "Envelope elements",
@@ -22,18 +23,46 @@
     "columnConstruction": "Construction",
     "columnLength": "Length (m)",
     "columnOpenings": "Openings",
+    "columnName": "Name",
+    "columnFootprint": "Footprint (m)",
+    "columnFloors": "Floors",
+    "columnFloorHeight": "Floor height (m)",
+    "columnPerimeter": "Perimeter (m)",
     "layersSummary_one": "{{count}} layer ({{cm}} cm)",
     "layersSummary_other": "{{count}} layers ({{cm}} cm)"
   },
   "editor": {
     "title": "Edit envelope — \"Before\" scenario",
-    "description": "Saving replaces all \"before\" scenario construction types, opening types, and envelope elements for this building. Construction and opening types are referenced by the code you give them below — element rows and openings pick their type from those codes.",
+    "description": "Saving replaces all \"before\" scenario building blocks, construction types, opening types, and envelope elements for this building. Construction and opening types are referenced by the code you give them below — element rows and openings pick their type from those codes.",
     "pleaseFix": "Please fix the following:",
     "saveEnvelope": "Save envelope",
     "saveFailed": "Failed to save envelope.",
     "remove": "Remove",
+    "previousStep": "Previous",
+    "nextStep": "Next",
+    "steps": {
+      "blocks": "Blocks",
+      "constructionTypes": "Construction types",
+      "openingTypes": "Opening types",
+      "elements": "Facades"
+    },
+    "buildingBlocks": {
+      "title": "Building blocks",
+      "stepDescription": "The building's parts (e.g. separate wings) — each one's footprint and floor count. Used in the next step to assign facades to a block.",
+      "add": "Add block",
+      "empty": "No blocks yet.",
+      "name": "Name *",
+      "namePlaceholder": "e.g. Block A",
+      "footprintLength": "Footprint length (m) *",
+      "footprintWidth": "Footprint width (m) *",
+      "numberOfFloors": "Number of floors *",
+      "floorToFloorHeight": "Floor-to-floor height (m) *",
+      "perimeter": "Perimeter (m) *",
+      "perimeterLossCoefficient": "Perimeter loss coefficient"
+    },
     "constructionTypes": {
       "title": "Construction types",
+      "stepDescription": "Reusable layer recipes (e.g. \"W1 wall\"). The U-value is computed live as you add layers.",
       "add": "Add construction type",
       "empty": "No construction types yet.",
       "code": "Code *",
@@ -46,10 +75,13 @@
       "loadingMaterials": "Loading materials...",
       "selectMaterial": "Select material",
       "thicknessPlaceholder": "Thickness (m)",
-      "noMaterials": "No materials in the reference catalog yet — layers can't be added until materials are seeded."
+      "noMaterials": "No materials in the reference catalog yet — layers can't be added until materials are seeded.",
+      "uValuePreview": "U ≈ {{value}} W/m²K",
+      "uValueUnavailable": "U-value: complete the layers"
     },
     "openingTypes": {
       "title": "Opening types",
+      "stepDescription": "Reusable window/door catalog. Define each type once, then reference it repeatedly on facades in the next step.",
       "add": "Add opening type",
       "empty": "No opening types yet.",
       "code": "Code *",
@@ -64,10 +96,18 @@
       "description": "Description"
     },
     "elements": {
-      "title": "Envelope elements",
+      "title": "Facades",
+      "stepDescription": "Each side (P1, P2, ...) is collapsed into one group — containing parts like wall and socle. The panel above shows a live running total, so you can cross-check against your Excel/measurements immediately.",
       "add": "Add element",
-      "empty": "No envelope elements yet.",
+      "addSide": "Add side",
+      "addElement": "Add element",
+      "empty": "No facade elements yet.",
+      "unnamedSide": "No side code",
+      "roofAndFloor": "Roof & floor",
+      "groupElementCount_one": "({{count}} element)",
+      "groupElementCount_other": "({{count}} elements)",
       "blockName": "Block name *",
+      "addBuildingBlockFirst": "Add a building block first",
       "orientation": "Orientation *",
       "sideCode": "Side code",
       "constructionType": "Construction type *",
@@ -82,9 +122,19 @@
       "noOpenings": "No openings on this element.",
       "addOpeningTypeFirst": "Add an opening type first",
       "selectOpeningType": "Select opening type",
-      "countPlaceholder": "Count"
+      "countPlaceholder": "Count",
+      "totalsBar": {
+        "title": "Running total area"
+      }
     },
     "errors": {
+      "buildingBlockNameRequired": "Every block needs a name.",
+      "buildingBlockNameDuplicate": "Block name \"{{name}}\" is duplicated.",
+      "buildingBlockFootprintLengthInvalid": "Block \"{{name}}\" needs a positive footprint length.",
+      "buildingBlockFootprintWidthInvalid": "Block \"{{name}}\" needs a positive footprint width.",
+      "buildingBlockFloorHeightInvalid": "Block \"{{name}}\" needs a positive floor-to-floor height.",
+      "buildingBlockPerimeterInvalid": "Block \"{{name}}\" needs a positive perimeter.",
+      "buildingBlockFloorsInvalid": "Block \"{{name}}\" needs a positive whole number of floors.",
       "constructionTypeCodeRequired": "Every construction type needs a code.",
       "constructionTypeCodeDuplicate": "Construction type code \"{{code}}\" is duplicated.",
       "layerMaterialRequired": "Construction type \"{{code}}\" has a layer with no material selected.",

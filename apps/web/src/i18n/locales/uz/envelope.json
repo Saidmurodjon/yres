@@ -6,6 +6,7 @@
     "emptyTitle": "Hali qobiq ma'lumotlari yo'q",
     "emptyDescription": "Ushbu bino uchun issiqlik yo'qotish hisob-kitoblarini yoqish uchun konstruksiya turlari, ochilma turlari va qobiq elementlarini kiriting.",
     "addEnvelopeData": "Qobiq ma'lumotlarini qo'shish",
+    "buildingBlocks": "Bino bloklari",
     "constructionTypes": "Konstruksiya turlari",
     "openingTypes": "Ochilma turlari",
     "envelopeElements": "Qobiq elementlari",
@@ -22,17 +23,45 @@
     "columnConstruction": "Konstruksiya",
     "columnLength": "Uzunlik (m)",
     "columnOpenings": "Ochilmalar",
+    "columnName": "Nomi",
+    "columnFootprint": "Gabarit (m)",
+    "columnFloors": "Qavatlar",
+    "columnFloorHeight": "Qavat balandligi (m)",
+    "columnPerimeter": "Perimetr (m)",
     "layersSummary_other": "{{count}} qatlam ({{cm}} sm)"
   },
   "editor": {
     "title": "Qobiqni tahrirlash — \"Oldingi\" stsenariy",
-    "description": "Saqlash ushbu binoning \"Oldingi\" stsenariysidagi barcha konstruksiya turlari, ochilma turlari va qobiq elementlarini almashtiradi. Konstruksiya va ochilma turlari quyida siz bergan kod orqali aniqlanadi — element qatorlari va ochilmalar o'z turini shu kodlar orqali tanlaydi.",
+    "description": "Saqlash ushbu binoning \"Oldingi\" stsenariysidagi barcha bino bloklari, konstruksiya turlari, ochilma turlari va qobiq elementlarini almashtiradi. Konstruksiya va ochilma turlari quyida siz bergan kod orqali aniqlanadi — element qatorlari va ochilmalar o'z turini shu kodlar orqali tanlaydi.",
     "pleaseFix": "Quyidagilarni tuzating:",
     "saveEnvelope": "Qobiqni saqlash",
     "saveFailed": "Qobiqni saqlab bo'lmadi.",
     "remove": "O'chirish",
+    "previousStep": "Oldingi",
+    "nextStep": "Keyingi",
+    "steps": {
+      "blocks": "Bloklar",
+      "constructionTypes": "Konstruksiya turlari",
+      "openingTypes": "Ochilma turlari",
+      "elements": "Yuzalar"
+    },
+    "buildingBlocks": {
+      "title": "Bino bloklari",
+      "stepDescription": "Bino qismlari (masalan alohida korpuslar) — har birining gabariti va qavatlar soni. Bu keyingi bosqichda yuzalarni blokka bog'lash uchun ishlatiladi.",
+      "add": "Blok qo'shish",
+      "empty": "Hali bloklar yo'q.",
+      "name": "Nomi *",
+      "namePlaceholder": "masalan, A blok",
+      "footprintLength": "Gabarit uzunligi (m) *",
+      "footprintWidth": "Gabarit kengligi (m) *",
+      "numberOfFloors": "Qavatlar soni *",
+      "floorToFloorHeight": "Qavat balandligi (m) *",
+      "perimeter": "Perimetr (m) *",
+      "perimeterLossCoefficient": "Perimetr yo'qotish koeffitsienti"
+    },
     "constructionTypes": {
       "title": "Konstruksiya turlari",
+      "stepDescription": "Qayta ishlatiluvchi qatlam-retseptlar (masalan \"W1 devor\"). Har biri qo'shilgan sari U-qiymati jonli hisoblanadi.",
       "add": "Konstruksiya turini qo'shish",
       "empty": "Hali konstruksiya turlari yo'q.",
       "code": "Kod *",
@@ -45,10 +74,13 @@
       "loadingMaterials": "Materiallar yuklanmoqda...",
       "selectMaterial": "Materialni tanlang",
       "thicknessPlaceholder": "Qalinlik (m)",
-      "noMaterials": "Ma'lumotnoma katalogida hali materiallar yo'q — materiallar kiritilmaguncha qatlamlarni qo'shib bo'lmaydi."
+      "noMaterials": "Ma'lumotnoma katalogida hali materiallar yo'q — materiallar kiritilmaguncha qatlamlarni qo'shib bo'lmaydi.",
+      "uValuePreview": "U ≈ {{value}} Vt/m²K",
+      "uValueUnavailable": "U-qiymati: qatlamlarni to'ldiring"
     },
     "openingTypes": {
       "title": "Ochilma turlari",
+      "stepDescription": "Qayta ishlatiluvchi deraza/eshik katalogi. Har bir turni bir marta ta'riflang, keyingi bosqichda yuzalarga qayta-qayta biriktiring.",
       "add": "Ochilma turini qo'shish",
       "empty": "Hali ochilma turlari yo'q.",
       "code": "Kod *",
@@ -63,10 +95,17 @@
       "description": "Tavsif"
     },
     "elements": {
-      "title": "Qobiq elementlari",
+      "title": "Yuzalar",
+      "stepDescription": "Har bir tomon (P1, P2, ...) bitta guruh sifatida yig'ilgan — ichida devor/socle kabi qismlar bor. Tepadagi panel jami maydonni jonli ko'rsatadi, shuning uchun Excel/o'lchov bilan darhol solishtirishingiz mumkin.",
       "add": "Element qo'shish",
-      "empty": "Hali qobiq elementlari yo'q.",
+      "addSide": "Yangi tomon qo'shish",
+      "addElement": "Element qo'shish",
+      "empty": "Hali yuzalar yo'q.",
+      "unnamedSide": "Tomon kodi yo'q",
+      "roofAndFloor": "Tom va pol",
+      "groupElementCount_other": "({{count}} ta element)",
       "blockName": "Blok nomi *",
+      "addBuildingBlockFirst": "Avval blok qo'shing",
       "orientation": "Yo'nalish *",
       "sideCode": "Tomon kodi",
       "constructionType": "Konstruksiya turi *",
@@ -81,9 +120,19 @@
       "noOpenings": "Bu elementda ochilmalar yo'q.",
       "addOpeningTypeFirst": "Avval ochilma turini qo'shing",
       "selectOpeningType": "Ochilma turini tanlang",
-      "countPlaceholder": "Soni"
+      "countPlaceholder": "Soni",
+      "totalsBar": {
+        "title": "Jami maydon (jonli)"
+      }
     },
     "errors": {
+      "buildingBlockNameRequired": "Har bir blok uchun nom kerak.",
+      "buildingBlockNameDuplicate": "\"{{name}}\" blok nomi takrorlangan.",
+      "buildingBlockFootprintLengthInvalid": "\"{{name}}\" bloki uchun musbat gabarit uzunligi kerak.",
+      "buildingBlockFootprintWidthInvalid": "\"{{name}}\" bloki uchun musbat gabarit kengligi kerak.",
+      "buildingBlockFloorHeightInvalid": "\"{{name}}\" bloki uchun musbat qavat balandligi kerak.",
+      "buildingBlockPerimeterInvalid": "\"{{name}}\" bloki uchun musbat perimetr kerak.",
+      "buildingBlockFloorsInvalid": "\"{{name}}\" bloki uchun musbat butun qavatlar soni kerak.",
       "constructionTypeCodeRequired": "Har bir konstruksiya turi uchun kod kerak.",
       "constructionTypeCodeDuplicate": "\"{{code}}\" konstruksiya turi kodi takrorlangan.",
       "layerMaterialRequired": "\"{{code}}\" konstruksiya turida materiali tanlanmagan qatlam bor.",

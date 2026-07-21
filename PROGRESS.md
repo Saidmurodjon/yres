@@ -465,3 +465,125 @@ faylida yangi `Invalid WebSocket close code` xatosi ko'rinmadi.
 - Hali standart konstruksiya-turi "shablon" kutubxonasi yo'q (auditor har bir qatlamni noldan
   qurish o'rniga boshlanishi mumkin bo'lgan mahalliy devor/tom tuzilmalari) — mumkin bo'lgan
   keyingi qadam sifatida belgilangan, boshlanmagan.
+
+## Manba Excel'dan (`3-DMTT v5.xlsx`) haqiqiy bino kiritildi — API orqali, UI'siz
+
+Lokal dev muhitida (`bun run dev`, haqiqiy Neon bazasiga ulangan `.dev.vars` bilan) manba
+hisob-kitob jadvalining o'zidagi bino ma'lumotlari birinchi marta platformaga real bino sifatida
+kiritildi. Foydalanuvchi `saidmurodjonkhamdamov@gmail.com` bilan Google orqali (Claude Chrome
+kengaytmasi orqali, parol/2FA foydalanuvchining o'zi tomonidan kiritilgan holda) tizimga kirdi.
+
+**Yondashuv**: Excel'da 300+ alohida qiymat (`Building_data` ~11 maydon, `Envelope` ~67 qator,
+`Consumption` 36 oy × 2 tashuvchi) borligi va platformada Excel-import funksiyasi yo'qligi
+sababli, qo'lda UI orqali forma-baqadam kiritish o'rniga: (1) fon vazifasi (`xlsx` npm paketi
+bilan, faqat scratchpad'da izolyatsiya qilingan holda) manba faylni API'ning
+`POST /buildings`, `PUT .../envelope`, `PUT .../systems/<key>` (×7), `PUT .../consumption` (×6)
+so'rov shakllariga mos JSON'ga aylantirdi; (2) `climateRegionId` va barcha `materialId`lar
+haqiqiy sessiya orqali `GET /api/climate/regions` / `GET /api/reference/materials`dan olib,
+qo'lda joylashtirildi; (3) brauzer sessiyasidagi (httpOnly cookie) autentifikatsiyadan
+foydalanish uchun, JSON fayllarni vaqtinchalik scratch `Bun.serve()` static-server (port 4321,
+faqat `http://localhost:5173` uchun CORS) orqali sahifa kontekstidagi `fetch()`ga uzatildi va
+so'rovlar shu yerdan `credentials: 'include'` bilan yuborildi — qo'lda cookie ajratib olishga
+hojat qolmadi.
+
+**Haqiqiy audit topilgan va tuzatilgan** (`api-contract-notes.md`dagi ambiguity #5): birinchi
+o'tishda deraza maydoni 234 m² chiqdi, manba Excel'ning o'zi 257 m² deb ko'rsatgan edi (~9%
+kam) — sabab, `length=0` bo'lgan ikkita "socle-continuation" qatori (P1 shimoliy socle 4×
+0.8×0.8, P11 janubiy socle 11× 1.0×1.8) qator-filtri tomonidan tashlab yuborilgan edi.
+Foydalanuvchi tanlovi bilan bu tuzatildi (256.62 m², 0.15% qoldiq — Excel'ning o'z
+yaxlitlashi doirasida).
+
+**Ma'lum bo'shliqlar/soddalashtirishlar** (to'liq ro'yxat scratchpad'dagi
+`api-contract-notes.md`da, chunki u vaqtinchalik joyda va keyingi sessiyalar uchun
+saqlanmaydi — shuning uchun eng muhimlari shu yerga ko'chirildi):
+- Faqat **"before" (audit qilingan holat)** ssenariysi kiritildi — manba Excel'dagi "after
+  renovation" parallel ma'lumotlar (yaxshiroq U-qiymatlar, issiqlik-qaytarish ventilyatsiyasi,
+  0.97-samaradorlikli qozon) va yangilanuvchi energiya (PV/quyosh issiq suv) — bular
+  taklif etilgan chora-tadbirlar, "hozirgi holat"ga kirmaydi — kiritilmadi.
+- **Bino turi (`buildingType`) `other` qilib qo'yildi** — Excel'da aniq maydon yo'q edi
+  (418 kishi + xona-turlari jadvalidan "hospital" degan xulosa chiqarilgan edi, lekin
+  foydalanuvchi buni tasdiqlamadi va aniq alternativa ham bermadi). Bino nomi/loyiha kodi
+  sifatida `3-DMTT` ishlatildi (foydalanuvchi tasdig'i bilan). Kerak bo'lsa bino sahifasining
+  "Tahrirlash" tugmasi orqali o'zgartiring.
+- `envelopeElements[].blockName` barcha 30 elementda `"3-DMTT"` (bino nomi) qilib qoldirilgan,
+  `buildingBlocks`dagi haqiqiy blok nomlari ("A blok"/"B blok"/"C blok")ga mos kelmaydi — bu
+  API'da qattiq FK emas, faqat erkin matn maydoni (`apps/api/src/routes/envelope.ts:176`), shuning
+  uchun so'rov xatosiz o'tdi, lekin UI'da har bir devorning qaysi blokka tegishli ekanligi
+  noto'g'ri ko'rsatilishi mumkin — tuzatilmagan.
+- Bino gabaritlari (`footprintLengthM`/`footprintWidthM`) haqiqiy o'lchamlar emas — Excel faqat
+  maydonni saqlagani uchun `sqrt(maydon)` (kvadrat shakl taxmini) qo'llanilgan; maydonning o'zi
+  to'g'ri, lekin uzunlik/kenglik individual raqamlari haqiqiy emas.
+- Tom (R1) va pol (F1) `lengthM: 1, heightEnvContactM: 1279` sifatida "soxta devor" qilib
+  modellashtirilgan — sxema faqat devor-shaklidagi maydonni qo'llab-quvvatlagani uchun, aniq
+  "yassi maydon" maydoni yo'q; ko'paytma (1279 m²) to'g'ri, individual raqamlar mazmunsiz.
+- `ventilationSystem.coolingSeasonHours` (yaqinda qo'shilgan mexanik-ventilyatsiya sovutish-yuki
+  maydoni) bo'sh (`null`) qoldirildi — manba jadvalda aniq bitta katak sifatida topilmadi.
+
+**Tekshirildi**: bino UI'da to'g'ri ko'rindi (Umumiy tab), keyin `POST /:id/audit/run` to'g'ridan-
+to'g'ri chaqirildi (UI'ning "Auditni ishga tushirish" tugmasi standart-qiymatli qisqa
+wizard'ga olib borgani uchun, allaqachon kiritilgan batafsil ma'lumotdan foydalanish o'rniga —
+shuning uchun wizard chetlab o'tildi). Audit xatosiz yakunlandi (`status: "completed"`),
+`/results` sahifasida haqiqiy raqamlar chiqdi: joriy energiya iste'moli 345 kWh/m²/yil,
+issitish/issiq suv/sovutish ulushi 98%/1%/1%. Bu butun zanjirni (bino → qobiq → tizimlar →
+iste'mol → hisoblash dvigateli → UI) haqiqiy manba ma'lumoti bilan uchtan-uchga tekshirdi.
+
+**Aniqlangan UI nozik jihati (tuzatilmagan, keyingi qadam sifatida qayd etildi)**: bino
+sahifasidagi "Auditni ishga tushirish" tugmasi allaqachon to'liq qobiq/tizimlar/iste'mol
+ma'lumoti kiritilgan bino uchun ham har doim soddalashtirilgan tezkor-wizard'ga (standart
+gabarit qiymatlari bilan) olib boradi — bu chalkashtiruvchi, chunki wizard orqali yuborilgan
+har qanday narsa allaqachon kiritilgan batafsil ma'lumotni ustiga yozib qo'yishi mumkin.
+Kelajakda: bino allaqachon batafsil ma'lumotga ega bo'lsa, tugma to'g'ridan-to'g'ri
+`POST /:id/audit/run`ni chaqirishi kerak, wizard'ga yo'naltirmasdan.
+
+Lokal dev serverlari (`apps/api` port 3000, `apps/web` port 5173) shu sessiya oxirida ishlab
+turibdi — keyingi tekshiruv uchun to'xtatilmadi.
+
+## Qobiq (Envelope) muharriri bosqichli qayta qurildi
+
+Yuqoridagi Excel-kiritish tajribasi paytida foydalanuvchi `envelope-editor-dialog.tsx`
+(1034 qator, uchta narsani — konstruksiya-qatlam retseptlari, oyna/eshik katalogi, 30 ta yuza
+nusxasi — bitta uzun formaga jamlagan) chalkashtiruvchi ekanini bevosita boshdan kechirdi
+(shu sababdan deraza maydoni birinchi urinishda 234 vs 257 m² xato chiqqan edi). Foydalanuvchi
+so'roviga ko'ra oraliq yamoq emas, to'liq bosqichli qayta qurish qilindi — reja
+`.claude/plans/wiggly-weaving-bird.md`da (endi bajarilgan holatda).
+
+**Yangi tuzilma** — `apps/web/src/components/building-detail/envelope-editor/` papkasi:
+`state.ts` (qator turlari, `toEditorState`/`parseEditorState`), `calculations.ts` (jonli
+U-qiymat va maydon formulalar — backend bilan **bir xil**: `uvalue.service.ts`ning
+`U=1/(Rint+Rext+ΣR)`i va `envelope.service.ts`ning `netArea=uzunlik×balandlik−ochilmalar`i),
+`row-card.tsx`, va 4 ta bosqich komponenti (`building-blocks-step.tsx`,
+`construction-types-step.tsx`, `opening-types-step.tsx`, `envelope-elements-step.tsx`).
+`envelope-editor-dialog.tsx` endi faqat qobiq: bosqich holati + `audit.tsx` wizard'idagi bilan
+bir xil qo'lda yasalgan raqamli-nishon stepper.
+
+**4 bosqich**: (0) Bino bloklari — YANGI, ilgari bu dialog `buildingBlocks`ni umuman
+to'ldirmasdan tashlab yuborar edi; (1) Konstruksiya turlari — endi har bir turi kartasida
+jonli "U ≈ X.XX Vt/m²K" belgisi (backend uchun yangi `GET /api/reference/surface-resistance`
+endpoint'i, `reference.materials()` andozasida); (2) Ochilma turlari — deyarli o'zgarishsiz;
+(3) Yuzalar — eng katta o'zgarish: elementlar `sideCode` bo'yicha (P1, P2, ...) tug'ma
+`<details>/<summary>` yordamida yig'iladigan guruhlarga bo'lingan (`packages/ui`da Accordion
+yo'q — tug'ma HTML ishlatildi), tepada doim ko'rinadigan (sticky) jami-maydon paneli bilan
+(devor/socle/tom/pol/deraza/eshik, jonli qayta hisoblanadi) — bugungi 234 vs 257 m² xatosi
+turini darhol ko'rsatib beradi. `blockName` endi erkin matn emas, 0-bosqichdagi bloklardan
+to'ldiriladigan `<Select>`.
+
+**Qo'lda tekshirildi**: `bun run type-check`, `bun run build` (haqiqiy Vite build), `bunx biome
+lint` — barchasi toza. `bun run test` — servis unit testlari o'tdi, integratsiya testlari
+kutilganidek `ECONNREFUSED` (lokal Postgres yo'q). Brauzerda: yangi muharrir bilan mavjud
+30-elementli bino ochildi, barcha 4 bosqich to'g'ri yuklandi, jami-hisoblagich aniq **256.6 m²
+deraza / 61.4 m²** eshikni ko'rsatdi (bugun API orqali tasdiqlangan qiymat bilan bir xil),
+U-qiymat oldindan ko'rsatuvi ishladi (W1 devor uchun 1.35 Vt/m²K), `blockName`ni "A blok"ga
+o'zgartirib Saqlash bosildi — `GET .../envelope` o'zgarishni to'g'ri qaytardi (30 element
+saqlanib qoldi), va `POST .../audit/run` hamon xatosiz yakunlandi.
+
+**Aniqlangan "ma'lumot yo'qolishi" — aslida bug emas**: shu tekshiruv paytida bugun ertalab
+yaratilgan asl `3-DMTT` bino (`id: 0c9bb740-...`) bazada topilmay qoldi, o'rniga faqat
+2026-07-12'da yaratilgan eski `3-DMTT` bino (`id: 35661d4c-...`) qolgani aniqlandi. Sabab
+tekshirildi: test to'plami (`bun run test`) `TEST_DATABASE_URL` o'rnatilmagan bo'lsa standart
+holatda mahalliy `localhost:5432`ga ulanadi (`apps/api/tests/helpers/test-db.ts:7-8`) va bu
+`ECONNREFUSED` bilan muvaffaqiyatsiz bo'lgani tasdiqlandi — demak haqiqiy Neon bazasiga
+tegmagan; wrangler dev process ham qayta ishga tushmagan. **Haqiqiy sabab: foydalanuvchining
+o'zi ikkita takroriy `3-DMTT` binosidan birini (bugungisini) qo'lda o'chirib tashlagan edi.**
+Bugungi Excel ma'lumoti scratchpad'dagi JSON fayllardan eski `35661d4c` binoga muvaffaqiyatli
+qayta tiklandi (envelope + systems + consumption + bino metama'lumotlari) — ma'lumot butun,
+tizimda muammo yo'q.

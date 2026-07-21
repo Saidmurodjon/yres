@@ -1,4 +1,4 @@
-import { lampType, material } from "@yres/db";
+import { lampType, material, surfaceResistance } from "@yres/db";
 import { Hono } from "hono";
 import type { AppEnv } from "../middleware/auth";
 import { authMiddleware } from "../middleware/auth";
@@ -22,4 +22,13 @@ referenceRoutes.get("/lamp-types", async (c) => {
   const db = c.get("db");
   const lampTypes = await db.select().from(lampType);
   return c.json({ lampTypes });
+});
+
+// GET /surface-resistance - per-elementCategory interior/exterior surface
+// resistance reference table, used to preview a construction type's U-value
+// client-side with the exact same formula audit.engine.ts uses server-side.
+referenceRoutes.get("/surface-resistance", async (c) => {
+  const db = c.get("db");
+  const surfaceResistances = await db.select().from(surfaceResistance);
+  return c.json({ surfaceResistances });
 });

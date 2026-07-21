@@ -36,6 +36,7 @@ import type {
   ReplaceRenewablesPayload,
   ReplaceUtilityBillsInput,
   ReplaceVentilationPayload,
+  SurfaceResistance,
   SystemsData,
   UpdateBuildingInput,
   UpdateConversationInput,
@@ -321,6 +322,8 @@ export const api = {
   reference: {
     materials: () => request<{ materials: Material[] }>("/api/reference/materials"),
     lampTypes: () => request<{ lampTypes: LampType[] }>("/api/reference/lamp-types"),
+    surfaceResistance: () =>
+      request<{ surfaceResistances: SurfaceResistance[] }>("/api/reference/surface-resistance"),
   },
 
   audit: {

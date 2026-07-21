@@ -54,6 +54,7 @@ export function EnvelopeTab({
   }
 
   const isEmpty =
+    data.blocks.length === 0 &&
     data.constructionTypes.length === 0 &&
     data.openingTypes.length === 0 &&
     data.envelopeElements.length === 0;
@@ -86,6 +87,42 @@ export function EnvelopeTab({
         </Card>
       ) : (
         <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{t("tab.buildingBlocks")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {data.blocks.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("tab.noneDefined")}</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("tab.columnName")}</TableHead>
+                      <TableHead>{t("tab.columnFootprint")}</TableHead>
+                      <TableHead>{t("tab.columnFloors")}</TableHead>
+                      <TableHead>{t("tab.columnFloorHeight")}</TableHead>
+                      <TableHead>{t("tab.columnPerimeter")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.blocks.map((block) => (
+                      <TableRow key={block.id}>
+                        <TableCell className="font-medium">{block.name}</TableCell>
+                        <TableCell>
+                          {formatNumber(block.footprintLengthM)} × {formatNumber(block.footprintWidthM)}
+                        </TableCell>
+                        <TableCell>{block.numberOfFloors}</TableCell>
+                        <TableCell>{formatNumber(block.floorToFloorHeightM)}</TableCell>
+                        <TableCell>{formatNumber(block.perimeterM)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">{t("tab.constructionTypes")}</CardTitle>

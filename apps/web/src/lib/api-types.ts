@@ -171,6 +171,13 @@ export interface Material {
   thermalConductivityWPerMk: number;
 }
 
+export interface SurfaceResistance {
+  id: string;
+  elementCategory: string;
+  interiorResistanceM2kPerW: number;
+  exteriorResistanceM2kPerW: number;
+}
+
 export interface ConstructionLayer {
   id: string;
   constructionTypeId: string;

@@ -16,3 +16,11 @@ export function useLampTypes() {
     staleTime: 60 * 60 * 1000,
   });
 }
+
+export function useSurfaceResistance() {
+  return useQuery({
+    queryKey: ["reference", "surface-resistance"],
+    queryFn: () => api.reference.surfaceResistance(),
+    staleTime: 60 * 60 * 1000,
+  });
+}
