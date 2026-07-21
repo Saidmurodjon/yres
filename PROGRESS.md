@@ -587,3 +587,55 @@ o'zi ikkita takroriy `3-DMTT` binosidan birini (bugungisini) qo'lda o'chirib tas
 Bugungi Excel ma'lumoti scratchpad'dagi JSON fayllardan eski `35661d4c` binoga muvaffaqiyatli
 qayta tiklandi (envelope + systems + consumption + bino metama'lumotlari) — ma'lumot butun,
 tizimda muammo yo'q.
+
+## Iste'mol (Consumption) kiritish qayta qurildi: yil-tab jadval + Excel shablon/yuklash
+
+Foydalanuvchi energiya iste'molini kiritish hali ham noqulay ekanini aytdi (bitta tashuvchi +
+bitta yilni Select orqali tanlab, 12 oylik jadvalni to'ldirib saqlash — ko'p yil/tashuvchi
+uchun picker'larni almashtirib qayta-qayta saqlash kerak edi) va ikkita narsa so'radi: (1)
+Excel varag'iga o'xshash qulayroq jadval, (2) Excel shablonini yuklab olib, to'ldirib, qayta
+yuklash orqali ma'lumot kiritish.
+
+**Yangi tuzilma**: `apps/web/src/components/building-detail/consumption-tab.tsx` qayta
+yozildi — yil `Select` o'rniga `Tabs` (Excel varaq-yorlig'i kabi, "+ Yil qo'shish" bilan), har
+bir yil ichida BITTA jadval (qatorlar — oylar, ustunlar — har bir tashuvchi uchun asosiy
+"Miqdor"). kVt·soat/Xarajat/Tarif maydonlari har bir katak yonidagi `Popover` orqali ochiladigan
+"Batafsil" panelida (agar to'ldirilgan bo'lsa, ikonka rangi o'zgaradi — ma'lumot yashiringan
+paytda ham yo'qolib qolmasligi uchun). "Hammasini saqlash" faol yil tab'idagi barcha
+tashuvchilar uchun ketma-ket `PUT /consumption` chaqiradi (bitta tugma bilan, avval har bir
+tashuvchi/yil uchun alohida saqlash kerak edi).
+
+**Yangi**: `apps/web/src/components/building-detail/consumption-excel.ts` — `xlsx` (SheetJS,
+`bun add xlsx --cwd apps/web` bilan qo'shildi) paketidan foydalanib:
+- `downloadConsumptionTemplate` — ro'yxat ("ledger") formatidagi shablon
+  (`Yil | Oy | Tashuvchi | Miqdor | kVt·soat | Xarajat | Tarif`, namuna qator + qabul
+  qilinadigan tashuvchilar ro'yxati bilan "O'qish" varag'i) yaratib yuklab beradi.
+- `parseConsumptionWorkbook` — yuklangan faylni sarlavha-nomi bo'yicha o'qiydi (uz/en/ru —
+  qaysi tilda shablon olingan bo'lsa ham ishlaydi), har bir qatorni tekshiradi, noto'g'ri
+  qatorlarni qator raqami bilan xato ro'yxatiga qo'shib tashlab yuboradi (butun faylni rad
+  etmaydi). Natija to'g'ridan-to'g'ri mavjud jadval holatiga birlashtiriladi — alohida
+  oldindan-ko'rish dialogi yo'q, import qilingan ma'lumot darhol tahrirlanadigan asosiy
+  jadvalda ko'rinadi va xuddi shu "Saqlash" tugmasi bilan saqlanadi.
+
+**Muhim arxitektura qarori**: `xlsx` og'ir kutubxona (minified ~430KB) — asosiy bundle'ga
+og'irlik qo'shmasligi uchun ikkala funksiya ham uni faqat chaqirilganda `await import("xlsx")`
+orqali dinamik yuklaydi (Vite buni avtomatik alohida chunk qiladi — build tekshiruvida
+tasdiqlandi, asosiy `index-*.js` chunk hajmi deyarli o'zgarmadi).
+
+**Tekshirildi**: `bun run type-check`/`build` (`apps/web`, `noUncheckedIndexedAccess` bo'yicha
+bir nechta massiv-indeks joyini haqiqiy fallback bilan tuzatishga to'g'ri keldi), `bunx biome
+lint` — toza. Brauzerda: `3-DMTT` binosining haqiqiy 2023-yil ma'lumoti (Gas/Electricity, 12 oy)
+yangi yil-tab jadvalida to'g'ri ko'rindi, "Batafsil" popover to'g'ri qiymatlarni ko'rsatdi
+(kVt·soat/Xarajat/Tarif), "Shablonni yuklab olish" haqiqiy `.xlsx` fayl yaratdi (2 varaq: asosiy
++ "O'qish"), va eng muhimi — haqiqiy `parseConsumptionWorkbook` funksiyasi (mock emas) sinov
+fayliga qarshi to'g'ridan-to'g'ri ishga tushirilib tekshirildi: 2 to'g'ri qator to'g'ri
+o'qildi, 2 ataylab noto'g'ri qator (oy=13, noma'lum tashuvchi) to'g'ri rad etildi va aniq xato
+xabari bilan qaytdi; yuklab olingan shablonning o'z namuna qatori ham xatosiz qayta o'qildi
+(to'liq round-trip). "Saqlash" tugmasi bosilib, `GET .../consumption` orqali 2023-yil uchun
+24 ta hisob-faktura (12 oy × 2 tashuvchi) saqlanganligi tasdiqlandi.
+
+Diqqat: brauzer avtomatlashtirish vositasining fayl-yuklash cheklovi tufayli haqiqiy fayl
+tanlash dialogi orqali "Excel yuklash" tugmasi ustida qo'lda bosib ko'rish sinalmadi — buning
+o'rniga xuddi shu `parseConsumptionWorkbook` funksiyasi to'g'ridan-to'g'ri chaqirilib
+tekshirildi (yuqorida). Foydalanuvchi birinchi haqiqiy foydalanishda UI orqali ham sinab
+ko'rishi tavsiya etiladi.

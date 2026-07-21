@@ -1,27 +1,62 @@
 {
   "enterMonthlyBills": "Enter monthly bills",
-  "enterMonthlyBillsDescription": "Pick a carrier and year, fill in whichever months you have bills for, then save them all at once — matching the source spreadsheet's one-table-per-carrier layout instead of adding one month at a time.",
-  "energyCarrier": "Energy carrier",
-  "year": "Year",
+  "enterMonthlyBillsDescription": "Pick a year tab and fill in the grid — every carrier is shown together in one table. kWh/Expense/Tariff live behind the \"Details\" button next to each cell. For faster entry from Excel, download the template, fill it in, and upload it back.",
   "columnMonth": "Month",
   "columnConsumption": "Consumption",
   "columnConsumptionKwh": "Consumption (kWh)",
   "columnExpense": "Expense",
   "columnTariff": "Tariff",
   "monthFallback": "Month {{n}}",
-  "ariaConsumption": "{{month}} consumption",
-  "ariaConsumptionKwh": "{{month}} consumption in kWh",
-  "ariaExpense": "{{month}} expense",
-  "ariaTariff": "{{month}} tariff",
+  "ariaConsumption": "{{carrier}} — {{month}} consumption",
   "consumptionMustBeNumber": "{{month}}: consumption must be a number.",
   "saveFailed": "Failed to save consumption data.",
-  "savedMessage": "Saved {{carrier}} bills for {{year}}.",
+  "savedMessage": "Saved all entered bills for {{year}}.",
   "saving": "Saving...",
-  "saveButton": "Save {{carrier}} — {{year}}",
+  "saveButton": "Save {{year}}",
   "allUtilityBills": "All utility bills",
   "failedToLoad": "Failed to load consumption data:",
   "noBillsYet": "No utility bills recorded yet",
   "noBillsDescription": "Use the grid above to add a carrier's monthly bills for a year.",
   "columnCarrier": "Carrier",
-  "columnYear": "Year"
+  "columnYear": "Year",
+  "yearTabs": {
+    "addYear": "Add year",
+    "add": "Add"
+  },
+  "advanced": {
+    "title": "Details",
+    "titleFor": "{{carrier}} — {{month}} (details)"
+  },
+  "excel": {
+    "downloadTemplate": "Download template",
+    "uploadButton": "Upload Excel",
+    "importing": "Importing...",
+    "importedSummary": "{{count}} entries imported (years: {{years}}).",
+    "importedNothing": "No matching entries found in the file.",
+    "importedErrors": "{{count}} rows were skipped:",
+    "template": {
+      "sheetName": "Consumption",
+      "readMeSheetName": "Read me",
+      "readMeTitle": "Instructions",
+      "readMeInstructions": "Enter one month+carrier record per row. Delete the example row and enter your own data, or overwrite it. In the \"Carrier\" column, use only one of the following values:",
+      "readMeCarriersLabel": "Accepted carriers:",
+      "columnYear": "Year",
+      "columnMonth": "Month",
+      "columnCarrier": "Carrier",
+      "columnConsumption": "Amount",
+      "columnConsumptionKwh": "Amount (kWh)",
+      "columnExpense": "Expense",
+      "columnTariff": "Tariff",
+      "fileName": "energy-consumption-template.xlsx"
+    },
+    "errors": {
+      "emptyFile": "The file is empty.",
+      "missingColumns": "Couldn't find \"Year\", \"Month\", \"Carrier\" columns in the file. Download the template and use it as a starting point.",
+      "invalidYear": "Row {{row}}: invalid year.",
+      "invalidMonth": "Row {{row}}: month must be between 1 and 12.",
+      "invalidCarrier": "Row {{row}}: unrecognized carrier.",
+      "invalidConsumption": "Row {{row}}: amount must be a number.",
+      "parseFailed": "Couldn't read the file — make sure it's a valid .xlsx file."
+    }
+  }
 }

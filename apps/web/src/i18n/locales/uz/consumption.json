@@ -1,27 +1,62 @@
 {
   "enterMonthlyBills": "Oylik hisob-fakturalarni kiritish",
-  "enterMonthlyBillsDescription": "Energiya tashuvchisi va yilni tanlang, hisob-fakturangiz bo'lgan oylarni to'ldiring, so'ng hammasini bir yo'la saqlang — bu manba jadvalining har bir tashuvchi uchun alohida jadval tuzilishiga mos keladi, bir vaqtda bitta oy qo'shish o'rniga.",
-  "energyCarrier": "Energiya tashuvchisi",
-  "year": "Yil",
+  "enterMonthlyBillsDescription": "Yil yorlig'ini tanlang va jadvalga to'ldiring — bitta jadvalda barcha tashuvchilar bir vaqtda ko'rinadi. kVt·soat/Xarajat/Tarif maydonlari har bir katak yonidagi \"Batafsil\" tugmasida. Excel'dan qulay kiritish uchun shablonni yuklab oling, to'ldiring va qayta yuklang.",
   "columnMonth": "Oy",
   "columnConsumption": "Iste'mol",
   "columnConsumptionKwh": "Iste'mol (kVt·soat)",
   "columnExpense": "Xarajat",
   "columnTariff": "Tarif",
   "monthFallback": "{{n}}-oy",
-  "ariaConsumption": "{{month}} iste'moli",
-  "ariaConsumptionKwh": "{{month}} iste'moli (kVt·soatda)",
-  "ariaExpense": "{{month}} xarajati",
-  "ariaTariff": "{{month}} tarifi",
+  "ariaConsumption": "{{carrier}} — {{month}} iste'moli",
   "consumptionMustBeNumber": "{{month}}: iste'mol raqam bo'lishi kerak.",
   "saveFailed": "Iste'mol ma'lumotlarini saqlab bo'lmadi.",
-  "savedMessage": "{{year}}-yil uchun {{carrier}} hisob-fakturalari saqlandi.",
+  "savedMessage": "{{year}}-yil uchun barcha kiritilgan hisob-fakturalar saqlandi.",
   "saving": "Saqlanmoqda...",
-  "saveButton": "{{carrier}}ni saqlash — {{year}}",
+  "saveButton": "{{year}}-yilni saqlash",
   "allUtilityBills": "Barcha kommunal hisob-fakturalar",
   "failedToLoad": "Iste'mol ma'lumotlarini yuklab bo'lmadi:",
   "noBillsYet": "Hali hisob-fakturalar qayd etilmagan",
   "noBillsDescription": "Tashuvchining bir yillik oylik hisob-fakturalarini qo'shish uchun yuqoridagi jadvaldan foydalaning.",
   "columnCarrier": "Tashuvchi",
-  "columnYear": "Yil"
+  "columnYear": "Yil",
+  "yearTabs": {
+    "addYear": "Yil qo'shish",
+    "add": "Qo'shish"
+  },
+  "advanced": {
+    "title": "Batafsil",
+    "titleFor": "{{carrier}} — {{month}} (batafsil)"
+  },
+  "excel": {
+    "downloadTemplate": "Shablonni yuklab olish",
+    "uploadButton": "Excel yuklash",
+    "importing": "Yuklanmoqda...",
+    "importedSummary": "{{count}} ta yozuv import qilindi (yillar: {{years}}).",
+    "importedNothing": "Faylda mos yozuvlar topilmadi.",
+    "importedErrors": "{{count}} ta qator o'tkazib yuborildi:",
+    "template": {
+      "sheetName": "Iste'mol",
+      "readMeSheetName": "O'qish",
+      "readMeTitle": "Ko'rsatma",
+      "readMeInstructions": "Har bir qatorga bitta oy+tashuvchi yozuvini kiriting. Namuna qatorni o'chirib, o'z ma'lumotlaringizni kiriting yoki ustiga yozing. \"Tashuvchi\" ustunida faqat quyidagi qiymatlardan birini yozing:",
+      "readMeCarriersLabel": "Qabul qilinadigan tashuvchilar:",
+      "columnYear": "Yil",
+      "columnMonth": "Oy",
+      "columnCarrier": "Tashuvchi",
+      "columnConsumption": "Miqdor",
+      "columnConsumptionKwh": "Miqdor (kVt·soat)",
+      "columnExpense": "Xarajat",
+      "columnTariff": "Tarif",
+      "fileName": "energiya-istemoli-shabloni.xlsx"
+    },
+    "errors": {
+      "emptyFile": "Fayl bo'sh.",
+      "missingColumns": "Fayldan \"Yil\", \"Oy\", \"Tashuvchi\" ustunlari topilmadi. Shablonni yuklab, namuna sifatida foydalaning.",
+      "invalidYear": "{{row}}-qator: yil noto'g'ri.",
+      "invalidMonth": "{{row}}-qator: oy 1 dan 12 gacha bo'lishi kerak.",
+      "invalidCarrier": "{{row}}-qator: tashuvchi tanilmadi.",
+      "invalidConsumption": "{{row}}-qator: miqdor raqam bo'lishi kerak.",
+      "parseFailed": "Faylni o'qib bo'lmadi — u haqiqiy .xlsx fayl ekanini tekshiring."
+    }
+  }
 }

@@ -1,27 +1,62 @@
 {
   "enterMonthlyBills": "Ввод ежемесячных счетов",
-  "enterMonthlyBillsDescription": "Выберите носитель энергии и год, заполните месяцы, по которым у вас есть счета, затем сохраните их все сразу — это соответствует таблице «один носитель — одна таблица» исходной таблицы, а не добавлению по одному месяцу.",
-  "energyCarrier": "Энергоноситель",
-  "year": "Год",
+  "enterMonthlyBillsDescription": "Выберите вкладку года и заполните таблицу — все энергоносители показаны вместе в одной таблице. Поля кВт·ч/Расход/Тариф скрыты за кнопкой «Подробнее» рядом с каждой ячейкой. Для быстрого ввода из Excel скачайте шаблон, заполните его и загрузите обратно.",
   "columnMonth": "Месяц",
   "columnConsumption": "Потребление",
   "columnConsumptionKwh": "Потребление (кВт·ч)",
   "columnExpense": "Расход",
   "columnTariff": "Тариф",
   "monthFallback": "Месяц {{n}}",
-  "ariaConsumption": "Потребление за {{month}}",
-  "ariaConsumptionKwh": "Потребление за {{month}} в кВт·ч",
-  "ariaExpense": "Расход за {{month}}",
-  "ariaTariff": "Тариф за {{month}}",
+  "ariaConsumption": "{{carrier}} — потребление за {{month}}",
   "consumptionMustBeNumber": "{{month}}: потребление должно быть числом.",
   "saveFailed": "Не удалось сохранить данные потребления.",
-  "savedMessage": "Счета по «{{carrier}}» за {{year}} сохранены.",
+  "savedMessage": "Все введённые счета за {{year}} год сохранены.",
   "saving": "Сохранение...",
-  "saveButton": "Сохранить «{{carrier}}» — {{year}}",
+  "saveButton": "Сохранить {{year}} год",
   "allUtilityBills": "Все счета за коммунальные услуги",
   "failedToLoad": "Не удалось загрузить данные потребления:",
   "noBillsYet": "Счетов пока не зафиксировано",
   "noBillsDescription": "Используйте таблицу выше, чтобы добавить ежемесячные счета носителя за год.",
   "columnCarrier": "Носитель",
-  "columnYear": "Год"
+  "columnYear": "Год",
+  "yearTabs": {
+    "addYear": "Добавить год",
+    "add": "Добавить"
+  },
+  "advanced": {
+    "title": "Подробнее",
+    "titleFor": "{{carrier}} — {{month}} (подробнее)"
+  },
+  "excel": {
+    "downloadTemplate": "Скачать шаблон",
+    "uploadButton": "Загрузить Excel",
+    "importing": "Импорт...",
+    "importedSummary": "Импортировано записей: {{count}} (годы: {{years}}).",
+    "importedNothing": "В файле не найдено подходящих записей.",
+    "importedErrors": "Пропущено строк: {{count}}:",
+    "template": {
+      "sheetName": "Потребление",
+      "readMeSheetName": "Инструкция",
+      "readMeTitle": "Инструкция",
+      "readMeInstructions": "Вносите одну запись месяц+носитель в каждую строку. Удалите строку-пример и введите свои данные, либо замените её. В столбце «Носитель» указывайте только одно из следующих значений:",
+      "readMeCarriersLabel": "Допустимые носители:",
+      "columnYear": "Год",
+      "columnMonth": "Месяц",
+      "columnCarrier": "Носитель",
+      "columnConsumption": "Количество",
+      "columnConsumptionKwh": "Количество (кВт·ч)",
+      "columnExpense": "Расход",
+      "columnTariff": "Тариф",
+      "fileName": "shablon-potrebleniya-energii.xlsx"
+    },
+    "errors": {
+      "emptyFile": "Файл пуст.",
+      "missingColumns": "В файле не найдены столбцы «Год», «Месяц», «Носитель». Скачайте шаблон и используйте его как основу.",
+      "invalidYear": "Строка {{row}}: некорректный год.",
+      "invalidMonth": "Строка {{row}}: месяц должен быть от 1 до 12.",
+      "invalidCarrier": "Строка {{row}}: носитель не распознан.",
+      "invalidConsumption": "Строка {{row}}: количество должно быть числом.",
+      "parseFailed": "Не удалось прочитать файл — убедитесь, что это корректный файл .xlsx."
+    }
+  }
 }
