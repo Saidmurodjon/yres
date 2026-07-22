@@ -1,6 +1,7 @@
 import type { building } from "@yres/db";
 import type { AuditResult, GenerationSourceResult } from "@yres/types";
 import { type PDFFont, type PDFPage, PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { DEFAULT_DISCOUNT_RATE, ENERGY_ESCALATION_RATES } from "./financial.service";
 import type {
   CarrierConsumptionHistory,
   ConstructionTypeUValueBreakdown,
@@ -386,6 +387,11 @@ function fmtUsd(value: number | null | undefined): string {
   return `$${fmt(value, 0)}`;
 }
 
+function fmtPct(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+  return `${fmt(value * 100, 1)}%`;
+}
+
 /**
  * Renders a fresh AuditResult (see routes/audit.ts's "recalculate on demand"
  * rule — this never reads a stored result) into a downloadable PDF report.
@@ -614,17 +620,98 @@ export async function generateAuditReportPdf(
   if (measuresToList.length === 0) {
     layout.paragraph("No energy-saving measures have been defined for this building yet.");
   } else {
+    // Standardized and actual are always shown together, never one without
+    // the other (calculation-engine.md) — as two adjacent tables sharing the
+    // same row order, since this drawing engine has no multi-line cells to
+    // fit both scenarios into a single row.
+    layout.paragraph("Theoretical savings (standardized conditions):");
     layout.table(
-      ["Measure", "Investment", "Annual savings", "Payback (yr)", "CO2 (t/yr)"],
+      ["Measure", "Investment", "Std. savings", "Payback (yr)", "NPV", "IRR", "CO2 (t/yr)"],
       measuresToList.map((m) => [
         m.name,
         fmtUsd(m.investmentCostUsd),
         `${fmtUsd(m.standardizedAnnualSavingsUsd)} (${fmt(m.standardizedAnnualSavingsKwh, 0)} kWh)`,
-        m.simplePaybackYears !== null ? fmt(m.simplePaybackYears, 1) : "—",
+        fmt(m.standardized.simplePaybackYears, 1),
+        fmtUsd(m.standardized.npv),
+        fmtPct(m.standardized.irr),
         fmt(m.co2ReductionTonnesPerYear, 1),
       ]),
-      [140, 80, 160, 80, 60],
+      [110, 65, 100, 55, 55, 50, 50],
     );
+    layout.paragraph("Actual savings (calibrated against metered bills):");
+    layout.table(
+      ["Measure", "Actual savings", "Payback (yr)", "NPV", "IRR"],
+      measuresToList.map((m) => [
+        m.name,
+        `${fmtUsd(m.actualAnnualSavingsUsd)} (${fmt(m.actualAnnualSavingsKwh, 0)} kWh)`,
+        fmt(m.actual.simplePaybackYears, 1),
+        fmtUsd(m.actual.npv),
+        fmtPct(m.actual.irr),
+      ]),
+      [140, 120, 60, 60, 60],
+    );
+  }
+
+  if (result.measures.length > 0) {
+    layout.heading("GHG emissions (CO2 reduction)");
+    layout.paragraph(
+      `Total CO2 reduction across all measures: ${fmt(result.summary.co2ReductionTonnesPerYear, 1)} tCO2/yr.`,
+    );
+    layout.table(
+      ["Measure", "CO2 reduction (tCO2/yr)"],
+      result.measures.map((m) => [m.name, fmt(m.co2ReductionTonnesPerYear, 1)]),
+      [280, 150],
+    );
+    if (extras.tariffs.length > 0) {
+      layout.paragraph(
+        `Emission factors used: ${extras.tariffs
+          .map((t) => `${t.energyCarrier.replace(/_/g, " ")} ${fmt(t.emissionFactorKgCo2PerKwh, 2)} kgCO2/kWh`)
+          .join(" · ")}.`,
+      );
+    }
+  }
+
+  layout.heading("Financial assumptions");
+  layout.paragraph(
+    `Discount rate: ${fmtPct(DEFAULT_DISCOUNT_RATE)} · Annual fuel-price escalation: ${Object.entries(
+      ENERGY_ESCALATION_RATES,
+    )
+      .map(([carrier, rate]) => `${carrier.replace(/_/g, " ")} ${fmtPct(rate)}`)
+      .join(", ")}.`,
+  );
+  if (extras.tariffs.length > 0) {
+    layout.table(
+      ["Energy carrier", "Unit cost", "Emission factor"],
+      extras.tariffs.map((t) => [
+        t.energyCarrier.replace(/_/g, " "),
+        `$${fmt(t.unitCostUsd, 3)}/kWh`,
+        `${fmt(t.emissionFactorKgCo2PerKwh, 2)} kgCO2/kWh`,
+      ]),
+      [200, 150, 150],
+    );
+  }
+
+  if (proposedMeasures.length > 0) {
+    layout.heading("Cashflow detail (proposed measures)");
+    for (const m of proposedMeasures) {
+      layout.paragraph(`${m.name} — lifetime ${m.lifetimeYears} years`);
+      layout.table(
+        ["Year", "Std. net CF", "Std. discounted", "Std. cumulative", "Actual net CF", "Actual disc.", "Actual cum."],
+        m.standardizedCashflow.map((std, i) => {
+          const actual = m.actualCashflow[i];
+          return [
+            String(std.year),
+            fmtUsd(std.netCashflow),
+            fmtUsd(std.discountedNetCashflow),
+            fmtUsd(std.cumulativeDiscountedCashflow),
+            actual ? fmtUsd(actual.netCashflow) : "—",
+            actual ? fmtUsd(actual.discountedNetCashflow) : "—",
+            actual ? fmtUsd(actual.cumulativeDiscountedCashflow) : "—",
+          ];
+        }),
+        [35, 75, 75, 75, 75, 75, 75],
+      );
+    }
   }
 
   if (result.nonEeMeasures.length > 0) {

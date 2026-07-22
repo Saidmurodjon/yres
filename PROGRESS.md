@@ -1131,3 +1131,20 @@ bino, hech narsa kiritilmagan) bilan ham sinovdan o'tdi — xato yo'q.
 Tekshirildi: `bun run type-check` (butun repo), `bunx biome lint`, `bun run test
 tests/services` (55/55), va yuqoridagi ikkita qo'lda smoke-test (to'liq ma'lumot + bo'sh
 ma'lumot).
+
+**5-bosqich (tugallandi)** — Chora-tadbirlar jadvali standardized/actual juftligini ikkita
+qo'shni jadval sifatida ko'rsatadigan qilib qayta yozildi (bu chizish dvigatelida ko'p-qatorli
+katak yo'q, shuning uchun bitta qatorga ikkalasini sig'dirish imkonsiz — ikkita qo'shni jadval
+bir xil qator tartibida "hech qanday ajratish yo'q" tamoyilini saqlaydi). Qo'shildi: GHG bo'limi
+(chora-tadbir bo'yicha CO2 jadvali + qo'llanilgan emissiya koeffitsientlari), Moliyaviy
+taxminlar bloki (`DEFAULT_DISCOUNT_RATE`, `ENERGY_ESCALATION_RATES` — `financial.service.ts`dan
+import qilingan, qayta yozilmagan — hisoblanmagan, faqat ko'rsatilgan) + tariflar jadvali
+(`extras.tariffs`), va har bir **taklif qilingan** chora-tadbir uchun pul oqimi jadvali —
+standardized va actual ustunlari bitta jadvalda yonma-yon (yil bo'yicha zip qilinib), alohida
+ikki jadval o'rniga. Yangi `fmtPct()` yordamchisi qo'shildi.
+
+Smoke-test qayta ishlatildi (ikkinchi, taklif qilinmagan chora-tadbir qo'shilgan holat bilan —
+`proposedForImplementation: false` filtri to'g'ri ishlayotganini tasdiqlash uchun). Tekshirildi:
+`bun run type-check` (butun repo), `bunx biome lint`, `bun run test tests/services` (55/55),
+qo'lda smoke-test (ikki chora-tadbirli, bittasi taklif qilinmagan) — xatosiz, `%PDF` bilan
+boshlanadi.
