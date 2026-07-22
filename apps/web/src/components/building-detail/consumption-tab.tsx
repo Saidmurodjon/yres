@@ -431,7 +431,7 @@ export function ConsumptionTab({
         </p>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             {ENERGY_CARRIERS.map((carrier) => (
               <MonthlyComparisonChart
                 key={carrier}
@@ -440,7 +440,7 @@ export function ConsumptionTab({
                 valueForBill={(b) => b.consumptionNative}
                 unitLabel={ENERGY_CARRIER_NATIVE_UNIT_LABELS[carrier]}
                 noDataLabel={t("comparisonChart.noData")}
-                height={200}
+                height={220}
               />
             ))}
           </div>
