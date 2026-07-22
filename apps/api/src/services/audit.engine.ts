@@ -754,18 +754,20 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
       emissionFactorKgCo2PerKwh: 0.3,
     };
 
-    const { indicators: standardized } = calculateFinancialIndicators({
-      investmentCostUsd: measure.investmentCostUsd,
-      maintenanceCostPercent: measure.maintenanceCostPercent,
-      firstYearAnnualSavingsUsd: savingsKwh * tariff.unitCostUsd,
-      annualEscalationRate: ENERGY_ESCALATION_RATES[carrier] ?? 0.02,
-      lifetimeYears: measure.lifetimeYears,
-      discountRate: 0.04,
-    });
+    const { indicators: standardized, cashflow: standardizedCashflow } = calculateFinancialIndicators(
+      {
+        investmentCostUsd: measure.investmentCostUsd,
+        maintenanceCostPercent: measure.maintenanceCostPercent,
+        firstYearAnnualSavingsUsd: savingsKwh * tariff.unitCostUsd,
+        annualEscalationRate: ENERGY_ESCALATION_RATES[carrier] ?? 0.02,
+        lifetimeYears: measure.lifetimeYears,
+        discountRate: 0.04,
+      },
+    );
 
     const baselineRatio = baselineRatioByCarrier.get(carrier) ?? 1;
     const actualSavingsKwh = savingsKwh * baselineRatio;
-    const { indicators: actual } = calculateFinancialIndicators({
+    const { indicators: actual, cashflow: actualCashflow } = calculateFinancialIndicators({
       investmentCostUsd: measure.investmentCostUsd,
       maintenanceCostPercent: measure.maintenanceCostPercent,
       firstYearAnnualSavingsUsd: actualSavingsKwh * tariff.unitCostUsd,
@@ -792,6 +794,8 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
       proposedForImplementation: measure.proposedForImplementation,
       standardized,
       actual,
+      standardizedCashflow,
+      actualCashflow,
     };
   });
 

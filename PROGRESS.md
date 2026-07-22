@@ -1060,3 +1060,21 @@ avvalgidek ishlashda davom etmoqda (`window_replacement` qayta tiklangandan keyi
 kWh/$486ga qaytdi), `totalInvestmentUsd` hamon $164,320 (o'zgarishsiz, Excel bilan mos).
 `potentialEnergyUseKwhPerM2Year`: 137.39 → **51.01 kWh/m²/yil** (devor/tom izolatsiyasi endi
 "keyingi" energiya sarfini to'g'ri kamaytiryapti).
+
+## Hisobotni platformaga to'liq integratsiya qilish (ko'p bosqichli, davom etmoqda)
+
+`.claude/rules/hisobot.md` WB ECE namunaviy hisobot shakli (`Namuna hujjatlar/пример отчёта
+Мд.docx`) bilan solishtirib PDF hisobotning (`report.service.ts`) maqsadli strukturasini va
+~12 ta bo'shliqni belgiladi — reja `C:\Users\Saidmurod\.claude\plans\harmonic-wondering-treehouse.md`da,
+8 bosqichga bo'lingan. Qarorlar: hisobot inglizcha qoladi (i18n qamrovga kirmaydi), pul oqimi
+jadvali faqat `proposedForImplementation` chora-tadbirlar uchun, grafiklar `pdf-lib`
+primitivlari (`drawRectangle`/`drawSvgPath`/`drawLine`) bilan qo'lda chiziladi (Workers
+runtime'da DOM/canvas yo'q, `recharts` server tarafida ishlamaydi).
+
+**1-bosqich (tugallandi)** — `EnergyMeasureResult`ga (`packages/types/src/measures.ts`)
+`standardizedCashflow`/`actualCashflow: CashflowYear[]` qo'shildi; `audit.engine.ts`
+`calculateFinancialIndicators()`dan hozir `cashflow`ni ham destructure qilib shu maydonlarga
+yozadi (yangi hisob-kitob yo'q — funksiya buni allaqachon qaytargan, faqat tashlab
+yuborilayotgan edi). Tekshirildi: `bun run type-check` (butun repo, `@yres/web` ham), `bunx
+biome lint`, `bun run test` — 55/55 unit test toza (integratsiya testlari kutilganidek
+`ECONNREFUSED`).

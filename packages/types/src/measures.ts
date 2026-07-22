@@ -1,4 +1,4 @@
-import type { FinancialIndicators } from "./financial";
+import type { CashflowYear, FinancialIndicators } from "./financial";
 
 export type MeasureCategory =
   | "envelope_wall_insulation"
@@ -47,4 +47,8 @@ export interface EnergyMeasureResult {
   proposedForImplementation: boolean;
   standardized: FinancialIndicators;
   actual: FinancialIndicators;
+  /** Year-by-year cashflow backing `standardized`'s NPV/IRR — year 0 is the investment year. */
+  standardizedCashflow: CashflowYear[];
+  /** Year-by-year cashflow backing `actual`'s NPV/IRR. */
+  actualCashflow: CashflowYear[];
 }
