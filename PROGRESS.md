@@ -947,3 +947,76 @@ binolar=0, grafik "Ko'rsatish uchun ma'lumot yo'q", jadval "Filtrga mos bino top
 to'g'ri ishlashi tasdiqlandi. Test uchun kiritilgan status/deadline qiymatlari tekshiruvdan so'ng
 `not_started`/`null`ga qaytarildi (haqiqiy bino yozuvini test ma'lumoti bilan ifloslantirmaslik
 uchun). `.claude/rules/dashboard.md` yozildi, `CLAUDE.md`ning qoidalar jadvaliga qo'shildi.
+
+## 3-DMTT: qobiq tiklandi, chora-tadbirlar uchun "keyingi" (after) stsenariy ma'lumotlari kiritildi
+
+Foydalanuvchi: chora-tadbir tejamkorligi energiya balansidan (oldingi − keyingi) shakllanishi,
+narxga ko'paytirilib daromad chiqishi, investitsiya aniq bo'lishi kerak. Tekshirilganda bu
+mexanizm `audit.engine.ts`da allaqachon to'g'ri yozilgan ekan (`resolveMeasureStandardizedSavingsKwh()`,
+`inferCarrierForMeasure()`) — muammo faqat ma'lumotda edi: (1) qobiq ma'lumotlari sababsiz
+yo'qolib qolgan edi (1 ta standart "Main block", 0 konstruksiya/ochilish turi, 0 element), (2)
+"keyingi" stsenariy qatorlari umuman kiritilmagan edi.
+
+**Qobiq (before) tiklandi** — `docs/3-DMTT v5.xlsx`ning `Envelope` varag'idan qayta o'qib
+kiritildi: 3 blok (A/B/C, `Envelope!84-86`), 4 konstruksiya turi (W1/Socle1-unheated/R1/F1,
+qatlamlari `U-values` varag'idan — masalan W1: ichki suvoq 2mm + kengaytirilgan gil-beton 10mm +
+g'isht 380mm + kengaytirilgan gil-beton 10mm, U=1.375), 6 ochilish turi (Win1/2/3, D1/2/3), 30
+qobiq elementi (P1-P14 devor+sokl juftlari + tom + pol).
+
+**Nozik jihat — oyna/eshik maydoni**: Excel'da "Win3" nomli oyna turi turli qatorlarda turli
+o'lchamlarda uchraydi (masalan 1.2×1.8=2.16m² va 1.9×1.8=3.42m² bir xil "Win3" nomi ostida) —
+sxemamiz esa bitta ochilish turiga bitta o'lcham beradi. Yechim: `widthM=1`,
+`heightM`="maydon-vazn o'rtachasi" (jami maydon ÷ jami dona), shunda `soni×kenglik×balandlik`
+har doim jami maydonni aynan takrorlaydi (256.62m² oyna, 61.43m² eshik — `Envelope!row71` bilan
+tasdiqlangan), U-qiymat esa Win3/D1'ning haqiqiy qiymati bo'lib qoladi (barcha nolmas-maydonli
+oyna/eshik aynan Win3/D1 bo'lgani uchun aniq, taxminiy emas). Excel'ning 2 ta "overflow" qatori
+(row6, row42 — oldingi qatorning davomi, element nomi bo'sh) alohida topilib oldingi qatorga
+qo'shildi (`check-overflow.mjs` bilan tekshirildi) — busiz jami maydon 234.26m² chiqib, 22.36m²
+kam bo'lardi.
+
+**"Keyingi" (after) ma'lumotlar kiritildi** — `GET /measures`dan tasdiqlangan taklif qilingan 9
+toifa: `envelope_wall_insulation, window_replacement, envelope_roof_insulation, heating_system,
+gas_boiler_replacement, equipment_replacement, pv, solar_dhw, ems` (floor_insulation,
+mechanical_ventilation_heat_recovery, lighting taklif qilinmagan — kiritilmadi):
+- `construction_type` (`after`): W1-after (U=0.295, +100mm mineral wool + ruberoid + tashqi
+  suvoq), Socle1u-after (U=0.314), R1-after (U=0.311, +150mm Polistirolbeton) — hammasi
+  `U-values` varag'idan.
+- `opening_type` (`after`): Win4 (U=1.5), D4 (U=1.8) — `Envelope!row95-96`.
+- `distribution_system` (`after`, heating): `insulatedFraction=1` (`Heat distr. efficiency!
+  row16`, tejamkorlik 28166.4 kWh/y — Excel bilan aynan mos).
+- `generation_source` (`after`, heating/gas_boiler): `efficiencyOrSeer=0.97`
+  (`Overall gener. & distrib. eff.!row7`, oldingi 0.58).
+- `equipment_item` (`after`): bitta sintetik yig'indi qator (`7927.169` kWh/y, `Equipment!row100`)
+  — 11 ta qurilmani alohida oldin/keyin qayta modellashtirish o'rniga soddalashtirish, izohda
+  belgilangan (natijaviy audit tejamkorligi Excel'ning o'z "savings=5953.396" qiymatidan farq
+  qiladi — mavjud "before" qatorlaridagi umumiy summaning Excel bilan mos kelishi tekshirilmadi,
+  keyingi sessiya uchun qayd etilsin).
+- `renewable_system` + oylik ishlab chiqarish: PV (10kW, `PV!row12-23` 12 oylik qiymat, jami
+  15607.42 kWh — aynan mos), Solar DHW (jami 7927.8 kWh — Excel oylik taqsimotni bermagani
+  uchun PV'ning oylik nisbati bilan proportsional taqsimlandi, faqat yillik jami aniq;
+  `renewable.service.ts` faqat jami qiymatni ishlatadi, oylik taqsimot audit natijasiga
+  ta'sir qilmaydi).
+
+**⚠️ Topilgan haqiqiy kod bo'shlig'i (tuzatilmadi — bu ma'lumot kiritish, kod o'zgarishi emas)**:
+`PUT /api/buildings/:id/envelope`ning `constructionTypeInputSchema`sida `retrofitOfId`ni
+o'rnatish uchun **hech qanday maydon yo'q** (`apps/api/src/schemas/envelope.ts`), garchi
+`envelope.service.ts`ning `resolveHeatLossGroups()` funksiyasi "keyingi" stsenariy uchun
+devor/tom/sokl issiqlik yo'qotishini aynan shu maydon orqali (`retrofitOfId` — qaysi "oldingi"
+turga tegishli ekanligi) hisoblasa ham. Natijada `envelope_wall_insulation` va
+`envelope_roof_insulation` uchun `standardizedAnnualSavingsKwh` **doim 0 bo'lib qoladi**,
+W1-after/R1-after/Socle1u-after qatorlari kiritilgan bo'lsa ham — ular hech qachon o'zining
+"oldingi" turiga bog'lanmaydi. Oyna/eshik (`opening_type`) va boshqa tizimlar bunday muammoga
+duch kelmaydi, chunki ularning "keyingi" holati faqat toifa (`category`) bo'yicha aniqlanadi,
+`retrofitOfId`siz. **Tuzatish uchun**: `constructionTypeInputSchema`ga `retrofitOfCode: z.string
+().optional()` (envelope elementlarning `constructionTypeCode` andozasiga o'xshab) qo'shish va
+`routes/envelope.ts`da shu kodni `constructionTypeIdByCode` xaritasi orqali haqiqiy ID'ga
+o'girib, insert paytida `retrofitOfId` sifatida yozish kerak.
+
+**Tekshirildi**: `POST /audit/run` muvaffaqiyatli (`status: completed`). Oldin
+`potentialEnergyUseKwhPerM2Year=0` edi, endi **137.39 kWh/m²/yil**. Ishlagan chora-tadbirlar:
+`window_replacement` 22,210 kWh/$486, `heating_system` 28,166 kWh/$617 (Excel bilan aynan mos),
+`gas_boiler_replacement` 461,488 kWh/$10,107, `equipment_replacement` 13,724 kWh/$1,256, `pv`
+15,607 kWh/$1,428 (aynan mos), `solar_dhw` 7,928 kWh/$174 (aynan mos), `ems` 10,262 kWh/$225.
+Yuqoridagi kod bo'shlig'i sababli `envelope_wall_insulation` va `envelope_roof_insulation` hamon
+0 kWh/0 $ ko'rsatadi — bu keyingi sessiyada `retrofitOfCode` maydonini qo'shish bilan
+tuzatilishi kerak.
