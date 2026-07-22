@@ -1,4 +1,4 @@
-import type { BuildingType } from "@yres/types";
+import type { BuildingStatus, BuildingType } from "@yres/types";
 import {
   Input,
   Label,
@@ -11,7 +11,12 @@ import {
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import type { Building, ClimateRegion, CreateBuildingInput } from "../../lib/api-types";
-import { BUILDING_TYPES, BUILDING_TYPE_LABELS } from "../../lib/labels";
+import {
+  BUILDING_STATUS_TRANSLATION_KEYS,
+  BUILDING_STATUSES,
+  BUILDING_TYPES,
+  BUILDING_TYPE_LABELS,
+} from "../../lib/labels";
 
 export interface BuildingFormValues {
   name: string;
@@ -19,6 +24,8 @@ export interface BuildingFormValues {
   climateRegionId: string;
   buildingType: BuildingType;
   yearBuilt: string;
+  status: BuildingStatus;
+  deadline: string;
   netCooledFloorAreaM2: string;
   heatingSeasonDurationDays: string;
   indoorTempNonOperationC: string;
@@ -44,6 +51,8 @@ export const DEFAULT_BUILDING_FORM_VALUES: BuildingFormValues = {
   climateRegionId: "",
   buildingType: "other",
   yearBuilt: "",
+  status: "not_started",
+  deadline: "",
   netCooledFloorAreaM2: "",
   heatingSeasonDurationDays: "163",
   indoorTempNonOperationC: "14",
@@ -65,6 +74,8 @@ export function buildingToFormValues(building: Building): BuildingFormValues {
     climateRegionId: building.climateRegionId,
     buildingType: building.buildingType,
     yearBuilt: building.yearBuilt !== null ? String(building.yearBuilt) : "",
+    status: building.status,
+    deadline: building.deadline ?? "",
     netCooledFloorAreaM2:
       building.netCooledFloorAreaM2 !== null ? String(building.netCooledFloorAreaM2) : "",
     heatingSeasonDurationDays: String(building.heatingSeasonDurationDays),
@@ -227,6 +238,8 @@ export function parseBuildingFormValues(
       climateRegionId: values.climateRegionId,
       buildingType: values.buildingType,
       yearBuilt: yearBuilt ?? null,
+      status: values.status,
+      deadline: values.deadline.trim() || null,
       netCooledFloorAreaM2: netCooledFloorAreaM2 ?? null,
       heatingSeasonDurationDays,
       indoorTempNonOperationC,
@@ -364,6 +377,30 @@ export function BuildingFormFields({
               type="number"
               value={values.occupantCount}
               onChange={(e) => set("occupantCount", e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={id("status")}>{t("form.status")}</Label>
+            <Select value={values.status} onValueChange={(v) => set("status", v as BuildingStatus)}>
+              <SelectTrigger id={id("status")}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {BUILDING_STATUSES.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {t(`status.${BUILDING_STATUS_TRANSLATION_KEYS[status]}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={id("deadline")}>{t("form.deadline")}</Label>
+            <Input
+              id={id("deadline")}
+              type="date"
+              value={values.deadline}
+              onChange={(e) => set("deadline", e.target.value)}
             />
           </div>
         </div>

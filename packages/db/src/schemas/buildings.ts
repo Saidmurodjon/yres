@@ -1,8 +1,8 @@
 import { relations } from "drizzle-orm";
-import { integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { date, integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 import { climateRegion } from "./climate";
-import { buildingTypeEnum } from "./enums";
+import { buildingStatusEnum, buildingTypeEnum } from "./enums";
 
 export const building = pgTable("building", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -16,6 +16,8 @@ export const building = pgTable("building", {
     .references(() => climateRegion.id),
   buildingType: buildingTypeEnum("building_type").notNull().default("other"),
   yearBuilt: integer("year_built"),
+  status: buildingStatusEnum("status").notNull().default("not_started"),
+  deadline: date("deadline"),
 
   // Building_data sheet
   netCooledFloorAreaM2: numeric("net_cooled_floor_area_m2", { mode: "number" }).default(0),

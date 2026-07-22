@@ -1,5 +1,5 @@
 import { building, buildingMember } from "@yres/db";
-import { eq, inArray, or } from "drizzle-orm";
+import { count, eq, inArray, or } from "drizzle-orm";
 import { Hono } from "hono";
 import { canWrite, findAccessibleBuilding, findOwnedBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
@@ -39,10 +39,25 @@ buildingRoutes.get("/", async (c) => {
       .where(eq(buildingMember.userId, user.id)),
   ]);
 
+  const buildingIds = buildings.map((b) => b.id);
+  const collaboratorCounts =
+    buildingIds.length > 0
+      ? await db
+          .select({ buildingId: buildingMember.buildingId, count: count() })
+          .from(buildingMember)
+          .where(inArray(buildingMember.buildingId, buildingIds))
+          .groupBy(buildingMember.buildingId)
+      : [];
+  const collaboratorCountByBuildingId = new Map(
+    collaboratorCounts.map((c) => [c.buildingId, c.count]),
+  );
+
   const roleByBuildingId = new Map(memberships.map((m) => [m.buildingId, m.role]));
   const buildingsWithRole = buildings.map((b) => ({
     ...b,
     role: b.userId === user.id ? ("owner" as const) : (roleByBuildingId.get(b.id) ?? "viewer"),
+    // The owner is never a `buildingMember` row (see that table's comment), so +1 accounts for them.
+    collaboratorCount: (collaboratorCountByBuildingId.get(b.id) ?? 0) + 1,
   }));
 
   return c.json({

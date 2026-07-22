@@ -5,7 +5,25 @@
   "failedToLoad": "Не удалось загрузить здания",
   "totalBuildings": "Всего зданий",
   "totalFloorArea": "Общая площадь (м²)",
-  "recentBuildings": "Недавние здания",
+  "recentBuildings": "Здания",
   "noBuildingsYet": "Пока нет зданий",
-  "noBuildingsDescription": "Добавьте своё первое здание, чтобы начать отслеживать его ограждающие конструкции, потребление и меры по энергоэффективности."
+  "noBuildingsDescription": "Добавьте своё первое здание, чтобы начать отслеживать его ограждающие конструкции, потребление и меры по энергоэффективности.",
+  "columnName": "Название",
+  "columnLocation": "Адрес",
+  "columnStatus": "Статус",
+  "columnAuditors": "Аудиторы",
+  "columnStarted": "Начато",
+  "columnDeadline": "Срок",
+  "overdueBadge": "Просрочено",
+  "filters": {
+    "searchPlaceholder": "Поиск по названию или адресу...",
+    "allTypes": "Все типы",
+    "allStatuses": "Все статусы",
+    "allRegions": "Все регионы",
+    "noMatch": "Нет зданий, соответствующих фильтру."
+  },
+  "regionChart": {
+    "title": "Здания по регионам",
+    "noData": "Нет данных для отображения."
+  }
 }

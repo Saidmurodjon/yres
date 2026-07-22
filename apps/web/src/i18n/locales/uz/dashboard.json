@@ -5,7 +5,25 @@
   "failedToLoad": "Binolarni yuklab bo'lmadi",
   "totalBuildings": "Jami binolar",
   "totalFloorArea": "Jami qavat maydoni (m²)",
-  "recentBuildings": "So'nggi binolar",
+  "recentBuildings": "Binolar",
   "noBuildingsYet": "Hali binolar yo'q",
-  "noBuildingsDescription": "Qobiq, iste'mol va energiya-tejamkor chora-tadbirlarni kuzatishni boshlash uchun birinchi binongizni qo'shing."
+  "noBuildingsDescription": "Qobiq, iste'mol va energiya-tejamkor chora-tadbirlarni kuzatishni boshlash uchun birinchi binongizni qo'shing.",
+  "columnName": "Nomi",
+  "columnLocation": "Manzil",
+  "columnStatus": "Status",
+  "columnAuditors": "Auditorlar",
+  "columnStarted": "Boshlangan",
+  "columnDeadline": "Muddat",
+  "overdueBadge": "Muddati o'tgan",
+  "filters": {
+    "searchPlaceholder": "Nomi yoki manzili bo'yicha qidirish...",
+    "allTypes": "Barcha turlar",
+    "allStatuses": "Barcha statuslar",
+    "allRegions": "Barcha hududlar",
+    "noMatch": "Filtrga mos bino topilmadi."
+  },
+  "regionChart": {
+    "title": "Hududlar bo'yicha binolar",
+    "noData": "Ko'rsatish uchun ma'lumot yo'q."
+  }
 }

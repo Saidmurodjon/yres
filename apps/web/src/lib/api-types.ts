@@ -1,4 +1,4 @@
-import type { BuildingType, Orientation, Scenario } from "@yres/types";
+import type { BuildingStatus, BuildingType, Orientation, Scenario } from "@yres/types";
 import type { UserRole } from "./auth-types";
 
 export interface UserProfile {
@@ -113,6 +113,8 @@ export interface Building {
   climateRegionId: string;
   buildingType: BuildingType;
   yearBuilt: number | null;
+  status: BuildingStatus;
+  deadline: string | null;
   netCooledFloorAreaM2: number | null;
   heatingSeasonDurationDays: number;
   indoorTempNonOperationC: number;
@@ -137,6 +139,7 @@ export type BuildingRole = "owner" | "editor" | "viewer";
 
 export interface BuildingWithRole extends Building {
   role: BuildingRole;
+  collaboratorCount: number;
 }
 
 export interface BuildingMember {

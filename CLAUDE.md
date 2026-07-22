@@ -28,6 +28,7 @@ bir marta haqiqiy production bug'iga sabab bo'lgan va kodni sovuq holda o'qishda
 | `social-features.md` | Navbar/rollar/profil/bildirishnoma/chat tashabbusi — `user.role`ning endi haqiqiy ekanligi, username backfill, Durable Objects arxitekturasi (to'liq dizayn: `docs/social-features.md`) |
 | `realtime.md` | Durable Objects/WebSocket nozik jihatlari — `serializeAttachment` vs xotiradagi holat, `getWebSockets()` orqali broadcast, RPC metodlar, Vitest'ning `cloudflare:workers` shim'i |
 | `ui-guidelines.md` | Platforma bo'ylab dizayn/responsive/state-boshqaruv/unumdorlik qoidalari — Zustand vs TanStack Query chegarasi (to'liq qoidalar: `docs/ui-guidelines.md`) |
+| `dashboard.md` | Dashboard sahifasi — `pageSize: 100` cheklovi, client-side filtr/grafik, `building.status`/`deadline`ning `audit_run`dan mustaqilligi, `collaboratorCount` qayerdan kelishi |
 | `i18n-and-appearance.md` | uz/ru/en ko'p tillilik (`react-i18next`) va kun/tun rejimi — rus ko'plik shakllari, localStorage-asoslangan sozlamalar (to'liq dizayn: `docs/i18n-and-appearance.md`) |
 
 ## Til

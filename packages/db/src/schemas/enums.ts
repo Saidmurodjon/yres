@@ -13,6 +13,19 @@ export const buildingTypeEnum = pgEnum("building_type", [
   "other",
 ]);
 
+/**
+ * Manually-set project-tracking status for a building's audit work —
+ * independent of `auditRunStatusEnum` below, which tracks a single
+ * calculation run's pending/running/completed/failed lifecycle, not the
+ * building's overall progress.
+ */
+export const buildingStatusEnum = pgEnum("building_status", [
+  "not_started",
+  "in_progress",
+  "completed",
+  "on_hold",
+]);
+
 export const orientationEnum = pgEnum("orientation", [
   "north",
   "south",

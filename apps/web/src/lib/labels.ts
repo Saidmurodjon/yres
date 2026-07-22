@@ -1,5 +1,12 @@
-import type { BuildingType, EndUse, EnvelopeElementCategory, Orientation } from "@yres/types";
 import type {
+  BuildingStatus,
+  BuildingType,
+  EndUse,
+  EnvelopeElementCategory,
+  Orientation,
+} from "@yres/types";
+import type {
+  Building,
   DistributionSystemType,
   EnergyCarrier,
   GenerationSourceType,
@@ -27,6 +34,29 @@ export const BUILDING_TYPE_LABELS: Record<BuildingType, string> = {
 };
 
 export const BUILDING_TYPES = Object.keys(BUILDING_TYPE_LABELS) as BuildingType[];
+
+// Unlike BUILDING_TYPE_LABELS above, status text is localized via t("buildings:status.*")
+// rather than hardcoded here — this is a new field with no legacy baggage to match.
+export const BUILDING_STATUSES: BuildingStatus[] = [
+  "not_started",
+  "in_progress",
+  "completed",
+  "on_hold",
+];
+
+// Maps the snake_case enum value to the camelCase key used under the
+// "buildings:status.*" i18next namespace (e.g. "in_progress" -> "inProgress").
+export const BUILDING_STATUS_TRANSLATION_KEYS: Record<BuildingStatus, string> = {
+  not_started: "notStarted",
+  in_progress: "inProgress",
+  completed: "completed",
+  on_hold: "onHold",
+};
+
+export function isBuildingOverdue(building: Pick<Building, "status" | "deadline">): boolean {
+  if (!building.deadline || building.status === "completed") return false;
+  return new Date(building.deadline) < new Date();
+}
 
 export const ORIENTATION_LABELS: Record<Orientation, string> = {
   north: "North",

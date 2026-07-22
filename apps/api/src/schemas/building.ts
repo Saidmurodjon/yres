@@ -1,4 +1,4 @@
-import { buildingTypeEnum } from "@yres/db";
+import { buildingStatusEnum, buildingTypeEnum } from "@yres/db";
 import { z } from "zod";
 
 export const createBuildingSchema = z.object({
@@ -7,6 +7,12 @@ export const createBuildingSchema = z.object({
   climateRegionId: z.string().uuid(),
   buildingType: z.enum(buildingTypeEnum.enumValues).optional(),
   yearBuilt: z.number().int().nullable().optional(),
+  status: z.enum(buildingStatusEnum.enumValues).optional(),
+  deadline: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .optional(),
 
   netCooledFloorAreaM2: z.number().nonnegative().optional(),
   heatingSeasonDurationDays: z.number().int().nonnegative(),

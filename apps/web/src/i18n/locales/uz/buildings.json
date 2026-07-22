@@ -55,6 +55,8 @@
     "yearBuilt": "Qurilgan yili",
     "floorArea": "Sof sovutiladigan qavat maydoni (m²)",
     "occupantCount": "Foydalanuvchilar soni",
+    "status": "Loyiha holati",
+    "deadline": "Muddat",
     "heatingSeasonConfig": "Isitish mavsumi sozlamalari",
     "heatingSeasonDuration": "Isitish mavsumi davomiyligi (kun) *",
     "avgOutdoorTemp": "O'rtacha tashqi harorat, isitish mavsumi (°C) *",
@@ -152,5 +154,11 @@
     "inviteFailed": "Bu shaxsni taklif qilib bo'lmadi.",
     "roleChangeFailed": "Rolni o'zgartirib bo'lmadi.",
     "removeFailed": "Bu shaxsni o'chirib bo'lmadi."
+  },
+  "status": {
+    "notStarted": "Boshlanmagan",
+    "inProgress": "Jarayonda",
+    "completed": "Tugallangan",
+    "onHold": "To'xtatilgan"
   }
 }

@@ -55,6 +55,8 @@
     "yearBuilt": "Year built",
     "floorArea": "Net cooled floor area (m²)",
     "occupantCount": "Occupant count",
+    "status": "Project status",
+    "deadline": "Deadline",
     "heatingSeasonConfig": "Heating season configuration",
     "heatingSeasonDuration": "Heating season duration (days) *",
     "avgOutdoorTemp": "Avg. outdoor temp, heating season (°C) *",
@@ -152,5 +154,11 @@
     "inviteFailed": "Failed to invite that person.",
     "roleChangeFailed": "Failed to change role.",
     "removeFailed": "Failed to remove that person."
+  },
+  "status": {
+    "notStarted": "Not started",
+    "inProgress": "In progress",
+    "completed": "Completed",
+    "onHold": "On hold"
   }
 }

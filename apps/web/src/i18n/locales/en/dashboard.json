@@ -5,7 +5,25 @@
   "failedToLoad": "Failed to load buildings",
   "totalBuildings": "Total Buildings",
   "totalFloorArea": "Total Floor Area (m²)",
-  "recentBuildings": "Recent buildings",
+  "recentBuildings": "Buildings",
   "noBuildingsYet": "No buildings yet",
-  "noBuildingsDescription": "Add your first building to start tracking its envelope, consumption, and energy-saving measures."
+  "noBuildingsDescription": "Add your first building to start tracking its envelope, consumption, and energy-saving measures.",
+  "columnName": "Name",
+  "columnLocation": "Location",
+  "columnStatus": "Status",
+  "columnAuditors": "Auditors",
+  "columnStarted": "Started",
+  "columnDeadline": "Deadline",
+  "overdueBadge": "Overdue",
+  "filters": {
+    "searchPlaceholder": "Search by name or location...",
+    "allTypes": "All types",
+    "allStatuses": "All statuses",
+    "allRegions": "All regions",
+    "noMatch": "No buildings match the filter."
+  },
+  "regionChart": {
+    "title": "Buildings by region",
+    "noData": "No data to display."
+  }
 }

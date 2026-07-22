@@ -835,3 +835,53 @@ holatga o'tdi va `localStorage.getItem("yres-sidebar-collapsed")` `"1"`ga yozild
 bosilganda `"0"`ga qaytdi); collapsed holatda nav icon'ga hover qilinganda "Binolar" tooltip'i
 chiqdi; toggle tugmasiga real hover qilingandan keyin `getComputedStyle(btn).backgroundColor`
 `rgba(0, 0, 0, 0)` (shaffof) ekanligi tasdiqlandi.
+
+## Dashboard: filtrlar, hududlar bo'yicha grafik, boyitilgan bino ma'lumoti
+
+Foydalanuvchi: "dashboarda bo'lishi kerak, filter, binolar hududlar bo'yicha grafik, binolar
+haqidagi umumiy malumotda nomi, manzili, statusi, auditorlar soni, boshlangan sanasi, deadline,
+shunga o'xshash muhim ma'lumotlar bo'lishi kerak" — mavjud Dashboard faqat 2 ta metrika va
+so'nggi 5 ta binoning yalang'och ro'yxatini ko'rsatardi. Tekshirilgandan so'ng ma'lum bo'ldiki
+`building` jadvalida status ham, deadline ham yo'q edi — Plan mode orqali foydalanuvchi bilan
+ikkita savol aniqlashtirildi: (1) status — audit_run'ning hisoblash holatidan mustaqil, qo'lda
+belgilanadigan loyiha holati (yangi ustun); (2) deadline — bino darajasida ixtiyoriy sana,
+muddati o'tgan+tugallanmagan binolar qizil belgi bilan ajratiladi.
+
+**Sxema** (`packages/db`): yangi `buildingStatusEnum` (`not_started`/`in_progress`/`completed`/
+`on_hold`, `enums.ts`), `building`ga `status` (notNull, default `not_started`) va `deadline`
+(`date`, ixtiyoriy) ustunlari. Migratsiya `bun run db:generate` bilan hosil qilindi
+(`0005_bumpy_veda.sql`), haqiqiy Neon'ga `drizzle-kit migrate` bilan muvaffaqiyatli qo'llandi
+(bu safar osilib qolmadi — `database.md`dagi fallback kerak bo'lmadi), `information_schema`
+so'rovi bilan ustunlar borligi tasdiqlandi.
+
+**Backend**: `schemas/building.ts`ga `status`/`deadline` (ikkalasi ham optional) qo'shildi.
+`routes/buildings.ts` GET `/` endi har bino uchun **`collaboratorCount`**ni ham qaytaradi —
+qo'shimcha guruhlangan `buildingMember` so'rovi (`count()` + `groupBy`) + har doim `+1` (bino
+egasi hech qachon `buildingMember` qatori bo'lmagani uchun).
+
+**Frontend**: `packages/types`ga `BuildingStatus` turi; `api-types.ts`ning `Building`/
+`BuildingWithRole`i yangilandi; `labels.ts`ga `BUILDING_STATUSES`, `BUILDING_STATUS_TRANSLATION_KEYS`
+(snake_case→camelCase i18n kalit xaritasi — `BUILDING_TYPE_LABELS`dan farqli, matn to'g'ridan-to'g'ri
+emas, `t("buildings:status.*")` orqali lokalizatsiya qilinadi), `isBuildingOverdue()`. Bino
+formasiga (`building-form-fields.tsx`, ham `new.tsx`, ham `edit-building-dialog.tsx` tomonidan
+ishlatiladi) Status `Select` va Deadline `<input type="date">` qo'shildi.
+
+**Dashboard sahifasi** to'liq qayta qurildi: qidiruv+tur+status+hudud filtrlari (barchasi
+client-side `useMemo`, `hudud` — mavjud erkin-matn `location`ning noyob qiymatlari); metrika
+kartalari endi filtrlangan to'plamdan; yangi **hududlar bo'yicha grafik** (`dataviz` skill —
+bitta seriya→bitta rang `CHART_COLORS.primary`, legend shart emas, mavjud `results.tsx`dagi
+`BarChart`+`ChartTooltip` andozasi); "So'nggi binolar" (5 tasi) o'rniga **barcha filtrlangan
+binolar** jadvalda — ustunlar Nomi/Manzil/Status(`Badge`, `not_started`→secondary/`in_progress`→
+warning/`completed`→success/`on_hold`→outline)/Auditorlar/Boshlangan/Muddat(+`destructive`
+"Muddati o'tgan" belgisi).
+
+**Tekshirildi**: `bun run type-check`, `bun run build`, `bunx biome lint` toza (barcha 5
+workspace). Brauzerda (`3-DMTT` binosi): edit dialogida Status="Jarayonda"+Deadline="2026-06-01"
+saqlangandan keyin `GET /api/buildings/:id` orqali backend'da to'g'ri saqlanganini (avvalgi bir
+urinish HMR-buzilgan sahifa holati sababli saqlanmagandek ko'ringan edi — sahifani to'liq qayta
+yuklab tuzatildi) tasdiqlandi; Dashboard'da status badge (amber "Jarayonda") + qizil "Muddati
+o'tgan" belgisi + Auditorlar=2 to'g'ri chiqdi; status filtrini "Tugallangan"ga o'zgartirib Jami
+binolar=0, grafik "Ko'rsatish uchun ma'lumot yo'q", jadval "Filtrga mos bino topilmadi" holatlari
+to'g'ri ishlashi tasdiqlandi. Test uchun kiritilgan status/deadline qiymatlari tekshiruvdan so'ng
+`not_started`/`null`ga qaytarildi (haqiqiy bino yozuvini test ma'lumoti bilan ifloslantirmaslik
+uchun). `.claude/rules/dashboard.md` yozildi, `CLAUDE.md`ning qoidalar jadvaliga qo'shildi.
