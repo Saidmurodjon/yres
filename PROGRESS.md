@@ -1148,3 +1148,15 @@ Smoke-test qayta ishlatildi (ikkinchi, taklif qilinmagan chora-tadbir qo'shilgan
 `bun run type-check` (butun repo), `bunx biome lint`, `bun run test tests/services` (55/55),
 qo'lda smoke-test (ikki chora-tadbirli, bittasi taklif qilinmagan) — xatosiz, `%PDF` bilan
 boshlanadi.
+
+**6-bosqich (tugallandi)** — Hisobot oxiriga "Annex 2: Detailed calculations" bo'limi
+qo'shildi: qobiq issiqlik yo'qotishi (`envelopeHeatLoss[].monthly`), ventilyatsiya yo'qotishi
+(`ventilationLoss[].monthly`), issiqlik balansi (`heatingEnergyBalance[].monthly`) — har biri
+oldin/keyin stsenariysi bo'yicha alohida oylik jadval. Hech qanday yangi hisob-kitob yo'q —
+`AuditResult`da allaqachon mavjud, faqat hech qayerda ko'rsatilmagan massivlar jadvalga
+chiqarildi (`hisobot.md`ning Annex-2 bo'shlig'i shu bilan yopildi). Bu bilan `hisobot.md`da
+belgilangan barcha ~12 bo'shliq yopildi.
+
+Smoke-test to'liq oylik massivlar (`monthly: [...]`, 12 oy × har bir manba) bilan qayta
+ishlatildi — 22KB'lik PDF, xatosiz. Tekshirildi: `bun run type-check` (butun repo), `bunx
+biome lint`, `bun run test tests/services` (55/55).

@@ -728,5 +728,65 @@ export async function generateAuditReportPdf(
     );
   }
 
+  // Annex 2: the monthly/category detail behind the annual figures shown
+  // above — already computed by AuditResult but never rendered anywhere.
+  // For the auditor to verify calculations, not the primary reading path,
+  // so it's kept at the end (hisobot.md's Annex 2).
+  layout.heading("Annex 2: Detailed calculations");
+
+  if (result.envelopeHeatLoss.length > 0) {
+    layout.paragraph("Envelope heat loss — monthly, by category");
+    for (const scenarioResult of result.envelopeHeatLoss) {
+      layout.paragraph(scenarioResult.scenario === "before" ? "Before" : "After");
+      layout.table(
+        ["Month", "Category", "Operation hrs (kWh)", "Non-op. hrs (kWh)", "Total (kWh)"],
+        scenarioResult.monthly.map((m) => [
+          MONTH_NAMES[m.month - 1] ?? String(m.month),
+          m.category.replace(/_/g, " "),
+          fmt(m.operationHoursLossKwh, 0),
+          fmt(m.nonOperationHoursLossKwh, 0),
+          fmt(m.totalKwh, 0),
+        ]),
+        [70, 150, 100, 100, 80],
+      );
+    }
+  }
+
+  if (result.ventilationLoss.length > 0) {
+    layout.paragraph("Ventilation heat loss — monthly");
+    for (const scenarioResult of result.ventilationLoss) {
+      layout.paragraph(scenarioResult.scenario === "before" ? "Before" : "After");
+      layout.table(
+        ["Month", "Natural (kWh)", "Mechanical (kWh)", "Total (kWh)"],
+        scenarioResult.monthly.map((m) => [
+          MONTH_NAMES[m.month - 1] ?? String(m.month),
+          fmt(m.naturalLossKwh, 0),
+          fmt(m.mechanicalLossKwh, 0),
+          fmt(m.totalKwh, 0),
+        ]),
+        [100, 130, 130, 100],
+      );
+    }
+  }
+
+  if (result.heatingEnergyBalance.length > 0) {
+    layout.paragraph("Heating energy balance — monthly");
+    for (const scenarioResult of result.heatingEnergyBalance) {
+      layout.paragraph(scenarioResult.scenario === "before" ? "Before" : "After");
+      layout.table(
+        ["Month", "Outdoor (°C)", "Gains (kWh)", "Losses (kWh)", "Util. factor", "Net need (kWh)"],
+        scenarioResult.monthly.map((m) => [
+          MONTH_NAMES[m.month - 1] ?? String(m.month),
+          fmt(m.outdoorTempC, 1),
+          fmt(m.totalGainsKwh, 0),
+          fmt(m.totalLossesKwh, 0),
+          fmt(m.utilizationFactor, 2),
+          fmt(m.netEnergyNeedKwh, 0),
+        ]),
+        [70, 80, 90, 90, 80, 90],
+      );
+    }
+  }
+
   return layout.toBytes();
 }
