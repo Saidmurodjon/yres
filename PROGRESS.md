@@ -538,6 +538,68 @@ Kelajakda: bino allaqachon batafsil ma'lumotga ega bo'lsa, tugma to'g'ridan-to'g
 Lokal dev serverlari (`apps/api` port 3000, `apps/web` port 5173) shu sessiya oxirida ishlab
 turibdi — keyingi tekshiruv uchun to'xtatilmadi.
 
+## `3-DMTT` ma'lumotini to'ldirish o'tishi (dastlabki kiritishdan keyingi bo'shliqlarni yopish)
+
+Foydalanuvchi "exceldagi ma'lumotlari 3-DMTT ga kiritilsin" deb qayta so'raganda, avval haqiqiy
+bazadagi holat tekshirildi — dastlabki kiritish to'liq emas ekan, va oraliqda qilingan UI
+sinovlaridan (paste-test'lar, sidebar/dashboard tekshiruvlari) qolgan sintetik test-qatorlar ham
+bor edi. Hammasi manba `docs/3-DMTT v5.xlsx`ga qarshi qatorma-qator solishtirilib to'g'irlandi:
+
+- **Iste'mol (`Consumption` varag'i) — asosiy bo'shliq**: bazada faqat 20 ta hisob-faktura bor
+  edi (gaz 17, elektr 3), Excel esa 3 yil (2023/2024/2025) × 12 oy × 2 tashuvchi = **72 ta**
+  to'liq qator beradi (`GAS` bloki qator 4-19, `Electrical Energy` bloki qator 22-37). Yetishmagan
+  hammasi (gaz 2023 to'liq + 2024-yilning iyun-dekabr, elektr 2023/2024/2025 to'liq) `PUT
+  .../consumption` orqali (tashuvchi+yil bo'yicha to'liq 12 oylik almashtirish) qo'shildi.
+  Shuningdek bazada **oldingi sinovlardan qolgan 3 ta soxta elektr-2026 qatori** (native
+  120/100/100 — synthetic paste-test qiymatlari) va **13 ta soxta district_heat qatori** (native
+  10/11/12/13/14 va 5/6/7/8/9/10/11/8 — xuddi shu sintetik naqsh) topildi va o'chirildi: Excel'ning
+  "Energie Termică" bloki (qator 40-55) **butunlay bo'sh** — bu bino markazlashgan issiqlikdan
+  foydalanmaydi, shuning uchun `district_heat` uchun 0 ta qator to'g'ri natija, ko'mir uchun
+  Consumption varag'ida umuman blok yo'q (to'g'ri — bino ko'mir ishlatmaydi).
+- **`netCooledFloorAreaM2` = 0 edi — haqiqiy bo'shliq, ataylab qoldirilgan soddalashtirish
+  emas** (asl kiritish yozuvida bu maydon "ma'lum bo'shliqlar" ro'yxatida umuman qayd etilmagan
+  — original o'tishda tushirib qoldirilgan). Excel'ning `Envelope!L92` ("Total" qatori, "Net
+  heated area" ustuni) **2515.415 m²** beradi (A blok 1236.24 + B blok 1236.24 + C blok 42.935)
+  — `PUT /buildings/:id` bilan to'g'rilandi. Bu Dashboard'da "Jami qavat maydoni" doim 0
+  ko'rsatib turishining haqiqiy sababi edi (avvalgi sessiyalarda bu displey-nozikligi deb
+  taxmin qilingan edi — aslida yo'q ma'lumot edi).
+- **Chora-tadbirlar (`energy_measure`) — 0 dan 11 taga**: `Measures_summary` varag'i
+  (qator 5-15) 11 ta nomzod chora-tadbirni "Investment [USD]" va "Proposed for implementation"
+  (Ha/Yo'q) bilan beradi. Barcha 11 tasi kiritildi (`POST .../measures`, kategoriyalar
+  `measureCategoryEnum`ga moslashtirildi — masalan "Thermal insulation of walls"→
+  `envelope_wall_insulation`, "Replacement of gas boiler"→`gas_boiler_replacement`), so'ng **9
+  tasi** ("Mechanical ventilation with heat recovery" va "Installation of LED lighting..." dan
+  tashqari hammasi — Excel'da bu ikkitasi "No" deb belgilangan) `POST .../measures/select`
+  orqali tanlandi. Tekshirish: tanlangan 9 ta chora-tadbirning investitsiya yig'indisi
+  ($76,138+$16,624+$15,350+$18,000+$22,770+$4,170+$7,268+$4,000+$0=**$164,320**) Excel'ning
+  o'z "Total proposed for implementation" qatoridagi $164,320 bilan **aynan** mos keldi.
+- **"Protective measures, other investments" (`non_ee_measure`) — ataylab kiritilmadi**: Excel'da
+  3 ta haqiqiy band bor (kabel almashtirish $4,000, ichki devor gipslash $5,000, quvur
+  demontaji $2,000), lekin ularning barchasi ham "Proposed for implementation" ustunida **"No"**
+  deb belgilangan (qolgan 10 ta qator — bo'sh, tavsif="0", investitsiya=$0, mazmunsiz). `apps/
+  api/src/services/audit.engine.ts`ning izohi "bu qatorlarda manba jadvalida tanlov bayrog'i
+  yo'q, shuning uchun har doim qo'shiladi" deb taxmin qiladi — bu **manba faylga nisbatan
+  noto'g'ri** (ular haqiqatan ham "No" bayrog'iga ega). Shu nomuvofiqlik sababli bu 3 bandni
+  kiritmaslikni tanladim (Excel ularni tanlanmagan deb belgilagan, kiritilsa
+  `totalInvestmentUsd`ni foydalanuvchi tanlamagan xarajat bilan shishirardi) — bu keyingi
+  ko'rib chiqish uchun ochiq qoldirilgan qaror, `audit.engine.ts`dagi izoh yangilanishi kerak
+  bo'lishi mumkin.
+- **Qobiq (`Envelope`) — qayta tekshirildi, o'zgarish kerak emas**: 3 blok (A/B/C)ning
+  footprint/qavat soni/balandlik/perimetr qiymatlari `Envelope!` qator 84-86 bilan aynan mos
+  keldi — oldingi sessiyada allaqachon to'g'ri kiritilgan edi.
+
+**Tekshirildi**: barcha o'zgarishlar haqiqiy autentifikatsiyalangan sessiya orqali
+(`saidmurodjonkhamdamov@gmail.com`, mavjud brauzer tab'i) to'g'ridan-to'g'ri API'ga
+`fetch(..., {credentials:'include'})` bilan qo'llanildi. `POST .../audit/run` xatosiz
+yakunlandi (`status: "completed"`); `AuditSummary.totalInvestmentUsd=$164,320` Excel bilan
+aynan mos keldi (yuqoriga qarang); `totalNonEeMeasureCostUsd=0` (non-EE bandlar kiritilmagani
+uchun, kutilganidek). **Diqqat**: `potentialEnergyUseKwhPerM2Year` natijada `0` chiqdi (kutilgan
+"retrofit'dan keyin kamaygan, lekin nolga teng bo'lmagan" qiymat o'rniga) — bu ma'lumot
+bo'shlig'i emas, balki hisoblash dvigateli xatti-harakatiga oid savol bo'lishi mumkin
+(masalan "after" konstruktsiya turlari qobiq elementlariga ulanmagan bo'lishi mumkin — asl
+kiritishda ataylab faqat "before" ssenariysi kiritilgan edi, yuqoriga qarang), keyingi sessiyada
+alohida tekshirilishi kerak, bu o'tishda tekshirilmadi (doira tashqarisida).
+
 ## Qobiq (Envelope) muharriri bosqichli qayta qurildi
 
 Yuqoridagi Excel-kiritish tajribasi paytida foydalanuvchi `envelope-editor-dialog.tsx`
