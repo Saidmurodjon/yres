@@ -760,3 +760,31 @@ tab-ajratilgan `paste` (`5\t6\t7\t8\t9\t10\t11\t8`) May kataklaridan boshlab qo'
 May-Dekabrgacha to'g'ri tarqalgani tasdiqlandi; Saqlab, `GET .../consumption` orqali barcha
 8 oy uchun backend hisoblagan `consumptionKwh` (masalan oy=10: 10×1163=11630) to'g'ri
 ekanligi va `POST .../audit/run` hamon xatosiz ishlashi tasdiqlandi.
+
+### Oltinchi tuzatish: vertikal (ustuvor) joylashuvga qaytish, siqiq padding, har tashuvchi uchun alohida grafik
+
+Foydalanuvchi 5-tuzatishdagi gorizontal (bir tashuvchi — bir qator, oylar ustun) joylashuvni
+qisman qaytardi: **oylik inputlar yana vertikal** bo'lsin (har tashuvchi o'z alohida
+12-qatorli ustunida), lekin **siqiq padding/margin bilan** (avvalgi vertikal versiyadagi
+kabi baland bo'lmasin). Grafik tomonida esa: har bir tashuvchi uchun **o'z birligida**
+alohida 3-yillik taqqoslash grafigi, va **eng pastida** barcha tashuvchilarni yagona
+birlikda (kVt·soat) birlashtirgan yakuniy taqqoslash grafigi.
+
+Muhim: state/saqlash/paste mantig'i (`CarrierYearRow { months, tariffLocal }`,
+`buildBillGroupsForYear`, `splitPastedValues`) o'zgarishsiz qoldi — faqat JSX render
+qismi (jadval ustuvor→vertikal) qayta yozildi, chunki holat tuzilishi allaqachon
+yo'nalishga bog'liq emas edi. `Table`ning standart `p-4` katakchasi juda baland edi —
+har bir katakka `p-1`/`h-7` kabi siqiq `className` qo'llanib, 12 qatorli ustun ancha
+ixchamlashtirildi.
+
+`consumption-comparison-chart.tsx` generik `MonthlyComparisonChart` komponentiga
+qayta ishlandi (`valueForBill` funksiyasi orqali parametrlashtirilgan) — 5 marta
+qayta ishlatiladi: 4 marta har tashuvchi uchun (`consumptionNative`, o'z birligida),
+1 marta jami uchun (`consumptionKwh`, kVt·soatda, eng pastda).
+
+**Tekshirildi**: `bun run type-check`, `bunx biome lint` toza. Brauzerda: 4 ta kichik
+vertikal ustun (Gas/Electricity/District heat/Coal) yonma-yon, har biri siqiq 12
+qatorli, pastida Tarif + jonli "Jami (kVt·soat)"; pastda 4 ta alohida-birlikdagi
+tashuvchi grafigi (Coal'da ma'lumot yo'qligi to'g'ri ko'rsatildi) + eng pastda umumiy
+kVt·soat taqqoslash grafigi. `POST .../audit/run` mavjud ma'lumot bilan hamon
+xatosiz ishlashi tasdiqlandi.

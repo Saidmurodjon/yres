@@ -14,8 +14,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
   Tabs,
   TabsContent,
@@ -30,7 +28,7 @@ import { useConsumption, useReplaceConsumption } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import type { EnergyCarrier, MonthlyBillInput, UtilityBill } from "../../lib/api-types";
 import { ENERGY_CARRIERS, ENERGY_CARRIER_LABELS, MONTH_LABELS, formatNumber } from "../../lib/labels";
-import { ConsumptionComparisonChart } from "./consumption-comparison-chart";
+import { MonthlyComparisonChart } from "./consumption-comparison-chart";
 import { type ParsedBillRow, downloadConsumptionTemplate, parseConsumptionWorkbook } from "./consumption-excel";
 import { ENERGY_CARRIER_NATIVE_UNIT_LABELS, previewConsumptionKwh } from "./consumption-units";
 
@@ -252,9 +250,9 @@ export function ConsumptionTab({
   }
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
+    <div className="space-y-4">
       {!readOnly && (
-        <Card className="lg:col-span-1">
+        <Card>
           <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
             <div>
               <CardTitle className="text-base">{t("enterMonthlyBills")}</CardTitle>
@@ -343,70 +341,69 @@ export function ConsumptionTab({
 
               {years.map((y) => (
                 <TabsContent key={y} value={String(y)}>
-                  <div className="overflow-x-auto rounded-md border border-border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="sticky left-0 bg-card">{t("columnCarrier")}</TableHead>
-                          {MONTH_LABELS.map((label) => (
-                            <TableHead key={label} className="text-center">
-                              {label.slice(0, 3)}
-                            </TableHead>
-                          ))}
-                          <TableHead>{t("columnTariff")}</TableHead>
-                          <TableHead className="text-muted-foreground">{t("columnKwhTotal")}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {ENERGY_CARRIERS.map((carrier) => {
-                          const row = gridFor(y)[carrier];
-                          const totalKwh = row.months.reduce((sum, raw) => {
-                            const value = Number(raw);
-                            return raw.trim() && !Number.isNaN(value)
-                              ? sum + previewConsumptionKwh(carrier, value)
-                              : sum;
-                          }, 0);
-                          return (
-                            <TableRow key={carrier}>
-                              <TableCell className="sticky left-0 bg-card font-medium">
-                                {ENERGY_CARRIER_LABELS[carrier]}
-                                <span className="ml-1 text-xs text-muted-foreground">
-                                  ({ENERGY_CARRIER_NATIVE_UNIT_LABELS[carrier]})
-                                </span>
-                              </TableCell>
-                              {row.months.map((value, idx) => (
-                                <TableCell key={MONTH_LABELS[idx]}>
-                                  <Input
-                                    type="number"
-                                    step="any"
-                                    className="w-16 px-1 text-center"
-                                    aria-label={t("ariaConsumption", {
-                                      month: MONTH_LABELS[idx],
-                                      carrier: ENERGY_CARRIER_LABELS[carrier],
-                                    })}
-                                    value={value}
-                                    onChange={(e) => updateMonth(y, carrier, idx, e.target.value)}
-                                    onPaste={(e) => handleMonthPaste(e, y, carrier, idx)}
-                                  />
-                                </TableCell>
-                              ))}
-                              <TableCell>
-                                <Input
-                                  type="number"
-                                  step="any"
-                                  className="w-20"
-                                  value={row.tariffLocal}
-                                  onChange={(e) => updateTariff(y, carrier, e.target.value)}
-                                />
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {totalKwh > 0 ? formatNumber(totalKwh) : "—"}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {ENERGY_CARRIERS.map((carrier) => {
+                      const row = gridFor(y)[carrier];
+                      const totalKwh = row.months.reduce((sum, raw) => {
+                        const value = Number(raw);
+                        return raw.trim() && !Number.isNaN(value)
+                          ? sum + previewConsumptionKwh(carrier, value)
+                          : sum;
+                      }, 0);
+                      return (
+                        <div key={carrier} className="overflow-hidden rounded-md border border-border">
+                          <div className="border-b border-border px-2 py-1.5 text-sm font-medium">
+                            {ENERGY_CARRIER_LABELS[carrier]}{" "}
+                            <span className="text-xs font-normal text-muted-foreground">
+                              ({ENERGY_CARRIER_NATIVE_UNIT_LABELS[carrier]})
+                            </span>
+                          </div>
+                          <Table>
+                            <TableBody>
+                              {row.months.map((value, idx) => {
+                                const monthLabel = MONTH_LABELS[idx] ?? t("monthFallback", { n: idx + 1 });
+                                return (
+                                <TableRow key={monthLabel}>
+                                  <TableCell className="w-12 p-1 pl-2 text-xs text-muted-foreground">
+                                    {monthLabel.slice(0, 3)}
+                                  </TableCell>
+                                  <TableCell className="p-1 pr-2">
+                                    <Input
+                                      type="number"
+                                      step="any"
+                                      className="h-7 px-1.5 text-sm"
+                                      aria-label={t("ariaConsumption", {
+                                        month: monthLabel,
+                                        carrier: ENERGY_CARRIER_LABELS[carrier],
+                                      })}
+                                      value={value}
+                                      onChange={(e) => updateMonth(y, carrier, idx, e.target.value)}
+                                      onPaste={(e) => handleMonthPaste(e, y, carrier, idx)}
+                                    />
+                                  </TableCell>
+                                </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                          <div className="flex items-center justify-between gap-2 border-t border-border px-2 py-1.5">
+                            <Label className="shrink-0 text-xs text-muted-foreground">
+                              {t("columnTariff")}
+                            </Label>
+                            <Input
+                              type="number"
+                              step="any"
+                              className="h-7 w-20 px-1.5 text-sm"
+                              value={row.tariffLocal}
+                              onChange={(e) => updateTariff(y, carrier, e.target.value)}
+                            />
+                          </div>
+                          <div className="border-t border-border bg-muted/30 px-2 py-1.5 text-xs text-muted-foreground">
+                            {t("columnKwhTotal")}: {totalKwh > 0 ? formatNumber(totalKwh) : "—"}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </TabsContent>
               ))}
@@ -426,17 +423,38 @@ export function ConsumptionTab({
         </Card>
       )}
 
-      <div className="lg:col-span-1">
-        {isLoading ? (
-          <Skeleton className="h-80 w-full" />
-        ) : isError ? (
-          <p className="text-sm text-destructive">
-            {t("failedToLoad")} {error instanceof ApiError ? error.message : t("common:unknownError")}
-          </p>
-        ) : (
-          <ConsumptionComparisonChart bills={bills} />
-        )}
-      </div>
+      {isLoading ? (
+        <Skeleton className="h-80 w-full" />
+      ) : isError ? (
+        <p className="text-sm text-destructive">
+          {t("failedToLoad")} {error instanceof ApiError ? error.message : t("common:unknownError")}
+        </p>
+      ) : (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {ENERGY_CARRIERS.map((carrier) => (
+              <MonthlyComparisonChart
+                key={carrier}
+                title={ENERGY_CARRIER_LABELS[carrier]}
+                bills={bills.filter((b) => b.energyCarrier === carrier)}
+                valueForBill={(b) => b.consumptionNative}
+                unitLabel={ENERGY_CARRIER_NATIVE_UNIT_LABELS[carrier]}
+                noDataLabel={t("comparisonChart.noData")}
+                height={200}
+              />
+            ))}
+          </div>
+          <MonthlyComparisonChart
+            title={t("comparisonChart.title")}
+            description={t("comparisonChart.description")}
+            bills={bills}
+            valueForBill={(b) => b.consumptionKwh ?? 0}
+            unitLabel="kVt·soat"
+            noDataLabel={t("comparisonChart.noData")}
+            height={280}
+          />
+        </>
+      )}
     </div>
   );
 }

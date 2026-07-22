@@ -4,6 +4,7 @@
   "columnCarrier": "Носитель",
   "columnTariff": "Тариф",
   "columnKwhTotal": "Итого (кВт·ч)",
+  "monthFallback": "Месяц {{n}}",
   "ariaConsumption": "{{carrier}} — потребление за {{month}}",
   "saveFailed": "Не удалось сохранить данные потребления.",
   "savedMessage": "Все введённые счета за {{year}} год сохранены.",

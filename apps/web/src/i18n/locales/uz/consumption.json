@@ -4,6 +4,7 @@
   "columnCarrier": "Tashuvchi",
   "columnTariff": "Tarif",
   "columnKwhTotal": "Jami (kVt·soat)",
+  "monthFallback": "{{n}}-oy",
   "ariaConsumption": "{{carrier}} — {{month}} iste'moli",
   "saveFailed": "Iste'mol ma'lumotlarini saqlab bo'lmadi.",
   "savedMessage": "{{year}}-yil uchun barcha kiritilgan hisob-fakturalar saqlandi.",

@@ -4,6 +4,7 @@
   "columnCarrier": "Carrier",
   "columnTariff": "Tariff",
   "columnKwhTotal": "Total (kWh)",
+  "monthFallback": "Month {{n}}",
   "ariaConsumption": "{{carrier}} — {{month}} consumption",
   "saveFailed": "Failed to save consumption data.",
   "savedMessage": "Saved all entered bills for {{year}}.",
