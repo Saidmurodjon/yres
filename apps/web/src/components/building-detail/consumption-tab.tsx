@@ -23,29 +23,31 @@ import {
   TabsTrigger,
 } from "@yres/ui";
 import { Download, Plus, Receipt, Save, Upload } from "lucide-react";
+import type { ClipboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConsumption, useReplaceConsumption } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import type { EnergyCarrier, MonthlyBillInput, UtilityBill } from "../../lib/api-types";
 import { ENERGY_CARRIERS, ENERGY_CARRIER_LABELS, MONTH_LABELS, formatNumber } from "../../lib/labels";
+import { ENERGY_CARRIER_NATIVE_UNIT_LABELS, previewConsumptionKwh } from "./consumption-units";
 import { type ParsedBillRow, downloadConsumptionTemplate, parseConsumptionWorkbook } from "./consumption-excel";
 
-// Every carrier is entered in one normalized unit — kWh — matching the
-// source spreadsheet's convention (`excelda yagona o'lchovga keltirilgan
-// kWh`), so columns are directly comparable across carriers. There's no
-// separate "native meter unit" field in this UI; the API's required
-// consumptionNative is just set equal to consumptionKwh at save time.
+// The primary, always-editable field is consumptionNative — the reading the
+// user actually has (m³ for gas, Gcal for district heat, ...). kWh is
+// derived (server-authoritative, previewed here client-side) and expense is
+// derived from consumptionNative × tariffLocal — neither is entered
+// directly. See consumption-units.ts / consumption.service.ts.
 interface MonthRow {
-  consumptionKwh: string;
-  expenseLocal: string;
+  consumptionNative: string;
   tariffLocal: string;
 }
 
 type YearGrid = Record<EnergyCarrier, MonthRow[]>;
+type PasteField = keyof MonthRow;
 
 function emptyMonthRow(): MonthRow {
-  return { consumptionKwh: "", expenseLocal: "", tariffLocal: "" };
+  return { consumptionNative: "", tariffLocal: "" };
 }
 
 function emptyYearGrid(): YearGrid {
@@ -60,13 +62,8 @@ function gridsFromBills(bills: UtilityBill[], years: number[]): Record<number, Y
   for (const bill of bills) {
     const yearGrid = grids[bill.year] ?? emptyYearGrid();
     grids[bill.year] = yearGrid;
-    // Older rows saved before this redesign may only have consumptionNative
-    // (no separate kWh figure) — fall back to it so existing data still
-    // shows up instead of appearing blank.
-    const kwh = bill.consumptionKwh ?? bill.consumptionNative;
     yearGrid[bill.energyCarrier][bill.month - 1] = {
-      consumptionKwh: String(kwh),
-      expenseLocal: bill.expenseLocal !== null ? String(bill.expenseLocal) : "",
+      consumptionNative: String(bill.consumptionNative),
       tariffLocal: bill.tariffLocal !== null ? String(bill.tariffLocal) : "",
     };
   }
@@ -75,8 +72,7 @@ function gridsFromBills(bills: UtilityBill[], years: number[]): Record<number, Y
 
 function billRowToMonthRow(row: ParsedBillRow): MonthRow {
   return {
-    consumptionKwh: String(row.consumptionKwh),
-    expenseLocal: row.expenseLocal !== null ? String(row.expenseLocal) : "",
+    consumptionNative: String(row.consumptionNative),
     tariffLocal: row.tariffLocal !== null ? String(row.tariffLocal) : "",
   };
 }
@@ -88,20 +84,26 @@ function buildBillGroupsForYear(
   for (const carrier of ENERGY_CARRIERS) {
     const bills: MonthlyBillInput[] = [];
     for (const [idx, row] of yearGrid[carrier].entries()) {
-      if (!row.consumptionKwh.trim()) continue;
-      const consumptionKwh = Number(row.consumptionKwh);
-      if (Number.isNaN(consumptionKwh)) continue;
+      if (!row.consumptionNative.trim()) continue;
+      const consumptionNative = Number(row.consumptionNative);
+      if (Number.isNaN(consumptionNative)) continue;
       bills.push({
         month: idx + 1,
-        consumptionNative: consumptionKwh,
-        consumptionKwh,
-        expenseLocal: row.expenseLocal.trim() ? Number(row.expenseLocal) : null,
+        consumptionNative,
         tariffLocal: row.tariffLocal.trim() ? Number(row.tariffLocal) : null,
       });
     }
     if (bills.length > 0) groups.push({ energyCarrier: carrier, bills });
   }
   return groups;
+}
+
+/** Splits pasted Excel-column text (one value per line, extra tab-columns ignored) into trimmed strings. */
+function splitPastedColumn(text: string): string[] {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.split("\t")[0]?.trim() ?? "")
+    .filter((v) => v !== "");
 }
 
 export function ConsumptionTab({
@@ -121,7 +123,7 @@ export function ConsumptionTab({
   const [gridsByYear, setGridsByYear] = useState<Record<number, YearGrid>>({});
   const [initialized, setInitialized] = useState(false);
   const [newYearValue, setNewYearValue] = useState(String(currentYear + 1));
-  const [showAdvancedColumns, setShowAdvancedColumns] = useState(false);
+  const [showTariff, setShowTariff] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
@@ -145,7 +147,7 @@ export function ConsumptionTab({
     return gridsByYear[year] ?? emptyYearGrid();
   }
 
-  function updateCell(year: number, carrier: EnergyCarrier, monthIdx: number, field: keyof MonthRow, value: string) {
+  function updateCell(year: number, carrier: EnergyCarrier, monthIdx: number, field: PasteField, value: string) {
     setGridsByYear((prev) => {
       const yearGrid = prev[year] ?? emptyYearGrid();
       const carrierRows = yearGrid[carrier].map((row, i) =>
@@ -154,6 +156,37 @@ export function ConsumptionTab({
       return { ...prev, [year]: { ...yearGrid, [carrier]: carrierRows } };
     });
     setSaved(false);
+  }
+
+  function pasteColumn(year: number, carrier: EnergyCarrier, startIdx: number, field: PasteField, values: string[]) {
+    setGridsByYear((prev) => {
+      const yearGrid = prev[year] ?? emptyYearGrid();
+      const carrierRows = [...yearGrid[carrier]];
+      values.forEach((value, i) => {
+        const idx = startIdx + i;
+        if (idx > 11) return;
+        const existing = carrierRows[idx] ?? emptyMonthRow();
+        carrierRows[idx] = { ...existing, [field]: value };
+      });
+      return { ...prev, [year]: { ...yearGrid, [carrier]: carrierRows } };
+    });
+    setSaved(false);
+  }
+
+  function handlePaste(
+    e: ClipboardEvent<HTMLInputElement>,
+    year: number,
+    carrier: EnergyCarrier,
+    startIdx: number,
+    field: PasteField,
+  ) {
+    const text = e.clipboardData.getData("text");
+    const values = splitPastedColumn(text);
+    // A single value pastes normally into just the focused cell; only
+    // multi-row Excel-column pastes need the custom fill-down behavior.
+    if (values.length <= 1) return;
+    e.preventDefault();
+    pasteColumn(year, carrier, startIdx, field, values);
   }
 
   function addYear() {
@@ -339,17 +372,22 @@ export function ConsumptionTab({
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead colSpan={showAdvancedColumns ? 4 : 2} className="text-center font-semibold">
+                                <TableHead colSpan={showTariff ? 4 : 3} className="text-center font-semibold">
                                   {ENERGY_CARRIER_LABELS[carrier]}
                                 </TableHead>
                               </TableRow>
                               <TableRow>
                                 <TableHead>{t("columnMonth")}</TableHead>
-                                <TableHead>{t("columnConsumptionKwh")}</TableHead>
-                                {showAdvancedColumns && (
+                                <TableHead>
+                                  {t("columnConsumptionNative", {
+                                    unit: ENERGY_CARRIER_NATIVE_UNIT_LABELS[carrier],
+                                  })}
+                                </TableHead>
+                                <TableHead className="text-muted-foreground">{t("columnKwhPreview")}</TableHead>
+                                {showTariff && (
                                   <>
-                                    <TableHead>{t("columnExpense")}</TableHead>
                                     <TableHead>{t("columnTariff")}</TableHead>
+                                    <TableHead className="text-muted-foreground">{t("columnExpense")}</TableHead>
                                   </>
                                 )}
                               </TableRow>
@@ -357,6 +395,15 @@ export function ConsumptionTab({
                             <TableBody>
                               {MONTH_LABELS.map((label, idx) => {
                                 const row = gridFor(y)[carrier][idx] ?? emptyMonthRow();
+                                const nativeValue = Number(row.consumptionNative);
+                                const kwhPreview = row.consumptionNative.trim() && !Number.isNaN(nativeValue)
+                                  ? previewConsumptionKwh(carrier, nativeValue)
+                                  : null;
+                                const tariffValue = Number(row.tariffLocal);
+                                const expensePreview =
+                                  kwhPreview !== null && row.tariffLocal.trim() && !Number.isNaN(tariffValue)
+                                    ? nativeValue * tariffValue
+                                    : null;
                                 return (
                                   <TableRow key={label}>
                                     <TableCell className="font-medium">{label}</TableCell>
@@ -369,25 +416,18 @@ export function ConsumptionTab({
                                           month: label,
                                           carrier: ENERGY_CARRIER_LABELS[carrier],
                                         })}
-                                        value={row.consumptionKwh}
+                                        value={row.consumptionNative}
                                         onChange={(e) =>
-                                          updateCell(y, carrier, idx, "consumptionKwh", e.target.value)
+                                          updateCell(y, carrier, idx, "consumptionNative", e.target.value)
                                         }
+                                        onPaste={(e) => handlePaste(e, y, carrier, idx, "consumptionNative")}
                                       />
                                     </TableCell>
-                                    {showAdvancedColumns && (
+                                    <TableCell className="text-sm text-muted-foreground">
+                                      {kwhPreview !== null ? formatNumber(kwhPreview) : "—"}
+                                    </TableCell>
+                                    {showTariff && (
                                       <>
-                                        <TableCell>
-                                          <Input
-                                            type="number"
-                                            step="any"
-                                            className="w-24"
-                                            value={row.expenseLocal}
-                                            onChange={(e) =>
-                                              updateCell(y, carrier, idx, "expenseLocal", e.target.value)
-                                            }
-                                          />
-                                        </TableCell>
                                         <TableCell>
                                           <Input
                                             type="number"
@@ -397,7 +437,11 @@ export function ConsumptionTab({
                                             onChange={(e) =>
                                               updateCell(y, carrier, idx, "tariffLocal", e.target.value)
                                             }
+                                            onPaste={(e) => handlePaste(e, y, carrier, idx, "tariffLocal")}
                                           />
+                                        </TableCell>
+                                        <TableCell className="text-sm text-muted-foreground">
+                                          {expensePreview !== null ? formatNumber(expensePreview) : "—"}
                                         </TableCell>
                                       </>
                                     )}
@@ -418,10 +462,10 @@ export function ConsumptionTab({
               <input
                 type="checkbox"
                 className="h-4 w-4 rounded border-border accent-primary"
-                checked={showAdvancedColumns}
-                onChange={(e) => setShowAdvancedColumns(e.target.checked)}
+                checked={showTariff}
+                onChange={(e) => setShowTariff(e.target.checked)}
               />
-              {t("showAdvancedColumns")}
+              {t("showTariff")}
             </label>
 
             {saveError && <p className="text-sm text-destructive">{saveError}</p>}
@@ -466,7 +510,8 @@ export function ConsumptionTab({
                   <TableHead>{t("columnCarrier")}</TableHead>
                   <TableHead>{t("columnYear")}</TableHead>
                   <TableHead>{t("columnMonth")}</TableHead>
-                  <TableHead>{t("columnConsumptionKwh")}</TableHead>
+                  <TableHead>{t("columnConsumptionNativeShort")}</TableHead>
+                  <TableHead>{t("columnKwhPreview")}</TableHead>
                   <TableHead>{t("columnExpense")}</TableHead>
                   <TableHead>{t("columnTariff")}</TableHead>
                 </TableRow>
@@ -477,7 +522,10 @@ export function ConsumptionTab({
                     <TableCell>{ENERGY_CARRIER_LABELS[bill.energyCarrier]}</TableCell>
                     <TableCell>{bill.year}</TableCell>
                     <TableCell>{MONTH_LABELS[bill.month - 1]}</TableCell>
-                    <TableCell>{formatNumber(bill.consumptionKwh ?? bill.consumptionNative)}</TableCell>
+                    <TableCell>
+                      {formatNumber(bill.consumptionNative)} {ENERGY_CARRIER_NATIVE_UNIT_LABELS[bill.energyCarrier]}
+                    </TableCell>
+                    <TableCell>{formatNumber(bill.consumptionKwh)}</TableCell>
                     <TableCell>{formatNumber(bill.expenseLocal)}</TableCell>
                     <TableCell>{formatNumber(bill.tariffLocal, 3)}</TableCell>
                   </TableRow>

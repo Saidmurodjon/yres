@@ -1,13 +1,13 @@
 import type { TFunction } from "i18next";
 import type { EnergyCarrier } from "../../lib/api-types";
 import { ENERGY_CARRIERS, ENERGY_CARRIER_LABELS } from "../../lib/labels";
+import { ENERGY_CARRIER_NATIVE_UNIT_LABELS } from "./consumption-units";
 
 export interface ParsedBillRow {
   year: number;
   month: number;
   energyCarrier: EnergyCarrier;
-  consumptionKwh: number;
-  expenseLocal: number | null;
+  consumptionNative: number;
   tariffLocal: number | null;
 }
 
@@ -19,26 +19,28 @@ export interface ParsedBillRow {
  * `downloadConsumptionTemplate` below, not with `consumption.json`'s other
  * (unrelated) UI strings.
  *
- * `consumptionNativeLegacy` isn't written into the current template — it's
- * kept only so a file downloaded before the kWh-first redesign (plain
- * "Miqdor" column, no unit) still parses.
+ * `consumptionKwhLegacy` isn't written into the current template — it's
+ * recognized only so a file downloaded before the native-unit-first
+ * redesign (a "Miqdor (kVt·soat)" column) still parses; its value is
+ * treated as a native reading only for electricity, where kWh IS the
+ * native unit, since for other carriers a pre-converted kWh figure can't
+ * be un-converted back to a native reading.
  */
 const HEADER_ALIASES: Record<
-  "year" | "month" | "carrier" | "consumptionKwh" | "consumptionNativeLegacy" | "expenseLocal" | "tariffLocal",
+  "year" | "month" | "carrier" | "consumptionNative" | "consumptionKwhLegacy" | "tariffLocal",
   string[]
 > = {
   year: ["yil", "year", "год"],
   month: ["oy", "month", "месяц"],
   carrier: ["tashuvchi", "carrier", "energy carrier", "носитель", "энергоноситель"],
-  consumptionKwh: [
+  consumptionNative: ["miqdor (asl birlik)", "amount (native unit)", "количество (в своей единице)", "miqdor", "amount", "количество"],
+  consumptionKwhLegacy: [
     "miqdor (kvt·soat)",
     "miqdor (kvt soat)",
     "amount (kwh)",
     "consumption (kwh)",
     "количество (квт·ч)",
   ],
-  consumptionNativeLegacy: ["miqdor", "amount", "consumption", "количество", "потребление"],
-  expenseLocal: ["xarajat", "expense", "cost", "расход", "затраты"],
   tariffLocal: ["tarif", "tariff", "тариф"],
 };
 
@@ -84,9 +86,8 @@ export async function parseConsumptionWorkbook(
     year: findColumn(headerRow, HEADER_ALIASES.year),
     month: findColumn(headerRow, HEADER_ALIASES.month),
     carrier: findColumn(headerRow, HEADER_ALIASES.carrier),
-    consumptionKwh: findColumn(headerRow, HEADER_ALIASES.consumptionKwh),
-    consumptionNativeLegacy: findColumn(headerRow, HEADER_ALIASES.consumptionNativeLegacy),
-    expenseLocal: findColumn(headerRow, HEADER_ALIASES.expenseLocal),
+    consumptionNative: findColumn(headerRow, HEADER_ALIASES.consumptionNative),
+    consumptionKwhLegacy: findColumn(headerRow, HEADER_ALIASES.consumptionKwhLegacy),
     tariffLocal: findColumn(headerRow, HEADER_ALIASES.tariffLocal),
   };
 
@@ -106,14 +107,6 @@ export async function parseConsumptionWorkbook(
     const month = Number(dataRow[columnIndex.month]);
     const carrier = matchCarrier(String(dataRow[columnIndex.carrier] ?? ""));
 
-    const kwhFromColumn =
-      columnIndex.consumptionKwh !== -1 ? Number(dataRow[columnIndex.consumptionKwh]) : Number.NaN;
-    const legacyNative =
-      columnIndex.consumptionNativeLegacy !== -1
-        ? Number(dataRow[columnIndex.consumptionNativeLegacy])
-        : Number.NaN;
-    const consumptionKwh = Number.isFinite(kwhFromColumn) ? kwhFromColumn : legacyNative;
-
     if (!Number.isFinite(year)) {
       errors.push(t("excel.errors.invalidYear", { row: rowNumber }));
       continue;
@@ -126,27 +119,30 @@ export async function parseConsumptionWorkbook(
       errors.push(t("excel.errors.invalidCarrier", { row: rowNumber }));
       continue;
     }
-    if (!Number.isFinite(consumptionKwh)) {
+
+    const nativeFromColumn =
+      columnIndex.consumptionNative !== -1 ? Number(dataRow[columnIndex.consumptionNative]) : Number.NaN;
+    // A legacy "kWh" column is only usable as-is for electricity (native
+    // unit = kWh already); for other carriers a pre-converted figure can't
+    // be reversed back to a native reading, so it's ignored for them.
+    const legacyKwh =
+      carrier === "electricity" && columnIndex.consumptionKwhLegacy !== -1
+        ? Number(dataRow[columnIndex.consumptionKwhLegacy])
+        : Number.NaN;
+    const consumptionNative = Number.isFinite(nativeFromColumn) ? nativeFromColumn : legacyKwh;
+
+    if (!Number.isFinite(consumptionNative)) {
       errors.push(t("excel.errors.invalidConsumption", { row: rowNumber }));
       continue;
     }
 
-    const readOptionalNumber = (colIdx: number): number | null => {
-      if (colIdx === -1) return null;
-      const raw = dataRow[colIdx];
-      if (raw === undefined || raw === null || raw === "") return null;
-      const value = Number(raw);
-      return Number.isFinite(value) ? value : null;
-    };
+    const tariffRaw = columnIndex.tariffLocal !== -1 ? dataRow[columnIndex.tariffLocal] : undefined;
+    const tariffLocal =
+      tariffRaw !== undefined && tariffRaw !== null && tariffRaw !== "" && Number.isFinite(Number(tariffRaw))
+        ? Number(tariffRaw)
+        : null;
 
-    rows.push({
-      year,
-      month,
-      energyCarrier: carrier,
-      consumptionKwh,
-      expenseLocal: readOptionalNumber(columnIndex.expenseLocal),
-      tariffLocal: readOptionalNumber(columnIndex.tariffLocal),
-    });
+    rows.push({ year, month, energyCarrier: carrier, consumptionNative, tariffLocal });
   }
 
   return { rows, errors };
@@ -159,12 +155,11 @@ export async function downloadConsumptionTemplate(t: TFunction): Promise<void> {
     t("excel.template.columnYear"),
     t("excel.template.columnMonth"),
     t("excel.template.columnCarrier"),
-    t("excel.template.columnConsumptionKwh"),
-    t("excel.template.columnExpense"),
+    t("excel.template.columnConsumptionNative"),
     t("excel.template.columnTariff"),
   ];
   const exampleYear = new Date().getFullYear();
-  const exampleRow = [exampleYear, 1, ENERGY_CARRIER_LABELS.gas, 11722, 3085000, 2500];
+  const exampleRow = [exampleYear, 1, ENERGY_CARRIER_LABELS.gas, 7274, 2500];
 
   const sheet = XLSX.utils.aoa_to_sheet([headers, exampleRow]);
   const workbook = XLSX.utils.book_new();
@@ -174,7 +169,7 @@ export async function downloadConsumptionTemplate(t: TFunction): Promise<void> {
     [t("excel.template.readMeTitle")],
     [t("excel.template.readMeInstructions")],
     [t("excel.template.readMeCarriersLabel")],
-    ...ENERGY_CARRIERS.map((c) => [ENERGY_CARRIER_LABELS[c]]),
+    ...ENERGY_CARRIERS.map((c) => [`${ENERGY_CARRIER_LABELS[c]} — ${ENERGY_CARRIER_NATIVE_UNIT_LABELS[c]}`]),
   ];
   const readMeSheet = XLSX.utils.aoa_to_sheet(readMeRows);
   XLSX.utils.book_append_sheet(workbook, readMeSheet, t("excel.template.readMeSheetName"));

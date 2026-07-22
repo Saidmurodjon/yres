@@ -352,12 +352,14 @@ export interface UtilityBill {
   tariffLocal: number | null;
 }
 
+// consumptionKwh is deliberately absent here — the server always derives it
+// from consumptionNative (see apps/api/src/services/consumption.service.ts),
+// so the client never sends one.
 export interface CreateUtilityBillInput {
   energyCarrier: EnergyCarrier;
   year: number;
   month: number;
   consumptionNative: number;
-  consumptionKwh?: number | null;
   expenseLocal?: number | null;
   tariffLocal?: number | null;
 }
@@ -365,7 +367,6 @@ export interface CreateUtilityBillInput {
 export interface MonthlyBillInput {
   month: number;
   consumptionNative: number;
-  consumptionKwh?: number | null;
   expenseLocal?: number | null;
   tariffLocal?: number | null;
 }

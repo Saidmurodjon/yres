@@ -1,4 +1,4 @@
-import { utilityBill } from "@yres/db";
+import { type energyCarrierEnum, utilityBill } from "@yres/db";
 import { and, eq } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
@@ -6,6 +6,27 @@ import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import { createUtilityBillsSchema, replaceUtilityBillsSchema } from "../schemas/consumption";
 import { paginationQuerySchema, toLimitOffset } from "../schemas/pagination";
+import { computeConsumptionKwh } from "../services/consumption.service";
+
+type EnergyCarrier = (typeof energyCarrierEnum.enumValues)[number];
+
+/**
+ * Fills in the two derived fields every bill needs: consumptionKwh (always
+ * computed — see consumption.service.ts) and expenseLocal (defaults to
+ * consumptionNative * tariffLocal when the caller didn't supply one
+ * directly, e.g. a real invoice with extra fees).
+ */
+function withDerivedFields<
+  T extends { consumptionNative: number; expenseLocal?: number | null; tariffLocal?: number | null },
+>(bill: T, energyCarrier: EnergyCarrier) {
+  const expenseLocal =
+    bill.expenseLocal ?? (bill.tariffLocal != null ? bill.consumptionNative * bill.tariffLocal : null);
+  return {
+    ...bill,
+    consumptionKwh: computeConsumptionKwh(energyCarrier, bill.consumptionNative),
+    expenseLocal,
+  };
+}
 
 export const consumptionRoutes = new Hono<AppEnv>();
 
@@ -62,7 +83,10 @@ consumptionRoutes.post("/:id/consumption", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const rows = parsed.data.bills.map((bill) => ({ ...bill, buildingId }));
+  const rows = parsed.data.bills.map((bill) => ({
+    ...withDerivedFields(bill, bill.energyCarrier),
+    buildingId,
+  }));
 
   const inserted = await db.insert(utilityBill).values(rows).returning();
 
@@ -94,7 +118,12 @@ consumptionRoutes.put("/:id/consumption", async (c) => {
   }
 
   const { energyCarrier, year, bills } = parsed.data;
-  const rows = bills.map((bill) => ({ ...bill, buildingId, energyCarrier, year }));
+  const rows = bills.map((bill) => ({
+    ...withDerivedFields(bill, energyCarrier),
+    buildingId,
+    energyCarrier,
+    year,
+  }));
 
   const statements: BatchItem<"pg">[] = [
     db

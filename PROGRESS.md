@@ -673,3 +673,55 @@ Tekshirildi: `bun run type-check`/`bunx biome lint` toza. Brauzerda: Gas-2023-ya
 belgisi yoqilganda haqiqiy qiymatlar (18185000 / 2500) to'g'ri ko'rindi, Saqlash bosilgach
 `GET .../consumption` orqali `consumptionKwh === consumptionNative === 69103` ekanligi va
 24 ta hisob-faktura saqlanib qolgani tasdiqlandi.
+
+### To'rtinchi tuzatish: birlamchi (asl) qiymat + avtomatik konversiya + Excel'dan paste
+
+Foydalanuvchi yana bir bor aniq talab bildirdi: kVt·soatni foydalanuvchining o'zi hisoblab
+kiritishi shart emas — **asl o'lchov birligidagi qiymat** (gaz uchun m³ va h.k.) kiritilsin,
+tizim o'zi kVt·soatga o'tkazsin, va tarif kiritilganda xarajat avtomatik chiqsin. Bundan
+tashqari Excel ustunini nusxalab jadvalga to'g'ridan-to'g'ri joylashtira olish (paste) so'raldi.
+
+**Muhim topilma**: `audit.engine.ts:692-698` audit kalibrlashi **faqat `consumptionKwh`ni**
+o'qiydi va uni yo'q hisob-fakturani jimgina tashlab yuboradi — demak bu shunchaki kosmetik
+emas, noto'g'ri/yo'q konversiya audit natijasini sezdirmasdan buzadi. Shuning uchun konversiya
+**backend'da, saqlash paytida, majburiy** qilib qo'yildi (frontend faqat oldindan ko'rsatish).
+
+**Konversiya koeffitsientlari — manba Excel'ning o'zidan** (o'ylab topilmagan,
+`docs/data-dictionary.md:188-191,1103-1105`dan): gaz 9.5 kVt·soat/m³, elektr 1:1, markazlashgan
+issiqlik 1163 kVt·soat/Gcal, ko'mir 5.5 kVt·soat/kg (manba Excel'ning o'zi buni "g'alati
+kombinatsiya" deb qayd etgan — foydalanuvchi tasdig'i bilan shu qiymat, "taxminiy" deb
+belgilangan holda, qo'llanildi). Xarajat = Miqdor(asl birlik) × Tarif — bu haqiqiy saqlangan
+ma'lumot bilan tasdiqlandi (7274×2500=18,185,000, aynan mavjud `expenseLocal`).
+
+**Backend**: yangi `apps/api/src/services/consumption.service.ts`
+(`CARRIER_KWH_PER_NATIVE_UNIT` + `computeConsumptionKwh`). `apps/api/src/schemas/
+consumption.ts`dan `consumptionKwh` mijoz-kirish maydoni sifatida **butunlay olib
+tashlandi** — server har doim hisoblaydi. `apps/api/src/routes/consumption.ts`ning POST/PUT
+handler'lari `withDerivedFields()` orqali saqlashdan oldin `consumptionKwh`ni hisoblaydi va
+`expenseLocal`ni (agar berilmagan bo'lsa) `consumptionNative × tariffLocal` sifatida standart
+qiymat qiladi.
+
+**Frontend**: `MonthRow` endi faqat `{ consumptionNative, tariffLocal }`. Yangi
+`consumption-units.ts` — backend bilan **bir xil** konstantalar nusxasi (faqat oldindan
+ko'rsatish uchun, server yagona haqiqat manbai) + har bir tashuvchining asl birligi
+(`m³`/`kVt·soat`/`Gcal`/`kg`). Har bir tashuvchi jadvalida endi: Oy | **Miqdor ({birlik})**
+(tahrirlanadigan) | **≈ kVt·soat** (doim ko'rinadigan, faqat-o'qish, jonli) | (belgi
+yoqilganda) Tarif (tahrirlanadigan) | Xarajat (faqat-o'qish, jonli). **Excel'dan paste**: har
+bir Miqdor/Tarif input'ida `onPaste` — ko'p qatorli clipboard matnini bosilgan oydan
+boshlab pastga to'ldiradi (bitta qiymatli oddiy paste standart holicha ishlaydi).
+`consumption-excel.ts` shabloni endi **Yil | Oy | Tashuvchi | Miqdor (asl birlik) | Tarif**
+(5 ustun, kVt·soat/Xarajat ustunlari olib tashlandi), "O'qish" varag'ida har bir tashuvchining
+asl birligi ro'yxati bilan.
+
+**Tekshirildi**: `bun run type-check`, `bunx biome lint`, `bun run test` (baza bilan bir xil —
+55 o'tdi/47 integratsiya ECONNREFUSED) toza. Brauzerda: Gas-yanvar katagiga `7274` (m³)
+kiritilganda "≈ kVt·soat" ustunida jonli **69,103** chiqdi (7274×9.5); Tarif `2500`da Xarajat
+**18,185,000** avtomatik chiqdi; District heat'ga sintetik `paste` hodisasi orqali (haqiqiy OS
+clipboard ruxsatisiz, `ClipboardEvent`+`DataTransfer` bilan to'g'ridan-to'g'ri) `10/11/12/13/14`
+joylashtirildi — Yanvardan Maygacha to'g'ri tarqaldi, konversiya (10×1163=11,630) to'g'ri
+chiqdi. Saqlab, `GET .../consumption` orqali **backend hisoblagan** `consumptionKwh=69103`,
+`expenseLocal=18185000` (mijoz bularni umuman yubormagan holda!) tasdiqlandi, `POST
+.../audit/run` hamon xatosiz. Shablonni yuklab olib (`Yil|Oy|Tashuvchi|Miqdor (asl
+birlik)|Tarif`, namuna qatorda haqiqiy 7274/2500), haqiqiy `parseConsumptionWorkbook`
+funksiyasi bilan qayta o'qib, `consumptionNative: 7274` (kVt·soat sifatida emas) to'g'ri
+tanilgani tasdiqlandi.
