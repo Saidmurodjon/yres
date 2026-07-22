@@ -102,6 +102,35 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
     }),
   );
 
+  const retrofitOfCodes = [
+    ...new Set(
+      constructionTypes
+        .map((ct) => ct.retrofitOfCode)
+        .filter((code): code is string => !!code),
+    ),
+  ];
+  const beforeConstructionTypeIdByCode = new Map<string, string>();
+  if (retrofitOfCodes.length > 0) {
+    const beforeRows = await db
+      .select({ id: constructionType.id, code: constructionType.code })
+      .from(constructionType)
+      .where(
+        and(
+          eq(constructionType.buildingId, buildingId),
+          eq(constructionType.scenario, "before"),
+          inArray(constructionType.code, retrofitOfCodes),
+        ),
+      );
+    for (const row of beforeRows) beforeConstructionTypeIdByCode.set(row.code, row.id);
+    const unresolved = retrofitOfCodes.filter((code) => !beforeConstructionTypeIdByCode.has(code));
+    if (unresolved.length > 0) {
+      return c.json(
+        { error: `constructionTypes reference unknown retrofitOfCode(s): ${unresolved.join(", ")}` },
+        400,
+      );
+    }
+  }
+
   const constructionTypeIdByCode = new Map<string, string>();
   const constructionTypeRows: (typeof constructionType.$inferInsert)[] = constructionTypes.map(
     (ct) => {
@@ -113,6 +142,9 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
         code: ct.code,
         elementCategory: ct.elementCategory,
         scenario,
+        retrofitOfId: ct.retrofitOfCode
+          ? (beforeConstructionTypeIdByCode.get(ct.retrofitOfCode) ?? null)
+          : null,
         description: ct.description ?? null,
       };
     },

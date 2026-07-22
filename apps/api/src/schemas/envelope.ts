@@ -20,6 +20,14 @@ const constructionTypeInputSchema = z.object({
   elementCategory: z.enum(envelopeElementCategoryEnum.enumValues),
   description: z.string().nullable().optional(),
   layers: z.array(constructionLayerInputSchema).default([]),
+  // Only meaningful when this payload's `scenario` is "after" — the `code`
+  // of the existing "before"-scenario construction type this one retrofits
+  // (`envelope.service.ts`'s `resolveHeatLossGroups()` swaps an element's
+  // before-type for whichever type has `retrofitOfId` pointing back at it).
+  // Resolved to a real `construction_type.id` in the route since the
+  // before-scenario type was created by an earlier PUT and isn't part of
+  // this payload.
+  retrofitOfCode: z.string().min(1).nullable().optional(),
 });
 
 const openingTypeInputSchema = z.object({

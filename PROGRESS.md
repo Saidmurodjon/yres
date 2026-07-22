@@ -1020,3 +1020,43 @@ o'girib, insert paytida `retrofitOfId` sifatida yozish kerak.
 Yuqoridagi kod bo'shlig'i sababli `envelope_wall_insulation` va `envelope_roof_insulation` hamon
 0 kWh/0 $ ko'rsatadi — bu keyingi sessiyada `retrofitOfCode` maydonini qo'shish bilan
 tuzatilishi kerak.
+
+## `retrofitOfCode` kod bo'shlig'ini tuzatish — devor/tom izolatsiyasi tejamkorligi ishga tushdi
+
+Foydalanuvchi to'g'ridan-to'g'ri so'radi: chora-tadbir tejamkorligi energiya balansidan
+(oldingi−keyingi) shakllanishi, tegishli tashuvchi narxiga ko'paytirilib daromad chiqishi, va
+investitsiya aniq hisob-kitob qilinishi kerak. Tekshiruv shuni ko'rsatdikim, bu mexanizm
+`audit.engine.ts`da allaqachon to'g'ri yozilgan edi — yagona muammo yuqorida qayd etilgan
+`retrofitOfId` bo'shlig'i edi. Shu bo'shliq endi tuzatildi:
+
+- **`apps/api/src/schemas/envelope.ts`**: `constructionTypeInputSchema`ga
+  `retrofitOfCode: z.string().min(1).nullable().optional()` qo'shildi.
+- **`apps/api/src/routes/envelope.ts`**: PUT handler'i endi so'ralgan `retrofitOfCode`larni
+  binoning mavjud `"before"` stsenariyli konstruksiya turlaridan (kod bo'yicha) qidiradi va
+  topilgan ID'ni yangi qatorning `retrofitOfId`siga yozadi; noma'lum kod uchun 400 xato
+  qaytaradi (`envelopeElements`ning noma'lum `constructionTypeCode`ga qanday munosabatda
+  bo'lishiga o'xshab).
+- Frontend Qobiq muharriri hamon faqat `"before"` stsenariyni tahrirlaydi (`EDIT_SCENARIO =
+  "before"`, `envelope-editor/state.ts`) — bu ataylab shunday qoldirildi, "keyingi" ma'lumot
+  hozircha faqat API orqali kiritiladi; alohida "keyingi" tahrirlash UI'si so'ralmagan.
+
+**Muhim amaliy saboq**: `PUT /:id/envelope` bitta stsenariy uchun **hammasini almashtiradi** —
+`constructionTypes`, `openingTypes`, `envelopeElements`ning har biri, payload'da berilmagan
+bo'lsa ham, o'sha stsenariyning mavjud qatorlari **avval o'chiriladi**. W1-after/R1-after/
+Socle1u-after'ga `retrofitOfCode` qo'shish uchun qilingan qayta-PUT dastlab faqat
+`constructionTypes`ni yubordi — natijada Win4/D4 (`openingTypes`) sezdirmasdan o'chib ketdi;
+keyin faqat `openingTypes`ni tuzatish uchun qilingan ikkinchi PUT esa yangi tuzatilgan
+`constructionTypes`ni yana o'chirib yubordi. Ikkalasi bitta PUT'da birga yuborilgach to'g'ri
+tiklandi. Bu endpoint'dan foydalanadigan har qanday kelajakdagi skript **bitta stsenariy uchun
+barcha to'rtta massivni (`buildingBlocks` ixtiyoriy, qolgan uchtasi doim) bitta so'rovda birga**
+yuborishi shart — qisman PUT xavfsiz emas.
+
+**Tekshirildi**: `bun run test` (`apps/api`) — 55/55 unit test (`tests/services/*`) toza
+o'tdi (10 ta integratsiya test fayli `ECONNREFUSED` bilan muvaffaqiyatsiz — kutilgan holat,
+`testing-and-verification.md`ga qarang). `bunx tsc --noEmit` va `bunx biome lint` toza.
+`POST /audit/run` orqali: `envelope_wall_insulation` 77,173 kWh/$1,690 (investitsiya $76,138),
+`envelope_roof_insulation` 136,734 kWh/$2,994 (investitsiya $15,350), qolgan 7 ta chora-tadbir
+avvalgidek ishlashda davom etmoqda (`window_replacement` qayta tiklangandan keyin yana 22,210
+kWh/$486ga qaytdi), `totalInvestmentUsd` hamon $164,320 (o'zgarishsiz, Excel bilan mos).
+`potentialEnergyUseKwhPerM2Year`: 137.39 → **51.01 kWh/m²/yil** (devor/tom izolatsiyasi endi
+"keyingi" energiya sarfini to'g'ri kamaytiryapti).
