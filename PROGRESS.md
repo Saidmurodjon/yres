@@ -1078,3 +1078,14 @@ yozadi (yangi hisob-kitob yo'q — funksiya buni allaqachon qaytargan, faqat tas
 yuborilayotgan edi). Tekshirildi: `bun run type-check` (butun repo, `@yres/web` ham), `bunx
 biome lint`, `bun run test` — 55/55 unit test toza (integratsiya testlari kutilganidek
 `ECONNREFUSED`).
+
+**2-bosqich (tugallandi)** — yangi `apps/api/src/services/report-data.service.ts`:
+`getUValueBreakdown()` (`constructionType`+`layers.material` — `audit.engine.ts:168-171`dagi
+bir xil so'rov andozasi, lekin yig'indi o'rniga har bir qatlamni saqlab qoladi, qatlam
+qarshiligini mavjud `uvalue.service.ts`ning `calculateLayerResistance()`/`calculateUValue()`si
+orqali hisoblaydi — audit.engine.ts'ning joyida qayta yozgan formulasi takrorlanmadi),
+`getConsumptionHistory()` (`utilityBill`ni carrier→oy→yil bo'yicha guruhlovchi sof
+`groupBillsByCarrierYearMonth()` funksiyasi orqali, alohida export qilingan — 8-bosqichda
+DB'siz unit-test qilinadi), `getLatestEnergyTariffs()` (`audit.engine.ts:729-735`dagi
+"carrier bo'yicha eng so'nggi tarif" andozasi). Tekshirildi: `bun run --cwd apps/api
+type-check`, `bunx biome lint`, `bun run test tests/services` — 55/55 toza.
