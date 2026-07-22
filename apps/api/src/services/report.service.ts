@@ -14,6 +14,16 @@ const MUTED = rgb(0.45, 0.45, 0.48);
 const RULE = rgb(0.85, 0.85, 0.87);
 const ACCENT = rgb(0.15, 0.35, 0.32);
 
+/** Chart series colors — a handful of muted, print-safe tones distinct enough to tell apart in grayscale too (varying lightness, not just hue). */
+const CHART_PALETTE = [
+  ACCENT,
+  rgb(0.55, 0.42, 0.15),
+  rgb(0.25, 0.4, 0.55),
+  rgb(0.5, 0.25, 0.35),
+  rgb(0.35, 0.5, 0.3),
+  rgb(0.6, 0.6, 0.62),
+];
+
 /**
  * Minimal top-to-bottom flow layout on top of pdf-lib's raw per-page drawing
  * API (it has no built-in text flow or tables) — tracks a cursor and starts
@@ -144,9 +154,150 @@ class ReportLayout {
     this.y -= 8;
   }
 
+  /**
+   * Vertical bar chart drawn with raw `drawRectangle`/`drawText` — pdf-lib
+   * has no chart primitive, and `recharts` (used for the equivalent web
+   * dashboard charts) can't run here: this service executes in the Workers
+   * runtime, which has no DOM/canvas to render into (see
+   * `.claude/rules/hisobot.md`). Bars are proportional to `chartHeight`;
+   * each bar gets a value label above it and a category label below.
+   */
+  barChart(data: { label: string; value: number }[], chartHeight = 120) {
+    if (data.length === 0) return;
+    const labelBandHeight = 28;
+    const totalHeight = chartHeight + labelBandHeight;
+    this.ensureSpace(totalHeight);
+
+    const maxValue = Math.max(...data.map((d) => Math.abs(d.value)), 1);
+    const slotWidth = CONTENT_WIDTH / data.length;
+    const barWidth = Math.min(slotWidth * 0.55, 48);
+    const baselineY = this.y - chartHeight;
+
+    this.page.drawLine({
+      start: { x: MARGIN, y: baselineY },
+      end: { x: PAGE_WIDTH - MARGIN, y: baselineY },
+      thickness: 0.75,
+      color: RULE,
+    });
+
+    data.forEach((d, i) => {
+      const barHeight = (Math.abs(d.value) / maxValue) * chartHeight;
+      const x = MARGIN + i * slotWidth + (slotWidth - barWidth) / 2;
+      this.page.drawRectangle({
+        x,
+        y: baselineY,
+        width: barWidth,
+        height: Math.max(barHeight, 0.5),
+        color: CHART_PALETTE[i % CHART_PALETTE.length],
+      });
+      this.page.drawText(fmt(d.value, 0), {
+        x,
+        y: baselineY + barHeight + 4,
+        size: 7,
+        font: this.regular,
+        color: MUTED,
+      });
+      this.page.drawText(truncateLabel(d.label, slotWidth, 7.5), {
+        x: MARGIN + i * slotWidth + 2,
+        y: baselineY - 12,
+        size: 7.5,
+        font: this.regular,
+        color: INK,
+      });
+    });
+
+    this.y -= totalHeight + 8;
+  }
+
+  /**
+   * Pie chart drawn as a sequence of `drawSvgPath` wedges (an `M`ove to
+   * center, `L`ine to the arc's start, `A`rc to its end, `Z` close) — the
+   * only way to draw an arbitrary shape pdf-lib doesn't have a primitive
+   * for. A side legend is drawn instead of on-slice labels since there's no
+   * text-along-a-curve support. Proportions are correct; exact wedge
+   * rendering couldn't be visually verified in this sandbox (no PDF
+   * viewer) — see `.claude/rules/hisobot.md`'s testing note.
+   */
+  pieChart(data: { label: string; value: number }[], radius = 55) {
+    const positive = data.filter((d) => d.value > 0);
+    if (positive.length === 0) return;
+    const total = positive.reduce((sum, d) => sum + d.value, 0);
+    const diameter = radius * 2;
+    const legendRowHeight = 14;
+    const blockHeight = Math.max(diameter, positive.length * legendRowHeight) + 10;
+    this.ensureSpace(blockHeight);
+
+    const cx = MARGIN + radius;
+    const cy = this.y - radius;
+
+    let cumulativeFraction = 0;
+    positive.forEach((d, i) => {
+      const fraction = d.value / total;
+      const path = wedgePath(cx, cy, radius, cumulativeFraction, cumulativeFraction + fraction);
+      this.page.drawSvgPath(path, { color: CHART_PALETTE[i % CHART_PALETTE.length] });
+      cumulativeFraction += fraction;
+    });
+
+    const legendX = MARGIN + diameter + 20;
+    positive.forEach((d, i) => {
+      const rowY = this.y - 4 - i * legendRowHeight;
+      this.page.drawRectangle({
+        x: legendX,
+        y: rowY - 7,
+        width: 8,
+        height: 8,
+        color: CHART_PALETTE[i % CHART_PALETTE.length],
+      });
+      const pct = ((d.value / total) * 100).toFixed(0);
+      this.page.drawText(`${d.label} — ${pct}%`, {
+        x: legendX + 12,
+        y: rowY - 6,
+        size: 8,
+        font: this.regular,
+        color: INK,
+      });
+    });
+
+    this.y -= blockHeight;
+  }
+
   async toBytes(): Promise<Uint8Array> {
     return this.doc.save();
   }
+}
+
+function truncateLabel(label: string, slotWidth: number, fontSize: number): string {
+  const maxChars = Math.max(3, Math.floor(slotWidth / (fontSize * 0.55)));
+  return label.length > maxChars ? `${label.slice(0, maxChars - 1)}…` : label;
+}
+
+/**
+ * Builds an SVG wedge path from center `(cx, cy)` for the arc spanning
+ * `[startFraction, endFraction)` of a full circle, measured clockwise from
+ * the top. `cx`/`cy` are real page coordinates (PDF's y-axis, origin
+ * bottom-left) — but `PDFPage.drawSvgPath` always applies its own
+ * `scale(1, -1)` to the path it's given ("SVG path Y axis is opposite
+ * pdf-lib's", per pdf-lib's own source), and this method is called without
+ * an `x`/`y` offset (so no translation cancels it out). Every Y coordinate
+ * in the emitted path is therefore negated here so it lands back at the
+ * intended page position once pdf-lib flips it.
+ */
+function wedgePath(
+  cx: number,
+  cy: number,
+  radius: number,
+  startFraction: number,
+  endFraction: number,
+): string {
+  const startAngle = Math.PI / 2 - startFraction * 2 * Math.PI;
+  const endAngle = Math.PI / 2 - endFraction * 2 * Math.PI;
+  const startX = cx + radius * Math.cos(startAngle);
+  const startY = cy + radius * Math.sin(startAngle);
+  const endX = cx + radius * Math.cos(endAngle);
+  const endY = cy + radius * Math.sin(endAngle);
+  const largeArcFlag = endFraction - startFraction > 0.5 ? 1 : 0;
+
+  return `M ${cx} ${-cy} L ${startX} ${-startY} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${endX} ${-endY} Z`;
 }
 
 function fmt(value: number | null | undefined, digits = 1): string {

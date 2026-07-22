@@ -1089,3 +1089,15 @@ orqali hisoblaydi — audit.engine.ts'ning joyida qayta yozgan formulasi takrorl
 DB'siz unit-test qilinadi), `getLatestEnergyTariffs()` (`audit.engine.ts:729-735`dagi
 "carrier bo'yicha eng so'nggi tarif" andozasi). Tekshirildi: `bun run --cwd apps/api
 type-check`, `bunx biome lint`, `bun run test tests/services` — 55/55 toza.
+
+**3-bosqich (tugallandi)** — `report.service.ts`dagi `ReportLayout` klassiga `barChart()`
+(proportsional `drawRectangle()` ketma-ketligi) va `pieChart()` (`drawSvgPath()` bilan
+markazdan chizilgan sektorlar + yon legend) qo'shildi. Muhim tuzatish: pdf-lib'ning
+`drawSvgPath()`si ichkarida har doim `scale(1, -1)` qo'llaydi ("SVG path Y axis is opposite
+pdf-lib's" — kutubxonaning o'z manba kodidagi izohi), shuning uchun `wedgePath()` funksiyasi
+barcha Y koordinatalarini path ichida oldindan manfiylab beradi — aks holda sektor sahifadan
+tashqariga chiqib ketardi. Metodlar hali `generateAuditReportPdf()`dan chaqirilmaydi (4-6
+bosqichlarda ulanadi) — bu bosqichda faqat klassga qo'shildi. Tekshirildi: `bun run
+type-check`, `bunx biome lint` — toza. Vizual tekshiruv (chizilgan PDF'ni ochib ko'rish) bu
+sandbox'da imkonsiz — `hisobot.md`ning tekshirish izohiga qarang; funksional tekshiruv
+(xatosiz PDF chiqishi) 8-bosqich testida qilinadi.
