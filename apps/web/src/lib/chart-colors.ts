@@ -60,3 +60,11 @@ export const DIVERGING_COLORS = {
   positive: CHART_COLORS.success,
   negative: CHART_COLORS.destructive,
 } as const;
+
+/**
+ * Fixed order for "compare the last few periods" charts (e.g. 3 years of
+ * monthly consumption) — same de-emphasize-older/accent-newest logic as
+ * `SCENARIO_COLORS`. Index from the end when fewer than 3 series are shown,
+ * so the most recent period always keeps the primary accent.
+ */
+export const RECENCY_COLORS = [CHART_COLORS.muted, CHART_COLORS.warning, CHART_COLORS.primary] as const;

@@ -725,3 +725,38 @@ chiqdi. Saqlab, `GET .../consumption` orqali **backend hisoblagan** `consumption
 birlik)|Tarif`, namuna qatorda haqiqiy 7274/2500), haqiqiy `parseConsumptionWorkbook`
 funksiyasi bilan qayta o'qib, `consumptionNative: 7274` (kVt·soat sifatida emas) to'g'ri
 tanilgani tasdiqlandi.
+
+### Beshinchi tuzatish: ixcham (bir tashuvchi — bir qator) jadval + yillar taqqoslash grafigi
+
+Foydalanuvchi jadvalni yana ham ixchamlashtirishni so'radi: har bir tashuvchi uchun 12 qatorli
+jadval o'rniga **bitta qator** (oylar ustun bo'lib chiqadi), va tarif ham oyma-oy emas, **butun
+yilga bitta** qiymat (haqiqiy ma'lumot buni tasdiqlagan edi — gaz/elektr tarifi 12 oy davomida
+bir xil bo'lib chiqqan). Bundan tashqari 3 yillik oylar kesimida taqqoslash ustunli grafigi
+(katta ekranda jadval yonida, tor ekranda pastida) va "Barcha kommunal hisob-fakturalar"
+faqat-o'qish jadvalini olib tashlash so'raldi.
+
+**Yangi jadval**: qatorlar — 4 tashuvchi (Gas/Electricity/District heat/Coal), ustunlar — 12 oy
++ bitta Tarif + jonli "Jami (kVt·soat)" — jami 4 qator (avvalgi 48 qator o'rniga). Paste
+funksiyasi endi **gorizontal** (Excel'dan qator nusxalanganda tab-ajratilgan) ustuvor, vertikal
+(ustun nusxalanganda newline-ajratilgan) ham hamon qo'llab-quvvatlanadi
+(`splitPastedValues`ning ikkalasini ham aniqlashi).
+
+**Yangi grafik**: `consumption-comparison-chart.tsx` — mavjud `recharts`+`chart-tooltip.tsx`+
+`chart-legend.tsx`+`lib/chart-colors.ts` andozasi bilan (dataviz skill'i yuklab o'qildi, mavjud
+`results.tsx`dagi BarChart aniq nusxa olindi). Ma'lumotdagi barcha bill'lardan eng so'nggi 3
+yil tanlanadi, har bir oy uchun **barcha tashuvchilar bo'yicha jami kVt·soat** hisoblanadi
+(tashuvchilar allaqachon bitta o'lchovda — kVt·soat — bo'lgani uchun to'g'ridan-to'g'ri
+qo'shish mumkin). Rang: yangi `RECENCY_COLORS` konstantasi (`chart-colors.ts`) — mavjud
+`SCENARIO_COLORS`dagi "eski=muted, yangi=primary" urg'u mantig'ining 3-seriyali versiyasi
+(muted→warning→primary), qat'iy tartibda, yangi rang o'ylab topilmagan.
+
+Sahifa tartibi: `grid lg:grid-cols-2` — chap ustun kiritish kartasi, o'ng ustun grafik kartasi;
+`lg`dan tor ekranlarda ustma-ust tushadi (grafik pastda).
+
+**Tekshirildi**: `bun run type-check`, `bunx biome lint` toza. Brauzerda: jadval haqiqiy
+ma'lumot bilan to'g'ri ko'chgan (masalan 2025-yil Gas-yanvar 6976), grafik 2024/2025/2026
+guruhlangan ustunlarni to'g'ri ranglar bilan chizgan; District heat qatoriga sintetik
+tab-ajratilgan `paste` (`5\t6\t7\t8\t9\t10\t11\t8`) May kataklaridan boshlab qo'llanilib,
+May-Dekabrgacha to'g'ri tarqalgani tasdiqlandi; Saqlab, `GET .../consumption` orqali barcha
+8 oy uchun backend hisoblagan `consumptionKwh` (masalan oy=10: 10×1163=11630) to'g'ri
+ekanligi va `POST .../audit/run` hamon xatosiz ishlashi tasdiqlandi.

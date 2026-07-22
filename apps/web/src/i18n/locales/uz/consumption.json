@@ -1,27 +1,23 @@
 {
   "enterMonthlyBills": "Oylik hisob-fakturalarni kiritish",
-  "enterMonthlyBillsDescription": "Yil yorlig'ini tanlang. Har bir energiya tashuvchisi o'z alohida jadvalida — hisob-hisobxonangizdagi asl birlikda kiriting (gaz — m³, markazlashgan issiqlik — Gcal, ko'mir — kg, elektr — kVt·soat); kVt·soat avtomatik hisoblanadi. Tarifni kiritsangiz, xarajat ham avtomatik chiqadi. Excel ustunini nusxalab, to'g'ridan-to'g'ri jadvalga joylashtirishingiz (paste) mumkin — yoki shablonni yuklab oling, to'ldiring va qayta yuklang.",
-  "columnMonth": "Oy",
-  "columnConsumptionNative": "Miqdor ({{unit}})",
-  "columnConsumptionNativeShort": "Miqdor",
-  "columnKwhPreview": "≈ kVt·soat",
-  "columnExpense": "Xarajat",
+  "enterMonthlyBillsDescription": "Yil yorlig'ini tanlang. Har bir energiya tashuvchisi bitta qatorda — hisob-hisobxonangizdagi asl birlikda kiriting (gaz — m³, markazlashgan issiqlik — Gcal, ko'mir — kg, elektr — kVt·soat), bitta tarif butun yilga qo'llanadi. Excel qatorini nusxalab, to'g'ridan-to'g'ri jadvalga joylashtirishingiz (paste) mumkin — yoki shablonni yuklab oling, to'ldiring va qayta yuklang.",
+  "columnCarrier": "Tashuvchi",
   "columnTariff": "Tarif",
+  "columnKwhTotal": "Jami (kVt·soat)",
   "ariaConsumption": "{{carrier}} — {{month}} iste'moli",
-  "showTariff": "Tarif va xarajatni ham ko'rsatish",
   "saveFailed": "Iste'mol ma'lumotlarini saqlab bo'lmadi.",
   "savedMessage": "{{year}}-yil uchun barcha kiritilgan hisob-fakturalar saqlandi.",
   "saving": "Saqlanmoqda...",
   "saveButton": "{{year}}-yilni saqlash",
-  "allUtilityBills": "Barcha kommunal hisob-fakturalar",
   "failedToLoad": "Iste'mol ma'lumotlarini yuklab bo'lmadi:",
-  "noBillsYet": "Hali hisob-fakturalar qayd etilmagan",
-  "noBillsDescription": "Tashuvchining bir yillik oylik hisob-fakturalarini qo'shish uchun yuqoridagi jadvaldan foydalaning.",
-  "columnCarrier": "Tashuvchi",
-  "columnYear": "Yil",
   "yearTabs": {
     "addYear": "Yil qo'shish",
     "add": "Qo'shish"
+  },
+  "comparisonChart": {
+    "title": "Yillar bo'yicha taqqoslash",
+    "description": "Oxirgi 3 yil, oylar kesimida, jami energiya iste'moli (barcha tashuvchilar, kVt·soatda).",
+    "noData": "Taqqoslash uchun hali ma'lumot yo'q."
   },
   "excel": {
     "downloadTemplate": "Shablonni yuklab olish",

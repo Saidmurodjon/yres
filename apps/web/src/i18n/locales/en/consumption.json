@@ -1,27 +1,23 @@
 {
   "enterMonthlyBills": "Enter monthly bills",
-  "enterMonthlyBillsDescription": "Pick a year tab. Every energy carrier has its own table — enter the reading in its own native unit (m³ for gas, Gcal for district heat, kg for coal, kWh for electricity); kWh is computed automatically. Enter a tariff and the expense is computed automatically too. Copy a column from Excel and paste it straight into the table — or download the template, fill it in, and upload it back.",
-  "columnMonth": "Month",
-  "columnConsumptionNative": "Amount ({{unit}})",
-  "columnConsumptionNativeShort": "Amount",
-  "columnKwhPreview": "≈ kWh",
-  "columnExpense": "Expense",
+  "enterMonthlyBillsDescription": "Pick a year tab. Every energy carrier is one row — enter the reading in its own native unit (m³ for gas, Gcal for district heat, kg for coal, kWh for electricity); one tariff applies to the whole year. Copy a row from Excel and paste it straight into the table — or download the template, fill it in, and upload it back.",
+  "columnCarrier": "Carrier",
   "columnTariff": "Tariff",
+  "columnKwhTotal": "Total (kWh)",
   "ariaConsumption": "{{carrier}} — {{month}} consumption",
-  "showTariff": "Also show tariff and expense",
   "saveFailed": "Failed to save consumption data.",
   "savedMessage": "Saved all entered bills for {{year}}.",
   "saving": "Saving...",
   "saveButton": "Save {{year}}",
-  "allUtilityBills": "All utility bills",
   "failedToLoad": "Failed to load consumption data:",
-  "noBillsYet": "No utility bills recorded yet",
-  "noBillsDescription": "Use the grid above to add a carrier's monthly bills for a year.",
-  "columnCarrier": "Carrier",
-  "columnYear": "Year",
   "yearTabs": {
     "addYear": "Add year",
     "add": "Add"
+  },
+  "comparisonChart": {
+    "title": "Year-over-year comparison",
+    "description": "Total energy consumption (every carrier, in kWh) for the last 3 years, by month.",
+    "noData": "No data to compare yet."
   },
   "excel": {
     "downloadTemplate": "Download template",
