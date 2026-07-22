@@ -1,8 +1,35 @@
 import type { building } from "@yres/db";
-import type { AuditResult } from "@yres/types";
+import type { AuditResult, GenerationSourceResult } from "@yres/types";
 import { type PDFFont, type PDFPage, PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import type {
+  CarrierConsumptionHistory,
+  ConstructionTypeUValueBreakdown,
+  LatestTariffRow,
+} from "./report-data.service";
 
 type Building = typeof building.$inferSelect;
+
+/** Raw data `AuditResult` doesn't carry — fetched separately by the `/audit/report` route via `report-data.service.ts` (see `.claude/rules/hisobot.md`). */
+export interface ReportExtras {
+  uValues: ConstructionTypeUValueBreakdown[];
+  consumptionHistory: CarrierConsumptionHistory[];
+  tariffs: LatestTariffRow[];
+}
+
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 const PAGE_WIDTH = 595.28; // A4 in points
 const PAGE_HEIGHT = 841.89;
@@ -300,6 +327,55 @@ function wedgePath(
   return `M ${cx} ${-cy} L ${startX} ${-startY} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${endX} ${-endY} Z`;
 }
 
+interface GenerationEfficiencyRow {
+  endUse: string;
+  scenario: string;
+  usefulEnergyNeedKwh: number;
+  distributionLossKwh: number;
+  finalEnergyConsumptionKwh: number;
+  specificFinalEnergyKwhPerM2: number;
+  /** Weighted by each source's own `finalEnergyConsumptionKwh` so a mix of e.g. a district-heat and a gas-boiler source doesn't average their efficiencies as if they served equal shares. */
+  weightedEfficiencyOrSeer: number;
+}
+
+/** `result.generation` is one row per generation *source*; multiple sources can share an end-use (e.g. district heat + a gas boiler both serving "heating"), so this collapses them into one report row per end-use/scenario. */
+function aggregateGenerationByEndUseScenario(
+  generation: GenerationSourceResult[],
+): GenerationEfficiencyRow[] {
+  const groups = new Map<string, GenerationSourceResult[]>();
+  for (const g of generation) {
+    const key = `${g.endUse}|${g.scenario}`;
+    const rows = groups.get(key) ?? [];
+    rows.push(g);
+    groups.set(key, rows);
+  }
+
+  return [...groups.values()].map((rows) => {
+    const usefulEnergyNeedKwh = rows.reduce((sum, r) => sum + r.usefulEnergyNeedKwh, 0);
+    const distributionLossKwh = rows.reduce((sum, r) => sum + r.distributionLossKwh, 0);
+    const finalEnergyConsumptionKwh = rows.reduce((sum, r) => sum + r.finalEnergyConsumptionKwh, 0);
+    const specificFinalEnergyKwhPerM2 = rows.reduce(
+      (sum, r) => sum + r.specificFinalEnergyKwhPerM2,
+      0,
+    );
+    const weightedEfficiencyOrSeer =
+      finalEnergyConsumptionKwh > 0
+        ? rows.reduce((sum, r) => sum + r.efficiencyOrSeer * r.finalEnergyConsumptionKwh, 0) /
+          finalEnergyConsumptionKwh
+        : 0;
+
+    return {
+      endUse: rows[0]?.endUse ?? "",
+      scenario: rows[0]?.scenario ?? "",
+      usefulEnergyNeedKwh,
+      distributionLossKwh,
+      finalEnergyConsumptionKwh,
+      specificFinalEnergyKwhPerM2,
+      weightedEfficiencyOrSeer,
+    };
+  });
+}
+
 function fmt(value: number | null | undefined, digits = 1): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
   return value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: digits });
@@ -317,6 +393,7 @@ function fmtUsd(value: number | null | undefined): string {
 export async function generateAuditReportPdf(
   building: Building,
   result: AuditResult,
+  extras: ReportExtras,
 ): Promise<Uint8Array> {
   const layout = await ReportLayout.create();
 
@@ -337,6 +414,19 @@ export async function generateAuditReportPdf(
         building.netCooledFloorAreaM2 ? `${fmt(building.netCooledFloorAreaM2, 0)} m²` : "—",
       ],
       ["Occupants", String(building.occupantCount)],
+    ],
+    2,
+  );
+  layout.keyValueGrid(
+    [
+      ["Heating season duration", `${fmt(building.heatingSeasonDurationDays, 0)} days`],
+      ["Indoor temp. (operation hours)", `${fmt(building.indoorTempOperationC, 1)} °C`],
+      ["Indoor temp. (non-operation hours)", `${fmt(building.indoorTempNonOperationC, 1)} °C`],
+      ["Outdoor avg. temp. (heating season)", `${fmt(building.outdoorAvgHeatingSeasonTempC, 1)} °C`],
+      ["Outdoor design temp. (coldest 5 days)", `${fmt(building.outdoorDesignTempC, 1)} °C`],
+      ["Cooling enthalpy — inside", `${fmt(building.coolingEnthalpyInsideKjKg, 1)} kJ/kg`],
+      ["Cooling enthalpy — outside", `${fmt(building.coolingEnthalpyOutsideKjKg, 1)} kJ/kg`],
+      ["Cooling enthalpy — hottest day", `${fmt(building.coolingEnthalpyHottestDayKjKg, 1)} kJ/kg`],
     ],
     2,
   );
@@ -375,6 +465,83 @@ export async function generateAuditReportPdf(
     [280, 100],
   );
 
+  if (extras.uValues.length > 0) {
+    layout.heading("U-value calculations");
+    for (const ct of extras.uValues) {
+      layout.paragraph(
+        `${ct.code} — ${ct.elementCategory.replace(/_/g, " ")} (${ct.scenario}) — U = ${fmt(ct.uValueWPerM2K, 3)} W/m²K`,
+      );
+      layout.table(
+        ["Layer", "Material", "Thickness (m)", "Conductivity (W/mK)", "R (m²K/W)"],
+        ct.layers.map((l, i) => [
+          String(i + 1),
+          l.materialName,
+          fmt(l.thicknessM, 3),
+          fmt(l.thermalConductivityWPerMk, 2),
+          fmt(l.resistanceM2KPerW, 3),
+        ]),
+        [40, 190, 90, 110, 90],
+      );
+      layout.paragraph(
+        `Rint = ${fmt(ct.interiorResistanceM2kPerW, 3)} m²K/W · Rext = ${fmt(ct.exteriorResistanceM2kPerW, 3)} m²K/W · Total R = ${fmt(ct.totalThermalResistanceM2KPerW, 3)} m²K/W`,
+      );
+    }
+  }
+
+  if (extras.consumptionHistory.length > 0) {
+    layout.heading("Metered energy consumption history (baseline)");
+    for (const carrier of extras.consumptionHistory) {
+      const years = [
+        ...new Set(carrier.months.flatMap((m) => m.byYear.map((y) => y.year))),
+      ].sort((a, b) => a - b);
+      layout.paragraph(carrier.energyCarrier.replace(/_/g, " "));
+      layout.table(
+        ["Month", ...years.map(String), "Average (baseline)"],
+        carrier.months.map((m) => [
+          MONTH_NAMES[m.month - 1] ?? String(m.month),
+          ...years.map((year) => {
+            const yearRow = m.byYear.find((y) => y.year === year);
+            return yearRow ? fmt(yearRow.consumptionKwh, 0) : "—";
+          }),
+          fmt(m.averageConsumptionKwh, 0),
+        ]),
+        [70, ...years.map(() => 70), 100],
+      );
+      layout.barChart(
+        carrier.months.map((m) => ({
+          label: MONTH_NAMES[m.month - 1] ?? String(m.month),
+          value: m.averageConsumptionKwh,
+        })),
+      );
+    }
+  }
+
+  const generationEfficiency = aggregateGenerationByEndUseScenario(result.generation);
+  if (generationEfficiency.length > 0) {
+    layout.heading("Generation & distribution efficiency");
+    layout.table(
+      [
+        "End use",
+        "Scenario",
+        "Useful need (kWh)",
+        "Distrib. loss (kWh)",
+        "Efficiency/SEER",
+        "Final energy (kWh)",
+        "Specific (kWh/m²)",
+      ],
+      generationEfficiency.map((g) => [
+        g.endUse,
+        g.scenario === "before" ? "Before" : "After",
+        fmt(g.usefulEnergyNeedKwh, 0),
+        fmt(g.distributionLossKwh, 0),
+        fmt(g.weightedEfficiencyOrSeer, 2),
+        fmt(g.finalEnergyConsumptionKwh, 0),
+        fmt(g.specificFinalEnergyKwhPerM2, 1),
+      ]),
+      [80, 70, 90, 90, 80, 90, 80],
+    );
+  }
+
   layout.heading("Heating energy balance (before vs. after)");
   layout.table(
     ["Scenario", "Annual net heating need (kWh)"],
@@ -395,6 +562,47 @@ export async function generateAuditReportPdf(
     ]),
     [180, 120, 180],
   );
+
+  // `section` distinguishes gross pre-generation envelope/ventilation losses
+  // from post-generation purchased final energy — never sum across them
+  // (calculation-engine.md).
+  const envelopeLossRows = result.energyBalanceBreakdown.filter(
+    (r) => r.section === "envelope_ventilation_loss",
+  );
+  if (envelopeLossRows.length > 0) {
+    layout.heading("Envelope & ventilation heat loss breakdown (before vs. after)");
+    layout.table(
+      ["Category", "Before (kWh)", "After (kWh)"],
+      envelopeLossRows.map((r) => [
+        r.category.replace(/_/g, " "),
+        fmt(r.beforeKwh, 0),
+        fmt(r.afterKwh, 0),
+      ]),
+      [280, 100, 100],
+    );
+    layout.paragraph("Before-renovation distribution (where heat is lost today):");
+    layout.barChart(
+      envelopeLossRows.map((r) => ({ label: r.category.replace(/_/g, " "), value: r.beforeKwh })),
+    );
+  }
+
+  const finalEnergyRows = result.energyBalanceBreakdown.filter((r) => r.section === "final_energy");
+  if (finalEnergyRows.length > 0) {
+    layout.heading("Final (purchased) energy breakdown (before vs. after)");
+    layout.table(
+      ["Category", "Before (kWh)", "After (kWh)"],
+      finalEnergyRows.map((r) => [
+        r.category.replace(/_/g, " "),
+        fmt(r.beforeKwh, 0),
+        fmt(r.afterKwh, 0),
+      ]),
+      [280, 100, 100],
+    );
+    layout.paragraph("After-renovation distribution (what will be purchased):");
+    layout.barChart(
+      finalEnergyRows.map((r) => ({ label: r.category.replace(/_/g, " "), value: r.afterKwh })),
+    );
+  }
 
   const proposedMeasures = result.measures.filter((m) => m.proposedForImplementation);
   layout.heading(

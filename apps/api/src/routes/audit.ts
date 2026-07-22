@@ -4,6 +4,11 @@ import { Hono } from "hono";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import { runFullAudit } from "../services/audit.engine";
+import {
+  getConsumptionHistory,
+  getLatestEnergyTariffs,
+  getUValueBreakdown,
+} from "../services/report-data.service";
 import { generateAuditReportPdf } from "../services/report.service";
 
 export const auditRoutes = new Hono<AppEnv>();
@@ -143,8 +148,17 @@ auditRoutes.get("/:id/audit/report", async (c) => {
     return c.json({ error: "No completed audit run for this building yet" }, 404);
   }
 
-  const result = await runFullAudit(db, buildingId);
-  const pdfBytes = await generateAuditReportPdf(access.building, result);
+  const [result, uValues, consumptionHistory, tariffs] = await Promise.all([
+    runFullAudit(db, buildingId),
+    getUValueBreakdown(db, buildingId),
+    getConsumptionHistory(db, buildingId),
+    getLatestEnergyTariffs(db),
+  ]);
+  const pdfBytes = await generateAuditReportPdf(access.building, result, {
+    uValues,
+    consumptionHistory,
+    tariffs,
+  });
 
   const r2Key = `reports/${buildingId}/latest.pdf`;
   await c.env.REPORTS_BUCKET.put(r2Key, pdfBytes, {

@@ -1101,3 +1101,33 @@ bosqichlarda ulanadi) — bu bosqichda faqat klassga qo'shildi. Tekshirildi: `bu
 type-check`, `bunx biome lint` — toza. Vizual tekshiruv (chizilgan PDF'ni ochib ko'rish) bu
 sandbox'da imkonsiz — `hisobot.md`ning tekshirish izohiga qarang; funksional tekshiruv
 (xatosiz PDF chiqishi) 8-bosqich testida qilinadi.
+
+**4-bosqich (tugallandi, 7-bosqich bilan birga)** — `generateAuditReportPdf()` uchinchi
+`extras: ReportExtras` argumentini oldi (`uValues`/`consumptionHistory`/`tariffs` —
+2-bosqichning yangi so'rovlari); imzo o'zgargani `routes/audit.ts`ni ham darhol buzgani uchun
+7-bosqich (route simlash — `runFullAudit()` bilan bir qatorda `Promise.all` orqali uchtasini
+chaqirish) shu bosqichda birga qilindi, aks holda oraliq holat buziq qolardi. Qo'shilgan
+bo'limlar: iqlim/harorat parametrlari (Bino bo'limiga), qatlam-qatlam U-qiymat jadvallari,
+oylik sarf tarixi jadvali+`barChart()` (carrier bo'yicha), generatsiya/taqsimot samaradorligi
+jadvali (`aggregateGenerationByEndUseScenario()` — bir nechta manba bitta end-use'ga xizmat
+qilganda samaradorlikni `finalEnergyConsumptionKwh` bo'yicha vaznlab o'rtachalaydi), energiya
+balansi taqsimoti jadvali+`barChart()` (ikki bo'lim: `envelope_ventilation_loss` uchun "oldin"
+taqsimoti — bugungi muammoni tashxislash, `final_energy` uchun "keyin" taqsimoti — nima sotib
+olinadi).
+
+**Haqiqiy bug topildi va tuzatildi (smoke-test orqali, commit qilinmasdan oldin)**: U-qiymat
+jadvalining "λ (W/mK)" sarlavhasi PDF'ning standart `WinAnsiEncoding`sida yo'q belgi
+(`λ` — grek harfi) ishlatgani uchun **har safar** (haqiqiy binoda construction type bo'lsa)
+`generateAuditReportPdf()`ni "WinAnsi cannot encode 'λ'" xatosi bilan yiqitardi. Bu faqat
+haqiqiy `generateAuditReportPdf()`ni chaqirib (qo'lda tuzilgan `AuditResult`/`extras` fixture
+bilan, `apps/api/smoke-report.ts` — vaqtinchalik, commit qilinmadi) topildi; `type-check`/`lint`
+buni tutib bermaydi (matn satri sifatida to'liq yaroqli TypeScript). Sarlavha "Conductivity
+(W/mK)"ga almashtirildi. Bu ushbu kengaytirishning **hisobot xatolarini faqat kod o'qishdan
+bilib bo'lmasligi** haqidagi `hisobot.md`ning tekshirish izohini tasdiqladi — shu sababli har
+bir keyingi bosqichda ham xuddi shu tarzda (qo'lda fixture bilan haqiqiy chaqiruv) qo'shimcha
+tekshiriladi, faqat 8-bosqichning rasmiy testiga qoldirilmaydi. Bo'sh massivlar (yangi
+bino, hech narsa kiritilmagan) bilan ham sinovdan o'tdi — xato yo'q.
+
+Tekshirildi: `bun run type-check` (butun repo), `bunx biome lint`, `bun run test
+tests/services` (55/55), va yuqoridagi ikkita qo'lda smoke-test (to'liq ma'lumot + bo'sh
+ma'lumot).
