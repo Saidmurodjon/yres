@@ -1,14 +1,12 @@
 {
   "enterMonthlyBills": "Oylik hisob-fakturalarni kiritish",
-  "enterMonthlyBillsDescription": "Yil yorlig'ini tanlang va jadvalga to'ldiring — bitta jadvalda barcha tashuvchilar bir vaqtda ko'rinadi. kVt·soat/Xarajat/Tarif maydonlari har bir katak yonidagi \"Batafsil\" tugmasida. Excel'dan qulay kiritish uchun shablonni yuklab oling, to'ldiring va qayta yuklang.",
+  "enterMonthlyBillsDescription": "Yil yorlig'ini tanlang. Har bir energiya tashuvchisi o'z alohida jadvalida, kVt·soatda (barcha tashuvchilar solishtirilishi uchun yagona o'lchov — manba Excel jadvalidagi kabi). Xarajat/Tarif kerak bo'lsa pastdagi belgini yoqing. Excel'dan qulay kiritish uchun shablonni yuklab oling, to'ldiring va qayta yuklang.",
   "columnMonth": "Oy",
-  "columnConsumption": "Iste'mol",
-  "columnConsumptionKwh": "Iste'mol (kVt·soat)",
+  "columnConsumptionKwh": "Miqdor (kVt·soat)",
   "columnExpense": "Xarajat",
   "columnTariff": "Tarif",
-  "monthFallback": "{{n}}-oy",
-  "ariaConsumption": "{{carrier}} — {{month}} iste'moli",
-  "consumptionMustBeNumber": "{{month}}: iste'mol raqam bo'lishi kerak.",
+  "ariaConsumption": "{{carrier}} — {{month}} iste'moli (kVt·soat)",
+  "showAdvancedColumns": "Xarajat va tarifni ham ko'rsatish",
   "saveFailed": "Iste'mol ma'lumotlarini saqlab bo'lmadi.",
   "savedMessage": "{{year}}-yil uchun barcha kiritilgan hisob-fakturalar saqlandi.",
   "saving": "Saqlanmoqda...",
@@ -23,10 +21,6 @@
     "addYear": "Yil qo'shish",
     "add": "Qo'shish"
   },
-  "advanced": {
-    "title": "Batafsil",
-    "titleFor": "{{carrier}} — {{month}} (batafsil)"
-  },
   "excel": {
     "downloadTemplate": "Shablonni yuklab olish",
     "uploadButton": "Excel yuklash",
@@ -38,12 +32,11 @@
       "sheetName": "Iste'mol",
       "readMeSheetName": "O'qish",
       "readMeTitle": "Ko'rsatma",
-      "readMeInstructions": "Har bir qatorga bitta oy+tashuvchi yozuvini kiriting. Namuna qatorni o'chirib, o'z ma'lumotlaringizni kiriting yoki ustiga yozing. \"Tashuvchi\" ustunida faqat quyidagi qiymatlardan birini yozing:",
+      "readMeInstructions": "Har bir qatorga bitta oy+tashuvchi yozuvini kiriting — \"Miqdor (kVt·soat)\" asosiy ustun (barcha tashuvchilar shu yagona o'lchovda kiritiladi). Namuna qatorni o'chirib, o'z ma'lumotlaringizni kiriting yoki ustiga yozing. \"Tashuvchi\" ustunida faqat quyidagi qiymatlardan birini yozing:",
       "readMeCarriersLabel": "Qabul qilinadigan tashuvchilar:",
       "columnYear": "Yil",
       "columnMonth": "Oy",
       "columnCarrier": "Tashuvchi",
-      "columnConsumption": "Miqdor",
       "columnConsumptionKwh": "Miqdor (kVt·soat)",
       "columnExpense": "Xarajat",
       "columnTariff": "Tarif",

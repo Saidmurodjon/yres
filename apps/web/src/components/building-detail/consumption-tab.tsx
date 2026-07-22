@@ -22,7 +22,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@yres/ui";
-import { Download, Plus, Receipt, Save, SlidersHorizontal, Upload } from "lucide-react";
+import { Download, Plus, Receipt, Save, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConsumption, useReplaceConsumption } from "../../hooks";
@@ -31,8 +31,12 @@ import type { EnergyCarrier, MonthlyBillInput, UtilityBill } from "../../lib/api
 import { ENERGY_CARRIERS, ENERGY_CARRIER_LABELS, MONTH_LABELS, formatNumber } from "../../lib/labels";
 import { type ParsedBillRow, downloadConsumptionTemplate, parseConsumptionWorkbook } from "./consumption-excel";
 
+// Every carrier is entered in one normalized unit — kWh — matching the
+// source spreadsheet's convention (`excelda yagona o'lchovga keltirilgan
+// kWh`), so columns are directly comparable across carriers. There's no
+// separate "native meter unit" field in this UI; the API's required
+// consumptionNative is just set equal to consumptionKwh at save time.
 interface MonthRow {
-  consumptionNative: string;
   consumptionKwh: string;
   expenseLocal: string;
   tariffLocal: string;
@@ -41,7 +45,7 @@ interface MonthRow {
 type YearGrid = Record<EnergyCarrier, MonthRow[]>;
 
 function emptyMonthRow(): MonthRow {
-  return { consumptionNative: "", consumptionKwh: "", expenseLocal: "", tariffLocal: "" };
+  return { consumptionKwh: "", expenseLocal: "", tariffLocal: "" };
 }
 
 function emptyYearGrid(): YearGrid {
@@ -56,9 +60,12 @@ function gridsFromBills(bills: UtilityBill[], years: number[]): Record<number, Y
   for (const bill of bills) {
     const yearGrid = grids[bill.year] ?? emptyYearGrid();
     grids[bill.year] = yearGrid;
+    // Older rows saved before this redesign may only have consumptionNative
+    // (no separate kWh figure) — fall back to it so existing data still
+    // shows up instead of appearing blank.
+    const kwh = bill.consumptionKwh ?? bill.consumptionNative;
     yearGrid[bill.energyCarrier][bill.month - 1] = {
-      consumptionNative: String(bill.consumptionNative),
-      consumptionKwh: bill.consumptionKwh !== null ? String(bill.consumptionKwh) : "",
+      consumptionKwh: String(kwh),
       expenseLocal: bill.expenseLocal !== null ? String(bill.expenseLocal) : "",
       tariffLocal: bill.tariffLocal !== null ? String(bill.tariffLocal) : "",
     };
@@ -68,8 +75,7 @@ function gridsFromBills(bills: UtilityBill[], years: number[]): Record<number, Y
 
 function billRowToMonthRow(row: ParsedBillRow): MonthRow {
   return {
-    consumptionNative: String(row.consumptionNative),
-    consumptionKwh: row.consumptionKwh !== null ? String(row.consumptionKwh) : "",
+    consumptionKwh: String(row.consumptionKwh),
     expenseLocal: row.expenseLocal !== null ? String(row.expenseLocal) : "",
     tariffLocal: row.tariffLocal !== null ? String(row.tariffLocal) : "",
   };
@@ -82,13 +88,13 @@ function buildBillGroupsForYear(
   for (const carrier of ENERGY_CARRIERS) {
     const bills: MonthlyBillInput[] = [];
     for (const [idx, row] of yearGrid[carrier].entries()) {
-      if (!row.consumptionNative.trim()) continue;
-      const consumptionNative = Number(row.consumptionNative);
-      if (Number.isNaN(consumptionNative)) continue;
+      if (!row.consumptionKwh.trim()) continue;
+      const consumptionKwh = Number(row.consumptionKwh);
+      if (Number.isNaN(consumptionKwh)) continue;
       bills.push({
         month: idx + 1,
-        consumptionNative,
-        consumptionKwh: row.consumptionKwh.trim() ? Number(row.consumptionKwh) : null,
+        consumptionNative: consumptionKwh,
+        consumptionKwh,
         expenseLocal: row.expenseLocal.trim() ? Number(row.expenseLocal) : null,
         tariffLocal: row.tariffLocal.trim() ? Number(row.tariffLocal) : null,
       });
@@ -115,6 +121,7 @@ export function ConsumptionTab({
   const [gridsByYear, setGridsByYear] = useState<Record<number, YearGrid>>({});
   const [initialized, setInitialized] = useState(false);
   const [newYearValue, setNewYearValue] = useState(String(currentYear + 1));
+  const [showAdvancedColumns, setShowAdvancedColumns] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
@@ -283,146 +290,139 @@ export function ConsumptionTab({
               </div>
             )}
 
-            <Tabs
-              value={activeYear}
-              onValueChange={(v) => {
-                setActiveYear(v);
-                setSaved(false);
-              }}
-            >
-              <div className="flex items-center gap-2">
-                <TabsList>
-                  {years.map((y) => (
-                    <TabsTrigger key={y} value={String(y)}>
-                      {y}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button type="button" variant="ghost" size="icon" aria-label={t("yearTabs.addYear")}>
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-56">
-                    <div className="space-y-2">
-                      <Label htmlFor="new-year-input">{t("yearTabs.addYear")}</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="new-year-input"
-                          type="number"
-                          value={newYearValue}
-                          onChange={(e) => setNewYearValue(e.target.value)}
-                        />
-                        <Button type="button" size="sm" onClick={addYear}>
-                          {t("yearTabs.add")}
-                        </Button>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <Tabs
+                value={activeYear}
+                onValueChange={(v) => {
+                  setActiveYear(v);
+                  setSaved(false);
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <TabsList>
+                    {years.map((y) => (
+                      <TabsTrigger key={y} value={String(y)}>
+                        {y}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button type="button" variant="ghost" size="icon" aria-label={t("yearTabs.addYear")}>
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-56">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-year-input">{t("yearTabs.addYear")}</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="new-year-input"
+                            type="number"
+                            value={newYearValue}
+                            onChange={(e) => setNewYearValue(e.target.value)}
+                          />
+                          <Button type="button" size="sm" onClick={addYear}>
+                            {t("yearTabs.add")}
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
+                    </PopoverContent>
+                  </Popover>
+                </div>
 
-              {years.map((y) => (
-                <TabsContent key={y} value={String(y)}>
-                  <div className="overflow-x-auto rounded-md border border-border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>{t("columnMonth")}</TableHead>
-                          {ENERGY_CARRIERS.map((c) => (
-                            <TableHead key={c}>{ENERGY_CARRIER_LABELS[c]}</TableHead>
-                          ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {MONTH_LABELS.map((label, idx) => (
-                          <TableRow key={label}>
-                            <TableCell className="font-medium">{label}</TableCell>
-                            {ENERGY_CARRIERS.map((carrier) => {
-                              const row = gridFor(y)[carrier][idx] ?? emptyMonthRow();
-                              const hasAdvanced = Boolean(
-                                row.consumptionKwh || row.expenseLocal || row.tariffLocal,
-                              );
-                              return (
-                                <TableCell key={carrier}>
-                                  <div className="flex items-center gap-1">
-                                    <Input
-                                      type="number"
-                                      step="any"
-                                      className="w-28"
-                                      aria-label={t("ariaConsumption", {
-                                        month: label,
-                                        carrier: ENERGY_CARRIER_LABELS[carrier],
-                                      })}
-                                      value={row.consumptionNative}
-                                      onChange={(e) =>
-                                        updateCell(y, carrier, idx, "consumptionNative", e.target.value)
-                                      }
-                                    />
-                                    <Popover>
-                                      <PopoverTrigger asChild>
-                                        <Button
-                                          type="button"
-                                          variant={hasAdvanced ? "secondary" : "ghost"}
-                                          size="icon"
-                                          className="h-8 w-8 shrink-0"
-                                          aria-label={t("advanced.title")}
-                                        >
-                                          <SlidersHorizontal className="h-3.5 w-3.5" />
-                                        </Button>
-                                      </PopoverTrigger>
-                                      <PopoverContent className="w-64 space-y-3">
-                                        <p className="text-sm font-medium">
-                                          {t("advanced.titleFor", { month: label, carrier: ENERGY_CARRIER_LABELS[carrier] })}
-                                        </p>
-                                        <div className="space-y-1.5">
-                                          <Label>{t("columnConsumptionKwh")}</Label>
+                {years.map((y) => (
+                  <TabsContent key={y} value={String(y)}>
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                      {ENERGY_CARRIERS.map((carrier) => (
+                        <div key={carrier} className="overflow-x-auto rounded-md border border-border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead colSpan={showAdvancedColumns ? 4 : 2} className="text-center font-semibold">
+                                  {ENERGY_CARRIER_LABELS[carrier]}
+                                </TableHead>
+                              </TableRow>
+                              <TableRow>
+                                <TableHead>{t("columnMonth")}</TableHead>
+                                <TableHead>{t("columnConsumptionKwh")}</TableHead>
+                                {showAdvancedColumns && (
+                                  <>
+                                    <TableHead>{t("columnExpense")}</TableHead>
+                                    <TableHead>{t("columnTariff")}</TableHead>
+                                  </>
+                                )}
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {MONTH_LABELS.map((label, idx) => {
+                                const row = gridFor(y)[carrier][idx] ?? emptyMonthRow();
+                                return (
+                                  <TableRow key={label}>
+                                    <TableCell className="font-medium">{label}</TableCell>
+                                    <TableCell>
+                                      <Input
+                                        type="number"
+                                        step="any"
+                                        className="w-24"
+                                        aria-label={t("ariaConsumption", {
+                                          month: label,
+                                          carrier: ENERGY_CARRIER_LABELS[carrier],
+                                        })}
+                                        value={row.consumptionKwh}
+                                        onChange={(e) =>
+                                          updateCell(y, carrier, idx, "consumptionKwh", e.target.value)
+                                        }
+                                      />
+                                    </TableCell>
+                                    {showAdvancedColumns && (
+                                      <>
+                                        <TableCell>
                                           <Input
                                             type="number"
                                             step="any"
-                                            value={row.consumptionKwh}
-                                            onChange={(e) =>
-                                              updateCell(y, carrier, idx, "consumptionKwh", e.target.value)
-                                            }
-                                          />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                          <Label>{t("columnExpense")}</Label>
-                                          <Input
-                                            type="number"
-                                            step="any"
+                                            className="w-24"
                                             value={row.expenseLocal}
                                             onChange={(e) =>
                                               updateCell(y, carrier, idx, "expenseLocal", e.target.value)
                                             }
                                           />
-                                        </div>
-                                        <div className="space-y-1.5">
-                                          <Label>{t("columnTariff")}</Label>
+                                        </TableCell>
+                                        <TableCell>
                                           <Input
                                             type="number"
                                             step="any"
+                                            className="w-20"
                                             value={row.tariffLocal}
                                             onChange={(e) =>
                                               updateCell(y, carrier, idx, "tariffLocal", e.target.value)
                                             }
                                           />
-                                        </div>
-                                      </PopoverContent>
-                                    </Popover>
-                                  </div>
-                                </TableCell>
-                              );
-                            })}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </TabsContent>
-              ))}
-            </Tabs>
+                                        </TableCell>
+                                      </>
+                                    )}
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      ))}
+                    </div>
+                  </TabsContent>
+                ))}
+              </Tabs>
+            </div>
+
+            <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-border accent-primary"
+                checked={showAdvancedColumns}
+                onChange={(e) => setShowAdvancedColumns(e.target.checked)}
+              />
+              {t("showAdvancedColumns")}
+            </label>
 
             {saveError && <p className="text-sm text-destructive">{saveError}</p>}
             {saved && !saveError && (
@@ -466,7 +466,6 @@ export function ConsumptionTab({
                   <TableHead>{t("columnCarrier")}</TableHead>
                   <TableHead>{t("columnYear")}</TableHead>
                   <TableHead>{t("columnMonth")}</TableHead>
-                  <TableHead>{t("columnConsumption")}</TableHead>
                   <TableHead>{t("columnConsumptionKwh")}</TableHead>
                   <TableHead>{t("columnExpense")}</TableHead>
                   <TableHead>{t("columnTariff")}</TableHead>
@@ -478,8 +477,7 @@ export function ConsumptionTab({
                     <TableCell>{ENERGY_CARRIER_LABELS[bill.energyCarrier]}</TableCell>
                     <TableCell>{bill.year}</TableCell>
                     <TableCell>{MONTH_LABELS[bill.month - 1]}</TableCell>
-                    <TableCell>{formatNumber(bill.consumptionNative)}</TableCell>
-                    <TableCell>{formatNumber(bill.consumptionKwh)}</TableCell>
+                    <TableCell>{formatNumber(bill.consumptionKwh ?? bill.consumptionNative)}</TableCell>
                     <TableCell>{formatNumber(bill.expenseLocal)}</TableCell>
                     <TableCell>{formatNumber(bill.tariffLocal, 3)}</TableCell>
                   </TableRow>

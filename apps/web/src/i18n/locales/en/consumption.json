@@ -1,14 +1,12 @@
 {
   "enterMonthlyBills": "Enter monthly bills",
-  "enterMonthlyBillsDescription": "Pick a year tab and fill in the grid — every carrier is shown together in one table. kWh/Expense/Tariff live behind the \"Details\" button next to each cell. For faster entry from Excel, download the template, fill it in, and upload it back.",
+  "enterMonthlyBillsDescription": "Pick a year tab. Every energy carrier has its own table, in kWh (one comparable unit across carriers — matching the source spreadsheet's convention). Turn on the switch below if you need to enter expense/tariff too. For faster entry from Excel, download the template, fill it in, and upload it back.",
   "columnMonth": "Month",
-  "columnConsumption": "Consumption",
-  "columnConsumptionKwh": "Consumption (kWh)",
+  "columnConsumptionKwh": "Amount (kWh)",
   "columnExpense": "Expense",
   "columnTariff": "Tariff",
-  "monthFallback": "Month {{n}}",
-  "ariaConsumption": "{{carrier}} — {{month}} consumption",
-  "consumptionMustBeNumber": "{{month}}: consumption must be a number.",
+  "ariaConsumption": "{{carrier}} — {{month}} consumption (kWh)",
+  "showAdvancedColumns": "Also show expense and tariff",
   "saveFailed": "Failed to save consumption data.",
   "savedMessage": "Saved all entered bills for {{year}}.",
   "saving": "Saving...",
@@ -23,10 +21,6 @@
     "addYear": "Add year",
     "add": "Add"
   },
-  "advanced": {
-    "title": "Details",
-    "titleFor": "{{carrier}} — {{month}} (details)"
-  },
   "excel": {
     "downloadTemplate": "Download template",
     "uploadButton": "Upload Excel",
@@ -38,12 +32,11 @@
       "sheetName": "Consumption",
       "readMeSheetName": "Read me",
       "readMeTitle": "Instructions",
-      "readMeInstructions": "Enter one month+carrier record per row. Delete the example row and enter your own data, or overwrite it. In the \"Carrier\" column, use only one of the following values:",
+      "readMeInstructions": "Enter one month+carrier record per row — \"Amount (kWh)\" is the main column (every carrier is entered in this one comparable unit). Delete the example row and enter your own data, or overwrite it. In the \"Carrier\" column, use only one of the following values:",
       "readMeCarriersLabel": "Accepted carriers:",
       "columnYear": "Year",
       "columnMonth": "Month",
       "columnCarrier": "Carrier",
-      "columnConsumption": "Amount",
       "columnConsumptionKwh": "Amount (kWh)",
       "columnExpense": "Expense",
       "columnTariff": "Tariff",

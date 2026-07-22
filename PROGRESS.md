@@ -639,3 +639,37 @@ tanlash dialogi orqali "Excel yuklash" tugmasi ustida qo'lda bosib ko'rish sinal
 o'rniga xuddi shu `parseConsumptionWorkbook` funksiyasi to'g'ridan-to'g'ri chaqirilib
 tekshirildi (yuqorida). Foydalanuvchi birinchi haqiqiy foydalanishda UI orqali ham sinab
 ko'rishi tavsiya etiladi.
+
+### Darhol keyingi tuzatish: birinchi urinish ham "tushunarsiz/noqulay" chiqdi
+
+Yuqoridagi bosqichli jadval saqlangandan so'ng foydalanuvchi darhol uni ham "tushunarsiz va
+tartibsiz" deb baholadi, uch bosqichda aniqlashtirildi:
+
+1. **"excelda yagona o'lchovga keltirilgan kWh"** — manba Excel'da barcha tashuvchilar
+   solishtirilishi uchun yagona o'lchov (kVt·soat)ga keltirilgan, birinchi urinishda esa
+   asosiy ko'rinadigan maydon har xil o'lchovli "Miqdor" (gaz uchun m³) edi, kVt·soat esa
+   "Batafsil"ga yashiringan edi — teskari edi. Tuzatildi: endi asosiy (va yagona doim
+   ko'rinadigan) maydon kVt·soat; alohida "asl o'lchov" maydoni butunlay olib tashlandi
+   (API hamon `consumptionNative`ni talab qiladi — saqlashda oddiygina kVt·soat qiymatiga
+   tenglashtiriladi).
+2. **"jadval ham noqulay"** → aniqlashtirilgach: har bir katakdagi kichik "Batafsil"
+   popover-tugmasi (12 oy × 4 tashuvchi = 48 ta kichik tugma) chalg'itar ekan. Tuzatildi:
+   popover butunlay olib tashlandi, o'rniga bitta global belgi ("Xarajat va tarifni ham
+   ko'rsatish") — yoqilganda HAR BIR jadvalga haqiqiy qo'shimcha ustunlar sifatida qo'shiladi
+   (popover emas), o'chirilganda (standart holat) faqat kVt·soat ustuni ko'rinadi.
+3. **"har bir energiya mahsulot uchun alohida bo'lsin"** — bitta katta ko'p-tashuvchili jadval
+   o'rniga endi har bir tashuvchi (Gas/Electricity/District heat/Coal) o'zining alohida kichik
+   jadvaliga ega, barchasi bir yil-tab ichida yonma-yon (`grid sm:grid-cols-2 xl:grid-cols-4`)
+   — "boshqa energiya manbasi ham bo'lishi mumkin" degani esa aniqlashtirilgach hozirgi 4
+   tashuvchi har doim ko'rinishi kifoya ekani ma'lum bo'ldi (yangi tashuvchi turi qo'shish —
+   `energyCarrierEnum`ni kengaytiradigan kattaroq backend o'zgarish — so'ralmadi).
+
+`packages/ui`da `Checkbox` komponenti yo'qligi aniqlandi — oddiy tug'ma `<input
+type="checkbox">` (Tailwind `accent-primary` bilan) ishlatildi, yangi umumiy komponent
+qo'shilmadi.
+
+Tekshirildi: `bun run type-check`/`bunx biome lint` toza. Brauzerda: Gas-2023-yanvar endi
+69103 (kVt·soat) ko'rsatadi (avvalgi 7274 m³ o'rniga), "Xarajat va tarifni ham ko'rsatish"
+belgisi yoqilganda haqiqiy qiymatlar (18185000 / 2500) to'g'ri ko'rindi, Saqlash bosilgach
+`GET .../consumption` orqali `consumptionKwh === consumptionNative === 69103` ekanligi va
+24 ta hisob-faktura saqlanib qolgani tasdiqlandi.
