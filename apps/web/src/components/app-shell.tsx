@@ -237,14 +237,19 @@ export function AppShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center justify-between border-t border-border pt-4">
+      </aside>
+      <div className="flex min-w-0 flex-1 flex-col">
+        {/* Desktop-only top navbar (mobile already has the bell/profile menu
+            inline in the icon header above) — sits above the main content,
+            to the right of the sidebar. */}
+        <header className="hidden h-14 shrink-0 items-center justify-end gap-2 border-b border-border bg-card px-6 sm:flex">
           <NotificationBell />
           {user && <ProfileMenu user={user} onSignOut={handleSignOut} />}
-        </div>
-      </aside>
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-7xl p-6 sm:p-8">{children}</div>
-      </main>
+        </header>
+        <main className="flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-7xl p-6 sm:p-8">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }
