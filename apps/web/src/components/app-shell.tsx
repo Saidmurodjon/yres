@@ -16,10 +16,16 @@ import {
   PopoverContent,
   PopoverTrigger,
   Toaster,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@yres/ui";
 import {
   Bell,
   Building2,
+  ChevronLeft,
+  ChevronRight,
   LayoutDashboard,
   LogOut,
   MessageCircle,
@@ -38,6 +44,7 @@ import {
 import { signOut, useSession } from "../lib/auth-client";
 import type { SessionUser, UserRole } from "../lib/auth-types";
 import { USER_ROLE_LABELS } from "../lib/labels";
+import { useSidebarStore } from "../stores/use-sidebar-store";
 
 interface NavItem {
   to: "/dashboard" | "/buildings" | "/chat" | "/admin/users";
@@ -60,7 +67,8 @@ function visibleNavItems(role: UserRole | undefined) {
 
 function initialsFor(name: string) {
   const parts = name.trim().split(/\s+/);
-  const initials = parts.length > 1 ? `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}` : name.slice(0, 2);
+  const initials =
+    parts.length > 1 ? `${parts[0]?.[0] ?? ""}${parts[1]?.[0] ?? ""}` : name.slice(0, 2);
   return initials.toUpperCase() || "?";
 }
 
@@ -145,9 +153,7 @@ function ProfileMenu({ user, onSignOut }: { user: SessionUser; onSignOut: () => 
         <DropdownMenuLabel>
           <div className="flex flex-col gap-1">
             <span className="truncate font-medium">{user.name}</span>
-            <span className="truncate text-xs font-normal text-muted-foreground">
-              {user.email}
-            </span>
+            <span className="truncate text-xs font-normal text-muted-foreground">{user.email}</span>
             {user.role !== "auditor" && (
               <Badge variant="secondary" className="w-fit">
                 {USER_ROLE_LABELS[user.role]}
@@ -184,6 +190,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
   const user = session?.user as SessionUser | undefined;
   const navItems = visibleNavItems(user?.role);
+  const collapsed = useSidebarStore((s) => s.collapsed);
+  const toggleSidebar = useSidebarStore((s) => s.toggle);
   // Called once here rather than inside NotificationBell, which renders
   // twice (mobile header + desktop sidebar, only one visible at a time via
   // CSS) — calling it there would open two redundant sockets.
@@ -195,61 +203,110 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col sm:flex-row">
-      <Toaster />
-      {/* Below `sm` the sidebar is hidden entirely, so this bar is mobile's
+    <TooltipProvider delayDuration={200}>
+      <div className="flex min-h-screen flex-col sm:flex-row">
+        <Toaster />
+        {/* Below `sm` the sidebar is hidden entirely, so this bar is mobile's
           only way to switch sections or sign out — without it there was no
           navigation on phone-width screens at all. */}
-      <header className="flex items-center justify-between border-b border-border bg-card px-3 py-2 sm:hidden">
-        <Link to="/dashboard" className="px-1 text-lg font-semibold">
-          YRES
-        </Link>
-        <nav className="flex items-center gap-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              aria-label={t(item.labelKey)}
-              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground [&.active]:bg-accent [&.active]:text-accent-foreground"
-              activeProps={{ className: "active" }}
-            >
-              <item.icon className="h-4 w-4" />
-            </Link>
-          ))}
-          <NotificationBell />
-          {user && <ProfileMenu user={user} onSignOut={handleSignOut} />}
-        </nav>
-      </header>
-      <aside className="hidden w-64 flex-col border-r border-border bg-card p-4 sm:flex">
-        <Link to="/dashboard" className="mb-8 px-2 text-lg font-semibold">
-          YRES
-        </Link>
-        <nav className="flex flex-1 flex-col gap-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground [&.active]:bg-accent [&.active]:text-accent-foreground"
-              activeProps={{ className: "active" }}
-            >
-              <item.icon className="h-4 w-4" />
-              {t(item.labelKey)}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Desktop-only top navbar (mobile already has the bell/profile menu
+        <header className="flex items-center justify-between border-b border-border bg-card px-3 py-2 sm:hidden">
+          <Link to="/dashboard" className="px-1 text-lg font-semibold">
+            YRES
+          </Link>
+          <nav className="flex items-center gap-1">
+            {navItems.map((item) => (
+              <Link
+                key={item.to}
+                to={item.to}
+                aria-label={t(item.labelKey)}
+                className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground [&.active]:bg-accent [&.active]:text-accent-foreground"
+                activeProps={{ className: "active" }}
+              >
+                <item.icon className="h-4 w-4" />
+              </Link>
+            ))}
+            <NotificationBell />
+            {user && <ProfileMenu user={user} onSignOut={handleSignOut} />}
+          </nav>
+        </header>
+        <aside
+          className={cn(
+            "hidden flex-col border-r border-border bg-card p-4 transition-[width] duration-150 sm:flex",
+            collapsed ? "w-16" : "w-64",
+          )}
+        >
+          <Link
+            to="/dashboard"
+            className={cn("mb-8 text-lg font-semibold", collapsed ? "px-1 text-center" : "px-2")}
+          >
+            {collapsed ? "Y" : "YRES"}
+          </Link>
+          <nav className="flex flex-1 flex-col gap-1">
+            {navItems.map((item) =>
+              collapsed ? (
+                <Tooltip key={item.to}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to={item.to}
+                      aria-label={t(item.labelKey)}
+                      className="flex items-center justify-center rounded-md px-2 py-2 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground [&.active]:bg-accent [&.active]:text-accent-foreground"
+                      activeProps={{ className: "active" }}
+                    >
+                      <item.icon className="h-4 w-4" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">{t(item.labelKey)}</TooltipContent>
+                </Tooltip>
+              ) : (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground [&.active]:bg-accent [&.active]:text-accent-foreground"
+                  activeProps={{ className: "active" }}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {t(item.labelKey)}
+                </Link>
+              ),
+            )}
+          </nav>
+        </aside>
+        <div className="flex min-w-0 flex-1 flex-col">
+          {/* Desktop-only top navbar (mobile already has the bell/profile menu
             inline in the icon header above) — sits above the main content,
             to the right of the sidebar. */}
-        <header className="hidden h-14 shrink-0 items-center justify-end gap-2 border-b border-border bg-card px-6 sm:flex">
-          <NotificationBell />
-          {user && <ProfileMenu user={user} onSignOut={handleSignOut} />}
-        </header>
-        <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-7xl p-6 sm:p-8">{children}</div>
-        </main>
+          <header className="hidden h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-4 sm:flex">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleSidebar}
+                  aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
+                  className="hover:bg-transparent hover:text-foreground"
+                >
+                  {collapsed ? (
+                    <ChevronRight className="h-4 w-4" />
+                  ) : (
+                    <ChevronLeft className="h-4 w-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {collapsed ? t("expandSidebar") : t("collapseSidebar")}
+              </TooltipContent>
+            </Tooltip>
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              {user && <ProfileMenu user={user} onSignOut={handleSignOut} />}
+            </div>
+          </header>
+          <main className="flex-1 overflow-y-auto">
+            <div className="mx-auto max-w-7xl p-6 sm:p-8">{children}</div>
+          </main>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }

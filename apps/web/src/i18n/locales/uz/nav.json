@@ -9,5 +9,7 @@
   "profileMenu": "Profil menyusi",
   "profile": "Profil",
   "settings": "Sozlamalar",
-  "signOut": "Chiqish"
+  "signOut": "Chiqish",
+  "collapseSidebar": "Yig'ish",
+  "expandSidebar": "Kengaytirish"
 }

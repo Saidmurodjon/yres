@@ -788,3 +788,50 @@ qatorli, pastida Tarif + jonli "Jami (kVt·soat)"; pastda 4 ta alohida-birlikdag
 tashuvchi grafigi (Coal'da ma'lumot yo'qligi to'g'ri ko'rsatildi) + eng pastda umumiy
 kVt·soat taqqoslash grafigi. `POST .../audit/run` mavjud ma'lumot bilan hamon
 xatosiz ishlashi tasdiqlandi.
+
+### Ettinchi tuzatish: har tashuvchi grafigi 2 tadan qatorga
+
+Foydalanuvchi 4 ta alohida-birlikdagi grafikni (Gas/Electricity/District heat/Coal) kengroq
+ekranda 4 tadan emas, **doim 2 tadan** joylashtirishni so'radi. `grid gap-3 sm:grid-cols-2
+xl:grid-cols-4` konteynerining `xl:grid-cols-4` qismi olib tashlandi — endi `sm:grid-cols-2`
+har doim amal qiladi (`5fb19c8`).
+
+## Navbar yaratish va sidebar yig'ish/kengaytirish
+
+Foydalanuvchi: "Navbar qismini tekshirsin mavjud bo'lmasa, yaratsin, side bardagi user va bell
+navbarda bo'lishi kerak!" — desktop uchun alohida navbar mavjud emas edi (bell/profil sidebar
+pastida edi). `app-shell.tsx`ga asosiy kontent tepasida `<header>` qo'shildi, `NotificationBell`/
+`ProfileMenu` sidebar pastidan shu yerga ko'chirildi (mobil `sm:hidden` icon-header o'zgarishsiz
+qoldi, u allaqachon o'z ichida bell/profilga ega) — `5a14bcf`.
+
+Keyin ikkita ketma-ket tuzatish so'raldi: **"side bar, kichiklashtirilganda meny va sub menyu
+icon ko'rinsin, hover bo'lganda matnni o'zi ko'rsatilsin"** — sidebar uchun collapse (faqat
+icon) rejimi va hover-tooltip kerak bo'ldi.
+
+- **Yangi**: `apps/web/src/stores/use-sidebar-store.ts` — `use-theme-store.ts`ning bir xil
+  andozasi (Zustand + `localStorage`, `ui-guidelines.md`dagi sof-mijoz-holat chegarasiga mos),
+  `collapsed: boolean` + `toggle()`.
+- **Yangi**: `packages/ui`ga `@radix-ui/react-tooltip` qo'shildi (avval `Tooltip` primitivi
+  umuman yo'q edi) — `packages/ui/src/components/tooltip.tsx` (`Tooltip`/`TooltipTrigger`/
+  `TooltipContent`/`TooltipProvider`), `packages/ui/src/index.ts`dan eksport qilindi.
+- `app-shell.tsx`: `<aside>` collapsed bo'lganda `w-16` (faqat icon'lar, logotip "Y"), aks holda
+  `w-64` (to'liq, `transition-[width]`); collapsed holatda har bir nav item `Tooltip` bilan
+  o'raladi (`side="right"`, matn faqat hover'da chiqadi).
+
+So'ng ikkita aniqlashtirish keldi:
+1. **"yig'ish kengaytirish navbarda bo'lishi kerak"** — collapse tugmasi dastlab `<aside>`
+   pastida edi, navbar (`<header>`)ga ko'chirildi (chap tomonga, bell/profil guruhi o'ng
+   tomonda qoladi, `<header>` `justify-between`ga o'zgardi).
+2. **"hover bo'lganda bg o'zgarmasin yig'ishga tegishli"** — collapse tugmasi `Button`ning
+   standart `ghost` varianti (`hover:bg-accent hover:text-accent-foreground`,
+   `packages/ui/src/components/button.tsx:14`) bilan fon rangini o'zgartirar edi; tugmaga
+   `className="hover:bg-transparent hover:text-foreground"` qo'shilib bu bekor qilindi.
+
+`nav.json` (uz/ru/en) ga `collapseSidebar`/`expandSidebar` kalitlari qo'shildi.
+
+**Tekshirildi**: `bun run type-check`, `bun run build` (`apps/web`), `bunx biome lint` toza.
+Brauzerda (`3-DMTT` sessiyasi): navbar toggle bosilganda sidebar `w-16`ga qisqarib icon-only
+holatga o'tdi va `localStorage.getItem("yres-sidebar-collapsed")` `"1"`ga yozildi (qayta
+bosilganda `"0"`ga qaytdi); collapsed holatda nav icon'ga hover qilinganda "Binolar" tooltip'i
+chiqdi; toggle tugmasiga real hover qilingandan keyin `getComputedStyle(btn).backgroundColor`
+`rgba(0, 0, 0, 0)` (shaffof) ekanligi tasdiqlandi.

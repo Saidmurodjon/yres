@@ -9,5 +9,7 @@
   "profileMenu": "Profile menu",
   "profile": "Profile",
   "settings": "Settings",
-  "signOut": "Sign out"
+  "signOut": "Sign out",
+  "collapseSidebar": "Collapse",
+  "expandSidebar": "Expand"
 }
