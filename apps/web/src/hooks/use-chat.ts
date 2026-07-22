@@ -155,8 +155,12 @@ export function useConversationSocket(conversationId: string | undefined) {
   }, [conversationId, queryClient]);
 
   function send(payload: Record<string, unknown>) {
+    console.log("[chat] send() called", payload.type, "readyState:", socketRef.current?.readyState);
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify(payload));
+      console.log("[chat] frame sent over socket");
+    } else {
+      console.warn("[chat] socket not OPEN, frame dropped");
     }
   }
 

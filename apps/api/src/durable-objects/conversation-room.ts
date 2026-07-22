@@ -64,6 +64,25 @@ export class ConversationRoom extends DurableObject<Env> {
 
     const db = createDb(this.env.DATABASE_URL);
 
+    console.log("[chat] frame received", incoming.type, "from", userId);
+    try {
+      await this.handleIncoming(db, ws, userId, conversationId, incoming);
+    } catch (err) {
+      // The Hibernatable WebSocket API has no default error surface for a
+      // rejected promise here — without this, a failed insert/update (bad
+      // FK, DB hiccup, etc.) fails completely silently: no broadcast, no
+      // log line, nothing the client or the server operator can see.
+      console.error("[chat] webSocketMessage failed", incoming.type, err);
+    }
+  }
+
+  private async handleIncoming(
+    db: ReturnType<typeof createDb>,
+    ws: WebSocket,
+    userId: string,
+    conversationId: string,
+    incoming: IncomingWsMessage,
+  ): Promise<void> {
     switch (incoming.type) {
       case "message": {
         if (!incoming.body?.trim() && !incoming.attachmentUrl) return;
@@ -142,6 +161,10 @@ export class ConversationRoom extends DurableObject<Env> {
     } else {
       ws.close(code, reason);
     }
+  }
+
+  async webSocketError(_ws: WebSocket, error: unknown): Promise<void> {
+    console.error("[chat] websocket error", error);
   }
 
   private broadcast(payload: unknown, exclude?: WebSocket): void {
