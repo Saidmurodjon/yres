@@ -1160,3 +1160,21 @@ belgilangan barcha ~12 bo'shliq yopildi.
 Smoke-test to'liq oylik massivlar (`monthly: [...]`, 12 oy × har bir manba) bilan qayta
 ishlatildi — 22KB'lik PDF, xatosiz. Tekshirildi: `bun run type-check` (butun repo), `bunx
 biome lint`, `bun run test tests/services` (55/55).
+
+**8-bosqich (tugallandi) — hisobot integratsiyasi yakunlandi**. 4-6 bosqichlarda qo'lda
+ishlatilgan vaqtinchalik smoke-test skriptlari (commit qilinmagan) endi doimiy testlarga
+aylandi: `apps/api/tests/services/report.service.test.ts` (to'liq to'ldirilgan `AuditResult`/
+`ReportExtras` fixture bilan `generateAuditReportPdf()`ni chaqirib, natijani `pdf-lib`ning
+o'zi bilan qayta yuklab `%PDF-` sarlavhasi va sahifa sonini tasdiqlaydi; bo'sh/yangi bino
+holatini ham, taklif qilinmagan chora-tadbir cashflow bo'limidan chiqarib tashlanishini ham
+qamrab oladi) va `apps/api/tests/services/report-data.service.test.ts` (`groupBillsByCarrierYear
+Month()` sof funksiyasini baza kerak bo'lmagan holda — guruhlash, `consumptionKwh: null`
+qatorlarni o'tkazib yuborish, oy bo'yicha saralash).
+
+**Yakuniy holat**: `hisobot.md`da belgilangan barcha 8 bo'lim (A-H)/~12 bo'shliq yopildi.
+Tekshirildi: `bun run type-check` (butun repo), `bunx biome lint`, `bun run test
+tests/services` — **62/62 unit test toza** (7 yangi test qo'shildi, avvalgi 55 ta o'zgarishsiz
+o'tdi). Integratsiya testlari (`tests/integration/report.test.ts`) bu sandbox'da lokal
+Postgres yo'qligi sababli tekshirilmadi (`testing-and-verification.md`ga qarang) —
+`/:id/audit/report` endpoint'ining haqiqiy HTTP orqali ishlashi keyingi haqiqiy muhitda
+tasdiqlanishi kerak.
