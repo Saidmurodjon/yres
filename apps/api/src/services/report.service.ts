@@ -40,16 +40,21 @@ const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 const INK = rgb(0.12, 0.12, 0.14);
 const MUTED = rgb(0.45, 0.45, 0.48);
 const RULE = rgb(0.85, 0.85, 0.87);
-const ACCENT = rgb(0.15, 0.35, 0.32);
+const ACCENT = rgb(0.09, 0.38, 0.34);
 
-/** Chart series colors — a handful of muted, print-safe tones distinct enough to tell apart in grayscale too (varying lightness, not just hue). */
+/** Chart card surface — every chart sits on this light panel with a colored accent edge so it reads as a designed block rather than bare marks on the page. Donut charts punch their center hole in this exact color so the cutout blends seamlessly with the card (see `pieChart`). */
+const CHART_CARD_BG = rgb(0.966, 0.968, 0.971);
+const CHART_CARD_BORDER = rgb(0.87, 0.88, 0.9);
+const CHART_GRID = rgb(0.85, 0.86, 0.88);
+
+/** Chart series colors — a modern, print-safe flat palette (varying hue AND lightness so grayscale printing still tells series apart). First entry matches ACCENT so single-series charts stay on-brand. */
 const CHART_PALETTE = [
   ACCENT,
-  rgb(0.55, 0.42, 0.15),
-  rgb(0.25, 0.4, 0.55),
-  rgb(0.5, 0.25, 0.35),
-  rgb(0.35, 0.5, 0.3),
-  rgb(0.6, 0.6, 0.62),
+  rgb(0.16, 0.42, 0.68),
+  rgb(0.82, 0.53, 0.15),
+  rgb(0.68, 0.29, 0.29),
+  rgb(0.42, 0.32, 0.58),
+  rgb(0.55, 0.58, 0.62),
 ];
 
 /**
@@ -187,106 +192,210 @@ class ReportLayout {
    * has no chart primitive, and `recharts` (used for the equivalent web
    * dashboard charts) can't run here: this service executes in the Workers
    * runtime, which has no DOM/canvas to render into (see
-   * `.claude/rules/hisobot.md`). Bars are proportional to `chartHeight`;
-   * each bar gets a value label above it and a category label below.
+   * `.claude/rules/hisobot.md`). Sits on a `CHART_CARD_BG` panel with a
+   * colored left edge (same treatment as `pieChart`, so the two read as one
+   * visual system) and dashed gridlines at 0/25/50/75/100% of the max value
+   * with axis labels, rather than bars floating on bare page background.
+   * Bars are proportional to `chartHeight`; each gets a bold, centered value
+   * label above it and a centered category label below.
    */
-  barChart(data: { label: string; value: number }[], chartHeight = 120) {
+  barChart(data: { label: string; value: number }[], chartHeight = 130) {
     if (data.length === 0) return;
-    const labelBandHeight = 28;
-    const totalHeight = chartHeight + labelBandHeight;
+    const padding = 14;
+    const axisWidth = 26;
+    const labelBandHeight = 26;
+    const totalHeight = padding * 2 + chartHeight + labelBandHeight;
     this.ensureSpace(totalHeight);
 
-    const maxValue = Math.max(...data.map((d) => Math.abs(d.value)), 1);
-    const slotWidth = CONTENT_WIDTH / data.length;
-    const barWidth = Math.min(slotWidth * 0.55, 48);
-    const baselineY = this.y - chartHeight;
-
-    this.page.drawLine({
-      start: { x: MARGIN, y: baselineY },
-      end: { x: PAGE_WIDTH - MARGIN, y: baselineY },
-      thickness: 0.75,
-      color: RULE,
+    const cardTop = this.y;
+    const cardBottom = cardTop - totalHeight;
+    this.page.drawRectangle({
+      x: MARGIN,
+      y: cardBottom,
+      width: CONTENT_WIDTH,
+      height: totalHeight,
+      color: CHART_CARD_BG,
+      borderColor: CHART_CARD_BORDER,
+      borderWidth: 0.75,
     });
+    this.page.drawRectangle({
+      x: MARGIN,
+      y: cardBottom,
+      width: 3,
+      height: totalHeight,
+      color: ACCENT,
+    });
+
+    const plotLeft = MARGIN + padding + axisWidth;
+    const plotRight = MARGIN + CONTENT_WIDTH - padding;
+    const plotWidth = plotRight - plotLeft;
+    const baselineY = cardTop - padding - chartHeight;
+    const maxValue = Math.max(...data.map((d) => Math.abs(d.value)), 1);
+
+    for (const fraction of [0, 0.25, 0.5, 0.75, 1]) {
+      const gy = baselineY + chartHeight * fraction;
+      this.page.drawLine({
+        start: { x: plotLeft, y: gy },
+        end: { x: plotRight, y: gy },
+        thickness: fraction === 0 ? 0.75 : 0.5,
+        color: fraction === 0 ? RULE : CHART_GRID,
+        dashArray: fraction === 0 || fraction === 1 ? undefined : [1.5, 1.5],
+      });
+      const axisLabel = fmt(maxValue * fraction, 0);
+      const axisLabelWidth = this.regular.widthOfTextAtSize(axisLabel, 6.5);
+      this.page.drawText(axisLabel, {
+        x: plotLeft - 6 - axisLabelWidth,
+        y: gy - 2,
+        size: 6.5,
+        font: this.regular,
+        color: MUTED,
+      });
+    }
+
+    const slotWidth = plotWidth / data.length;
+    const barWidth = Math.min(slotWidth * 0.55, 42);
 
     data.forEach((d, i) => {
       const barHeight = (Math.abs(d.value) / maxValue) * chartHeight;
-      const x = MARGIN + i * slotWidth + (slotWidth - barWidth) / 2;
+      const x = plotLeft + i * slotWidth + (slotWidth - barWidth) / 2;
       this.page.drawRectangle({
         x,
         y: baselineY,
         width: barWidth,
-        height: Math.max(barHeight, 0.5),
+        height: Math.max(barHeight, 0.75),
         color: CHART_PALETTE[i % CHART_PALETTE.length],
       });
-      this.page.drawText(fmt(d.value, 0), {
-        x,
+
+      const valueLabel = fmt(d.value, 0);
+      const valueLabelWidth = this.bold.widthOfTextAtSize(valueLabel, 7);
+      this.page.drawText(valueLabel, {
+        x: x + barWidth / 2 - valueLabelWidth / 2,
         y: baselineY + barHeight + 4,
+        size: 7,
+        font: this.bold,
+        color: INK,
+      });
+
+      const catLabel = truncateLabel(d.label, slotWidth, 7);
+      const catLabelWidth = this.regular.widthOfTextAtSize(catLabel, 7);
+      this.page.drawText(catLabel, {
+        x: x + barWidth / 2 - catLabelWidth / 2,
+        y: baselineY - 12,
         size: 7,
         font: this.regular,
         color: MUTED,
       });
-      this.page.drawText(truncateLabel(d.label, slotWidth, 7.5), {
-        x: MARGIN + i * slotWidth + 2,
-        y: baselineY - 12,
-        size: 7.5,
-        font: this.regular,
-        color: INK,
-      });
     });
 
-    this.y -= totalHeight + 8;
+    this.y = cardBottom - 10;
   }
 
   /**
-   * Pie chart drawn as a sequence of `drawSvgPath` wedges (an `M`ove to
-   * center, `L`ine to the arc's start, `A`rc to its end, `Z` close) — the
-   * only way to draw an arbitrary shape pdf-lib doesn't have a primitive
-   * for. A side legend is drawn instead of on-slice labels since there's no
-   * text-along-a-curve support. Proportions are correct; exact wedge
-   * rendering couldn't be visually verified in this sandbox (no PDF
+   * Donut chart: pie wedges via `drawSvgPath` (an `M`ove to center, `L`ine
+   * to the arc's start, `A`rc to its end, `Z` close — the only way to draw
+   * an arbitrary shape pdf-lib doesn't have a primitive for; arc math is
+   * unchanged from the original pie implementation). A thin stroke in the
+   * card's own background color separates wedges, and a plain `drawCircle`
+   * in that exact same background color punches the center hole — safe
+   * because it's a uniform fill matching the surrounding card, not a real
+   * clip path, so there's no seam. The total sits in that hole and a side
+   * legend (circular swatches + share %) replaces on-slice labels since
+   * there's no text-along-a-curve support. Proportions are correct; exact
+   * wedge rendering couldn't be visually verified in this sandbox (no PDF
    * viewer) — see `.claude/rules/hisobot.md`'s testing note.
    */
-  pieChart(data: { label: string; value: number }[], radius = 55) {
+  pieChart(data: { label: string; value: number }[], radius = 60) {
     const positive = data.filter((d) => d.value > 0);
     if (positive.length === 0) return;
     const total = positive.reduce((sum, d) => sum + d.value, 0);
     const diameter = radius * 2;
-    const legendRowHeight = 14;
-    const blockHeight = Math.max(diameter, positive.length * legendRowHeight) + 10;
-    this.ensureSpace(blockHeight);
+    const padding = 14;
+    const legendRowHeight = 16;
+    const innerHeight = Math.max(diameter, positive.length * legendRowHeight);
+    const totalHeight = innerHeight + padding * 2;
+    this.ensureSpace(totalHeight);
 
-    const cx = MARGIN + radius;
-    const cy = this.y - radius;
+    const cardTop = this.y;
+    const cardBottom = cardTop - totalHeight;
+    this.page.drawRectangle({
+      x: MARGIN,
+      y: cardBottom,
+      width: CONTENT_WIDTH,
+      height: totalHeight,
+      color: CHART_CARD_BG,
+      borderColor: CHART_CARD_BORDER,
+      borderWidth: 0.75,
+    });
+    this.page.drawRectangle({
+      x: MARGIN,
+      y: cardBottom,
+      width: 3,
+      height: totalHeight,
+      color: ACCENT,
+    });
+
+    const cx = MARGIN + padding + radius + 6;
+    const cy = cardTop - padding - radius;
 
     let cumulativeFraction = 0;
     positive.forEach((d, i) => {
       const fraction = d.value / total;
       const path = wedgePath(cx, cy, radius, cumulativeFraction, cumulativeFraction + fraction);
-      this.page.drawSvgPath(path, { color: CHART_PALETTE[i % CHART_PALETTE.length] });
+      this.page.drawSvgPath(path, {
+        color: CHART_PALETTE[i % CHART_PALETTE.length],
+        borderColor: CHART_CARD_BG,
+        borderWidth: 1.5,
+      });
       cumulativeFraction += fraction;
     });
 
-    const legendX = MARGIN + diameter + 20;
+    const holeRadius = radius * 0.58;
+    this.page.drawCircle({ x: cx, y: cy, size: holeRadius, color: CHART_CARD_BG });
+
+    const totalLabel = fmt(total, 0);
+    const totalLabelWidth = this.bold.widthOfTextAtSize(totalLabel, 11);
+    this.page.drawText(totalLabel, {
+      x: cx - totalLabelWidth / 2,
+      y: cy + 1,
+      size: 11,
+      font: this.bold,
+      color: INK,
+    });
+    const unitLabel = "kWh";
+    const unitLabelWidth = this.regular.widthOfTextAtSize(unitLabel, 6.5);
+    this.page.drawText(unitLabel, {
+      x: cx - unitLabelWidth / 2,
+      y: cy - 10,
+      size: 6.5,
+      font: this.regular,
+      color: MUTED,
+    });
+
+    const legendX = cx + radius + 24;
+    const legendTop = cy + (positive.length * legendRowHeight) / 2;
     positive.forEach((d, i) => {
-      const rowY = this.y - 4 - i * legendRowHeight;
-      this.page.drawRectangle({
-        x: legendX,
-        y: rowY - 7,
-        width: 8,
-        height: 8,
-        color: CHART_PALETTE[i % CHART_PALETTE.length],
-      });
-      const pct = ((d.value / total) * 100).toFixed(0);
-      this.page.drawText(`${d.label} — ${pct}%`, {
-        x: legendX + 12,
+      const rowY = legendTop - i * legendRowHeight;
+      const color = CHART_PALETTE[i % CHART_PALETTE.length];
+      this.page.drawCircle({ x: legendX + 4, y: rowY - 3, size: 4, color });
+      this.page.drawText(d.label, {
+        x: legendX + 14,
         y: rowY - 6,
         size: 8,
         font: this.regular,
         color: INK,
       });
+      const pctLabel = `${((d.value / total) * 100).toFixed(0)}%`;
+      const pctLabelWidth = this.bold.widthOfTextAtSize(pctLabel, 8);
+      this.page.drawText(pctLabel, {
+        x: MARGIN + CONTENT_WIDTH - padding - pctLabelWidth,
+        y: rowY - 6,
+        size: 8,
+        font: this.bold,
+        color: MUTED,
+      });
     });
 
-    this.y -= blockHeight;
+    this.y = cardBottom - 10;
   }
 
   async toBytes(): Promise<Uint8Array> {
@@ -300,15 +409,23 @@ function truncateLabel(label: string, slotWidth: number, fontSize: number): stri
 }
 
 /**
- * Builds an SVG wedge path from center `(cx, cy)` for the arc spanning
+ * Builds a filled wedge path from center `(cx, cy)` for the arc spanning
  * `[startFraction, endFraction)` of a full circle, measured clockwise from
- * the top. `cx`/`cy` are real page coordinates (PDF's y-axis, origin
- * bottom-left) — but `PDFPage.drawSvgPath` always applies its own
- * `scale(1, -1)` to the path it's given ("SVG path Y axis is opposite
- * pdf-lib's", per pdf-lib's own source), and this method is called without
- * an `x`/`y` offset (so no translation cancels it out). Every Y coordinate
- * in the emitted path is therefore negated here so it lands back at the
- * intended page position once pdf-lib flips it.
+ * the top, as a fan of straight-line segments rather than an SVG elliptical
+ * arc (`A`) command. An earlier version used a single `A` command — visually
+ * verified (by actually opening a generated PDF) to render wrong for *both*
+ * small wedges (thin self-intersecting slivers instead of a slice) and large,
+ * >50%-of-circle wedges (a wildly oversized blob): the arc's large-arc/sweep
+ * flags interact with `drawSvgPath`'s own `scale(1, -1)` Y-flip ("SVG path Y
+ * axis is opposite pdf-lib's", per pdf-lib's source) in a way that isn't the
+ * plain flag semantics the flip-cancellation reasoning assumed. A line-segment
+ * fan has no arc flags to get wrong — just explicit `(x, y)` pairs — at the
+ * cost of a very slightly faceted edge, invisible at this chart's print size
+ * with one segment roughly every 4°. `cx`/`cy` are real page coordinates
+ * (PDF's y-axis, origin bottom-left); every Y coordinate emitted into the
+ * path is negated so it lands back at the intended page position once
+ * pdf-lib's automatic flip un-negates it (this part of the original
+ * reasoning held up under visual verification and is unchanged).
  */
 function wedgePath(
   cx: number,
@@ -317,15 +434,16 @@ function wedgePath(
   startFraction: number,
   endFraction: number,
 ): string {
-  const startAngle = Math.PI / 2 - startFraction * 2 * Math.PI;
-  const endAngle = Math.PI / 2 - endFraction * 2 * Math.PI;
-  const startX = cx + radius * Math.cos(startAngle);
-  const startY = cy + radius * Math.sin(startAngle);
-  const endX = cx + radius * Math.cos(endAngle);
-  const endY = cy + radius * Math.sin(endAngle);
-  const largeArcFlag = endFraction - startFraction > 0.5 ? 1 : 0;
-
-  return `M ${cx} ${-cy} L ${startX} ${-startY} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${endX} ${-endY} Z`;
+  const segments = Math.max(2, Math.ceil((endFraction - startFraction) * 90));
+  const points: string[] = [];
+  for (let i = 0; i <= segments; i++) {
+    const fraction = startFraction + ((endFraction - startFraction) * i) / segments;
+    const angle = Math.PI / 2 - fraction * 2 * Math.PI;
+    const x = cx + radius * Math.cos(angle);
+    const y = cy + radius * Math.sin(angle);
+    points.push(`L ${x} ${-y}`);
+  }
+  return `M ${cx} ${-cy} ${points.join(" ")} Z`;
 }
 
 interface GenerationEfficiencyRow {
@@ -587,7 +705,7 @@ export async function generateAuditReportPdf(
       [280, 100, 100],
     );
     layout.paragraph("Before-renovation distribution (where heat is lost today):");
-    layout.barChart(
+    layout.pieChart(
       envelopeLossRows.map((r) => ({ label: r.category.replace(/_/g, " "), value: r.beforeKwh })),
     );
   }
@@ -605,7 +723,7 @@ export async function generateAuditReportPdf(
       [280, 100, 100],
     );
     layout.paragraph("After-renovation distribution (what will be purchased):");
-    layout.barChart(
+    layout.pieChart(
       finalEnergyRows.map((r) => ({ label: r.category.replace(/_/g, " "), value: r.afterKwh })),
     );
   }
