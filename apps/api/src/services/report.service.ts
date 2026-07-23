@@ -32,10 +32,11 @@ const MONTH_NAMES = [
   "Dec",
 ];
 
-const PAGE_WIDTH = 595.28; // A4 in points
-const PAGE_HEIGHT = 841.89;
+const PORTRAIT_WIDTH = 595.28; // A4 in points
+const PORTRAIT_HEIGHT = 841.89;
+const LANDSCAPE_WIDTH = PORTRAIT_HEIGHT;
+const LANDSCAPE_HEIGHT = PORTRAIT_WIDTH;
 const MARGIN = 50;
-const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
 
 const INK = rgb(0.12, 0.12, 0.14);
 const MUTED = rgb(0.45, 0.45, 0.48);
@@ -66,45 +67,64 @@ class ReportLayout {
   private doc: PDFDocument;
   private page: PDFPage;
   private y: number;
+  private pageWidth: number;
+  private pageHeight: number;
   private regular: PDFFont;
   private bold: PDFFont;
+  private italic: PDFFont;
 
-  private constructor(doc: PDFDocument, regular: PDFFont, bold: PDFFont) {
+  private constructor(doc: PDFDocument, regular: PDFFont, bold: PDFFont, italic: PDFFont) {
     this.doc = doc;
     this.regular = regular;
     this.bold = bold;
-    this.page = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-    this.y = PAGE_HEIGHT - MARGIN;
+    this.italic = italic;
+    this.pageWidth = PORTRAIT_WIDTH;
+    this.pageHeight = PORTRAIT_HEIGHT;
+    this.page = doc.addPage([this.pageWidth, this.pageHeight]);
+    this.y = this.pageHeight - MARGIN;
   }
 
   static async create(): Promise<ReportLayout> {
     const doc = await PDFDocument.create();
-    const regular = await doc.embedFont(StandardFonts.Helvetica);
-    const bold = await doc.embedFont(StandardFonts.HelveticaBold);
-    return new ReportLayout(doc, regular, bold);
+    const regular = await doc.embedFont(StandardFonts.TimesRoman);
+    const bold = await doc.embedFont(StandardFonts.TimesRomanBold);
+    const italic = await doc.embedFont(StandardFonts.TimesRomanItalic);
+    return new ReportLayout(doc, regular, bold, italic);
+  }
+
+  /** Current page's printable width — portrait by default, widened when `table()` switches a too-wide table onto its own landscape page (see that method's comment). */
+  private contentWidth(): number {
+    return this.pageWidth - MARGIN * 2;
+  }
+
+  private newPortraitPage() {
+    this.pageWidth = PORTRAIT_WIDTH;
+    this.pageHeight = PORTRAIT_HEIGHT;
+    this.page = this.doc.addPage([this.pageWidth, this.pageHeight]);
+    this.y = this.pageHeight - MARGIN;
   }
 
   private ensureSpace(height: number) {
     if (this.y - height < MARGIN) {
-      this.page = this.doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-      this.y = PAGE_HEIGHT - MARGIN;
+      this.page = this.doc.addPage([this.pageWidth, this.pageHeight]);
+      this.y = this.pageHeight - MARGIN;
     }
   }
 
   title(text: string) {
-    this.ensureSpace(30);
-    this.page.drawText(text, { x: MARGIN, y: this.y - 20, size: 20, font: this.bold, color: INK });
-    this.y -= 34;
+    this.ensureSpace(32);
+    this.page.drawText(text, { x: MARGIN, y: this.y - 22, size: 22, font: this.bold, color: INK });
+    this.y -= 36;
   }
 
   heading(text: string) {
-    this.ensureSpace(28);
+    this.ensureSpace(30);
     this.y -= 10;
-    this.page.drawText(text, { x: MARGIN, y: this.y, size: 13, font: this.bold, color: ACCENT });
+    this.page.drawText(text, { x: MARGIN, y: this.y, size: 14, font: this.bold, color: ACCENT });
     this.y -= 6;
     this.page.drawLine({
       start: { x: MARGIN, y: this.y },
-      end: { x: PAGE_WIDTH - MARGIN, y: this.y },
+      end: { x: this.pageWidth - MARGIN, y: this.y },
       thickness: 0.75,
       color: RULE,
     });
@@ -112,25 +132,38 @@ class ReportLayout {
   }
 
   paragraph(text: string) {
-    this.ensureSpace(16);
-    this.page.drawText(text, { x: MARGIN, y: this.y, size: 9.5, font: this.regular, color: MUTED });
-    this.y -= 16;
+    this.ensureSpace(17);
+    this.page.drawText(text, { x: MARGIN, y: this.y, size: 10, font: this.regular, color: MUTED });
+    this.y -= 17;
+  }
+
+  /**
+   * Auditor commentary / narrative note — italic, visually distinct from
+   * `paragraph()`'s regular-weight body text (approved report redesign,
+   * `docs/report-redesign-proposal.md` §1/§5). Used for construction-type
+   * descriptions and, in later phases, optional per-section auditor
+   * conclusions under charts.
+   */
+  note(text: string) {
+    this.ensureSpace(17);
+    this.page.drawText(text, { x: MARGIN, y: this.y, size: 10, font: this.italic, color: MUTED });
+    this.y -= 17;
   }
 
   /** Two-column label/value rows, e.g. building metadata or KPI cards flattened to text. */
   keyValueGrid(pairs: [string, string][], columns = 2) {
-    const colWidth = CONTENT_WIDTH / columns;
-    const rowHeight = 32;
+    const colWidth = this.contentWidth() / columns;
+    const rowHeight = 34;
     for (let i = 0; i < pairs.length; i += columns) {
       this.ensureSpace(rowHeight);
       const rowPairs = pairs.slice(i, i + columns);
       rowPairs.forEach(([label, value], col) => {
         const x = MARGIN + col * colWidth;
-        this.page.drawText(label, { x, y: this.y, size: 8, font: this.regular, color: MUTED });
+        this.page.drawText(label, { x, y: this.y, size: 9, font: this.regular, color: MUTED });
         this.page.drawText(value, {
           x,
-          y: this.y - 14,
-          size: 12,
+          y: this.y - 15,
+          size: 13,
           font: this.bold,
           color: INK,
         });
@@ -139,7 +172,27 @@ class ReportLayout {
     }
   }
 
+  /**
+   * Draws a table on the current (portrait) page — unless the combined
+   * `columnWidths` don't fit portrait's printable width, in which case the
+   * whole table gets its own landscape page (A4 rotated) instead of
+   * silently overflowing past the right margin. The larger 10pt table text
+   * from the typography redesign made several already-tight tables (e.g.
+   * the 7-column cashflow detail) exceed portrait width — this is the
+   * general "won't fit portrait → use landscape" fallback the redesign
+   * proposal asked for, not a one-off fix for that section. Whatever
+   * content follows always resumes on a fresh portrait page.
+   */
   table(headers: string[], rows: string[][], columnWidths: number[]) {
+    const totalWidth = columnWidths.reduce((sum, w) => sum + w, 0);
+    const needsLandscape = totalWidth > this.contentWidth();
+    if (needsLandscape) {
+      this.pageWidth = LANDSCAPE_WIDTH;
+      this.pageHeight = LANDSCAPE_HEIGHT;
+      this.page = this.doc.addPage([this.pageWidth, this.pageHeight]);
+      this.y = this.pageHeight - MARGIN;
+    }
+
     const rowHeight = 18;
     const drawHeaderRow = () => {
       this.ensureSpace(rowHeight * 2);
@@ -148,7 +201,7 @@ class ReportLayout {
         this.page.drawText(headers[i] ?? "", {
           x,
           y: this.y,
-          size: 8.5,
+          size: 10,
           font: this.bold,
           color: INK,
         });
@@ -157,7 +210,7 @@ class ReportLayout {
       this.y -= 4;
       this.page.drawLine({
         start: { x: MARGIN, y: this.y },
-        end: { x: PAGE_WIDTH - MARGIN, y: this.y },
+        end: { x: this.pageWidth - MARGIN, y: this.y },
         thickness: 0.5,
         color: RULE,
       });
@@ -167,8 +220,8 @@ class ReportLayout {
     drawHeaderRow();
     for (const row of rows) {
       if (this.y - rowHeight < MARGIN) {
-        this.page = this.doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-        this.y = PAGE_HEIGHT - MARGIN;
+        this.page = this.doc.addPage([this.pageWidth, this.pageHeight]);
+        this.y = this.pageHeight - MARGIN;
         drawHeaderRow();
       }
       let x = MARGIN;
@@ -176,7 +229,7 @@ class ReportLayout {
         this.page.drawText(row[i] ?? "", {
           x,
           y: this.y,
-          size: 8.5,
+          size: 10,
           font: this.regular,
           color: INK,
         });
@@ -185,6 +238,10 @@ class ReportLayout {
       this.y -= rowHeight;
     }
     this.y -= 8;
+
+    if (needsLandscape) {
+      this.newPortraitPage();
+    }
   }
 
   /**
@@ -212,7 +269,7 @@ class ReportLayout {
     this.page.drawRectangle({
       x: MARGIN,
       y: cardBottom,
-      width: CONTENT_WIDTH,
+      width: this.contentWidth(),
       height: totalHeight,
       color: CHART_CARD_BG,
       borderColor: CHART_CARD_BORDER,
@@ -227,7 +284,7 @@ class ReportLayout {
     });
 
     const plotLeft = MARGIN + padding + axisWidth;
-    const plotRight = MARGIN + CONTENT_WIDTH - padding;
+    const plotRight = MARGIN + this.contentWidth() - padding;
     const plotWidth = plotRight - plotLeft;
     const baselineY = cardTop - padding - chartHeight;
     const maxValue = Math.max(...data.map((d) => Math.abs(d.value)), 1);
@@ -242,11 +299,11 @@ class ReportLayout {
         dashArray: fraction === 0 || fraction === 1 ? undefined : [1.5, 1.5],
       });
       const axisLabel = fmt(maxValue * fraction, 0);
-      const axisLabelWidth = this.regular.widthOfTextAtSize(axisLabel, 6.5);
+      const axisLabelWidth = this.regular.widthOfTextAtSize(axisLabel, 7);
       this.page.drawText(axisLabel, {
         x: plotLeft - 6 - axisLabelWidth,
         y: gy - 2,
-        size: 6.5,
+        size: 7,
         font: this.regular,
         color: MUTED,
       });
@@ -267,21 +324,21 @@ class ReportLayout {
       });
 
       const valueLabel = fmt(d.value, 0);
-      const valueLabelWidth = this.bold.widthOfTextAtSize(valueLabel, 7);
+      const valueLabelWidth = this.bold.widthOfTextAtSize(valueLabel, 8);
       this.page.drawText(valueLabel, {
         x: x + barWidth / 2 - valueLabelWidth / 2,
         y: baselineY + barHeight + 4,
-        size: 7,
+        size: 8,
         font: this.bold,
         color: INK,
       });
 
-      const catLabel = truncateLabel(d.label, slotWidth, 7);
-      const catLabelWidth = this.regular.widthOfTextAtSize(catLabel, 7);
+      const catLabel = truncateLabel(d.label, slotWidth, 8);
+      const catLabelWidth = this.regular.widthOfTextAtSize(catLabel, 8);
       this.page.drawText(catLabel, {
         x: x + barWidth / 2 - catLabelWidth / 2,
         y: baselineY - 12,
-        size: 7,
+        size: 8,
         font: this.regular,
         color: MUTED,
       });
@@ -320,7 +377,7 @@ class ReportLayout {
     this.page.drawRectangle({
       x: MARGIN,
       y: cardBottom,
-      width: CONTENT_WIDTH,
+      width: this.contentWidth(),
       height: totalHeight,
       color: CHART_CARD_BG,
       borderColor: CHART_CARD_BORDER,
@@ -353,20 +410,20 @@ class ReportLayout {
     this.page.drawCircle({ x: cx, y: cy, size: holeRadius, color: CHART_CARD_BG });
 
     const totalLabel = fmt(total, 0);
-    const totalLabelWidth = this.bold.widthOfTextAtSize(totalLabel, 11);
+    const totalLabelWidth = this.bold.widthOfTextAtSize(totalLabel, 12);
     this.page.drawText(totalLabel, {
       x: cx - totalLabelWidth / 2,
       y: cy + 1,
-      size: 11,
+      size: 12,
       font: this.bold,
       color: INK,
     });
     const unitLabel = "kWh";
-    const unitLabelWidth = this.regular.widthOfTextAtSize(unitLabel, 6.5);
+    const unitLabelWidth = this.regular.widthOfTextAtSize(unitLabel, 7.5);
     this.page.drawText(unitLabel, {
       x: cx - unitLabelWidth / 2,
-      y: cy - 10,
-      size: 6.5,
+      y: cy - 11,
+      size: 7.5,
       font: this.regular,
       color: MUTED,
     });
@@ -380,16 +437,16 @@ class ReportLayout {
       this.page.drawText(d.label, {
         x: legendX + 14,
         y: rowY - 6,
-        size: 8,
+        size: 9,
         font: this.regular,
         color: INK,
       });
       const pctLabel = `${((d.value / total) * 100).toFixed(0)}%`;
-      const pctLabelWidth = this.bold.widthOfTextAtSize(pctLabel, 8);
+      const pctLabelWidth = this.bold.widthOfTextAtSize(pctLabel, 9);
       this.page.drawText(pctLabel, {
-        x: MARGIN + CONTENT_WIDTH - padding - pctLabelWidth,
+        x: MARGIN + this.contentWidth() - padding - pctLabelWidth,
         y: rowY - 6,
-        size: 8,
+        size: 9,
         font: this.bold,
         color: MUTED,
       });
@@ -604,7 +661,7 @@ export async function generateAuditReportPdf(
           fmt(l.thermalConductivityWPerMk, 2),
           fmt(l.resistanceM2KPerW, 3),
         ]),
-        [40, 190, 90, 110, 90],
+        [30, 185, 85, 100, 85],
       );
       layout.paragraph(
         `Rint = ${fmt(ct.interiorResistanceM2kPerW, 3)} m²K/W · Rext = ${fmt(ct.exteriorResistanceM2kPerW, 3)} m²K/W · Total R = ${fmt(ct.totalThermalResistanceM2KPerW, 3)} m²K/W`,
@@ -662,7 +719,7 @@ export async function generateAuditReportPdf(
         fmt(g.finalEnergyConsumptionKwh, 0),
         fmt(g.specificFinalEnergyKwhPerM2, 1),
       ]),
-      [80, 70, 90, 90, 80, 90, 80],
+      [70, 70, 110, 110, 90, 110, 100],
     );
   }
 
@@ -754,7 +811,7 @@ export async function generateAuditReportPdf(
         fmtPct(m.standardized.irr),
         fmt(m.co2ReductionTonnesPerYear, 1),
       ]),
-      [110, 65, 100, 55, 55, 50, 50],
+      [230, 65, 130, 65, 70, 90, 60],
     );
     layout.paragraph("Actual savings (calibrated against metered bills):");
     layout.table(
@@ -766,7 +823,7 @@ export async function generateAuditReportPdf(
         fmtUsd(m.actual.npv),
         fmtPct(m.actual.irr),
       ]),
-      [140, 120, 60, 60, 60],
+      [260, 150, 70, 80, 100],
     );
   }
 
@@ -805,7 +862,7 @@ export async function generateAuditReportPdf(
         `$${fmt(t.unitCostUsd, 3)}/kWh`,
         `${fmt(t.emissionFactorKgCo2PerKwh, 2)} kgCO2/kWh`,
       ]),
-      [200, 150, 150],
+      [160, 120, 150],
     );
   }
 
@@ -865,7 +922,7 @@ export async function generateAuditReportPdf(
           fmt(m.nonOperationHoursLossKwh, 0),
           fmt(m.totalKwh, 0),
         ]),
-        [70, 150, 100, 100, 80],
+        [65, 140, 95, 95, 75],
       );
     }
   }
@@ -901,7 +958,7 @@ export async function generateAuditReportPdf(
           fmt(m.utilizationFactor, 2),
           fmt(m.netEnergyNeedKwh, 0),
         ]),
-        [70, 80, 90, 90, 80, 90],
+        [55, 80, 85, 85, 75, 85],
       );
     }
   }

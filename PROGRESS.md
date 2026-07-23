@@ -1178,3 +1178,111 @@ o'tdi). Integratsiya testlari (`tests/integration/report.test.ts`) bu sandbox'da
 Postgres yo'qligi sababli tekshirilmadi (`testing-and-verification.md`ga qarang) —
 `/:id/audit/report` endpoint'ining haqiqiy HTTP orqali ishlashi keyingi haqiqiy muhitda
 tasdiqlanishi kerak.
+
+## Hisobotni zamonaviylashtirish: grafik dizayni + katta qayta ko'rib chiqish taklifi
+
+Loyiha egasi hisobotdagi grafiklarning "juda eski" ko'rinishidan norozi bo'lib, avval
+grafik dizayni tuzatishni, keyin esa ancha kattaroq ro'yxatni (shrift, til, tuzilma, auditor
+izohlari, QR-kod, xarita) so'radi. Ikki alohida bosqichda ishlandi.
+
+### Grafik modernizatsiyasi (tugallandi, commit qilindi)
+
+`report.service.ts`ning `ReportLayout.barChart()`/`pieChart()`i qayta yozildi: ikkalasi ham
+endi karta fonida (och kulrang panel + chap tarafda ACCENT chiziqli), bar chart'da 0/25/50/
+75/100% setka chiziqlari + o'lchov yorliqlari, markazlashtirilgan qiymat/kategoriya yozuvlari.
+`pieChart()` donut'ga aylantirildi (markazda jami qiymat, yon legendada rangli belgi+foiz) va
+ikkita bo'limga (issiqlik/ventilyatsiya yo'qotish taqsimoti "oldin", sotib olingan energiya
+taqsimoti "keyin") ulandi — bu funksiya avval yozilgan, lekin hech qayerda chaqirilmagan edi.
+
+**Haqiqiy bug topildi va tuzatildi** (birinchi marta haqiqiy PDF generatsiya qilib, sahifalarni
+ochib ko'rish orqali — `Read` vositasi PDF sahifalarini rasm sifatida ko'rsata oladi ekan, bu
+avval "sandbox'da tekshirib bo'lmaydi" deb hujjatlashtirilgan edi): `wedgePath()`ning yagona SVG
+`A` (arc) buyrug'i orqali chizilgan donut sektorlar amalda parchalanib ketgan (kichik sektorlar
+uchun ingichka bir-biriga kesishgan bo'laklar, 50%dan katta sektorlar uchun juda katta noto'g'ri
+shakl) — `drawSvgPath()`ning o'zining `scale(1,-1)` flip'i bilan arc'ning katta-yoy/yo'nalish
+bayroqlari kutilganidek o'zaro bekor bo'lmagan. Tuzatish: yoyni bitta `A` buyrug'i o'rniga
+to'g'ri chiziqlar ketma-ketligi (har ~4°da bitta segment) bilan almashtirish — bayroq
+noaniqligi umuman yo'qoladi. Haqiqiy binoga qarshi qayta generatsiya qilib tasdiqlandi (barcha
+sahifalar to'g'ri chiqdi).
+
+Tekshirildi: `bun run --cwd apps/api type-check`, `bunx biome lint`, `bun run test
+tests/services/report.service.test.ts tests/services/report-data.service.test.ts` (7/7),
+haqiqiy Neon bazadagi bino bilan generatsiya qilingan PDF vizual tekshirildi. Commit qilindi.
+
+### Katta qayta ko'rib chiqish — spec-first yondashuv
+
+Loyiha egasi keyin bitta xabarda ko'p talab qo'shdi: Times New Roman shrift, izohlar kursiv,
+hisobot tizim tilida (uz/ru/en) yozilsin, energiya iste'moli platformadagi kabi 3-yillik
+guruhlangan ustunli grafik bilan ko'rsatilsin, energiya balansi Excel'dagi tuzilishida
+(carrier bo'yicha, standardized/actual), auditor har bir bo'limga (ayniqsa qatlam ma'lumotlari
+va grafiklar ostida) izoh qoldira olsin, grafik bo'lsa jadval shart emas, QR-kod +
+haqiqiylik/amal qilish muddati bloki, bino koordinatalari+xarita hisobot boshida.
+
+Bu hajm sabab, avval **`docs/report-redesign-proposal.md`** yozildi — har bir band uchun
+(1) nima so'ralgan, (2) kodda hozirgi holat (tekshirilgan, fayl:qator havolasi bilan), (3)
+taklif, (4) yangi sxema/infratuzilma kerakmi. Fon tadqiqotida aniqlangan muhim faktlar:
+- `constructionType.description` ustuni **allaqachon mavjud** (`envelope.ts:21`) va frontendda
+  tahrirlanadi — auditor izohi uchun yangi sxema shart emas, faqat `report-data.service.ts` →
+  PDF ulanishi yetishmayapti (eng tez bajariladigan band).
+- Platformaning 3-yillik iste'mol grafigi (`consumption-comparison-chart.tsx`) guruhlangan
+  bar chart (har oy ichida yil bo'yicha yonma-yon ustunlar) — PDF'dagi `barChart()` esa hozir
+  faqat bitta seriya (o'rtacha) oladi, buni moslashtirish haqiqiy kod o'zgarishi talab qiladi.
+- Manba Excel'ning "Specific-consumption summary" jadvali (actual/standardized-oldin/
+  standardized-keyin, issitish/ISI/elektr bo'yicha) hozir `AuditResult`da umuman yo'q —
+  aniqlangan haqiqiy bo'shliq, `audit.engine.ts`ga yangi hisoblash kerak.
+- Auditor izohlari (grafik ostida ixtiyoriy), bino koordinatalari+xarita, va QR-kod/tekshiruv
+  sahifasi — barchasi haqiqatan yangi sxema/route/tashqi integratsiya talab qiladi.
+
+Loyiha egasi faylni ko'rib chiqib, bir nechta joyni to'g'ridan-to'g'ri tahrirladi (shrift
+o'lchamlari — 12pt yoki 10pt, portraitga sig'masa albom holatga o'tkazilsin; xarita/QR
+uchun "bepul va ishonchli" variant tanlansin; auditor izohi faqat kerakli qismlarga; barcha
+uch til hoziroq tarjima qilinsin, xato bo'lsa keyin tuzatiladi) va ishni boshlashni
+tasdiqladi.
+
+### 1-bosqich: Tipografiya + albom-sahifa zaxira mexanizmi (tugallandi)
+
+`ReportLayout`ning shrift oilasi `Helvetica*`dan `Times*`ga o'tkazildi
+(`StandardFonts.TimesRoman`/`TimesRomanBold`/`TimesRomanItalic` — barchasi pdf-lib'da
+standart, alohida embed shart emas), yangi `note()` metodi qo'shildi (kursiv, auditor
+izohlari uchun — hali hech qayerda chaqirilmaydi, keyingi bosqichlarda ishlatiladi).
+O'lchamlar oshirildi: sarlavha 20→22pt, bo'lim sarlavhasi 13→14pt, paragraf 9.5→10pt, jadval
+katakchasi 8.5→10pt, `keyValueGrid` qiymati 12→13pt.
+
+**Albom-sahifa zaxirasi** (`table()`ga): agar ustun kengliklari yig'indisi joriy (portret)
+sahifaning bosiladigan kengligidan oshsa, jadval o'zining alohida albom (landscape, A4
+aylantirilgan) sahifasida chiziladi — buning uchun `ReportLayout` avval qattiq kodlangan
+`PAGE_WIDTH`/`PAGE_HEIGHT`/`CONTENT_WIDTH` modul konstantalaridan instance maydonlariga
+(`this.pageWidth`/`this.pageHeight`, `this.contentWidth()`) o'tkazildi, shunda albom
+sahifadan keyin kelgan har qanday kontent yana toza portret sahifadan davom etadi.
+
+**Ikkita haqiqiy bug topildi va tuzatildi** (yana haqiqiy PDF generatsiya qilib, sahifa-
+sahifa ochib ko'rish orqali):
+1. Birinchi urinishda albom-almashtirishdan keyin portretga qaytarish kodi butunlay
+   unutilgan edi — bir marta albom rejimi ishga tushgach, **butun qolgan hisobot** shu holatda
+   qolib ketgan (23 ta sahifaning barchasi albom bo'lib chiqqan). `PDFDocument.load()` orqali
+   sahifa o'lchamlarini dasturiy tekshirish bilan aniqlandi (`p.getSize()`), keyin `table()`
+   oxiriga yetishmayotgan `this.newPortraitPage()` chaqiruvi qo'shildi.
+2. Kattalashtirilgan 10pt shrift bir nechta jadvalning (Tavsiya etilgan chora-tadbirlar —
+   ham standardized, ham actual; Generatsiya/taqsimot samaradorligi; manba Excel'ning
+   qatlam/energiya balansi Annex 2 jadvallari) oldindan belgilangan ustun kengliklarini haqiqiy
+   matn kengligidan torroq qilib qo'ygan edi — natijada nom/qiymat matnlari qo'shni ustunga
+   "yopishib" chiqayotgan edi (masalan "Thermal insulation of walls$76,138"). Bu faqat vizual
+   tekshiruv orqali topildi (`bun run type-check`/testlar bunday matn-darajasidagi kollizyani
+   ushlab bera olmaydi — bu qator to'liq yaroqli TypeScript satri). Tuzatish: chora-tadbirlar
+   jadvallarini ataylab kengaytirib albom rejimiga o'tkazildi (nom ustuniga ko'proq joy), qolgan
+   uch jadvalning kengliklari esa portret ichida sig'adigan qilib qisqartirildi (ular grafik
+   emas, oddiy qisqa qiymatlar edi, albom shart emas edi).
+
+Yakuniy holat: 20 sahifalik hisobotda faqat 3 ta jadval (Tavsiya etilgan chora-tadbirlar —
+ikkalasi ham, Generatsiya/taqsimot samaradorligi) albom rejimida, qolgan barchasi portretda —
+har biri haqiqiy binoga qarshi qayta generatsiya qilib, PDF'ni to'liq ochib ko'rish orqali
+tasdiqlandi (kollizyasiz, o'qilishi oson).
+
+Tekshirildi: `bun run --cwd apps/api type-check`, `bunx biome lint`, `bun run test
+tests/services` (barcha 62/62 unit test — faqat `report.service.test.ts`/`report-data.
+service.test.ts` emas, butun servis to'plami qayta ishga tushirildi ehtiyot uchun).
+
+**Keyingi qadam**: `docs/report-redesign-proposal.md`ning §9 jadvalidagi qolgan bosqichlar
+(til/i18n, 3-yillik guruhlangan grafik, specific-consumption jamlanma jadvali, auditor
+izohlari, koordinatalar+xarita, QR-kod) navbat bilan davom etadi — har biri alohida
+tekshirilgan+commit qilingan bosqich sifatida.
