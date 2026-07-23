@@ -1626,3 +1626,49 @@ to'g'ri chiqdi. Ikkala holat ham matn/ikonka/disclaimer bilan birga to'g'ri rend
 
 **`docs/report-redesign-proposal.md`ning barcha §9 bosqichlari tugallandi va to'liq
 tekshirildi** (Yandex xaritasi kodi tayyor, faqat kalit hal qilinishi kerak — yuqoriga qarang).
+
+### Hisobotdagi ortiqcha bo'sh sahifalar tuzatildi (loyiha egasi shikoyati asosida)
+
+Loyiha egasi "hisobot orasida bo'sh joylar ko'p" deb shikoyat qildi. Haqiqiy "3-DMTT" binosiga
+qarshi to'liq hisobot generatsiya qilinib (bir martalik scratch skript bilan), har bir
+sahifaning haqiqiy kontent-pastki chegarasi `pymupdf`ning `get_text("blocks")`/`get_drawings()`
+orqali dasturiy ravishda o'lchanib, "sahifaning necha foizi bo'sh" tekshiruvi qilindi — vizual
+ko'rib chiqishga tayanish o'rniga aniq sonli tashxis.
+
+**Topilgan ildiz sabab**: `table()` metodi albom (landscape) rejimga o'tgandan so'ng, jadval
+tugagach **har doim** yangi portret sahifaga qaytarardi (`newPortraitPage()`, 1-bosqichda
+(tipografiya) qo'shilgan). Bu ayniqsa ikkita siklda halokatli edi — U-qiymat hisob-kitoblari
+(`extras.uValues`ning har bir elementi uchun: paragraph+note+jadval+paragraph) va moliyaviy
+pul-oqimi tafsiloti (har bir chora-tadbir uchun: paragraph+7-ustunli jadval). Har ikkala
+siklda **keyingi element ham albom jadval talab qiladi** — natijada: albom jadval → majburiy
+yangi PORTRET sahifa (unda faqat 2-3 qatorli matn) → keyingi elementning jadvali yana albom
+talab qiladi → yana yangi albom sahifa. 47 sahifalik hisobotda **~30 tasi 90%+ bo'sh** edi
+(`content_bottom` sahifa balandligining atigi 10-15%ida tugardi).
+
+**Tuzatish**: `newPortraitPage()`ning majburiy chaqiruvi butunlay olib tashlandi (o'zi ham
+endi hech qayerda ishlatilmagani uchun butunlay o'chirildi). Jadvaldan keyingi kontent endi
+joriy sahifa o'lchamida davom etadi — agar joriy sahifa allaqachon albom bo'lsa va keyingi
+jadval ham albomga muhtoj bo'lsa, `needsLandscape = totalWidth > this.contentWidth()`
+tekshiruvi **allaqachon albom kengligiga nisbatan** hisoblanganligi sababli ko'pincha `false`
+chiqadi — ya'ni jadval yangi sahifa ochmasdan, xuddi shu albom sahifada davom etadi. Natija:
+47 sahifadan **24 sahifaga** tushdi, jiddiy bo'sh sahifalar soni ~30 tadan **2 taga** (faqat
+tabiiy holatlar — muqova sahifasining o'zi va hisobotning eng oxirgi sahifasi, ikkalasi ham
+odatiy hujjat-oxiri bo'shlig'i, bug' emas).
+
+**Ikkinchi, kichikroq sabab ham topildi va tuzatildi**: `heading()` faqat o'zi uchun 30pt joy
+tekshirardi (`ensureSpace(30)`) — agar keyingi kontent albom sahifa talab qilsa-yu, joriy
+portret sahifada hali ko'p bo'sh joy qolgan bo'lsa, sarlavha o'sha bo'sh joyning boshida
+"yolg'iz" chizilib qolardi (masalan "Executive summary" sarlavhasi jadvalisiz). Bu holatlar
+kamroq uchraydi va umuman oldini olib bo'lmaydi (chunki muammo balandlik emas, mo'ljal —
+portretdan albomga o'tish — bo'lgani uchun), lekin `ensureSpace(30)` → `ensureSpace(100)`ga
+oshirilishi ba'zi holatlarda sarlavhani keyingi sahifaga suradi, agar joriy sahifada 100pt'dan
+kam joy qolgan bo'lsa.
+
+Ikkalasi ham umumiy, butun hisobot bo'ylab ishlaydigan tuzatishlar (bitta bo'lim uchun emas) —
+`table()`/`heading()` qanday ishlatilishidan qat'iy nazar amal qiladi.
+
+**Tekshirildi**: `bun run --cwd apps/api type-check`, `bunx biome lint`, `bun run --cwd apps/api
+test tests/services` (64/64). Haqiqiy Neon bazadagi "3-DMTT" binosiga qarshi to'liq hisobot
+qayta generatsiya qilinib, barcha 24 sahifa sahifama-sahifa `pymupdf` bilan rasmga aylantirilib
+vizual tekshirildi — U-qiymat va pul-oqimi bo'limlari endi bir nechta elementni bitta zich
+sahifada ketma-ket chizadi, hech qanday matn kesilishi/ustma-ust tushishi topilmadi.

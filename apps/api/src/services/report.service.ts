@@ -121,13 +121,6 @@ class ReportLayout {
     return this.pageWidth - MARGIN * 2;
   }
 
-  private newPortraitPage() {
-    this.pageWidth = PORTRAIT_WIDTH;
-    this.pageHeight = PORTRAIT_HEIGHT;
-    this.page = this.doc.addPage([this.pageWidth, this.pageHeight]);
-    this.y = this.pageHeight - MARGIN;
-  }
-
   private ensureSpace(height: number) {
     if (this.y - height < MARGIN) {
       this.page = this.doc.addPage([this.pageWidth, this.pageHeight]);
@@ -142,7 +135,14 @@ class ReportLayout {
   }
 
   heading(text: string) {
-    this.ensureSpace(30);
+    // Reserves room for the heading itself *plus* a little of whatever
+    // follows (found via visual PDF verification: with only `ensureSpace(30)`,
+    // a heading whose very next block needed a fresh landscape page — e.g.
+    // "Executive summary" right before its table — would get stranded alone
+    // at the bottom of a page with a large blank gap beneath it). Not a
+    // guarantee the next block fits, just enough that a heading is never
+    // the last visible thing on an otherwise near-empty page.
+    this.ensureSpace(100);
     this.y -= 10;
     this.page.drawText(text, { x: MARGIN, y: this.y, size: 14, font: this.bold, color: ACCENT });
     this.y -= 6;
@@ -203,15 +203,30 @@ class ReportLayout {
   }
 
   /**
-   * Draws a table on the current (portrait) page — unless the combined
-   * `columnWidths` don't fit portrait's printable width, in which case the
-   * whole table gets its own landscape page (A4 rotated) instead of
-   * silently overflowing past the right margin. The larger 10pt table text
-   * from the typography redesign made several already-tight tables (e.g.
-   * the 7-column cashflow detail) exceed portrait width — this is the
-   * general "won't fit portrait → use landscape" fallback the redesign
-   * proposal asked for, not a one-off fix for that section. Whatever
-   * content follows always resumes on a fresh portrait page.
+   * Draws a table on the current page — unless the combined `columnWidths`
+   * don't fit the current page's printable width, in which case the whole
+   * table gets its own landscape page (A4 rotated) instead of silently
+   * overflowing past the right margin. The larger 10pt table text from the
+   * typography redesign made several already-tight tables (e.g. the
+   * 7-column cashflow detail) exceed portrait width — this is the general
+   * "won't fit → use landscape" fallback the redesign proposal asked for,
+   * not a one-off fix for that section.
+   *
+   * Deliberately does **not** force a return to portrait afterward (an
+   * earlier version did) — real-report visual verification found that
+   * loops which alternate short portrait-only content with a landscape
+   * table per iteration (the U-value layer breakdown, the per-measure
+   * cashflow detail) were producing a portrait page holding 2-3 lines of
+   * text, immediately followed by a landscape page for the very next
+   * table, over and over — dozens of pages that were 90%+ blank. Content
+   * now simply keeps flowing on whatever page dimensions are already
+   * current; a table that would need landscape relative to *portrait*
+   * width often already fits within an *already-landscape* current page's
+   * wider content width, so most of these loops now stay on one landscape
+   * page across several iterations instead of paging per table. Narrower
+   * content (headings, charts) rendered on a landscape page afterward
+   * looks a little wider than strictly necessary, but that's a cosmetic
+   * tradeoff, not a wasted page.
    *
    * `columnWidths` was hand-tuned against English header text length —
    * ru/uz headers for the same column (e.g. "Issiqlik o'tkazuvchanligi
@@ -282,10 +297,6 @@ class ReportLayout {
       this.y -= rowHeight;
     }
     this.y -= 8;
-
-    if (needsLandscape) {
-      this.newPortraitPage();
-    }
   }
 
   /**
