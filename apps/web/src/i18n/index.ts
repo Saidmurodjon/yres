@@ -15,6 +15,7 @@ import enNav from "./locales/en/nav.json";
 import enProfile from "./locales/en/profile.json";
 import enSettings from "./locales/en/settings.json";
 import enSystems from "./locales/en/systems.json";
+import enVerify from "./locales/en/verify.json";
 import ruAdmin from "./locales/ru/admin.json";
 import ruAudit from "./locales/ru/audit.json";
 import ruAuth from "./locales/ru/auth.json";
@@ -29,6 +30,7 @@ import ruNav from "./locales/ru/nav.json";
 import ruProfile from "./locales/ru/profile.json";
 import ruSettings from "./locales/ru/settings.json";
 import ruSystems from "./locales/ru/systems.json";
+import ruVerify from "./locales/ru/verify.json";
 import uzAdmin from "./locales/uz/admin.json";
 import uzAudit from "./locales/uz/audit.json";
 import uzAuth from "./locales/uz/auth.json";
@@ -43,6 +45,7 @@ import uzNav from "./locales/uz/nav.json";
 import uzProfile from "./locales/uz/profile.json";
 import uzSettings from "./locales/uz/settings.json";
 import uzSystems from "./locales/uz/systems.json";
+import uzVerify from "./locales/uz/verify.json";
 
 export const SUPPORTED_LANGUAGES = ["uz", "ru", "en"] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
@@ -73,6 +76,7 @@ i18n
         chat: uzChat,
         profile: uzProfile,
         audit: uzAudit,
+        verify: uzVerify,
       },
       ru: {
         common: ruCommon,
@@ -89,6 +93,7 @@ i18n
         chat: ruChat,
         profile: ruProfile,
         audit: ruAudit,
+        verify: ruVerify,
       },
       en: {
         common: enCommon,
@@ -105,6 +110,7 @@ i18n
         chat: enChat,
         profile: enProfile,
         audit: enAudit,
+        verify: enVerify,
       },
     },
     ns: [
@@ -122,6 +128,7 @@ i18n
       "chat",
       "profile",
       "audit",
+      "verify",
     ],
     // Uzbek is the project's primary language (CLAUDE.md) — used when the
     // browser's language isn't one of the three supported ones.

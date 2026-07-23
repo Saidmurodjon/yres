@@ -166,12 +166,16 @@ auditRoutes.get("/:id/audit/report", async (c) => {
   // (docs/report-redesign-proposal.md §2).
   const requestedLang = c.req.query("lang");
   const lang = isReportLang(requestedLang) ? requestedLang : "en";
+  // Encoded as a QR code on the report's cover page (docs/report-redesign-
+  // proposal.md §8) — points at the public, unauthenticated verify route.
+  const verifyUrl = `${c.env.WEB_URL}/verify/${latestCompleted.id}`;
   const pdfBytes = await generateAuditReportPdf(
     access.building,
     result,
     { uValues, consumptionHistory, tariffs, annotations },
     lang,
     c.env.YANDEX_STATIC_MAPS_API_KEY,
+    verifyUrl,
   );
 
   const r2Key = `reports/${buildingId}/latest.pdf`;

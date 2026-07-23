@@ -52,6 +52,17 @@ export function useUpsertReportAnnotation(buildingId: string) {
   });
 }
 
+/** Public, unauthenticated (docs/report-redesign-proposal.md §8) — used by the /verify/$auditRunId page, not gated behind a building/session. */
+export function useVerifyAuditRun(auditRunId: string | undefined) {
+  return useQuery({
+    queryKey: ["verify", auditRunId],
+    queryFn: () => api.verify(auditRunId as string),
+    enabled: !!auditRunId,
+    retry: (failureCount, error) =>
+      error instanceof ApiError && error.status === 404 ? false : failureCount < 2,
+  });
+}
+
 /** Downloads the audit report PDF and triggers a browser save-as, rather than just returning the blob. */
 export function useDownloadAuditReport(buildingId: string) {
   return useMutation({

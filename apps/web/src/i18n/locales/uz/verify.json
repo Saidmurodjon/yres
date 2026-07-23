@@ -1,0 +1,10 @@
+{
+  "title": "Hisobotni tekshirish",
+  "checking": "Tekshirilmoqda…",
+  "validTitle": "Ushbu hisobot haqiqiy",
+  "validDescription": "Ushbu energiya audit hisoboti YRES platformasida \"{{buildingName}}\" uchun {{date}} sanasida yaratilgan.",
+  "invalidTitle": "Tasdiqlanmadi",
+  "invalidDescription": "Ushbu hisobotni bizning ma'lumotlarimizga qarshi tasdiqlab bo'lmadi. U eskirgan bo'lishi yoki havola noto'g'ri bo'lishi mumkin.",
+  "disclaimer": "Bu faqat hisobot ushbu platformada yaratilganini tasdiqlaydi — bino ma'lumotlari yaratilgandan beri o'zgarmaganini kafolatlamaydi.",
+  "backToHome": "YRES'ga o'tish"
+}

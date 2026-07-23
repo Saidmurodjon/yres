@@ -358,6 +358,9 @@ describe("generateAuditReportPdf", () => {
       buildingFixture(),
       fullResultFixture(),
       fullExtrasFixture(),
+      "en",
+      undefined,
+      "https://yres.example.com/verify/00000000-0000-0000-0000-000000000000",
     );
 
     expect(Buffer.from(bytes.slice(0, 5)).toString("utf-8")).toBe("%PDF-");

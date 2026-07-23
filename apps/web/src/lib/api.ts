@@ -365,4 +365,9 @@ export const api = {
         { method: "PUT", body: JSON.stringify({ note }) },
       ),
   },
+  /** Public, unauthenticated — the report's cover-page QR code links here (docs/report-redesign-proposal.md §8). */
+  verify: (auditRunId: string) =>
+    request<{ valid: boolean; buildingName?: string; completedAt?: string }>(
+      `/api/verify/${auditRunId}`,
+    ),
 };

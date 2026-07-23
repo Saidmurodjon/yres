@@ -1545,3 +1545,83 @@ biome lint` (tegilgan fayllar), `bun run --cwd apps/api test tests/services` (64
 tasdiqlanmagan taxmin) haqiqiy kalit bilan birga tekshirilishi kerak (agar Yandex boshqacha
 javob qaytarsa, URL parametrlarini moslashtirish kerak bo'lishi mumkin). Shundan keyin §9'ning
 oxirgi bosqichi — QR-kod+tekshiruv sahifasi (yangi public route+kutubxona) qoladi.
+
+### Yandex Static Maps kaliti olindi, lekin hozircha 503 bilan ishlamayapti
+
+Loyiha egasi Yandex Developer Dashboard'da haqiqiy Static API kalitini yaratdi
+(`developer.tech.yandex.ru`, "Connect APIs" oynasidan "Static API" tanlab) — Claude Chrome
+kengaytmasi orqali navigatsiya qilib ko'rsatildi, lekin ro'yxatdan o'tish/kalit yaratishning
+o'zi loyiha egasi tomonidan bajarildi (akkaunt/kredentsial amallarini Claude bajarmaydi).
+Kalit `apps/api/.dev.vars`ga qo'shildi va Yandex dashboard'ida "Static API"ga to'g'ri
+bog'langani tasdiqlandi ("Keys" sahifasida ko'rindi).
+
+Ammo haqiqiy so'rov (`static-maps.yandex.ru/v1` ham, eskirgan `1.x` ham) izchil **503 Service
+Unavailable** qaytarmoqda — bu sandbox'ning tarmog'idan (`curl`) boshida `403 Invalid api key`
+edi, keyin haqiqiy brauzerdan (foydalanuvchining tarmog'i) qayta tekshirilganda **503**ga
+o'zgardi, va bu Moskva markazi kabi oddiy test-koordinata bilan ham takrorlandi — demak muammo
+parametr formatida emas. Yandex dashboard'ida "daily free limit... 100 requests... choose a
+paid plan" degan banner ko'rindi, bu balki bepul reja endi billing bog'lashni talab qilishini
+anglatishi mumkin, lekin bu tasdiqlanmagan taxmin.
+
+Loyiha egasi bilan kelishilgan holda **hozircha to'xtatildi** — keyinroq qaytariladi, agar
+ishlamasa boshqa provayderga (masalan OpenStreetMap-asoslangan bepul statik-xarita xizmati)
+o'tish ko'rib chiqiladi. Kod tomondan hech narsa o'zgartirilishi shart emas —
+`fetchYandexStaticMapPng()` allaqachon har qanday xatoda (403/503/tarmoq xatosi) `null`
+qaytarib, matn-fallback bilan ishlaydi, shuning uchun bu holat hisobot generatsiyasini
+buzmaydi.
+
+### 9-bosqich: QR-kod + tekshiruv sahifasi (tugallandi)
+
+`docs/report-redesign-proposal.md`ning §9'idagi oxirgi bosqich. Kutilganidan kichikroq chiqdi —
+`auditRun` jadvalida allaqachon kerakli maydonlar bor edi (`id`, `buildingId`, `status`,
+`completedAt`), yangi ustun kerak bo'lmadi.
+
+**Backend**: yangi `apps/api/src/routes/verify.ts` — `GET /api/verify/:auditRunId`, **ataylab
+`authMiddleware`siz** (`climate.ts`/`reference.ts`dagi public-route andozasiga o'xshab, lekin
+ular ham aslida auth talab qiladi — bu birinchi haqiqatan public route). Faqat xavfsiz
+maydonlarni qaytaradi: `valid`, `buildingName`, `completedAt` — joylashuv/moliyaviy/texnik
+tafsilot yo'q, chunki `auditRunId` UUID bo'lsa ham bu route access-control emas, shunchaki
+"taxmin qilib bo'lmaydigan URL" xavfsizlik modeli. Topilmasa yoki `status !== "completed"`
+bo'lsa `404 {valid:false}`.
+
+`qrcode-generator` npm paketi qo'shildi (sof JS, Buffer/canvas'ga bog'liq emas — Workers-mos
+ehtimoli yuqori, `report-redesign-proposal.md`ning o'z tavsiyasi). `ReportLayout`ga yangi
+`qrCode()` metodi — QR matritsasining har bir "qorong'i" katagini `drawRectangle()` bilan
+chizadi, tashqi rasm kutubxonasi shart emas. `generateAuditReportPdf()`ning yangi ixtiyoriy
+6-parametri (`verifyUrl?`) — muqova sahifasida QR kod + "Ushbu hisobot YRES platformasida
+yaratilgan" matni + tekshiruv URL manzili matn sifatida ham chiziladi (skanerlay olmaydiganlar
+uchun zaxira). `routes/audit.ts` buni `${WEB_URL}/verify/${latestCompleted.id}`dan quradi.
+
+**Frontend**: yangi public route `apps/web/src/routes/verify.$auditRunId.tsx` (`_authenticated`
+tashqarisida, `login.tsx`/`forgot-password.tsx` andozasida — auth talab qilmaydi), yangi
+`verify` i18n namespace (uch tilda), `useVerifyAuditRun()` hook'i (`use-audit.ts`, 404'ni
+maxsus "tasdiqlanmadi" holati sifatida ushlaydi, boshqa xatolarda qayta uradi — mavjud
+`useAuditStatus`/`useAuditResults` andozasiga mos).
+
+**Haqiqiy bug topildi va tuzatildi** (haqiqiy PDF generatsiya qilib, vizual tekshirish orqali):
+tekshiruv URL matni ("Haqiqiyligini tekshirish uchun ... http://localhost:5173/verify/...")
+sahifadan tashqariga chiqib ketgan edi — `paragraph()`/`note()` metodlari `heading()` kabi hech
+qachon matn kengligini o'lchamagan (faqat `table()`ning sarlavha-kolliziyasi va `heading()`ning
+o'zi oldin tuzatilgan edi). Bu safar, chunki `paragraph()`/`note()` **umumiy** metodlar (butun
+hisobot bo'ylab o'nlab joyda ishlatiladi, faqat bitta yangi chaqiruv emas), sarlavhani
+qisqartirish o'rniga **umumiy so'z-bo'yicha o'rash** (`wrapText()`) qo'shildi — bo'shliqlar
+bo'yicha bo'ladi, bitta uzun bo'shliqsiz token (URL kabi) hali ham sig'masa belgi-bo'yicha
+bo'linadi. Ikkala metod ham endi ko'p qatorli matnni to'g'ri chizadi. Boshqa barcha
+paragraph/note joylar (qisqa matnlar) o'zgarishsiz bitta qatorda qoladi — vizual tekshiruvda
+regressiya topilmadi.
+
+**Tekshirildi**: `bun run type-check` (barcha workspace), `bun run --cwd apps/web build`, `bunx
+biome lint` (tegilgan fayllar), `bun run --cwd apps/api test tests/services` (64/64 — asosiy
+test'ga haqiqiy `verifyUrl` qo'shilib QR-chizish yo'li ham endi qamrab olingan). Backend to'liq
+haqiqiy muhitda tekshirildi: haqiqiy Neon bazadan "3-DMTT" binosining haqiqiy `auditRunId`si
+olinib, `GET /api/verify/:id` haqiqiy (`{valid:true, buildingName:"3-DMTT", completedAt:...}`)
+va soxta UUID (`{valid:false}`, 404) holatlarining ikkalasi ham to'g'ri ishlagani tasdiqlandi;
+haqiqiy PDF generatsiya qilinib QR kod va tekshiruv matni sahifada to'g'ri chiqqani vizual
+tasdiqlandi. **Frontend `/verify/$auditRunId` sahifasining o'zi brauzerda vizual tekshirilmadi**
+— Claude Chrome kengaytmasi tekshiruv paytida uzilib qoldi va sessiya oxirigacha tiklanmadi;
+komponentning o'zi soddaligi (mavjud `useQuery`+shartli render andozasi) va backend
+kontraktining to'g'ridan-to'g'ri tasdiqlanganligi tufayli past xavfli deb baholanadi, lekin
+haqiqiy brauzerda ko'rib chiqish tavsiya etiladi.
+
+**`docs/report-redesign-proposal.md`ning barcha §9 bosqichlari tugallandi** (Yandex xaritasi
+kodi tayyor, faqat kalit hal qilinishi kerak — yuqoriga qarang).

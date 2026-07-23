@@ -21,6 +21,7 @@ import { notificationsRoutes } from "./routes/notifications";
 import { referenceRoutes } from "./routes/reference";
 import { systemsRoutes } from "./routes/systems";
 import { usersRoutes } from "./routes/users";
+import { verifyRoutes } from "./routes/verify";
 
 export interface Env {
   DATABASE_URL: string;
@@ -103,6 +104,7 @@ app.route("/api/users", usersRoutes);
 app.route("/api/admin", adminUsersRoutes);
 app.route("/api/notifications", notificationsRoutes);
 app.route("/api/chat", chatRoutes);
+app.route("/api/verify", verifyRoutes);
 
 // Reports uncaught exceptions (route bugs, calculation-engine errors,
 // unexpected DB failures) to Sentry with request context. A blank

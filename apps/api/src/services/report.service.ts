@@ -2,6 +2,7 @@ import fontkit from "@pdf-lib/fontkit";
 import type { building } from "@yres/db";
 import type { AuditResult, GenerationSourceResult, ReportAnnotationSectionKey } from "@yres/types";
 import { type PDFFont, type PDFPage, PDFDocument, rgb } from "pdf-lib";
+import qrcode from "qrcode-generator";
 import { PT_SERIF_BOLD_BASE64 } from "../assets/fonts/pt-serif-bold";
 import { PT_SERIF_ITALIC_BASE64 } from "../assets/fonts/pt-serif-italic";
 import { PT_SERIF_REGULAR_BASE64 } from "../assets/fonts/pt-serif-regular";
@@ -155,9 +156,12 @@ class ReportLayout {
   }
 
   paragraph(text: string) {
-    this.ensureSpace(17);
-    this.page.drawText(text, { x: MARGIN, y: this.y, size: 10, font: this.regular, color: MUTED });
-    this.y -= 17;
+    const lines = wrapText(text, this.regular, 10, this.contentWidth());
+    this.ensureSpace(17 * lines.length);
+    for (const line of lines) {
+      this.page.drawText(line, { x: MARGIN, y: this.y, size: 10, font: this.regular, color: MUTED });
+      this.y -= 17;
+    }
   }
 
   /**
@@ -168,9 +172,12 @@ class ReportLayout {
    * conclusions under charts.
    */
   note(text: string) {
-    this.ensureSpace(17);
-    this.page.drawText(text, { x: MARGIN, y: this.y, size: 10, font: this.italic, color: MUTED });
-    this.y -= 17;
+    const lines = wrapText(text, this.italic, 10, this.contentWidth());
+    this.ensureSpace(17 * lines.length);
+    for (const line of lines) {
+      this.page.drawText(line, { x: MARGIN, y: this.y, size: 10, font: this.italic, color: MUTED });
+      this.y -= 17;
+    }
   }
 
   /** Two-column label/value rows, e.g. building metadata or KPI cards flattened to text. */
@@ -632,9 +639,75 @@ class ReportLayout {
     this.y -= height + 8;
   }
 
+  /**
+   * Draws a QR code as plain filled squares — one `drawRectangle()` per
+   * dark module, no external rendering/canvas library needed, just the
+   * module grid `qrcode-generator` computes (docs/report-redesign-proposal.md
+   * §8). `isDark(row, col)` follows that library's own indexing (row 0 =
+   * top), so row `r`'s squares sit `(r+1)` module-heights down from the
+   * current cursor.
+   */
+  qrCode(moduleCount: number, isDark: (row: number, col: number) => boolean, sizePt = 90) {
+    this.ensureSpace(sizePt + 8);
+    const moduleSize = sizePt / moduleCount;
+    const top = this.y;
+    for (let row = 0; row < moduleCount; row++) {
+      for (let col = 0; col < moduleCount; col++) {
+        if (!isDark(row, col)) continue;
+        this.page.drawRectangle({
+          x: MARGIN + col * moduleSize,
+          y: top - (row + 1) * moduleSize,
+          width: moduleSize,
+          height: moduleSize,
+          color: INK,
+        });
+      }
+    }
+    this.y -= sizePt + 8;
+  }
+
   async toBytes(): Promise<Uint8Array> {
     return this.doc.save();
   }
+}
+
+/**
+ * Splits `text` into lines that fit `maxWidth` at `fontSize`, breaking at
+ * spaces first — and, if a single space-free token (e.g. a URL) is still
+ * too wide on its own, hard-splitting it by character. `paragraph()`/`note()`
+ * never measured text width before this (only `table()`'s column-header
+ * collision and `heading()`'s overflow, both found via visual PDF
+ * verification, prompted fixes there) — the verify-report URL text was the
+ * first paragraph long enough to actually run off the page edge.
+ */
+function wrapText(text: string, font: PDFFont, fontSize: number, maxWidth: number): string[] {
+  const lines: string[] = [];
+  let current = "";
+  for (const word of text.split(" ")) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (font.widthOfTextAtSize(candidate, fontSize) <= maxWidth) {
+      current = candidate;
+      continue;
+    }
+    if (current) lines.push(current);
+    if (font.widthOfTextAtSize(word, fontSize) <= maxWidth) {
+      current = word;
+      continue;
+    }
+    let chunk = "";
+    for (const char of word) {
+      const next = chunk + char;
+      if (chunk && font.widthOfTextAtSize(next, fontSize) > maxWidth) {
+        lines.push(chunk);
+        chunk = char;
+      } else {
+        chunk = next;
+      }
+    }
+    current = chunk;
+  }
+  if (current) lines.push(current);
+  return lines;
 }
 
 function truncateLabel(label: string, slotWidth: number, fontSize: number): string {
@@ -795,6 +868,7 @@ export async function generateAuditReportPdf(
   extras: ReportExtras,
   lang: ReportLang = "en",
   yandexStaticMapsApiKey?: string,
+  verifyUrl?: string,
 ): Promise<Uint8Array> {
   const layout = await ReportLayout.create(lang);
 
@@ -810,6 +884,20 @@ export async function generateAuditReportPdf(
       }),
     }),
   );
+
+  // QR code + note authenticating this specific PDF as platform-generated
+  // (docs/report-redesign-proposal.md §8) — `verifyUrl` is only absent for
+  // callers that don't pass one (e.g. existing unit tests), never in
+  // production (routes/audit.ts always builds one from the completed
+  // audit_run it just resolved).
+  if (verifyUrl) {
+    const qr = qrcode(0, "M");
+    qr.addData(verifyUrl);
+    qr.make();
+    layout.qrCode(qr.getModuleCount(), (row, col) => qr.isDark(row, col), 80);
+    layout.paragraph(t(lang, "reportGeneratedByPlatform"));
+    layout.paragraph(t(lang, "scanToVerify", { url: verifyUrl }));
+  }
 
   layout.heading(t(lang, "headingBuilding"));
   if (building.latitude !== null && building.longitude !== null) {
