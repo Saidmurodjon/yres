@@ -1312,21 +1312,24 @@ jadval endi ortiqcha (`docs/report-redesign-proposal.md`ning grafik-jadval qoida
 Haqiqiy binoga qarshi qayta generatsiya qilib tasdiqlandi — gaz va elektr uchun ikkala grafik
 ham platformadagi dashboard grafigiga o'xshash chiqdi (rang, guruhlash, legend).
 
-**Ochiq qoldirilgan ikkita savol** (keyingi qadamdan oldin loyiha egasidan javob kutilmoqda):
-1. Qobiq/ventilyatsiya yo'qotish taqsimoti va sotib olingan energiya taqsimoti bo'limlarida
-   jadval (before+after ikkala ustun) va donut grafik (faqat bittasi — mos ravishda "before"
-   yoki "after") ikkalasi ham hali saqlanib qolgan — chunki jadvalda donut ko'rsatmaydigan
-   qo'shimcha ustun (ikkinchi stsenariy) bor, uni olib tashlash `hisobot.md`ning "hech qanday
-   hisoblangan qiymat egasiz qolmasin" qoidasini buzardi. Ikki variant: (a) shu holicha qoldirish
-   (jadval ma'lumot jihatidan to'liqroq), yoki (b) har ikkala stsenariy uchun ham donut qo'shib
-   (before VA after), keyin jadvalni olib tashlash. Hal qilinmagan.
-2. `docs/report-redesign-proposal.md`ning §3'dagi to'liq 19-bandli tuzilma "Qisqa xulosa
-   jadvali" (namunaning Table 1 — har bir chora-tadbir uchun investitsiya/to'lov muddati
-   juftligi/CO2/tavsiya) nomli **yangi**, hisobotning boshida joylashadigan qisqa jamlanma
-   jadvalini nazarda tutadi — bu hozirgi "Recommended measures" bo'limidan mustaqil, undan oldin
-   keladigan alohida qisqartirilgan ko'rinish. Bu yangi kontent yaratishni talab qiladi (shunchaki
-   qayta tartiblash emas), shuning uchun hali qo'shilmagan.
+**Ikkita ochiq savol loyiha egasiga berildi va ikkalasi ham tasdiqlandi:**
+1. Qobiq/ventilyatsiya yo'qotish va sotib olingan energiya taqsimoti bo'limlari — **har ikkala
+   stsenariy uchun ham donut** (before VA after) qo'shildi, jadvallar olib tashlandi. Endi har
+   bir bo'lim ikkita donut ko'rsatadi (masalan "Before-renovation distribution" va
+   "After-renovation distribution: residual loss once measures are applied") — ikkala ustun
+   ham vizual ko'rsatiladi, jadval haqiqatan ortiqcha bo'lib qoladi.
+2. Hisobot boshida yangi **"Executive summary — measures overview"** jadvali qo'shildi (Building
+   bo'limidan keyin, Summary'dan oldin) — namunaviy hujjatning Table 1: har bir chora-tadbir
+   uchun Investment, Payback (std./actual juftligi), CO2 (t/yr), Recommended (Ha/Yo'q). Bu
+   hozirgi batafsil "Recommended measures" bo'limidan (hisobotning o'rtasida) mustaqil — undan
+   oldin o'quvchi butun ro'yxatni bir qarashda ko'radi.
+
+**Haqiqiy bug yana topildi va tuzatildi** (vizual tekshiruv orqali): yangi Table 1'da eng uzun
+chora-tadbir nomi ("Installation of LED lighting and replacing of distribution system", 67
+belgi) `Measure` ustuniga (220pt) sig'may, `Investment` qiymatiga yopishib chiqqan edi — xuddi
+avvalgi bosqichdagi kabi bug'. Ustun kengligi 280pt'ga oshirildi (jami 660pt, albom rejimini
+saqlab qolgan holda).
 
 Tekshirildi: `bun run --cwd apps/api type-check`, `bunx biome lint`, `bun run test
-tests/services` (62/62), haqiqiy Neon bazadagi bino bilan generatsiya qilingan PDF vizual
-tekshirildi (ikkala bosqich uchun ham).
+tests/services` (62/62), haqiqiy Neon bazadagi bino bilan generatsiya qilingan PDF har bir
+o'zgarishdan keyin vizual tekshirildi.

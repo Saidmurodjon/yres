@@ -734,6 +734,27 @@ export async function generateAuditReportPdf(
     2,
   );
 
+  // Concise up-front overview (namunaviy hujjatning Table 1) — independent
+  // of, and read before, the full "Recommended measures" detail later in
+  // the report (docs/report-redesign-proposal.md §3 item 3).
+  if (result.measures.length > 0) {
+    layout.heading("Executive summary — measures overview");
+    layout.table(
+      ["Measure", "Investment", "Payback (std.)", "Payback (actual)", "CO2 (t/yr)", "Recommended"],
+      result.measures.map((m) => [
+        m.name,
+        fmtUsd(m.investmentCostUsd),
+        m.standardized.simplePaybackYears !== null
+          ? `${fmt(m.standardized.simplePaybackYears, 1)} yr`
+          : "—",
+        m.actual.simplePaybackYears !== null ? `${fmt(m.actual.simplePaybackYears, 1)} yr` : "—",
+        fmt(m.co2ReductionTonnesPerYear, 1),
+        m.proposedForImplementation ? "Yes" : "No",
+      ]),
+      [280, 65, 80, 85, 65, 85],
+    );
+  }
+
   layout.heading("Summary");
   const { summary } = result;
   layout.keyValueGrid(
@@ -872,32 +893,25 @@ export async function generateAuditReportPdf(
   );
   if (envelopeLossRows.length > 0) {
     layout.heading("Envelope & ventilation heat loss breakdown (before vs. after)");
-    layout.table(
-      ["Category", "Before (kWh)", "After (kWh)"],
-      envelopeLossRows.map((r) => [
-        r.category.replace(/_/g, " "),
-        fmt(r.beforeKwh, 0),
-        fmt(r.afterKwh, 0),
-      ]),
-      [280, 100, 100],
-    );
+    // Before AND after donuts together carry every value the old before/after
+    // table did — no separate table needed
+    // (docs/report-redesign-proposal.md's chart-implies-no-table rule).
     layout.paragraph("Before-renovation distribution (where heat is lost today):");
     layout.pieChart(
       envelopeLossRows.map((r) => ({ label: r.category.replace(/_/g, " "), value: r.beforeKwh })),
+    );
+    layout.paragraph("After-renovation distribution (residual loss once measures are applied):");
+    layout.pieChart(
+      envelopeLossRows.map((r) => ({ label: r.category.replace(/_/g, " "), value: r.afterKwh })),
     );
   }
 
   const finalEnergyRows = result.energyBalanceBreakdown.filter((r) => r.section === "final_energy");
   if (finalEnergyRows.length > 0) {
     layout.heading("Final (purchased) energy breakdown (before vs. after)");
-    layout.table(
-      ["Category", "Before (kWh)", "After (kWh)"],
-      finalEnergyRows.map((r) => [
-        r.category.replace(/_/g, " "),
-        fmt(r.beforeKwh, 0),
-        fmt(r.afterKwh, 0),
-      ]),
-      [280, 100, 100],
+    layout.paragraph("Before-renovation distribution (what is purchased today):");
+    layout.pieChart(
+      finalEnergyRows.map((r) => ({ label: r.category.replace(/_/g, " "), value: r.beforeKwh })),
     );
     layout.paragraph("After-renovation distribution (what will be purchased):");
     layout.pieChart(
