@@ -40,6 +40,7 @@ import type {
   NonEeMeasureResult,
   RenewableProductionResult,
   Scenario,
+  SpecificConsumptionRow,
   VentilationLossResult,
 } from "@yres/types";
 import { desc, eq } from "drizzle-orm";
@@ -707,6 +708,61 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     if (theoreticalKwh > 0) baselineRatioByCarrier.set(carrier, actualAverageKwh / theoreticalKwh);
   }
 
+  // --- Specific consumption summary ("Breakdown Baseline & Balance" sheet's
+  // rows 28-31): actual (bill-calibrated) vs. standardized-before vs.
+  // standardized-after, kWh/m2/year, split heating/DHW/electricity. The
+  // source sheet hardcodes heating=gas-metered/DHW=district-heat-metered for
+  // its one specific building, which doesn't generalize — instead, "actual"
+  // here calibrates each "before" generation source by its own carrier's
+  // baseline ratio, so a mixed-carrier building (e.g. gas heating + electric
+  // DHW) calibrates each end-use against the carrier it actually draws from.
+  const specificConsumptionSummary: SpecificConsumptionRow[] = (["heating", "dhw"] as const).map(
+    (endUse) => {
+      const standardizedBeforeKwh =
+        finalEnergyByEndUse.find((e) => e.endUse === endUse && e.scenario === "before")
+          ?.finalEnergyConsumptionKwh ?? 0;
+      const standardizedAfterKwh =
+        finalEnergyByEndUse.find((e) => e.endUse === endUse && e.scenario === "after")
+          ?.finalEnergyConsumptionKwh ?? 0;
+      const actualKwh = generation
+        .filter((g) => g.scenario === "before" && g.endUse === endUse)
+        .reduce((sum, g) => {
+          const sourceType = generationSourceById.get(g.sourceId)?.sourceType;
+          const carrier = sourceType && carrierForGenerationSourceType(sourceType);
+          const ratio = (carrier && baselineRatioByCarrier.get(carrier)) ?? 1;
+          return sum + g.finalEnergyConsumptionKwh * ratio;
+        }, 0);
+      return {
+        endUse,
+        actualKwhPerM2Year: heatedFloorAreaM2 > 0 ? actualKwh / heatedFloorAreaM2 : 0,
+        standardizedBeforeKwhPerM2Year:
+          heatedFloorAreaM2 > 0 ? standardizedBeforeKwh / heatedFloorAreaM2 : 0,
+        standardizedAfterKwhPerM2Year:
+          heatedFloorAreaM2 > 0 ? standardizedAfterKwh / heatedFloorAreaM2 : 0,
+      };
+    },
+  );
+  const electricityStandardizedBeforeKwh =
+    (lighting.find((l) => l.scenario === "before")?.annualConsumptionKwh ?? 0) +
+    (equipment.find((e) => e.scenario === "before")?.annualConsumptionKwh ?? 0) +
+    (cooling.find((c) => c.scenario === "before")?.electricalEnergyForCoolingKwh ?? 0);
+  const electricityStandardizedAfterKwh =
+    (lighting.find((l) => l.scenario === "after")?.annualConsumptionKwh ?? 0) +
+    (equipment.find((e) => e.scenario === "after")?.annualConsumptionKwh ?? 0) +
+    (cooling.find((c) => c.scenario === "after")?.electricalEnergyForCoolingKwh ?? 0);
+  const electricityRatio = baselineRatioByCarrier.get("electricity") ?? 1;
+  specificConsumptionSummary.push({
+    endUse: "electricity",
+    actualKwhPerM2Year:
+      heatedFloorAreaM2 > 0
+        ? (electricityStandardizedBeforeKwh * electricityRatio) / heatedFloorAreaM2
+        : 0,
+    standardizedBeforeKwhPerM2Year:
+      heatedFloorAreaM2 > 0 ? electricityStandardizedBeforeKwh / heatedFloorAreaM2 : 0,
+    standardizedAfterKwhPerM2Year:
+      heatedFloorAreaM2 > 0 ? electricityStandardizedAfterKwh / heatedFloorAreaM2 : 0,
+  });
+
   // --- Measures & financials ---
   const measureRows = await db.query.energyMeasure.findMany({
     where: eq(energyMeasure.buildingId, buildingId),
@@ -826,6 +882,7 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     renewableProduction,
     finalEnergyByEndUse,
     energyBalanceBreakdown,
+    specificConsumptionSummary,
     measures,
     nonEeMeasures,
   };

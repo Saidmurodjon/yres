@@ -245,6 +245,11 @@ function fullResultFixture(): AuditResult {
       { category: "gas", section: "final_energy", beforeKwh: 600000, afterKwh: 280000 },
       { category: "lighting", section: "final_energy", beforeKwh: 50000, afterKwh: 20000 },
     ],
+    specificConsumptionSummary: [
+      { endUse: "heating", actualKwhPerM2Year: 320, standardizedBeforeKwhPerM2Year: 300, standardizedAfterKwhPerM2Year: 140 },
+      { endUse: "dhw", actualKwhPerM2Year: 25, standardizedBeforeKwhPerM2Year: 20, standardizedAfterKwhPerM2Year: 15 },
+      { endUse: "electricity", actualKwhPerM2Year: 45, standardizedBeforeKwhPerM2Year: 40, standardizedAfterKwhPerM2Year: 30 },
+    ],
     measures: [
       measureFixture(),
       measureFixture({
@@ -331,6 +336,7 @@ function emptyResultFixture(): AuditResult {
     renewableProduction: [],
     finalEnergyByEndUse: [],
     energyBalanceBreakdown: [],
+    specificConsumptionSummary: [],
     measures: [],
     nonEeMeasures: [],
   };

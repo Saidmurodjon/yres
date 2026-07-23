@@ -46,6 +46,25 @@ export interface EnergyBalanceRow {
   afterKwh: number;
 }
 
+export type SpecificConsumptionEndUse = "heating" | "dhw" | "electricity";
+
+/**
+ * The classic 3-column energy-audit comparison (source Excel's "Breakdown
+ * Baseline & Balance" sheet, rows 28-31): actual (bill-calibrated) vs.
+ * standardized-before vs. standardized-after, in kWh/m²/year, split by
+ * heating/DHW/electricity. `actualKwhPerM2Year` has no meaningful
+ * "after" counterpart — same reasoning as `EnergyMeasureResult.actual`
+ * (calculation-engine.md): there is no post-retrofit metered data, only a
+ * theoretical "before" figure calibrated by each end-use's own carrier
+ * ratio.
+ */
+export interface SpecificConsumptionRow {
+  endUse: SpecificConsumptionEndUse;
+  actualKwhPerM2Year: number;
+  standardizedBeforeKwhPerM2Year: number;
+  standardizedAfterKwhPerM2Year: number;
+}
+
 export interface AuditResult {
   buildingId: string;
   generatedAt: string;
@@ -64,6 +83,7 @@ export interface AuditResult {
   renewableProduction: RenewableProductionResult[];
   finalEnergyByEndUse: EndUseEnergyTotals[];
   energyBalanceBreakdown: EnergyBalanceRow[];
+  specificConsumptionSummary: SpecificConsumptionRow[];
   measures: EnergyMeasureResult[];
   nonEeMeasures: NonEeMeasureResult[];
 }

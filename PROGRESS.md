@@ -1383,3 +1383,61 @@ tilda ham toza chiqdi.
 **Keyingi qadam**: `docs/report-redesign-proposal.md`ning §9 jadvalidagi qolgan bosqichlar
 (specific-consumption jamlanma jadvali, auditor izohlari, koordinatalar+xarita, QR-kod) navbat
 bilan davom etadi.
+
+### 6-bosqich: Specific-consumption jamlanma jadvali (tugallandi)
+
+Manba Excel'ning `Breakdown Baseline & Balance` varag'i 28-31 qatorlari (`docs/3-DMTT v5.xlsx`,
+`openpyxl` bilan to'g'ridan-to'g'ri ochib formulalar tekshirildi) klassik 3-ustunli energiya-audit
+solishtiruv jadvali: issitish/ISI/elektr har biri uchun haqiqiy (hisob-fakturadan) vs
+standartlashtirilgan-oldin vs standartlashtirilgan-keyin, kVt·soat/m²/yil birligida. Bu
+`AuditResult`da umuman yo'q edi.
+
+**Muhim qaror — manba Excel'ning o'ziga xos formulasidan chetlanish**: manba jadval haqiqiy
+qiymatini `Consumption!M19` (gaz) ni to'g'ridan-to'g'ri "issitish"ga va `Consumption!M55`
+("Energie Termică"/markazlashgan issiqlik) ni "ISI"ga qattiq bog'lagan — bu faqat o'sha bitta
+loyihaning tashuvchi tarkibiga (issitish=gaz, ISI=markazlashgan issiqlik) mos, umumlashtirilmaydi.
+Platformaning o'z modeli har qanday tashuvchi kombinatsiyasini qo'llab-quvvatlagani uchun, buning
+o'rniga: yangi `SpecificConsumptionRow` (`packages/types/src/audit.ts`) har bir "oldin"
+generatsiya manbai o'zining **o'z tashuvchisi** kalibrlash nisbati (`baselineRatioByCarrier`,
+allaqachon `EnergyMeasureResult.actual`da ishlatiladigan mexanizm) bilan hisoblanadi — aralash
+tashuvchili bino (masalan gaz bilan isitish + elektr ISI) har bir foydalanish turini o'zi
+ishlatgan tashuvchiga nisbatan to'g'ri kalibrlaydi, manba jadvalning bitta-loyihaga xos
+taxminini takrorlamaydi. Standartlashtirilgan oldin/keyin qiymatlar to'g'ridan-to'g'ri
+`finalEnergyByEndUse` (issitish/ISI) va `lighting`+`equipment`+`cooling` yig'indisi (elektr)dan
+olinadi, `heatedFloorAreaM2`ga bo'linadi.
+
+`report.service.ts`ga yangi jadval qo'shildi ("Final energy by end-use" jadvalidan keyin,
+jadval-faqat — `docs/report-redesign-proposal.md`ning §6/§4b istisnosi, chunki bu aniq sonli
+solishtirish, vizual taqsimot emas), `report-i18n.ts`ga uch tilda (`thActualBills`,
+`thStandardizedBefore`, `thStandardizedAfter`, `headingSpecificConsumptionSummary`) qo'shildi.
+
+**Haqiqiy bug topildi va tuzatildi** (faqat vizual tekshiruv orqali — haqiqiy Neon bazadagi
+"3-DMTT" binosiga qarshi PDF generatsiya qilib, uchala tilni sahifa-sahifa ochib ko'rish orqali,
+`ReportLayout.heading()`ning o'zi hech qanday kenglik tekshiruvi/o'rash qilmasligi sababli):
+rus tilidagi uzun sarlavha matni ("Сводка удельного потребления (кВт·ч/м²/год — фактическое и
+стандартизированное)") sahifaning o'ng chetidan tashqariga chiqib ketgan edi — bu `table()`da
+Phase 5'da tuzatilgan sarlavha-kolliziya bugiga o'xshash, lekin `heading()` uchun. Kenglikni
+tekshiradigan umumiy mexanizm qo'shish o'rniga (boshqa hech qanday sarlavha hozircha bunchalik
+uzun emas), sarlavha matni qisqartirildi ("Specific consumption summary"/"Сводка удельного
+потребления"/"Solishtirma iste'mol jamlanmasi") va birlik+tavsif alohida `paragraph()` qatoriga
+ko'chirildi (boshqa bo'limlarda sarlavha ostida tushuntiruvchi paragraf bo'lish andozasiga mos).
+
+Vizual tekshiruvda yana aniqlandi (bug emas): jadval sarlavhalar matni tufayli albom (landscape)
+rejimga o'tganda, undan oldingi sarlavha ba'zan portret sahifaning deyarli bo'sh pastki qismida
+"yolg'iz" qolib ketadi (jadvalning o'zi keyingi albom sahifada boshlanadi) — bu allaqachon
+"Generation & distribution efficiency" jadvali uchun ham mavjud, oldindan qabul qilingan naqsh
+ekan (`heading()` faqat o'zining balandligi uchun joy tekshiradi, undan keyin keladigan
+jadval/albom-almashtirish uchun emas) — yangi kod bilan bog'liq regressiya emas, tuzatilmadi.
+
+Tekshirildi: `bun run --cwd apps/api type-check`, `bun run --cwd apps/web type-check` (Vite
+build), `bunx biome lint` (tegilgan fayllar), `bun run --cwd apps/api test tests/services`
+(64/64 — jumladan uch tilning barchasida "throwing"siz render testlari). Haqiqiy Neon bazadagi
+"3-DMTT" binosiga qarshi (`apps/api`ning `runFullAudit`/`generateAuditReportPdf`ini to'g'ridan-
+to'g'ri chaqiradigan bir martalik scratch skript bilan, HTTP autentifikatsiyasiz — skript
+tekshiruvdan keyin o'chirildi) uchala tilda PDF generatsiya qilinib, `pymupdf` bilan sahifalar
+rasmga aylantirilib vizual tekshirildi (heading-overflow bugi tuzatilgandan keyin barcha uchala
+til toza chiqdi). Commit qilindi.
+
+**Keyingi qadam**: §9 jadvalidagi qolgan bosqichlar — auditor izohlari (yangi sxema kerak),
+koordinatalar+xarita (yangi ustunlar+tashqi API), QR-kod+tekshiruv sahifasi (yangi route+
+kutubxona).

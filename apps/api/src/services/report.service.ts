@@ -992,6 +992,27 @@ export async function generateAuditReportPdf(
     [180, 120, 180],
   );
 
+  // Jadval-only exception to the chart-implies-no-table rule
+  // (docs/report-redesign-proposal.md §6/§4b) — this is a precise 3-column
+  // numeric comparison, not a visual distribution.
+  layout.heading(t(lang, "headingSpecificConsumptionSummary"));
+  layout.paragraph(t(lang, "specificConsumptionSummaryNote"));
+  layout.table(
+    [
+      t(lang, "thEndUse"),
+      t(lang, "thActualBills"),
+      t(lang, "thStandardizedBefore"),
+      t(lang, "thStandardizedAfter"),
+    ],
+    result.specificConsumptionSummary.map((r) => [
+      enumLabel(lang, r.endUse),
+      fmt(lang, r.actualKwhPerM2Year, 1),
+      fmt(lang, r.standardizedBeforeKwhPerM2Year, 1),
+      fmt(lang, r.standardizedAfterKwhPerM2Year, 1),
+    ]),
+    [140, 140, 140, 140],
+  );
+
   // `section` distinguishes gross pre-generation envelope/ventilation losses
   // from post-generation purchased final energy — never sum across them
   // (calculation-engine.md).
