@@ -1,7 +1,12 @@
+import fontkit from "@pdf-lib/fontkit";
 import type { building } from "@yres/db";
 import type { AuditResult, GenerationSourceResult } from "@yres/types";
-import { type PDFFont, type PDFPage, PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { type PDFFont, type PDFPage, PDFDocument, rgb } from "pdf-lib";
+import { PT_SERIF_BOLD_BASE64 } from "../assets/fonts/pt-serif-bold";
+import { PT_SERIF_ITALIC_BASE64 } from "../assets/fonts/pt-serif-italic";
+import { PT_SERIF_REGULAR_BASE64 } from "../assets/fonts/pt-serif-regular";
 import { DEFAULT_DISCOUNT_RATE, ENERGY_ESCALATION_RATES } from "./financial.service";
+import { enumLabel, localeTag, type ReportLang, t } from "./report-i18n";
 import type {
   CarrierConsumptionHistory,
   ConstructionTypeUValueBreakdown,
@@ -72,24 +77,40 @@ class ReportLayout {
   private regular: PDFFont;
   private bold: PDFFont;
   private italic: PDFFont;
+  private lang: ReportLang;
 
-  private constructor(doc: PDFDocument, regular: PDFFont, bold: PDFFont, italic: PDFFont) {
+  private constructor(
+    doc: PDFDocument,
+    regular: PDFFont,
+    bold: PDFFont,
+    italic: PDFFont,
+    lang: ReportLang,
+  ) {
     this.doc = doc;
     this.regular = regular;
     this.bold = bold;
     this.italic = italic;
+    this.lang = lang;
     this.pageWidth = PORTRAIT_WIDTH;
     this.pageHeight = PORTRAIT_HEIGHT;
     this.page = doc.addPage([this.pageWidth, this.pageHeight]);
     this.y = this.pageHeight - MARGIN;
   }
 
-  static async create(): Promise<ReportLayout> {
+  static async create(lang: ReportLang): Promise<ReportLayout> {
     const doc = await PDFDocument.create();
-    const regular = await doc.embedFont(StandardFonts.TimesRoman);
-    const bold = await doc.embedFont(StandardFonts.TimesRomanBold);
-    const italic = await doc.embedFont(StandardFonts.TimesRomanItalic);
-    return new ReportLayout(doc, regular, bold, italic);
+    // pdf-lib's built-in StandardFonts (the previous Times* embedding) only
+    // support WinAnsi encoding — real-world tested: generating a Russian
+    // report threw "WinAnsi cannot encode ..." on the very first Cyrillic
+    // character. PT Serif (SIL OFL, see assets/fonts/OFL.txt) is embedded
+    // instead — a Latin+Cyrillic serif in the spirit of Times New Roman —
+    // via `@pdf-lib/fontkit`, the library's own mechanism for embedding
+    // arbitrary font files instead of the four built-in Latin-only ones.
+    doc.registerFontkit(fontkit);
+    const regular = await doc.embedFont(PT_SERIF_REGULAR_BASE64, { subset: false });
+    const bold = await doc.embedFont(PT_SERIF_BOLD_BASE64, { subset: false });
+    const italic = await doc.embedFont(PT_SERIF_ITALIC_BASE64, { subset: false });
+    return new ReportLayout(doc, regular, bold, italic, lang);
   }
 
   /** Current page's printable width — portrait by default, widened when `table()` switches a too-wide table onto its own landscape page (see that method's comment). */
@@ -182,9 +203,23 @@ class ReportLayout {
    * general "won't fit portrait → use landscape" fallback the redesign
    * proposal asked for, not a one-off fix for that section. Whatever
    * content follows always resumes on a fresh portrait page.
+   *
+   * `columnWidths` was hand-tuned against English header text length —
+   * ru/uz headers for the same column (e.g. "Issiqlik o'tkazuvchanligi
+   * (Vt/mK)" vs "Thermal conductivity (W/mK)") can be meaningfully longer
+   * and would silently bleed into the next column's header with no gap.
+   * Widening each column to at least the actual rendered header width
+   * (measured against the bold font actually used to draw it) makes this
+   * self-correcting per language instead of needing separate column-width
+   * tuning per locale.
    */
   table(headers: string[], rows: string[][], columnWidths: number[]) {
-    const totalWidth = columnWidths.reduce((sum, w) => sum + w, 0);
+    const headerPadding = 8;
+    const effectiveWidths = columnWidths.map((w, i) => {
+      const headerWidth = this.bold.widthOfTextAtSize(headers[i] ?? "", 10);
+      return Math.max(w, headerWidth + headerPadding);
+    });
+    const totalWidth = effectiveWidths.reduce((sum, w) => sum + w, 0);
     const needsLandscape = totalWidth > this.contentWidth();
     if (needsLandscape) {
       this.pageWidth = LANDSCAPE_WIDTH;
@@ -205,7 +240,7 @@ class ReportLayout {
           font: this.bold,
           color: INK,
         });
-        x += columnWidths[i] ?? 60;
+        x += effectiveWidths[i] ?? 60;
       }
       this.y -= 4;
       this.page.drawLine({
@@ -233,7 +268,7 @@ class ReportLayout {
           font: this.regular,
           color: INK,
         });
-        x += columnWidths[i] ?? 60;
+        x += effectiveWidths[i] ?? 60;
       }
       this.y -= rowHeight;
     }
@@ -298,7 +333,7 @@ class ReportLayout {
         color: fraction === 0 ? RULE : CHART_GRID,
         dashArray: fraction === 0 || fraction === 1 ? undefined : [1.5, 1.5],
       });
-      const axisLabel = fmt(maxValue * fraction, 0);
+      const axisLabel = fmt(this.lang, maxValue * fraction, 0);
       const axisLabelWidth = this.regular.widthOfTextAtSize(axisLabel, 7);
       this.page.drawText(axisLabel, {
         x: plotLeft - 6 - axisLabelWidth,
@@ -323,7 +358,7 @@ class ReportLayout {
         color: CHART_PALETTE[i % CHART_PALETTE.length],
       });
 
-      const valueLabel = fmt(d.value, 0);
+      const valueLabel = fmt(this.lang, d.value, 0);
       const valueLabelWidth = this.bold.widthOfTextAtSize(valueLabel, 8);
       this.page.drawText(valueLabel, {
         x: x + barWidth / 2 - valueLabelWidth / 2,
@@ -405,7 +440,7 @@ class ReportLayout {
         color: fraction === 0 ? RULE : CHART_GRID,
         dashArray: fraction === 0 || fraction === 1 ? undefined : [1.5, 1.5],
       });
-      const axisLabel = fmt(maxValue * fraction, 0);
+      const axisLabel = fmt(this.lang, maxValue * fraction, 0);
       const axisLabelWidth = this.regular.widthOfTextAtSize(axisLabel, 7);
       this.page.drawText(axisLabel, {
         x: plotLeft - 6 - axisLabelWidth,
@@ -531,7 +566,7 @@ class ReportLayout {
     const holeRadius = radius * 0.58;
     this.page.drawCircle({ x: cx, y: cy, size: holeRadius, color: CHART_CARD_BG });
 
-    const totalLabel = fmt(total, 0);
+    const totalLabel = fmt(this.lang, total, 0);
     const totalLabelWidth = this.bold.widthOfTextAtSize(totalLabel, 12);
     this.page.drawText(totalLabel, {
       x: cx - totalLabelWidth / 2,
@@ -540,7 +575,7 @@ class ReportLayout {
       font: this.bold,
       color: INK,
     });
-    const unitLabel = "kWh";
+    const unitLabel = t(this.lang, "unitKwh");
     const unitLabelWidth = this.regular.widthOfTextAtSize(unitLabel, 7.5);
     this.page.drawText(unitLabel, {
       x: cx - unitLabelWidth / 2,
@@ -674,62 +709,100 @@ function aggregateGenerationByEndUseScenario(
   });
 }
 
-function fmt(value: number | null | undefined, digits = 1): string {
+function fmt(lang: ReportLang, value: number | null | undefined, digits = 1): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  return value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: digits });
+  return value.toLocaleString(localeTag(lang), {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: digits,
+  });
 }
 
-function fmtUsd(value: number | null | undefined): string {
+function fmtUsd(lang: ReportLang, value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  return `$${fmt(value, 0)}`;
+  return `$${fmt(lang, value, 0)}`;
 }
 
-function fmtPct(value: number | null | undefined): string {
+function fmtPct(lang: ReportLang, value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  return `${fmt(value * 100, 1)}%`;
+  return `${fmt(lang, value * 100, 1)}%`;
 }
 
 /**
  * Renders a fresh AuditResult (see routes/audit.ts's "recalculate on demand"
  * rule — this never reads a stored result) into a downloadable PDF report.
+ * `lang` matches whichever UI language the request was made in (the
+ * frontend passes its current `i18n.language` as a query param — see
+ * `routes/audit.ts` — since this runs server-side with no access to the
+ * browser's i18next instance); defaults to English if omitted or
+ * unrecognized. Report structural text and enum-value labels are
+ * translated via `report-i18n.ts`; free-text database content (measure
+ * names, ancillary-cost descriptions, construction-type/auditor notes) is
+ * never translated — see that file's own doc comment for why.
  */
 export async function generateAuditReportPdf(
   building: Building,
   result: AuditResult,
   extras: ReportExtras,
+  lang: ReportLang = "en",
 ): Promise<Uint8Array> {
-  const layout = await ReportLayout.create();
+  const layout = await ReportLayout.create(lang);
 
-  layout.title("YRES Energy Audit Report");
+  layout.title(t(lang, "title"));
   layout.paragraph(
-    `${building.name} — ${building.location} — generated ${new Date(result.generatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`,
+    t(lang, "generatedOn", {
+      name: building.name,
+      location: building.location,
+      date: new Date(result.generatedAt).toLocaleDateString(localeTag(lang), {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+    }),
   );
 
-  layout.heading("Building");
+  layout.heading(t(lang, "headingBuilding"));
   layout.keyValueGrid(
     [
-      ["Name", building.name],
-      ["Location", building.location],
-      ["Type", building.buildingType.replace(/_/g, " ")],
-      ["Year built", building.yearBuilt ? String(building.yearBuilt) : "—"],
+      [t(lang, "labelName"), building.name],
+      [t(lang, "labelLocation"), building.location],
+      [t(lang, "labelType"), enumLabel(lang, building.buildingType)],
+      [t(lang, "labelYearBuilt"), building.yearBuilt ? String(building.yearBuilt) : "—"],
       [
-        "Net cooled floor area",
-        building.netCooledFloorAreaM2 ? `${fmt(building.netCooledFloorAreaM2, 0)} m²` : "—",
+        t(lang, "labelNetCooledFloorArea"),
+        building.netCooledFloorAreaM2 ? `${fmt(lang, building.netCooledFloorAreaM2, 0)} m²` : "—",
       ],
-      ["Occupants", String(building.occupantCount)],
+      [t(lang, "labelOccupants"), String(building.occupantCount)],
     ],
     2,
   );
   layout.keyValueGrid(
     [
-      ["Heating season duration", `${fmt(building.heatingSeasonDurationDays, 0)} days`],
-      ["Indoor temp. (operation hours)", `${fmt(building.indoorTempOperationC, 1)} °C`],
-      ["Indoor temp. (non-operation hours)", `${fmt(building.indoorTempNonOperationC, 1)} °C`],
-      ["Outdoor avg. temp. (heating season)", `${fmt(building.outdoorAvgHeatingSeasonTempC, 1)} °C`],
-      ["Outdoor design temp. (coldest 5 days)", `${fmt(building.outdoorDesignTempC, 1)} °C`],
-      ["Cooling enthalpy — inside", `${fmt(building.coolingEnthalpyInsideKjKg, 1)} kJ/kg`],
-      ["Cooling enthalpy — outside", `${fmt(building.coolingEnthalpyOutsideKjKg, 1)} kJ/kg`],
-      ["Cooling enthalpy — hottest day", `${fmt(building.coolingEnthalpyHottestDayKjKg, 1)} kJ/kg`],
+      [
+        t(lang, "labelHeatingSeasonDuration"),
+        `${fmt(lang, building.heatingSeasonDurationDays, 0)} ${t(lang, "unitDay")}`,
+      ],
+      [t(lang, "labelIndoorTempOperation"), `${fmt(lang, building.indoorTempOperationC, 1)} °C`],
+      [
+        t(lang, "labelIndoorTempNonOperation"),
+        `${fmt(lang, building.indoorTempNonOperationC, 1)} °C`,
+      ],
+      [
+        t(lang, "labelOutdoorAvgTemp"),
+        `${fmt(lang, building.outdoorAvgHeatingSeasonTempC, 1)} °C`,
+      ],
+      [t(lang, "labelOutdoorDesignTemp"), `${fmt(lang, building.outdoorDesignTempC, 1)} °C`],
+      [
+        t(lang, "labelCoolingEnthalpyInside"),
+        `${fmt(lang, building.coolingEnthalpyInsideKjKg, 1)} kJ/kg`,
+      ],
+      [
+        t(lang, "labelCoolingEnthalpyOutside"),
+        `${fmt(lang, building.coolingEnthalpyOutsideKjKg, 1)} kJ/kg`,
+      ],
+      [
+        t(lang, "labelCoolingEnthalpyHottestDay"),
+        `${fmt(lang, building.coolingEnthalpyHottestDayKjKg, 1)} kJ/kg`,
+      ],
     ],
     2,
   );
@@ -738,90 +811,124 @@ export async function generateAuditReportPdf(
   // of, and read before, the full "Recommended measures" detail later in
   // the report (docs/report-redesign-proposal.md §3 item 3).
   if (result.measures.length > 0) {
-    layout.heading("Executive summary — measures overview");
+    layout.heading(t(lang, "headingExecutiveSummary"));
     layout.table(
-      ["Measure", "Investment", "Payback (std.)", "Payback (actual)", "CO2 (t/yr)", "Recommended"],
+      [
+        t(lang, "thMeasure"),
+        t(lang, "thInvestment"),
+        t(lang, "thPaybackStd"),
+        t(lang, "thPaybackActual"),
+        t(lang, "thCo2PerYear"),
+        t(lang, "thRecommended"),
+      ],
       result.measures.map((m) => [
         m.name,
-        fmtUsd(m.investmentCostUsd),
+        fmtUsd(lang, m.investmentCostUsd),
         m.standardized.simplePaybackYears !== null
-          ? `${fmt(m.standardized.simplePaybackYears, 1)} yr`
+          ? `${fmt(lang, m.standardized.simplePaybackYears, 1)} ${t(lang, "unitYr")}`
           : "—",
-        m.actual.simplePaybackYears !== null ? `${fmt(m.actual.simplePaybackYears, 1)} yr` : "—",
-        fmt(m.co2ReductionTonnesPerYear, 1),
-        m.proposedForImplementation ? "Yes" : "No",
+        m.actual.simplePaybackYears !== null
+          ? `${fmt(lang, m.actual.simplePaybackYears, 1)} ${t(lang, "unitYr")}`
+          : "—",
+        fmt(lang, m.co2ReductionTonnesPerYear, 1),
+        m.proposedForImplementation ? t(lang, "yes") : t(lang, "no"),
       ]),
       [280, 65, 80, 85, 65, 85],
     );
   }
 
-  layout.heading("Summary");
+  layout.heading(t(lang, "headingSummary"));
   const { summary } = result;
   layout.keyValueGrid(
     [
-      ["Current energy use", `${fmt(summary.currentEnergyUseKwhPerM2Year, 0)} kWh/m²/yr`],
-      ["Potential energy use", `${fmt(summary.potentialEnergyUseKwhPerM2Year, 0)} kWh/m²/yr`],
-      ["Potential savings", `${fmt(summary.potentialSavingsKwhPerM2Year, 0)} kWh/m²/yr`],
-      ["CO2 reduction", `${fmt(summary.co2ReductionTonnesPerYear, 1)} tCO2/yr`],
-      ["Total investment", fmtUsd(summary.totalInvestmentUsd)],
-      ["  of which ancillary (non-energy-saving)", fmtUsd(summary.totalNonEeMeasureCostUsd)],
-      ["Total annual savings", fmtUsd(summary.totalAnnualSavingsUsd)],
       [
-        "Simple payback",
-        summary.simplePaybackYears !== null ? `${fmt(summary.simplePaybackYears, 1)} yr` : "—",
+        t(lang, "labelCurrentEnergyUse"),
+        `${fmt(lang, summary.currentEnergyUseKwhPerM2Year, 0)} ${t(lang, "unitKwhPerM2Yr")}`,
+      ],
+      [
+        t(lang, "labelPotentialEnergyUse"),
+        `${fmt(lang, summary.potentialEnergyUseKwhPerM2Year, 0)} ${t(lang, "unitKwhPerM2Yr")}`,
+      ],
+      [
+        t(lang, "labelPotentialSavings"),
+        `${fmt(lang, summary.potentialSavingsKwhPerM2Year, 0)} ${t(lang, "unitKwhPerM2Yr")}`,
+      ],
+      [
+        t(lang, "labelCo2Reduction"),
+        `${fmt(lang, summary.co2ReductionTonnesPerYear, 1)} ${t(lang, "unitTco2Yr")}`,
+      ],
+      [t(lang, "labelTotalInvestment"), fmtUsd(lang, summary.totalInvestmentUsd)],
+      [t(lang, "labelTotalInvestmentAncillary"), fmtUsd(lang, summary.totalNonEeMeasureCostUsd)],
+      [t(lang, "labelTotalAnnualSavings"), fmtUsd(lang, summary.totalAnnualSavingsUsd)],
+      [
+        t(lang, "labelSimplePayback"),
+        summary.simplePaybackYears !== null
+          ? `${fmt(lang, summary.simplePaybackYears, 1)} ${t(lang, "unitYr")}`
+          : "—",
       ],
     ],
     3,
   );
 
-  layout.heading("Envelope areas");
+  layout.heading(t(lang, "headingEnvelopeAreas"));
   const areas = result.envelopeAreas;
   layout.table(
-    ["Element", "Area (m²)"],
+    [t(lang, "thElement"), t(lang, "thArea")],
     [
-      ["External wall", fmt(areas.externalWallAreaM2, 1)],
-      ["Socle", fmt(areas.socleAreaM2, 1)],
-      ["Roof", fmt(areas.roofAreaM2, 1)],
-      ["Floor", fmt(areas.floorAreaM2, 1)],
-      ["Windows", fmt(areas.windowAreaM2, 1)],
-      ["Doors", fmt(areas.doorAreaM2, 1)],
+      [enumLabel(lang, "external_wall"), fmt(lang, areas.externalWallAreaM2, 1)],
+      [t(lang, "labelSocle"), fmt(lang, areas.socleAreaM2, 1)],
+      [enumLabel(lang, "roof"), fmt(lang, areas.roofAreaM2, 1)],
+      [enumLabel(lang, "floor"), fmt(lang, areas.floorAreaM2, 1)],
+      [enumLabel(lang, "window"), fmt(lang, areas.windowAreaM2, 1)],
+      [enumLabel(lang, "door"), fmt(lang, areas.doorAreaM2, 1)],
     ],
     [280, 100],
   );
 
   if (extras.uValues.length > 0) {
-    layout.heading("U-value calculations");
+    layout.heading(t(lang, "headingUValueCalculations"));
     for (const ct of extras.uValues) {
+      const scenarioLabel = ct.scenario === "before" ? t(lang, "before") : t(lang, "after");
       layout.paragraph(
-        `${ct.code} — ${ct.elementCategory.replace(/_/g, " ")} (${ct.scenario}) — U = ${fmt(ct.uValueWPerM2K, 3)} W/m²K`,
+        `${ct.code} — ${enumLabel(lang, ct.elementCategory)} (${scenarioLabel}) — U = ${fmt(lang, ct.uValueWPerM2K, 3)} W/m²K`,
       );
       if (ct.description) {
         layout.note(ct.description);
       }
       layout.table(
-        ["Layer", "Material", "Thickness (m)", "Conductivity (W/mK)", "R (m²K/W)"],
+        [
+          t(lang, "thLayer"),
+          t(lang, "thMaterial"),
+          t(lang, "thThickness"),
+          t(lang, "thConductivity"),
+          t(lang, "thResistance"),
+        ],
         ct.layers.map((l, i) => [
           String(i + 1),
           l.materialName,
-          fmt(l.thicknessM, 3),
-          fmt(l.thermalConductivityWPerMk, 2),
-          fmt(l.resistanceM2KPerW, 3),
+          fmt(lang, l.thicknessM, 3),
+          fmt(lang, l.thermalConductivityWPerMk, 2),
+          fmt(lang, l.resistanceM2KPerW, 3),
         ]),
         [30, 185, 85, 100, 85],
       );
       layout.paragraph(
-        `Rint = ${fmt(ct.interiorResistanceM2kPerW, 3)} m²K/W · Rext = ${fmt(ct.exteriorResistanceM2kPerW, 3)} m²K/W · Total R = ${fmt(ct.totalThermalResistanceM2KPerW, 3)} m²K/W`,
+        t(lang, "resistanceSummary", {
+          rint: fmt(lang, ct.interiorResistanceM2kPerW, 3),
+          rext: fmt(lang, ct.exteriorResistanceM2kPerW, 3),
+          total: fmt(lang, ct.totalThermalResistanceM2KPerW, 3),
+        }),
       );
     }
   }
 
   if (extras.consumptionHistory.length > 0) {
-    layout.heading("Metered energy consumption history (baseline)");
+    layout.heading(t(lang, "headingConsumptionHistory"));
     for (const carrier of extras.consumptionHistory) {
       const years = [
         ...new Set(carrier.months.flatMap((m) => m.byYear.map((y) => y.year))),
       ].sort((a, b) => a - b);
-      layout.paragraph(carrier.energyCarrier.replace(/_/g, " "));
+      layout.paragraph(enumLabel(lang, carrier.energyCarrier));
       // Grouped, year-by-year bars (matching the platform's own
       // MonthlyComparisonChart) already carry every value the old
       // month×year table showed — no separate table needed
@@ -840,47 +947,47 @@ export async function generateAuditReportPdf(
 
   const generationEfficiency = aggregateGenerationByEndUseScenario(result.generation);
   if (generationEfficiency.length > 0) {
-    layout.heading("Generation & distribution efficiency");
+    layout.heading(t(lang, "headingGenerationEfficiency"));
     layout.table(
       [
-        "End use",
-        "Scenario",
-        "Useful need (kWh)",
-        "Distrib. loss (kWh)",
-        "Efficiency/SEER",
-        "Final energy (kWh)",
-        "Specific (kWh/m²)",
+        t(lang, "thEndUse"),
+        t(lang, "thScenario"),
+        t(lang, "thUsefulNeed"),
+        t(lang, "thDistribLoss"),
+        t(lang, "thEfficiencySeer"),
+        t(lang, "thFinalEnergyKwh"),
+        t(lang, "thSpecific"),
       ],
       generationEfficiency.map((g) => [
-        g.endUse,
-        g.scenario === "before" ? "Before" : "After",
-        fmt(g.usefulEnergyNeedKwh, 0),
-        fmt(g.distributionLossKwh, 0),
-        fmt(g.weightedEfficiencyOrSeer, 2),
-        fmt(g.finalEnergyConsumptionKwh, 0),
-        fmt(g.specificFinalEnergyKwhPerM2, 1),
+        enumLabel(lang, g.endUse),
+        g.scenario === "before" ? t(lang, "before") : t(lang, "after"),
+        fmt(lang, g.usefulEnergyNeedKwh, 0),
+        fmt(lang, g.distributionLossKwh, 0),
+        fmt(lang, g.weightedEfficiencyOrSeer, 2),
+        fmt(lang, g.finalEnergyConsumptionKwh, 0),
+        fmt(lang, g.specificFinalEnergyKwhPerM2, 1),
       ]),
       [70, 70, 110, 110, 90, 110, 100],
     );
   }
 
-  layout.heading("Heating energy balance (before vs. after)");
+  layout.heading(t(lang, "headingHeatingEnergyBalance"));
   layout.table(
-    ["Scenario", "Annual net heating need (kWh)"],
+    [t(lang, "thScenario"), t(lang, "thAnnualNetHeatingNeed")],
     result.heatingEnergyBalance.map((r) => [
-      r.scenario === "before" ? "Before (baseline)" : "After (proposed)",
-      fmt(r.annualNetEnergyNeedKwh, 0),
+      r.scenario === "before" ? t(lang, "beforeBaseline") : t(lang, "afterProposed"),
+      fmt(lang, r.annualNetEnergyNeedKwh, 0),
     ]),
     [280, 200],
   );
 
-  layout.heading("Final energy by end-use");
+  layout.heading(t(lang, "headingFinalEnergyByEndUse"));
   layout.table(
-    ["End use", "Scenario", "Final energy (kWh)"],
+    [t(lang, "thEndUse"), t(lang, "thScenario"), t(lang, "thFinalEnergy")],
     result.finalEnergyByEndUse.map((e) => [
-      e.endUse,
-      e.scenario === "before" ? "Before" : "After",
-      fmt(e.finalEnergyConsumptionKwh, 0),
+      enumLabel(lang, e.endUse),
+      e.scenario === "before" ? t(lang, "before") : t(lang, "after"),
+      fmt(lang, e.finalEnergyConsumptionKwh, 0),
     ]),
     [180, 120, 180],
   );
@@ -892,130 +999,154 @@ export async function generateAuditReportPdf(
     (r) => r.section === "envelope_ventilation_loss",
   );
   if (envelopeLossRows.length > 0) {
-    layout.heading("Envelope & ventilation heat loss breakdown (before vs. after)");
+    layout.heading(t(lang, "headingEnvelopeLossBreakdown"));
     // Before AND after donuts together carry every value the old before/after
     // table did — no separate table needed
     // (docs/report-redesign-proposal.md's chart-implies-no-table rule).
-    layout.paragraph("Before-renovation distribution (where heat is lost today):");
+    layout.paragraph(t(lang, "beforeDistLossToday"));
     layout.pieChart(
-      envelopeLossRows.map((r) => ({ label: r.category.replace(/_/g, " "), value: r.beforeKwh })),
+      envelopeLossRows.map((r) => ({ label: enumLabel(lang, r.category), value: r.beforeKwh })),
     );
-    layout.paragraph("After-renovation distribution (residual loss once measures are applied):");
+    layout.paragraph(t(lang, "afterDistResidual"));
     layout.pieChart(
-      envelopeLossRows.map((r) => ({ label: r.category.replace(/_/g, " "), value: r.afterKwh })),
+      envelopeLossRows.map((r) => ({ label: enumLabel(lang, r.category), value: r.afterKwh })),
     );
   }
 
   const finalEnergyRows = result.energyBalanceBreakdown.filter((r) => r.section === "final_energy");
   if (finalEnergyRows.length > 0) {
-    layout.heading("Final (purchased) energy breakdown (before vs. after)");
-    layout.paragraph("Before-renovation distribution (what is purchased today):");
+    layout.heading(t(lang, "headingFinalEnergyBreakdown"));
+    layout.paragraph(t(lang, "beforeDistPurchasedToday"));
     layout.pieChart(
-      finalEnergyRows.map((r) => ({ label: r.category.replace(/_/g, " "), value: r.beforeKwh })),
+      finalEnergyRows.map((r) => ({ label: enumLabel(lang, r.category), value: r.beforeKwh })),
     );
-    layout.paragraph("After-renovation distribution (what will be purchased):");
+    layout.paragraph(t(lang, "afterDistPurchased"));
     layout.pieChart(
-      finalEnergyRows.map((r) => ({ label: r.category.replace(/_/g, " "), value: r.afterKwh })),
+      finalEnergyRows.map((r) => ({ label: enumLabel(lang, r.category), value: r.afterKwh })),
     );
   }
 
   const proposedMeasures = result.measures.filter((m) => m.proposedForImplementation);
   layout.heading(
     proposedMeasures.length > 0
-      ? "Recommended measures (proposed for implementation)"
-      : "Measures (none currently selected for implementation)",
+      ? t(lang, "headingRecommendedMeasures")
+      : t(lang, "headingMeasuresNoneSelected"),
   );
   const measuresToList = proposedMeasures.length > 0 ? proposedMeasures : result.measures;
   if (measuresToList.length === 0) {
-    layout.paragraph("No energy-saving measures have been defined for this building yet.");
+    layout.paragraph(t(lang, "noMeasuresDefined"));
   } else {
     // Standardized and actual are always shown together, never one without
     // the other (calculation-engine.md) — as two adjacent tables sharing the
     // same row order, since this drawing engine has no multi-line cells to
     // fit both scenarios into a single row.
-    layout.paragraph("Theoretical savings (standardized conditions):");
+    layout.paragraph(t(lang, "theoreticalSavings"));
     layout.table(
-      ["Measure", "Investment", "Std. savings", "Payback (yr)", "NPV", "IRR", "CO2 (t/yr)"],
+      [
+        t(lang, "thMeasure"),
+        t(lang, "thInvestment"),
+        t(lang, "thStdSavings"),
+        t(lang, "thPaybackYr"),
+        t(lang, "thNpv"),
+        t(lang, "thIrr"),
+        t(lang, "thCo2PerYear"),
+      ],
       measuresToList.map((m) => [
         m.name,
-        fmtUsd(m.investmentCostUsd),
-        `${fmtUsd(m.standardizedAnnualSavingsUsd)} (${fmt(m.standardizedAnnualSavingsKwh, 0)} kWh)`,
-        fmt(m.standardized.simplePaybackYears, 1),
-        fmtUsd(m.standardized.npv),
-        fmtPct(m.standardized.irr),
-        fmt(m.co2ReductionTonnesPerYear, 1),
+        fmtUsd(lang, m.investmentCostUsd),
+        `${fmtUsd(lang, m.standardizedAnnualSavingsUsd)} (${fmt(lang, m.standardizedAnnualSavingsKwh, 0)} ${t(lang, "unitKwh")})`,
+        fmt(lang, m.standardized.simplePaybackYears, 1),
+        fmtUsd(lang, m.standardized.npv),
+        fmtPct(lang, m.standardized.irr),
+        fmt(lang, m.co2ReductionTonnesPerYear, 1),
       ]),
       [230, 65, 130, 65, 70, 90, 60],
     );
-    layout.paragraph("Actual savings (calibrated against metered bills):");
+    layout.paragraph(t(lang, "actualSavingsCalibrated"));
     layout.table(
-      ["Measure", "Actual savings", "Payback (yr)", "NPV", "IRR"],
+      [t(lang, "thMeasure"), t(lang, "thActualSavings"), t(lang, "thPaybackYr"), t(lang, "thNpv"), t(lang, "thIrr")],
       measuresToList.map((m) => [
         m.name,
-        `${fmtUsd(m.actualAnnualSavingsUsd)} (${fmt(m.actualAnnualSavingsKwh, 0)} kWh)`,
-        fmt(m.actual.simplePaybackYears, 1),
-        fmtUsd(m.actual.npv),
-        fmtPct(m.actual.irr),
+        `${fmtUsd(lang, m.actualAnnualSavingsUsd)} (${fmt(lang, m.actualAnnualSavingsKwh, 0)} ${t(lang, "unitKwh")})`,
+        fmt(lang, m.actual.simplePaybackYears, 1),
+        fmtUsd(lang, m.actual.npv),
+        fmtPct(lang, m.actual.irr),
       ]),
       [260, 150, 70, 80, 100],
     );
   }
 
   if (result.measures.length > 0) {
-    layout.heading("GHG emissions (CO2 reduction)");
+    layout.heading(t(lang, "headingGhgEmissions"));
     layout.paragraph(
-      `Total CO2 reduction across all measures: ${fmt(result.summary.co2ReductionTonnesPerYear, 1)} tCO2/yr.`,
+      t(lang, "totalCo2Reduction", {
+        value: fmt(lang, result.summary.co2ReductionTonnesPerYear, 1),
+      }),
     );
     layout.table(
-      ["Measure", "CO2 reduction (tCO2/yr)"],
-      result.measures.map((m) => [m.name, fmt(m.co2ReductionTonnesPerYear, 1)]),
+      [t(lang, "thMeasure"), t(lang, "thCo2ReductionTyr")],
+      result.measures.map((m) => [m.name, fmt(lang, m.co2ReductionTonnesPerYear, 1)]),
       [280, 150],
     );
     if (extras.tariffs.length > 0) {
       layout.paragraph(
-        `Emission factors used: ${extras.tariffs
-          .map((t) => `${t.energyCarrier.replace(/_/g, " ")} ${fmt(t.emissionFactorKgCo2PerKwh, 2)} kgCO2/kWh`)
-          .join(" · ")}.`,
+        t(lang, "emissionFactorsUsed", {
+          list: extras.tariffs
+            .map(
+              (tariff) =>
+                `${enumLabel(lang, tariff.energyCarrier)} ${fmt(lang, tariff.emissionFactorKgCo2PerKwh, 2)} ${t(lang, "unitKgco2PerKwh")}`,
+            )
+            .join(" · "),
+        }),
       );
     }
   }
 
-  layout.heading("Financial assumptions");
+  layout.heading(t(lang, "headingFinancialAssumptions"));
   layout.paragraph(
-    `Discount rate: ${fmtPct(DEFAULT_DISCOUNT_RATE)} · Annual fuel-price escalation: ${Object.entries(
-      ENERGY_ESCALATION_RATES,
-    )
-      .map(([carrier, rate]) => `${carrier.replace(/_/g, " ")} ${fmtPct(rate)}`)
-      .join(", ")}.`,
+    t(lang, "discountRateAssumption", {
+      rate: fmtPct(lang, DEFAULT_DISCOUNT_RATE),
+      escalation: Object.entries(ENERGY_ESCALATION_RATES)
+        .map(([carrier, rate]) => `${enumLabel(lang, carrier)} ${fmtPct(lang, rate)}`)
+        .join(", "),
+    }),
   );
   if (extras.tariffs.length > 0) {
     layout.table(
-      ["Energy carrier", "Unit cost", "Emission factor"],
-      extras.tariffs.map((t) => [
-        t.energyCarrier.replace(/_/g, " "),
-        `$${fmt(t.unitCostUsd, 3)}/kWh`,
-        `${fmt(t.emissionFactorKgCo2PerKwh, 2)} kgCO2/kWh`,
+      [t(lang, "thEnergyCarrier"), t(lang, "thUnitCost"), t(lang, "thEmissionFactor")],
+      extras.tariffs.map((tariff) => [
+        enumLabel(lang, tariff.energyCarrier),
+        `$${fmt(lang, tariff.unitCostUsd, 3)}/${t(lang, "unitKwh")}`,
+        `${fmt(lang, tariff.emissionFactorKgCo2PerKwh, 2)} ${t(lang, "unitKgco2PerKwh")}`,
       ]),
       [160, 120, 150],
     );
   }
 
   if (proposedMeasures.length > 0) {
-    layout.heading("Cashflow detail (proposed measures)");
+    layout.heading(t(lang, "headingCashflowDetail"));
     for (const m of proposedMeasures) {
-      layout.paragraph(`${m.name} — lifetime ${m.lifetimeYears} years`);
+      layout.paragraph(t(lang, "measureLifetime", { name: m.name, years: m.lifetimeYears }));
       layout.table(
-        ["Year", "Std. net CF", "Std. discounted", "Std. cumulative", "Actual net CF", "Actual disc.", "Actual cum."],
+        [
+          t(lang, "thYear"),
+          t(lang, "thStdNetCf"),
+          t(lang, "thStdDiscounted"),
+          t(lang, "thStdCumulative"),
+          t(lang, "thActualNetCf"),
+          t(lang, "thActualDisc"),
+          t(lang, "thActualCum"),
+        ],
         m.standardizedCashflow.map((std, i) => {
           const actual = m.actualCashflow[i];
           return [
             String(std.year),
-            fmtUsd(std.netCashflow),
-            fmtUsd(std.discountedNetCashflow),
-            fmtUsd(std.cumulativeDiscountedCashflow),
-            actual ? fmtUsd(actual.netCashflow) : "—",
-            actual ? fmtUsd(actual.discountedNetCashflow) : "—",
-            actual ? fmtUsd(actual.cumulativeDiscountedCashflow) : "—",
+            fmtUsd(lang, std.netCashflow),
+            fmtUsd(lang, std.discountedNetCashflow),
+            fmtUsd(lang, std.cumulativeDiscountedCashflow),
+            actual ? fmtUsd(lang, actual.netCashflow) : "—",
+            actual ? fmtUsd(lang, actual.discountedNetCashflow) : "—",
+            actual ? fmtUsd(lang, actual.cumulativeDiscountedCashflow) : "—",
           ];
         }),
         [35, 75, 75, 75, 75, 75, 75],
@@ -1024,14 +1155,14 @@ export async function generateAuditReportPdf(
   }
 
   if (result.nonEeMeasures.length > 0) {
-    layout.heading("Ancillary costs (non-energy-saving)");
+    layout.heading(t(lang, "headingAncillaryCosts"));
     layout.table(
-      ["Description", "Quantity", "Unit cost", "Total cost"],
+      [t(lang, "thDescription"), t(lang, "thQuantity"), t(lang, "thUnitCost"), t(lang, "thTotalCost")],
       result.nonEeMeasures.map((m) => [
         m.description,
-        `${fmt(m.quantity, 1)}${m.unit ? ` ${m.unit}` : ""}`,
-        fmtUsd(m.unitCostUsd),
-        fmtUsd(m.totalCostUsd),
+        `${fmt(lang, m.quantity, 1)}${m.unit ? ` ${m.unit}` : ""}`,
+        fmtUsd(lang, m.unitCostUsd),
+        fmtUsd(lang, m.totalCostUsd),
       ]),
       [200, 100, 80, 80],
     );
@@ -1041,20 +1172,26 @@ export async function generateAuditReportPdf(
   // above — already computed by AuditResult but never rendered anywhere.
   // For the auditor to verify calculations, not the primary reading path,
   // so it's kept at the end (hisobot.md's Annex 2).
-  layout.heading("Annex 2: Detailed calculations");
+  layout.heading(t(lang, "headingAnnex2"));
 
   if (result.envelopeHeatLoss.length > 0) {
-    layout.paragraph("Envelope heat loss — monthly, by category");
+    layout.paragraph(t(lang, "envelopeHeatLossMonthly"));
     for (const scenarioResult of result.envelopeHeatLoss) {
-      layout.paragraph(scenarioResult.scenario === "before" ? "Before" : "After");
+      layout.paragraph(scenarioResult.scenario === "before" ? t(lang, "before") : t(lang, "after"));
       layout.table(
-        ["Month", "Category", "Operation hrs (kWh)", "Non-op. hrs (kWh)", "Total (kWh)"],
+        [
+          t(lang, "thMonth"),
+          t(lang, "thCategory"),
+          t(lang, "thOperationHrs"),
+          t(lang, "thNonOpHrs"),
+          t(lang, "thTotal"),
+        ],
         scenarioResult.monthly.map((m) => [
           MONTH_NAMES[m.month - 1] ?? String(m.month),
-          m.category.replace(/_/g, " "),
-          fmt(m.operationHoursLossKwh, 0),
-          fmt(m.nonOperationHoursLossKwh, 0),
-          fmt(m.totalKwh, 0),
+          enumLabel(lang, m.category),
+          fmt(lang, m.operationHoursLossKwh, 0),
+          fmt(lang, m.nonOperationHoursLossKwh, 0),
+          fmt(lang, m.totalKwh, 0),
         ]),
         [65, 140, 95, 95, 75],
       );
@@ -1062,16 +1199,16 @@ export async function generateAuditReportPdf(
   }
 
   if (result.ventilationLoss.length > 0) {
-    layout.paragraph("Ventilation heat loss — monthly");
+    layout.paragraph(t(lang, "ventilationHeatLossMonthly"));
     for (const scenarioResult of result.ventilationLoss) {
-      layout.paragraph(scenarioResult.scenario === "before" ? "Before" : "After");
+      layout.paragraph(scenarioResult.scenario === "before" ? t(lang, "before") : t(lang, "after"));
       layout.table(
-        ["Month", "Natural (kWh)", "Mechanical (kWh)", "Total (kWh)"],
+        [t(lang, "thMonth"), t(lang, "thNatural"), t(lang, "thMechanical"), t(lang, "thTotal")],
         scenarioResult.monthly.map((m) => [
           MONTH_NAMES[m.month - 1] ?? String(m.month),
-          fmt(m.naturalLossKwh, 0),
-          fmt(m.mechanicalLossKwh, 0),
-          fmt(m.totalKwh, 0),
+          fmt(lang, m.naturalLossKwh, 0),
+          fmt(lang, m.mechanicalLossKwh, 0),
+          fmt(lang, m.totalKwh, 0),
         ]),
         [100, 130, 130, 100],
       );
@@ -1079,18 +1216,25 @@ export async function generateAuditReportPdf(
   }
 
   if (result.heatingEnergyBalance.length > 0) {
-    layout.paragraph("Heating energy balance — monthly");
+    layout.paragraph(t(lang, "heatingEnergyBalanceMonthly"));
     for (const scenarioResult of result.heatingEnergyBalance) {
-      layout.paragraph(scenarioResult.scenario === "before" ? "Before" : "After");
+      layout.paragraph(scenarioResult.scenario === "before" ? t(lang, "before") : t(lang, "after"));
       layout.table(
-        ["Month", "Outdoor (°C)", "Gains (kWh)", "Losses (kWh)", "Util. factor", "Net need (kWh)"],
+        [
+          t(lang, "thMonth"),
+          t(lang, "thOutdoor"),
+          t(lang, "thGains"),
+          t(lang, "thLosses"),
+          t(lang, "thUtilFactor"),
+          t(lang, "thNetNeed"),
+        ],
         scenarioResult.monthly.map((m) => [
           MONTH_NAMES[m.month - 1] ?? String(m.month),
-          fmt(m.outdoorTempC, 1),
-          fmt(m.totalGainsKwh, 0),
-          fmt(m.totalLossesKwh, 0),
-          fmt(m.utilizationFactor, 2),
-          fmt(m.netEnergyNeedKwh, 0),
+          fmt(lang, m.outdoorTempC, 1),
+          fmt(lang, m.totalGainsKwh, 0),
+          fmt(lang, m.totalLossesKwh, 0),
+          fmt(lang, m.utilizationFactor, 2),
+          fmt(lang, m.netEnergyNeedKwh, 0),
         ]),
         [55, 80, 85, 85, 75, 85],
       );

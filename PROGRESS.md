@@ -1333,3 +1333,53 @@ saqlab qolgan holda).
 Tekshirildi: `bun run --cwd apps/api type-check`, `bunx biome lint`, `bun run test
 tests/services` (62/62), haqiqiy Neon bazadagi bino bilan generatsiya qilingan PDF har bir
 o'zgarishdan keyin vizual tekshirildi.
+
+### 5-bosqich: Hisobot tili platforma tiliga moslashtirildi (tugallandi)
+
+Yangi `apps/api/src/services/report-i18n.ts` — server-tomonidagi hisobot uchun mustaqil,
+minimal `t(lang, key, vars?)`/`enumLabel(lang, rawValue)` lug'ati (uz/ru/en, ~90 kalit), frontend
+`react-i18next` namespace'laridan ataylab alohida (Workers runtime'ida i18next instansiyasi yo'q).
+Platformaning mavjud konventsiyasiga ergashib, fizik birliklarning o'zi ham tarjima qilinadi
+(masalan "kWh" → "kVt·soat"/"кВт·ч"), shunchaki yorliqlar emas. `routes/audit.ts`ning
+`GET /:id/audit/report`i endi `?lang=` query-parametrini o'qiydi (`isReportLang()` orqali
+tekshirilib, yaroqsiz/yo'q bo'lsa `"en"`ga tushadi); `apps/web/src/lib/api.ts`ning `report()`i
+so'rovga joriy `i18n.language`ni qo'shadi — hisobot doim platforma qaysi tilda ko'rsatilayotgan
+bo'lsa, o'sha tilda generatsiya qilinadi.
+
+**Haqiqiy arxitektura to'sig'i topildi va hal qilindi**: pdf-lib'ning `StandardFonts.TimesRoman`i
+faqat WinAnsi (Lotin) kodировкани qo'llab-quvvatlaydi — birinchi rus harfida
+(`Error: WinAnsi cannot encode "О"`) yiqildi. Yechim: `@pdf-lib/fontkit` + SIL OFL litsenziyali
+**PT Serif** shrifti (`doc.registerFontkit(fontkit)` + `doc.embedFont(base64, {...})`) —
+regular/bold/italic har biri `apps/api/src/assets/fonts/pt-serif-*.ts`da base64 satr sifatida
+saqlanadi (Wrangler/Vitest ikkalasida ham binary-asset-loader konfiguratsiyasisiz ishlaydi).
+
+**Ikkita qo'shimcha haqiqiy bug topildi va tuzatildi** (faqat vizual tekshiruv orqali, ikkalasi
+ham type-check/lint/unit-testlardan o'tgan edi):
+1. **Shrift subsetting'dagi glif buzilishi** — `embedFont(..., { subset: true })` bilan rus
+   PDF'ining render qilingan tasvirlarida ba'zi harflar (ayniqsa kichik, regular-vazndagi matn)
+   uzilgan/ustma-ust tushgan holda chiqardi, garchi PDF'dan chiqarilgan xom matn to'g'ri bo'lsa
+   ham. `subset: false`ga o'tkazish (to'liq shriftni ichiga joylash) muammoni butunlay hal qildi —
+   fayl hajmi oshdi (~142KB → ~427KB har bir til uchun), bu bir martalik yuklab olinadigan
+   hisobot uchun arzimas narx.
+2. **Jadval sarlavhalari uzun tarjimalarda qo'shni ustunga yopishib chiqishi** — `table()`
+   metodi `columnWidths`ni faqat inglizcha sarlavha uzunligiga qarab tekshirar edi (`needsLandscape`
+   hisob-kitobi), lekin haqiqiy sarlavha matnining o'zi (masalan
+   "Issiqlik o'tkazuvchanligi (Vt/mK)" — inglizcha "Thermal conductivity (W/mK)"dan uzunroq)
+   ustun kengligidan oshib ketganda, keyingi ustun sarlavhasiga bo'shliqsiz yopishib qolar edi
+   (masalan "QatlamMaterial", "Qoplash muddat(NPV(yil)"). Tuzatish: har bir ustun kengligi endi
+   `this.bold.widthOfTextAtSize(headers[i], 10)` orqali haqiqiy render qilingan sarlavha
+   kengligiga nisbatan dinamik kengaytiriladi (`effectiveWidths`) — bu har bir til uchun alohida
+   ustun-kenglik sozlashga hojat qoldirmaydi, o'zi moslashadi. Muhim: bu tuzatish faqat uz/ru
+   render'ida ko'rindi, chunki barcha oldingi qo'lda-sozlash inglizcha matn uzunligiga qarab
+   qilingan edi — yana bir bor "faqat inglizcha bilan tekshirish yetarli emas" isboti.
+
+Tekshirildi: `bun run --cwd apps/api type-check`, `bun run --cwd apps/web type-check` (haqiqiy
+Vite build), `bunx biome lint` (barcha tegilgan fayllar), `bun run test tests/services` (64/64,
+jumladan yangi `it.each(["ru", "uz"])` render testlari), va uchala tilda (en/ru/uz) haqiqiy Neon
+bazadagi "3-DMTT" binosiga qarshi PDF generatsiya qilib, har bir sahifani vizual tekshirish —
+ikkala bug (shrift buzilishi va sarlavha kolliziyasi) tuzatilgandan keyin barcha 40+ sahifa uchta
+tilda ham toza chiqdi.
+
+**Keyingi qadam**: `docs/report-redesign-proposal.md`ning §9 jadvalidagi qolgan bosqichlar
+(specific-consumption jamlanma jadvali, auditor izohlari, koordinatalar+xarita, QR-kod) navbat
+bilan davom etadi.

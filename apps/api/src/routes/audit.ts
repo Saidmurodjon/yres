@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import { runFullAudit } from "../services/audit.engine";
+import { isReportLang } from "../services/report-i18n";
 import {
   getConsumptionHistory,
   getLatestEnergyTariffs,
@@ -154,11 +155,17 @@ auditRoutes.get("/:id/audit/report", async (c) => {
     getConsumptionHistory(db, buildingId),
     getLatestEnergyTariffs(db),
   ]);
-  const pdfBytes = await generateAuditReportPdf(access.building, result, {
-    uValues,
-    consumptionHistory,
-    tariffs,
-  });
+  // Frontend passes its current i18n.language here — this route runs
+  // server-side with no access to the browser's i18next instance
+  // (docs/report-redesign-proposal.md §2).
+  const requestedLang = c.req.query("lang");
+  const lang = isReportLang(requestedLang) ? requestedLang : "en";
+  const pdfBytes = await generateAuditReportPdf(
+    access.building,
+    result,
+    { uValues, consumptionHistory, tariffs },
+    lang,
+  );
 
   const r2Key = `reports/${buildingId}/latest.pdf`;
   await c.env.REPORTS_BUCKET.put(r2Key, pdfBytes, {

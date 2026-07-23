@@ -373,4 +373,20 @@ describe("generateAuditReportPdf", () => {
     const bytes = await generateAuditReportPdf(buildingFixture(), result, fullExtrasFixture());
     expect(Buffer.from(bytes.slice(0, 5)).toString("utf-8")).toBe("%PDF-");
   });
+
+  it.each(["ru", "uz"] as const)(
+    "renders a fully-populated audit in %s without throwing",
+    async (lang) => {
+      const bytes = await generateAuditReportPdf(
+        buildingFixture(),
+        fullResultFixture(),
+        fullExtrasFixture(),
+        lang,
+      );
+
+      expect(Buffer.from(bytes.slice(0, 5)).toString("utf-8")).toBe("%PDF-");
+      const loaded = await PDFDocument.load(bytes);
+      expect(loaded.getPageCount()).toBeGreaterThan(1);
+    },
+  );
 });

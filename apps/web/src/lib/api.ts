@@ -45,6 +45,7 @@ import type {
   UtilityBill,
 } from "./api-types";
 import type { UserRole } from "./auth-types";
+import i18n from "../i18n";
 
 export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -339,9 +340,13 @@ export const api = {
         `/api/buildings/${buildingId}/audit/results`,
       ),
     report: async (buildingId: string): Promise<{ blob: Blob; fileName: string }> => {
-      const response = await fetch(`${API_URL}/api/buildings/${buildingId}/audit/report`, {
-        credentials: "include",
-      });
+      // Report is generated server-side (no access to this tab's i18next
+      // instance), so the current UI language is passed explicitly
+      // (docs/report-redesign-proposal.md §2).
+      const response = await fetch(
+        `${API_URL}/api/buildings/${buildingId}/audit/report?lang=${encodeURIComponent(i18n.language)}`,
+        { credentials: "include" },
+      );
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
         throw new ApiError(response.status, body as ApiErrorBody);
