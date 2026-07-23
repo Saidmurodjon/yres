@@ -1617,11 +1617,12 @@ haqiqiy muhitda tekshirildi: haqiqiy Neon bazadan "3-DMTT" binosining haqiqiy `a
 olinib, `GET /api/verify/:id` haqiqiy (`{valid:true, buildingName:"3-DMTT", completedAt:...}`)
 va soxta UUID (`{valid:false}`, 404) holatlarining ikkalasi ham to'g'ri ishlagani tasdiqlandi;
 haqiqiy PDF generatsiya qilinib QR kod va tekshiruv matni sahifada to'g'ri chiqqani vizual
-tasdiqlandi. **Frontend `/verify/$auditRunId` sahifasining o'zi brauzerda vizual tekshirilmadi**
-— Claude Chrome kengaytmasi tekshiruv paytida uzilib qoldi va sessiya oxirigacha tiklanmadi;
-komponentning o'zi soddaligi (mavjud `useQuery`+shartli render andozasi) va backend
-kontraktining to'g'ridan-to'g'ri tasdiqlanganligi tufayli past xavfli deb baholanadi, lekin
-haqiqiy brauzerda ko'rib chiqish tavsiya etiladi.
+tasdiqlandi.
 
-**`docs/report-redesign-proposal.md`ning barcha §9 bosqichlari tugallandi** (Yandex xaritasi
-kodi tayyor, faqat kalit hal qilinishi kerak — yuqoriga qarang).
+**Keyinroq (kengaytma tiklangandan so'ng) frontend ham brauzerda vizual tasdiqlandi**: haqiqiy
+`auditRunId` bilan `/verify/9045896a-...` — yashil ✓ "Ushbu hisobot haqiqiy", bino nomi
+("3-DMTT") va sana to'g'ri ko'rsatildi; soxta UUID bilan — qizil ✗ "Tasdiqlanmadi" holati
+to'g'ri chiqdi. Ikkala holat ham matn/ikonka/disclaimer bilan birga to'g'ri render bo'ldi.
+
+**`docs/report-redesign-proposal.md`ning barcha §9 bosqichlari tugallandi va to'liq
+tekshirildi** (Yandex xaritasi kodi tayyor, faqat kalit hal qilinishi kerak — yuqoriga qarang).
