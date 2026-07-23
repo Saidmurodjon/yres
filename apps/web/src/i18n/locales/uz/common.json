@@ -19,5 +19,8 @@
   "somethingWrong": "Nimadir xato ketdi",
   "unexpectedError": "Kutilmagan xatolik yuz berdi. Odatda sahifani qayta yuklash yordam beradi.",
   "reload": "Qayta yuklash",
-  "noDataAvailable": "Ma'lumot mavjud emas."
+  "noDataAvailable": "Ma'lumot mavjud emas.",
+  "auditorNote": "Auditor izohi (ixtiyoriy)",
+  "auditorNotePlaceholder": "Hisobot o'quvchisi uchun tushuntirish qo'shing — masalan, bu grafik nega shunday ko'rinishda ekanligi.",
+  "addNote": "Izoh qo'shish"
 }

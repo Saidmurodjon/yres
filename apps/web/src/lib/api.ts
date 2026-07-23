@@ -1,4 +1,4 @@
-import type { AuditResult } from "@yres/types";
+import type { AuditResult, ReportAnnotationSectionKey } from "@yres/types";
 import type {
   AdminUser,
   ApiErrorBody,
@@ -355,5 +355,14 @@ export const api = {
       const fileName = /filename="([^"]+)"/.exec(disposition)?.[1] ?? "audit-report.pdf";
       return { blob: await response.blob(), fileName };
     },
+    annotations: (buildingId: string) =>
+      request<{ annotations: Partial<Record<ReportAnnotationSectionKey, string>> }>(
+        `/api/buildings/${buildingId}/audit/annotations`,
+      ),
+    upsertAnnotation: (buildingId: string, sectionKey: ReportAnnotationSectionKey, note: string) =>
+      request<{ annotation: { id: string; note: string } | null }>(
+        `/api/buildings/${buildingId}/audit/annotations/${sectionKey}`,
+        { method: "PUT", body: JSON.stringify({ note }) },
+      ),
   },
 };

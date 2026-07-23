@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@yres/ui";
+import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { UtilityBill } from "../../lib/api-types";
@@ -21,6 +22,7 @@ export function MonthlyComparisonChart({
   unitLabel,
   noDataLabel,
   height = 240,
+  footer,
 }: {
   title: string;
   description?: string;
@@ -29,6 +31,8 @@ export function MonthlyComparisonChart({
   unitLabel: string;
   noDataLabel: string;
   height?: number;
+  /** Rendered below the chart/legend — e.g. an `AuditorNote` (docs/report-redesign-proposal.md §5b). */
+  footer?: ReactNode;
 }) {
   const compareYears = useMemo(() => {
     const yearsWithData = [...new Set(bills.map((b) => b.year))].sort((a, b) => b - a);
@@ -107,6 +111,7 @@ export function MonthlyComparisonChart({
             />
           </>
         )}
+        {footer}
       </CardContent>
     </Card>
   );

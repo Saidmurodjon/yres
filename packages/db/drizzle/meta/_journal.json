@@ -43,6 +43,13 @@
       "when": 1784685849902,
       "tag": "0005_bumpy_veda",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784816100576,
+      "tag": "0006_workable_zaladane",
+      "breakpoints": true
     }
   ]
 }

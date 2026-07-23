@@ -2,10 +2,16 @@ import {
   type Database,
   constructionType,
   energyTariff,
+  reportAnnotation,
   surfaceResistance,
   utilityBill,
 } from "@yres/db";
-import type { EnvelopeElementCategory, Scenario } from "@yres/types";
+import {
+  REPORT_ANNOTATION_SECTION_KEYS,
+  type EnvelopeElementCategory,
+  type ReportAnnotationSectionKey,
+  type Scenario,
+} from "@yres/types";
 import { desc, eq } from "drizzle-orm";
 import { calculateLayerResistance, calculateUValue } from "./uvalue.service";
 
@@ -187,4 +193,24 @@ export async function getLatestEnergyTariffs(db: Database): Promise<LatestTariff
     }
   }
   return [...latestByCarrier.values()];
+}
+
+/** Keyed by `sectionKey` (docs/report-redesign-proposal.md §5b) — rows with an unrecognized key (e.g. a section removed since the note was written) are dropped rather than surfaced, since neither the frontend nor the PDF has anywhere left to show them. */
+export async function getReportAnnotations(
+  db: Database,
+  buildingId: string,
+): Promise<Partial<Record<ReportAnnotationSectionKey, string>>> {
+  const rows = await db
+    .select()
+    .from(reportAnnotation)
+    .where(eq(reportAnnotation.buildingId, buildingId));
+
+  const knownKeys = new Set<string>(REPORT_ANNOTATION_SECTION_KEYS);
+  const bySectionKey: Partial<Record<ReportAnnotationSectionKey, string>> = {};
+  for (const row of rows) {
+    if (knownKeys.has(row.sectionKey)) {
+      bySectionKey[row.sectionKey as ReportAnnotationSectionKey] = row.note;
+    }
+  }
+  return bySectionKey;
 }

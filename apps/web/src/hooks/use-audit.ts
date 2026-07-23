@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { ReportAnnotationSectionKey } from "@yres/types";
 import { ApiError } from "../lib/api";
 import { api } from "../lib/api";
 
@@ -28,6 +29,25 @@ export function useRunAudit(buildingId: string) {
     mutationFn: () => api.audit.run(buildingId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["buildings", buildingId, "audit"] });
+    },
+  });
+}
+
+export function useReportAnnotations(buildingId: string | undefined) {
+  return useQuery({
+    queryKey: ["buildings", buildingId, "audit", "annotations"],
+    queryFn: () => api.audit.annotations(buildingId as string),
+    enabled: !!buildingId,
+  });
+}
+
+export function useUpsertReportAnnotation(buildingId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ sectionKey, note }: { sectionKey: ReportAnnotationSectionKey; note: string }) =>
+      api.audit.upsertAnnotation(buildingId, sectionKey, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["buildings", buildingId, "audit", "annotations"] });
     },
   });
 }

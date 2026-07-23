@@ -1,6 +1,6 @@
 import fontkit from "@pdf-lib/fontkit";
 import type { building } from "@yres/db";
-import type { AuditResult, GenerationSourceResult } from "@yres/types";
+import type { AuditResult, GenerationSourceResult, ReportAnnotationSectionKey } from "@yres/types";
 import { type PDFFont, type PDFPage, PDFDocument, rgb } from "pdf-lib";
 import { PT_SERIF_BOLD_BASE64 } from "../assets/fonts/pt-serif-bold";
 import { PT_SERIF_ITALIC_BASE64 } from "../assets/fonts/pt-serif-italic";
@@ -20,6 +20,8 @@ export interface ReportExtras {
   uValues: ConstructionTypeUValueBreakdown[];
   consumptionHistory: CarrierConsumptionHistory[];
   tariffs: LatestTariffRow[];
+  /** Auditor freeform notes, keyed by report section (docs/report-redesign-proposal.md §5b) — optional, so callers that don't pass it (e.g. existing tests) still render fine with no notes. */
+  annotations?: Partial<Record<ReportAnnotationSectionKey, string>>;
 }
 
 const MONTH_NAMES = [
@@ -942,6 +944,9 @@ export async function generateAuditReportPdf(
           ),
         })),
       );
+      const carrierNote =
+        extras.annotations?.[`consumption_${carrier.energyCarrier}` as ReportAnnotationSectionKey];
+      if (carrierNote) layout.note(carrierNote);
     }
   }
 
@@ -1032,6 +1037,8 @@ export async function generateAuditReportPdf(
     layout.pieChart(
       envelopeLossRows.map((r) => ({ label: enumLabel(lang, r.category), value: r.afterKwh })),
     );
+    const envelopeLossNote = extras.annotations?.envelope_ventilation_loss;
+    if (envelopeLossNote) layout.note(envelopeLossNote);
   }
 
   const finalEnergyRows = result.energyBalanceBreakdown.filter((r) => r.section === "final_energy");
@@ -1045,6 +1052,8 @@ export async function generateAuditReportPdf(
     layout.pieChart(
       finalEnergyRows.map((r) => ({ label: enumLabel(lang, r.category), value: r.afterKwh })),
     );
+    const finalEnergyNote = extras.annotations?.final_energy;
+    if (finalEnergyNote) layout.note(finalEnergyNote);
   }
 
   const proposedMeasures = result.measures.filter((m) => m.proposedForImplementation);

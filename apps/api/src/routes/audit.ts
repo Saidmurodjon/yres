@@ -1,13 +1,18 @@
-import { auditRun } from "@yres/db";
+import { auditRun, reportAnnotation } from "@yres/db";
 import { and, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
+import {
+  reportAnnotationSectionKeySchema,
+  upsertReportAnnotationSchema,
+} from "../schemas/report-annotations";
 import { runFullAudit } from "../services/audit.engine";
 import { isReportLang } from "../services/report-i18n";
 import {
   getConsumptionHistory,
   getLatestEnergyTariffs,
+  getReportAnnotations,
   getUValueBreakdown,
 } from "../services/report-data.service";
 import { generateAuditReportPdf } from "../services/report.service";
@@ -149,11 +154,12 @@ auditRoutes.get("/:id/audit/report", async (c) => {
     return c.json({ error: "No completed audit run for this building yet" }, 404);
   }
 
-  const [result, uValues, consumptionHistory, tariffs] = await Promise.all([
+  const [result, uValues, consumptionHistory, tariffs, annotations] = await Promise.all([
     runFullAudit(db, buildingId),
     getUValueBreakdown(db, buildingId),
     getConsumptionHistory(db, buildingId),
     getLatestEnergyTariffs(db),
+    getReportAnnotations(db, buildingId),
   ]);
   // Frontend passes its current i18n.language here — this route runs
   // server-side with no access to the browser's i18next instance
@@ -163,7 +169,7 @@ auditRoutes.get("/:id/audit/report", async (c) => {
   const pdfBytes = await generateAuditReportPdf(
     access.building,
     result,
-    { uValues, consumptionHistory, tariffs },
+    { uValues, consumptionHistory, tariffs, annotations },
     lang,
   );
 
@@ -180,4 +186,75 @@ auditRoutes.get("/:id/audit/report", async (c) => {
       "Content-Disposition": `attachment; filename="${fileName}"`,
     },
   });
+});
+
+// GET /:id/audit/annotations - every auditor note recorded for this building,
+// keyed by sectionKey (docs/report-redesign-proposal.md §5b) — tied to the
+// building, not a specific audit_run, since results are recalculated fresh
+// on every request rather than persisted.
+auditRoutes.get("/:id/audit/annotations", async (c) => {
+  const buildingId = c.req.param("id");
+  const db = c.get("db");
+  const user = c.get("user");
+
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  const annotations = await getReportAnnotations(db, buildingId);
+  return c.json({ annotations });
+});
+
+// PUT /:id/audit/annotations/:sectionKey - upsert this building's note for
+// one report section. An empty note deletes the row rather than storing an
+// empty string, so "no note" and "note cleared" collapse to the same state.
+auditRoutes.put("/:id/audit/annotations/:sectionKey", async (c) => {
+  const buildingId = c.req.param("id");
+  const parsedSectionKey = reportAnnotationSectionKeySchema.safeParse(c.req.param("sectionKey"));
+  if (!parsedSectionKey.success) {
+    return c.json({ error: "Invalid section key" }, 400);
+  }
+  const body = await c.req.json().catch(() => null);
+  const parsed = upsertReportAnnotationSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid body", details: parsed.error.flatten() }, 400);
+  }
+
+  const db = c.get("db");
+  const user = c.get("user");
+
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
+    return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
+  }
+
+  const sectionKey = parsedSectionKey.data;
+  const note = parsed.data.note.trim();
+
+  if (note.length === 0) {
+    await db
+      .delete(reportAnnotation)
+      .where(
+        and(
+          eq(reportAnnotation.buildingId, buildingId),
+          eq(reportAnnotation.sectionKey, sectionKey),
+        ),
+      );
+    return c.json({ annotation: null });
+  }
+
+  const [annotation] = await db
+    .insert(reportAnnotation)
+    .values({ buildingId, sectionKey, note, createdByUserId: user.id })
+    .onConflictDoUpdate({
+      target: [reportAnnotation.buildingId, reportAnnotation.sectionKey],
+      set: { note, updatedAt: new Date() },
+    })
+    .returning();
+
+  return c.json({ annotation });
 });

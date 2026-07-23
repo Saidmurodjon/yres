@@ -298,6 +298,10 @@ function fullExtrasFixture(): ReportExtras {
       },
     ],
     tariffs: [{ energyCarrier: "gas", unitCostUsd: 0.05, emissionFactorKgCo2PerKwh: 0.2 }],
+    annotations: {
+      consumption_gas: "Gas meter was replaced in March 2022; readings before that are estimated.",
+      final_energy: "District heating tariff increased mid-year, see Annex 2 for the split.",
+    },
   };
 }
 

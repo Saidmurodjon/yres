@@ -19,5 +19,8 @@
   "somethingWrong": "Something went wrong",
   "unexpectedError": "An unexpected error occurred. Reloading the page usually fixes it.",
   "reload": "Reload",
-  "noDataAvailable": "No data available."
+  "noDataAvailable": "No data available.",
+  "auditorNote": "Auditor note (optional)",
+  "auditorNotePlaceholder": "Add context for the report reader — e.g. why this chart looks the way it does.",
+  "addNote": "Add note"
 }

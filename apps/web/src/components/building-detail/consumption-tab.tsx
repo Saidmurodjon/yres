@@ -20,6 +20,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@yres/ui";
+import { consumptionAnnotationSectionKey } from "@yres/types";
 import { Download, Plus, Save, Upload } from "lucide-react";
 import type { ClipboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -27,6 +28,7 @@ import { useTranslation } from "react-i18next";
 import { useConsumption, useReplaceConsumption } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import type { EnergyCarrier, MonthlyBillInput, UtilityBill } from "../../lib/api-types";
+import { AuditorNote } from "../auditor-note";
 import { ENERGY_CARRIERS, ENERGY_CARRIER_LABELS, MONTH_LABELS, formatNumber } from "../../lib/labels";
 import { MonthlyComparisonChart } from "./consumption-comparison-chart";
 import { type ParsedBillRow, downloadConsumptionTemplate, parseConsumptionWorkbook } from "./consumption-excel";
@@ -441,6 +443,13 @@ export function ConsumptionTab({
                 unitLabel={ENERGY_CARRIER_NATIVE_UNIT_LABELS[carrier]}
                 noDataLabel={t("comparisonChart.noData")}
                 height={220}
+                footer={
+                  <AuditorNote
+                    buildingId={buildingId}
+                    sectionKey={consumptionAnnotationSectionKey(carrier)}
+                    readOnly={readOnly}
+                  />
+                }
               />
             ))}
           </div>

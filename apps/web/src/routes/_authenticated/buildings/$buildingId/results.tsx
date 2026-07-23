@@ -50,6 +50,7 @@ import {
   AuditNotRunEmptyState,
   AuditResultsSkeleton,
 } from "../../../../components/audit-result-states";
+import { AuditorNote } from "../../../../components/auditor-note";
 import { ChartLegend } from "../../../../components/chart-legend";
 import { ChartTooltip } from "../../../../components/chart-tooltip";
 import { ShareBar } from "../../../../components/share-bar";
@@ -404,6 +405,7 @@ function AuditResultsPage() {
                       ))}
                     </TableBody>
                   </Table>
+                  <AuditorNote buildingId={buildingId} sectionKey={section.key} />
                 </div>
               ))}
             </div>

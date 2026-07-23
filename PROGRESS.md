@@ -1441,3 +1441,53 @@ til toza chiqdi). Commit qilindi.
 **Keyingi qadam**: §9 jadvalidagi qolgan bosqichlar — auditor izohlari (yangi sxema kerak),
 koordinatalar+xarita (yangi ustunlar+tashqi API), QR-kod+tekshiruv sahifasi (yangi route+
 kutubxona).
+
+### 7-bosqich: Auditor izohlari (tugallandi)
+
+`docs/report-redesign-proposal.md`ning §5b'sida belgilangan variant (A) amalga oshirildi:
+yangi `report_annotation` jadvali (`packages/db/src/schemas/report-annotations.ts`, migratsiya
+`0006_workable_zaladane`) — `(buildingId, sectionKey)` bo'yicha unique, `auditRun`ga emas
+**binoga** bog'langan (natija hech qachon saqlanmagani uchun — `calculation-engine.md`).
+`sectionKey` ataylab enum/FK emas, oddiy matn ustuni (`EnergyBalanceRow.category` bilan bir xil
+andoza) — barqaror kalitlar to'plami (`consumption_gas`/`consumption_electricity`/
+`consumption_district_heat`/`consumption_coal`/`envelope_ventilation_loss`/`final_energy`/
+`renewable_offset`) `packages/db`ga bog'liq bo'lmasligi uchun `packages/types`da
+(`REPORT_ANNOTATION_SECTION_KEYS`) saqlanadi, frontend ham backend ham shu yerdan oladi.
+
+**Backend**: `GET`/`PUT /api/buildings/:id/audit/annotations(/:sectionKey)` (`routes/audit.ts`)
+— bo'sh izoh qatorni saqlash o'rniga o'chiradi ("izoh yo'q" va "izoh tozalandi" bir xil holatga
+tushishi uchun). `report-data.service.ts`ning yangi `getReportAnnotations()`i bilan
+`/audit/report` route'iga ulandi — `ReportExtras.annotations` orqali `report.service.ts`ning
+iste'mol-tarixi (har bir tashuvchi grafigidan keyin), qobiq-yo'qotish va yakuniy-energiya
+donut-juftlari (har biri bitta izoh, oldin/keyin ikkalasiga ham tegishli) ostida kursiv
+(`layout.note()`) chizadi.
+
+**Frontend**: qayta ishlatiladigan `AuditorNote` komponenti (`components/auditor-note.tsx`) —
+`useReportAnnotations`/`useUpsertReportAnnotation` (React Query, bir xil `buildingId` uchun
+keshni ulashadi, necha nusxada render bo'lmasin bitta so'rov) orqali ishlaydi. Uch holat: izoh
+yo'q → "Izoh qo'shish" tugmasi; izoh bor, tahrirlanmayotgan → kursiv matn (bosilsa tahrirlash
+rejimiga o'tadi); tahrirlash rejimi → `Textarea` + Saqlash/Bekor qilish. `consumption-tab.tsx`ga
+(har bir tashuvchi diagrammasi ostida, `MonthlyComparisonChart`ning yangi `footer` prop'i orqali)
+va `results.tsx`ga (har bir energiya-balans bo'limi jadvali ostida) ulandi. `common.json`ga uch
+tilda yangi kalitlar qo'shildi (`auditorNote`/`auditorNotePlaceholder`/`addNote`).
+
+**Haqiqiy tekshiruv**: lokal `.dev.vars` Neon bazasida `0006` migratsiyasi hali qo'llanilmagan
+edi — `database.md`dagi qo'lda-qo'llash tartibi (`pg` Client, non-pooler host, tranzaksiya,
+`drizzle.__drizzle_migrations`ga hash+timestamp yozish) bilan qo'llandi. Keyin **haqiqiy
+brauzerda** (Claude Chrome kengaytmasi, mavjud sessiya) "3-DMTT" binosiga qarshi to'liq oqim
+sinaldi: Iste'mol tab'ida gaz grafigига izoh qo'shildi/tahrirlandi/o'chirildi (network so'rovlar
+va API log orqali `PUT`/`GET .../audit/annotations`ning 200 qaytarganiga ishonch hosil qilindi),
+Natijalar sahifasida "final_energy" bo'limiga izoh qo'shildi, so'ng "Hisobotni yuklab olish"
+tugmasi orqali haqiqiy PDF generatsiya qilinib (`pymupdf` bilan sahifalar rasmga aylantirilib)
+ikkala izoh ham to'g'ri joyda (mos grafik/jadvaldan keyin, kursiv) chiqqani vizual tasdiqlandi.
+Test uchun qo'shilgan ikkala izoh keyin UI orqali tozalandi (bino ma'lumotida sun'iy test matni
+qolib ketmasligi uchun).
+
+Tekshirildi: `bun run type-check` (barcha workspace), `bun run --cwd apps/web build`, `bunx biome
+lint` (tegilgan fayllar), `bun run --cwd apps/api test tests/services` (64/64,
+`fullExtrasFixture()`ga ikkita namunaviy izoh qo'shilgan holda). Ishga tushirilgan lokal dev
+server'lar (API 3000, web 5173) tekshiruv oxirida to'xtatildi.
+
+**Keyingi qadam**: §9 jadvalidagi qolgan ikkita bosqich — koordinatalar+xarita (yangi
+ustunlar+tashqi statik-xarita API, provayder tanlovi kutilmoqda), QR-kod+tekshiruv sahifasi
+(yangi public route+kutubxona).
