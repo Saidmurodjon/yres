@@ -15,3 +15,8 @@ RESEND_API_KEY=
 # Optional locally — error reporting is disabled entirely when this is
 # blank (see the withSentry call in src/index.ts).
 SENTRY_DSN=
+
+# Optional locally — the PDF report's building-location map image is
+# skipped (text-only coordinates remain) when this is blank. Get a free
+# key from https://developer.tech.yandex.ru/ (Static API).
+YANDEX_STATIC_MAPS_API_KEY=

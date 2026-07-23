@@ -57,6 +57,9 @@
     "occupantCount": "Количество жильцов",
     "status": "Статус проекта",
     "deadline": "Срок",
+    "latitude": "Широта",
+    "longitude": "Долгота",
+    "coordinatesHelp": "Необязательно — отображается в PDF-отчёте с небольшой картой местоположения.",
     "heatingSeasonConfig": "Параметры отопительного сезона",
     "heatingSeasonDuration": "Продолжительность отопительного сезона (дней) *",
     "avgOutdoorTemp": "Средняя температура наружного воздуха, отопительный сезон (°C) *",
@@ -73,6 +76,7 @@
     "hottestDay": "Самый жаркий день",
     "fieldRequired": "{{field}} обязательно для заполнения.",
     "fieldMustBeNumber": "{{field}} должно быть числом.",
+    "fieldOutOfRange": "{{field}} должно быть в диапазоне от {{min}} до {{max}}.",
     "fieldNameLabel": "Название",
     "fieldLocationLabel": "Адрес",
     "fieldClimateRegionLabel": "Климатический регион",
@@ -88,7 +92,9 @@
     "fieldOccupantCountLabel": "Количество жильцов",
     "fieldEnthalpyInsideLabel": "Энтальпия охлаждения (внутри)",
     "fieldEnthalpyOutsideLabel": "Энтальпия охлаждения (снаружи)",
-    "fieldEnthalpyHottestLabel": "Энтальпия охлаждения (самый жаркий день)"
+    "fieldEnthalpyHottestLabel": "Энтальпия охлаждения (самый жаркий день)",
+    "fieldLatitudeLabel": "Широта",
+    "fieldLongitudeLabel": "Долгота"
   },
   "detail": {
     "backToBuildings": "Назад к зданиям",
@@ -109,6 +115,7 @@
     "financialAnalysis": "Финансовый анализ",
     "locationAndType": "Адрес и тип",
     "location": "Адрес",
+    "coordinates": "Координаты",
     "buildingType": "Тип здания",
     "yearBuilt": "Год постройки",
     "floorArea": "Чистая охлаждаемая площадь",

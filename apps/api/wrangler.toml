@@ -66,9 +66,10 @@ namespace_id = "1001"
 simple = { limit = 10, period = 60 }
 
 # Secrets (DATABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
-# BETTER_AUTH_SECRET, RESEND_API_KEY, SENTRY_DSN) are set via
-# `wrangler secret put <NAME>` (add `--env production` for the production
-# environment below) and are never stored in this file. See docs/deployment.md.
+# BETTER_AUTH_SECRET, RESEND_API_KEY, SENTRY_DSN, YANDEX_STATIC_MAPS_API_KEY)
+# are set via `wrangler secret put <NAME>` (add `--env production` for the
+# production environment below) and are never stored in this file. See
+# docs/deployment.md.
 
 # --- Production environment ---
 # `name`/`API_URL`/`WEB_URL` below are placeholders — replace with your

@@ -57,6 +57,9 @@
     "occupantCount": "Occupant count",
     "status": "Project status",
     "deadline": "Deadline",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "coordinatesHelp": "Optional — shown on the PDF report with a small location map.",
     "heatingSeasonConfig": "Heating season configuration",
     "heatingSeasonDuration": "Heating season duration (days) *",
     "avgOutdoorTemp": "Avg. outdoor temp, heating season (°C) *",
@@ -73,6 +76,7 @@
     "hottestDay": "Hottest day",
     "fieldRequired": "{{field}} is required.",
     "fieldMustBeNumber": "{{field}} must be a number.",
+    "fieldOutOfRange": "{{field}} must be between {{min}} and {{max}}.",
     "fieldNameLabel": "Name",
     "fieldLocationLabel": "Location",
     "fieldClimateRegionLabel": "Climate region",
@@ -88,7 +92,9 @@
     "fieldOccupantCountLabel": "Occupant count",
     "fieldEnthalpyInsideLabel": "Cooling enthalpy (inside)",
     "fieldEnthalpyOutsideLabel": "Cooling enthalpy (outside)",
-    "fieldEnthalpyHottestLabel": "Cooling enthalpy (hottest day)"
+    "fieldEnthalpyHottestLabel": "Cooling enthalpy (hottest day)",
+    "fieldLatitudeLabel": "Latitude",
+    "fieldLongitudeLabel": "Longitude"
   },
   "detail": {
     "backToBuildings": "Back to buildings",
@@ -109,6 +115,7 @@
     "financialAnalysis": "Financial Analysis",
     "locationAndType": "Location & type",
     "location": "Location",
+    "coordinates": "Coordinates",
     "buildingType": "Building type",
     "yearBuilt": "Year built",
     "floorArea": "Net cooled floor area",

@@ -38,6 +38,8 @@ export interface Env {
   EMAIL_FROM: string;
   /** Sentry DSN for error tracking. Empty disables reporting (see the withSentry call below). */
   SENTRY_DSN: string;
+  /** Yandex Static Maps API key for the PDF report's building-location map (docs/report-redesign-proposal.md §7). Empty/unset in dev — report.service.ts's fetchYandexStaticMapPng() just skips the image and keeps the text-only coordinates line. */
+  YANDEX_STATIC_MAPS_API_KEY: string;
   /**
    * Cloudflare's native Rate Limiting binding (see wrangler.toml) — only
    * present when provisioned for an environment. `rateLimit()` middleware

@@ -79,6 +79,12 @@ export function OverviewTab({ building, role }: { building: Building; role: Buil
           <CardContent>
             <dl className="grid grid-cols-2 gap-4">
               <Field label={t("overview.location")} value={building.location} />
+              {building.latitude !== null && building.longitude !== null && (
+                <Field
+                  label={t("overview.coordinates")}
+                  value={`${building.latitude.toFixed(4)}°, ${building.longitude.toFixed(4)}°`}
+                />
+              )}
               <Field
                 label={t("overview.buildingType")}
                 value={

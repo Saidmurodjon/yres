@@ -76,6 +76,16 @@ alerted on.
 1. Create a project at [sentry.io](https://sentry.io) (platform: Cloudflare Workers).
 2. Copy its DSN — this is `SENTRY_DSN`.
 
+## 3d. Yandex Static Maps (PDF report's building-location map, optional)
+
+Without this, the PDF report still shows the building's coordinates as text — just no map image
+(see `fetchYandexStaticMapPng()` in `apps/api/src/services/report.service.ts`, which fails open on
+any error).
+
+1. Register/sign in at [developer.tech.yandex.ru](https://developer.tech.yandex.ru) and create a
+   key for the **Static API** (part of the JavaScript API & Static API key group).
+2. Copy the key — this is `YANDEX_STATIC_MAPS_API_KEY`.
+
 ## 4. Configure secrets
 
 **Cloudflare Worker secrets** (not stored in `wrangler.toml` — set directly):
@@ -87,6 +97,7 @@ bunx wrangler secret put GOOGLE_CLIENT_ID --env production      # optional
 bunx wrangler secret put GOOGLE_CLIENT_SECRET --env production  # optional
 bunx wrangler secret put RESEND_API_KEY --env production        # optional, see 3b
 bunx wrangler secret put SENTRY_DSN --env production            # optional, see 3c
+bunx wrangler secret put YANDEX_STATIC_MAPS_API_KEY --env production  # optional, see 3d
 ```
 
 **Rate limiting** (brute-force/credential-stuffing protection on sign-in, sign-up, and

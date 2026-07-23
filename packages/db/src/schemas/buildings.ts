@@ -18,6 +18,9 @@ export const building = pgTable("building", {
   yearBuilt: integer("year_built"),
   status: buildingStatusEnum("status").notNull().default("not_started"),
   deadline: date("deadline"),
+  /** Optional — additive to `location`'s free-text region string, doesn't replace it (dashboard.md). Used for the PDF report's coordinates line + static map (docs/report-redesign-proposal.md §7). */
+  latitude: numeric("latitude", { mode: "number" }),
+  longitude: numeric("longitude", { mode: "number" }),
 
   // Building_data sheet
   netCooledFloorAreaM2: numeric("net_cooled_floor_area_m2", { mode: "number" }).default(0),

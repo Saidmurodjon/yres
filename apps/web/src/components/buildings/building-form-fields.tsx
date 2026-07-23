@@ -26,6 +26,8 @@ export interface BuildingFormValues {
   yearBuilt: string;
   status: BuildingStatus;
   deadline: string;
+  latitude: string;
+  longitude: string;
   netCooledFloorAreaM2: string;
   heatingSeasonDurationDays: string;
   indoorTempNonOperationC: string;
@@ -53,6 +55,8 @@ export const DEFAULT_BUILDING_FORM_VALUES: BuildingFormValues = {
   yearBuilt: "",
   status: "not_started",
   deadline: "",
+  latitude: "",
+  longitude: "",
   netCooledFloorAreaM2: "",
   heatingSeasonDurationDays: "163",
   indoorTempNonOperationC: "14",
@@ -76,6 +80,8 @@ export function buildingToFormValues(building: Building): BuildingFormValues {
     yearBuilt: building.yearBuilt !== null ? String(building.yearBuilt) : "",
     status: building.status,
     deadline: building.deadline ?? "",
+    latitude: building.latitude !== null ? String(building.latitude) : "",
+    longitude: building.longitude !== null ? String(building.longitude) : "",
     netCooledFloorAreaM2:
       building.netCooledFloorAreaM2 !== null ? String(building.netCooledFloorAreaM2) : "",
     heatingSeasonDurationDays: String(building.heatingSeasonDurationDays),
@@ -198,6 +204,36 @@ export function parseBuildingFormValues(
     errors,
     t,
   );
+  const latitude = parseOptionalNumber(
+    values.latitude,
+    t("buildings:form.fieldLatitudeLabel"),
+    errors,
+    t,
+  );
+  if (latitude !== undefined && (latitude < -90 || latitude > 90)) {
+    errors.push(
+      t("buildings:form.fieldOutOfRange", {
+        field: t("buildings:form.fieldLatitudeLabel"),
+        min: -90,
+        max: 90,
+      }),
+    );
+  }
+  const longitude = parseOptionalNumber(
+    values.longitude,
+    t("buildings:form.fieldLongitudeLabel"),
+    errors,
+    t,
+  );
+  if (longitude !== undefined && (longitude < -180 || longitude > 180)) {
+    errors.push(
+      t("buildings:form.fieldOutOfRange", {
+        field: t("buildings:form.fieldLongitudeLabel"),
+        min: -180,
+        max: 180,
+      }),
+    );
+  }
   const netCooledFloorAreaM2 = parseOptionalNumber(
     values.netCooledFloorAreaM2,
     t("buildings:form.fieldFloorAreaLabel"),
@@ -240,6 +276,8 @@ export function parseBuildingFormValues(
       yearBuilt: yearBuilt ?? null,
       status: values.status,
       deadline: values.deadline.trim() || null,
+      latitude: latitude ?? null,
+      longitude: longitude ?? null,
       netCooledFloorAreaM2: netCooledFloorAreaM2 ?? null,
       heatingSeasonDurationDays,
       indoorTempNonOperationC,
@@ -402,6 +440,29 @@ export function BuildingFormFields({
               value={values.deadline}
               onChange={(e) => set("deadline", e.target.value)}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={id("latitude")}>{t("form.latitude")}</Label>
+            <Input
+              id={id("latitude")}
+              type="number"
+              step="any"
+              placeholder="41.2995"
+              value={values.latitude}
+              onChange={(e) => set("latitude", e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={id("longitude")}>{t("form.longitude")}</Label>
+            <Input
+              id={id("longitude")}
+              type="number"
+              step="any"
+              placeholder="69.2401"
+              value={values.longitude}
+              onChange={(e) => set("longitude", e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">{t("form.coordinatesHelp")}</p>
           </div>
         </div>
       </fieldset>

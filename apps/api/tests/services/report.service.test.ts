@@ -26,6 +26,8 @@ function buildingFixture(overrides: Partial<Building> = {}): Building {
     yearBuilt: 1985,
     status: "not_started",
     deadline: null,
+    latitude: 41.2995,
+    longitude: 69.2401,
     netCooledFloorAreaM2: 2000,
     heatingSeasonDurationDays: 163,
     indoorTempNonOperationC: 14,

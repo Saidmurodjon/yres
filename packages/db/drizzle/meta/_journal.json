@@ -50,6 +50,13 @@
       "when": 1784816100576,
       "tag": "0006_workable_zaladane",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784818671175,
+      "tag": "0007_stale_paper_doll",
+      "breakpoints": true
     }
   ]
 }

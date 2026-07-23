@@ -57,6 +57,9 @@
     "occupantCount": "Foydalanuvchilar soni",
     "status": "Loyiha holati",
     "deadline": "Muddat",
+    "latitude": "Kenglik (latitude)",
+    "longitude": "Uzunlik (longitude)",
+    "coordinatesHelp": "Ixtiyoriy — PDF hisobotda kichik joylashuv xaritasi bilan ko'rsatiladi.",
     "heatingSeasonConfig": "Isitish mavsumi sozlamalari",
     "heatingSeasonDuration": "Isitish mavsumi davomiyligi (kun) *",
     "avgOutdoorTemp": "O'rtacha tashqi harorat, isitish mavsumi (°C) *",
@@ -73,6 +76,7 @@
     "hottestDay": "Eng issiq kun",
     "fieldRequired": "{{field}} to'ldirilishi shart.",
     "fieldMustBeNumber": "{{field}} raqam bo'lishi kerak.",
+    "fieldOutOfRange": "{{field}} {{min}} va {{max}} oralig'ida bo'lishi kerak.",
     "fieldNameLabel": "Nomi",
     "fieldLocationLabel": "Joylashuvi",
     "fieldClimateRegionLabel": "Iqlim mintaqasi",
@@ -88,7 +92,9 @@
     "fieldOccupantCountLabel": "Foydalanuvchilar soni",
     "fieldEnthalpyInsideLabel": "Sovutish entalpiyasi (ichki)",
     "fieldEnthalpyOutsideLabel": "Sovutish entalpiyasi (tashqi)",
-    "fieldEnthalpyHottestLabel": "Sovutish entalpiyasi (eng issiq kun)"
+    "fieldEnthalpyHottestLabel": "Sovutish entalpiyasi (eng issiq kun)",
+    "fieldLatitudeLabel": "Kenglik (latitude)",
+    "fieldLongitudeLabel": "Uzunlik (longitude)"
   },
   "detail": {
     "backToBuildings": "Binolarga qaytish",
@@ -109,6 +115,7 @@
     "financialAnalysis": "Moliyaviy tahlil",
     "locationAndType": "Joylashuv va turi",
     "location": "Joylashuvi",
+    "coordinates": "Koordinatalar",
     "buildingType": "Bino turi",
     "yearBuilt": "Qurilgan yili",
     "floorArea": "Sof sovutiladigan qavat maydoni",

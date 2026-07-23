@@ -1491,3 +1491,57 @@ server'lar (API 3000, web 5173) tekshiruv oxirida to'xtatildi.
 **Keyingi qadam**: §9 jadvalidagi qolgan ikkita bosqich — koordinatalar+xarita (yangi
 ustunlar+tashqi statik-xarita API, provayder tanlovi kutilmoqda), QR-kod+tekshiruv sahifasi
 (yangi public route+kutubxona).
+
+### 8-bosqich: Bino koordinatalari va xarita (kod tayyor, API kalit kutilmoqda)
+
+Provayder sifatida loyiha egasi **Yandex Static Maps**ni tanladi. API kalit hali yo'q —
+loyiha egasi bilan kelishilgan holda avval kod tayyorlandi (`developer.tech.yandex.ru`dan
+kalit olish alohida, foydalanuvchining o'zi bajaradigan qadam — akkaunt ro'yxatdan
+o'tkazish Claude tomonidan bajarilmaydigan amal).
+
+**Sxema**: `building`ga ikkita ixtiyoriy ustun — `latitude`/`longitude` (`numeric`, nullable),
+migratsiya `0007_stale_paper_doll`. `location`ning o'zi (erkin-matn hudud, `dashboard.md`) bilan
+almashtirilmaydi, faqat qo'shimcha.
+
+**Backend**: `apps/api/src/schemas/building.ts`ga range-validatsiya (-90..90 / -180..180,
+ikkalasi ham ixtiyoriy). `report.service.ts`ga: (1) `formatCoordinates()` — "41.2995° N, 69.2401°
+E" uslubida (belgidan yarim-shar harfiga), (2) `fetchYandexStaticMapPng()` — Yandex Static Maps
+API'dan PNG olib keladi, **har qanday xatoda (kalit yo'q/tarmoq xatosi/kalit noto'g'ri) `null`
+qaytaradi** — hisobotning matn-qismi (koordinatalar) hech qachon xarita rasmiga bog'liq
+bo'lmaydi (`notify.ts`ning bildirishnoma-xatosini yutish qoidasiga o'xshash fire-and-forget
+uslubi). Yangi `ReportLayout.image()` metodi (PNG'ni o'lchamga moslab `embedPng`+`drawImage`
+orqali chizadi). Bino bo'limining **eng boshida** (sarlavhadan keyin, key-value jadvaldan oldin)
+chiziladi. `generateAuditReportPdf()`ning yangi ixtiyoriy 5-parametri
+(`yandexStaticMapsApiKey?`) `routes/audit.ts`dan `c.env.YANDEX_STATIC_MAPS_API_KEY`ni uzatadi —
+`Env` interfeysiga, `wrangler.toml`ning sirlar izohiga, `.dev.vars.example`ga,
+`docs/deployment.md`/`.claude/rules/deployment.md`ga qo'shildi (hozircha bo'sh — xarita rasmi
+o'tkazib yuboriladi, koordinatalar matni qoladi).
+
+**Frontend**: `building-form-fields.tsx`ga "Kenglik (latitude)"/"Uzunlik (longitude)" sonli
+kirish maydonlari (qo'lda kiritish — xarita-tanlagich emas, sodda variant tanlandi) + diapazon
+validatsiyasi (`fieldOutOfRange` xato xabari), `overview-tab.tsx`ga "Koordinatalar" maydoni
+(faqat ikkalasi ham to'ldirilgan bo'lsa ko'rinadi). Uch tilda (`buildings.json`) yangi kalitlar.
+
+**Haqiqiy tekshiruv**: migratsiya lokal `.dev.vars` bazasiga qo'lda qo'llandi (`database.md`
+tartibi). Haqiqiy brauzerda "3-DMTT" binosiga sinov koordinatalari (41.3111, 69.2797 — Toshkent
+markazi) kiritilib saqlandi, Umumiy tab'da "Koordinatalar: 41.3111°, 69.2797°" to'g'ri ko'rindi,
+so'ng haqiqiy PDF yuklab olinib (`pymupdf` bilan) bino bo'limining eng boshida "Koordinatalar:
+41.3111° N, 69.2797° E" matni to'g'ri joyda chiqqani va — API kalit hali sozlanmagani uchun —
+xarita rasmisiz, sahifa buzilmasdan chiroyli render bo'lgani vizual tasdiqlandi (aynan
+kutilgan gracious-degradation xatti-harakati). Test uchun kiritilgan koordinatalar so'ngra UI
+orqali tozalandi (bu bino uchun haqiqiy manzil tasdiqlanmagani uchun).
+
+**Yon voqea**: tekshiruv paytida Claude Chrome kengaytmasi vaqtincha uzilib qoldi (tarmoq
+uzilishi) — foydalanuvchi tiklagandan keyin davom etildi, hech qanday ma'lumot yo'qolmadi
+(edit dialogidagi kiritilgan qiymatlar saqlanib qolgan edi).
+
+Tekshirildi: `bun run type-check` (barcha workspace), `bun run --cwd apps/web build`, `bunx
+biome lint` (tegilgan fayllar), `bun run --cwd apps/api test tests/services` (64/64,
+`buildingFixture()`ga Toshkent koordinatalari qo'shilgan holda).
+
+**Keyingi qadam**: loyiha egasi Yandex Developer Console'dan Static API kalitini olgach,
+`.dev.vars`/`wrangler secret put YANDEX_STATIC_MAPS_API_KEY`ga qo'shadi — shundan so'ng
+`fetchYandexStaticMapPng()`ning haqiqiy URL formati (`static-maps.yandex.ru/v1?...`, hozircha
+tasdiqlanmagan taxmin) haqiqiy kalit bilan birga tekshirilishi kerak (agar Yandex boshqacha
+javob qaytarsa, URL parametrlarini moslashtirish kerak bo'lishi mumkin). Shundan keyin §9'ning
+oxirgi bosqichi — QR-kod+tekshiruv sahifasi (yangi public route+kutubxona) qoladi.

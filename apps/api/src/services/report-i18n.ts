@@ -58,6 +58,7 @@ const STRINGS = {
 
     labelName: "Name",
     labelLocation: "Location",
+    labelCoordinates: "Coordinates",
     labelType: "Type",
     labelYearBuilt: "Year built",
     labelNetCooledFloorArea: "Net cooled floor area",
@@ -197,6 +198,7 @@ const STRINGS = {
 
     labelName: "Название",
     labelLocation: "Расположение",
+    labelCoordinates: "Координаты",
     labelType: "Тип",
     labelYearBuilt: "Год постройки",
     labelNetCooledFloorArea: "Отапливаемая площадь",
@@ -338,6 +340,7 @@ const STRINGS = {
 
     labelName: "Nomi",
     labelLocation: "Joylashuvi",
+    labelCoordinates: "Koordinatalar",
     labelType: "Turi",
     labelYearBuilt: "Qurilgan yili",
     labelNetCooledFloorArea: "Sof isitiladigan maydon",

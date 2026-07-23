@@ -115,6 +115,8 @@ export interface Building {
   yearBuilt: number | null;
   status: BuildingStatus;
   deadline: string | null;
+  latitude: number | null;
+  longitude: number | null;
   netCooledFloorAreaM2: number | null;
   heatingSeasonDurationDays: number;
   indoorTempNonOperationC: number;

@@ -171,6 +171,7 @@ auditRoutes.get("/:id/audit/report", async (c) => {
     result,
     { uValues, consumptionHistory, tariffs, annotations },
     lang,
+    c.env.YANDEX_STATIC_MAPS_API_KEY,
   );
 
   const r2Key = `reports/${buildingId}/latest.pdf`;

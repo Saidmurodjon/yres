@@ -13,6 +13,8 @@ export const createBuildingSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .nullable()
     .optional(),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
 
   netCooledFloorAreaM2: z.number().nonnegative().optional(),
   heatingSeasonDurationDays: z.number().int().nonnegative(),

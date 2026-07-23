@@ -614,6 +614,24 @@ class ReportLayout {
     this.y = cardBottom - 10;
   }
 
+  /**
+   * Embeds a raster image (PNG bytes) scaled to fit within `maxWidthPt` ×
+   * `maxHeightPt`, preserving aspect ratio — used for the building
+   * location's static map (docs/report-redesign-proposal.md §7). The only
+   * caller wraps the fetch that produces these bytes in its own try/catch
+   * (a failed/unavailable map must never break report generation), so this
+   * method itself assumes valid PNG bytes.
+   */
+  async image(pngBytes: Uint8Array, maxWidthPt: number, maxHeightPt: number) {
+    const image = await this.doc.embedPng(pngBytes);
+    const scale = Math.min(maxWidthPt / image.width, maxHeightPt / image.height, 1);
+    const width = image.width * scale;
+    const height = image.height * scale;
+    this.ensureSpace(height + 8);
+    this.page.drawImage(image, { x: MARGIN, y: this.y - height, width, height });
+    this.y -= height + 8;
+  }
+
   async toBytes(): Promise<Uint8Array> {
     return this.doc.save();
   }
@@ -729,6 +747,36 @@ function fmtPct(lang: ReportLang, value: number | null | undefined): string {
   return `${fmt(lang, value * 100, 1)}%`;
 }
 
+/** `41.2995° N, 69.2401° E` style — sign becomes a hemisphere letter instead of a minus, the conventional way coordinates are printed on official documents. */
+function formatCoordinates(latitude: number, longitude: number): string {
+  const lat = `${Math.abs(latitude).toFixed(4)}° ${latitude >= 0 ? "N" : "S"}`;
+  const lng = `${Math.abs(longitude).toFixed(4)}° ${longitude >= 0 ? "E" : "W"}`;
+  return `${lat}, ${lng}`;
+}
+
+/**
+ * Static location-map image for the building coordinates (docs/
+ * report-redesign-proposal.md §7, provider chosen: Yandex Static Maps).
+ * Returns `null` on any failure (missing API key, network error, non-OK
+ * response) — the caller falls back to text-only coordinates, since a
+ * broken map fetch must never break report generation (same
+ * fire-and-forget tolerance as `notify.ts`'s notification push).
+ */
+async function fetchYandexStaticMapPng(
+  latitude: number,
+  longitude: number,
+  apiKey: string,
+): Promise<Uint8Array | null> {
+  try {
+    const url = `https://static-maps.yandex.ru/v1?ll=${longitude},${latitude}&z=15&size=450,300&l=map&pt=${longitude},${latitude},pm2rdm&apikey=${apiKey}`;
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    return new Uint8Array(await response.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Renders a fresh AuditResult (see routes/audit.ts's "recalculate on demand"
  * rule — this never reads a stored result) into a downloadable PDF report.
@@ -746,6 +794,7 @@ export async function generateAuditReportPdf(
   result: AuditResult,
   extras: ReportExtras,
   lang: ReportLang = "en",
+  yandexStaticMapsApiKey?: string,
 ): Promise<Uint8Array> {
   const layout = await ReportLayout.create(lang);
 
@@ -763,6 +812,19 @@ export async function generateAuditReportPdf(
   );
 
   layout.heading(t(lang, "headingBuilding"));
+  if (building.latitude !== null && building.longitude !== null) {
+    layout.paragraph(
+      `${t(lang, "labelCoordinates")}: ${formatCoordinates(building.latitude, building.longitude)}`,
+    );
+    if (yandexStaticMapsApiKey) {
+      const mapPng = await fetchYandexStaticMapPng(
+        building.latitude,
+        building.longitude,
+        yandexStaticMapsApiKey,
+      );
+      if (mapPng) await layout.image(mapPng, 300, 200);
+    }
+  }
   layout.keyValueGrid(
     [
       [t(lang, "labelName"), building.name],
