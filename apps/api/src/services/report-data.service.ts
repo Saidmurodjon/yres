@@ -29,6 +29,8 @@ export interface ConstructionTypeUValueBreakdown {
   code: string;
   elementCategory: EnvelopeElementCategory;
   scenario: Scenario;
+  /** Auditor's own free-text note on this construction type (`constructionType.description`) — already editable in the envelope UI, just not previously threaded through to the report. Rendered as an italic note under the U-value table (`.claude/rules/hisobot.md`'s report redesign). */
+  description: string | null;
   layers: UValueLayerBreakdown[];
   interiorResistanceM2kPerW: number;
   exteriorResistanceM2kPerW: number;
@@ -88,6 +90,7 @@ export async function getUValueBreakdown(
       code: ct.code,
       elementCategory: ct.elementCategory,
       scenario: ct.scenario,
+      description: ct.description,
       layers,
       interiorResistanceM2kPerW: resistance.interiorResistanceM2kPerW,
       exteriorResistanceM2kPerW: resistance.exteriorResistanceM2kPerW,

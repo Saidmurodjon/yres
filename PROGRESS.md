@@ -1286,3 +1286,47 @@ service.test.ts` emas, butun servis to'plami qayta ishga tushirildi ehtiyot uchu
 (til/i18n, 3-yillik guruhlangan grafik, specific-consumption jamlanma jadvali, auditor
 izohlari, koordinatalar+xarita, QR-kod) navbat bilan davom etadi — har biri alohida
 tekshirilgan+commit qilingan bosqich sifatida.
+
+### 3-bosqich: Construction type izohini ulash (tugallandi)
+
+`report-data.service.ts`ning `ConstructionTypeUValueBreakdown`iga `description: string | null`
+qo'shildi (`getUValueBreakdown()` endi `constructionType.description`ni ham qaytaradi — ustun
+o'zi allaqachon sxemada va frontendda bor edi, faqat hisobotga ulanmagan edi). `report.
+service.ts`ning U-value bo'limida, har bir construction type sarlavhasidan keyin, `description`
+mavjud bo'lsa yangi `layout.note()` (kursiv) orqali chiziladi. Haqiqiy binoga qarshi qayta
+generatsiya qilib tekshirildi — auditor izohlari (masalan "Roof in contact with unheated
+space...") endi har bir U-value bo'limi ostida kursiv matn sifatida chiroyli chiqadi.
+
+### 4-bosqich: 3-yillik guruhlangan ustunli grafik (tugallandi)
+
+Yangi `ReportLayout.groupedBarChart(categories, series)` metodi qo'shildi — platformaning o'z
+`MonthlyComparisonChart`i (`consumption-comparison-chart.tsx`, `recharts`) bilan bir xil
+tuzilishda: har bir oy ichida yil bo'yicha yonma-yon ustunlar, pastda yil-legend (rangli
+belgi+son). Bitta seriyali `barChart()`dan farqli, har bir ustun ustida qiymat yorlig'i
+chizilmaydi (12 oy × 3 yil = 36 ustun bo'lishi mumkin, o'qilishi mumkin bo'lmay qolardi) — buning
+o'rniga setka+o'q yorliqlari va legend orqali o'qiladi. "Metered energy consumption history"
+bo'limidagi eski bitta-seriyali (o'rtacha) `barChart()` chaqiruvi va unga tegishli oy×yil jadvali
+olib tashlandi — yangi grafik xuddi shu ma'lumotni (har bir yil, har bir oy) to'liq ko'rsatadi,
+jadval endi ortiqcha (`docs/report-redesign-proposal.md`ning grafik-jadval qoidasi).
+
+Haqiqiy binoga qarshi qayta generatsiya qilib tasdiqlandi — gaz va elektr uchun ikkala grafik
+ham platformadagi dashboard grafigiga o'xshash chiqdi (rang, guruhlash, legend).
+
+**Ochiq qoldirilgan ikkita savol** (keyingi qadamdan oldin loyiha egasidan javob kutilmoqda):
+1. Qobiq/ventilyatsiya yo'qotish taqsimoti va sotib olingan energiya taqsimoti bo'limlarida
+   jadval (before+after ikkala ustun) va donut grafik (faqat bittasi — mos ravishda "before"
+   yoki "after") ikkalasi ham hali saqlanib qolgan — chunki jadvalda donut ko'rsatmaydigan
+   qo'shimcha ustun (ikkinchi stsenariy) bor, uni olib tashlash `hisobot.md`ning "hech qanday
+   hisoblangan qiymat egasiz qolmasin" qoidasini buzardi. Ikki variant: (a) shu holicha qoldirish
+   (jadval ma'lumot jihatidan to'liqroq), yoki (b) har ikkala stsenariy uchun ham donut qo'shib
+   (before VA after), keyin jadvalni olib tashlash. Hal qilinmagan.
+2. `docs/report-redesign-proposal.md`ning §3'dagi to'liq 19-bandli tuzilma "Qisqa xulosa
+   jadvali" (namunaning Table 1 — har bir chora-tadbir uchun investitsiya/to'lov muddati
+   juftligi/CO2/tavsiya) nomli **yangi**, hisobotning boshida joylashadigan qisqa jamlanma
+   jadvalini nazarda tutadi — bu hozirgi "Recommended measures" bo'limidan mustaqil, undan oldin
+   keladigan alohida qisqartirilgan ko'rinish. Bu yangi kontent yaratishni talab qiladi (shunchaki
+   qayta tartiblash emas), shuning uchun hali qo'shilmagan.
+
+Tekshirildi: `bun run --cwd apps/api type-check`, `bunx biome lint`, `bun run test
+tests/services` (62/62), haqiqiy Neon bazadagi bino bilan generatsiya qilingan PDF vizual
+tekshirildi (ikkala bosqich uchun ham).

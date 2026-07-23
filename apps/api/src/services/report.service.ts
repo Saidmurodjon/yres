@@ -348,6 +348,128 @@ class ReportLayout {
   }
 
   /**
+   * Grouped (multi-series) bar chart — one cluster of side-by-side bars per
+   * category, matching the platform's own "last 3 years, by month"
+   * comparison chart (`apps/web/src/components/building-detail/
+   * consumption-comparison-chart.tsx`'s `MonthlyComparisonChart`, a
+   * `recharts` grouped `BarChart`) rather than the single averaged bar the
+   * PDF previously showed for consumption history. Skips per-bar value
+   * labels (unlike the single-series `barChart`) — with up to 3 bars per
+   * one of 12 month-categories there's no room to keep them legible; a
+   * swatch+label legend under the chart carries series identity instead.
+   */
+  groupedBarChart(
+    categories: string[],
+    series: { label: string; values: number[] }[],
+    chartHeight = 130,
+  ) {
+    if (categories.length === 0 || series.length === 0) return;
+    const padding = 14;
+    const axisWidth = 26;
+    const labelBandHeight = 20;
+    const legendHeight = 18;
+    const totalHeight = padding * 2 + chartHeight + labelBandHeight + legendHeight;
+    this.ensureSpace(totalHeight);
+
+    const cardTop = this.y;
+    const cardBottom = cardTop - totalHeight;
+    this.page.drawRectangle({
+      x: MARGIN,
+      y: cardBottom,
+      width: this.contentWidth(),
+      height: totalHeight,
+      color: CHART_CARD_BG,
+      borderColor: CHART_CARD_BORDER,
+      borderWidth: 0.75,
+    });
+    this.page.drawRectangle({
+      x: MARGIN,
+      y: cardBottom,
+      width: 3,
+      height: totalHeight,
+      color: ACCENT,
+    });
+
+    const plotLeft = MARGIN + padding + axisWidth;
+    const plotRight = MARGIN + this.contentWidth() - padding;
+    const plotWidth = plotRight - plotLeft;
+    const baselineY = cardTop - padding - chartHeight;
+    const maxValue = Math.max(...series.flatMap((s) => s.values.map((v) => Math.abs(v))), 1);
+
+    for (const fraction of [0, 0.25, 0.5, 0.75, 1]) {
+      const gy = baselineY + chartHeight * fraction;
+      this.page.drawLine({
+        start: { x: plotLeft, y: gy },
+        end: { x: plotRight, y: gy },
+        thickness: fraction === 0 ? 0.75 : 0.5,
+        color: fraction === 0 ? RULE : CHART_GRID,
+        dashArray: fraction === 0 || fraction === 1 ? undefined : [1.5, 1.5],
+      });
+      const axisLabel = fmt(maxValue * fraction, 0);
+      const axisLabelWidth = this.regular.widthOfTextAtSize(axisLabel, 7);
+      this.page.drawText(axisLabel, {
+        x: plotLeft - 6 - axisLabelWidth,
+        y: gy - 2,
+        size: 7,
+        font: this.regular,
+        color: MUTED,
+      });
+    }
+
+    const slotWidth = plotWidth / categories.length;
+    const barGap = 2;
+    const clusterWidth = Math.min(slotWidth * 0.75, series.length * 14 + (series.length - 1) * barGap);
+    const barWidth = (clusterWidth - (series.length - 1) * barGap) / series.length;
+
+    categories.forEach((cat, catIndex) => {
+      const clusterX = plotLeft + catIndex * slotWidth + (slotWidth - clusterWidth) / 2;
+      series.forEach((s, seriesIndex) => {
+        const value = s.values[catIndex] ?? 0;
+        const barHeight = (Math.abs(value) / maxValue) * chartHeight;
+        const x = clusterX + seriesIndex * (barWidth + barGap);
+        this.page.drawRectangle({
+          x,
+          y: baselineY,
+          width: barWidth,
+          height: Math.max(barHeight, 0.5),
+          color: CHART_PALETTE[seriesIndex % CHART_PALETTE.length],
+        });
+      });
+
+      const catLabel = truncateLabel(cat, slotWidth, 8);
+      const catLabelWidth = this.regular.widthOfTextAtSize(catLabel, 8);
+      this.page.drawText(catLabel, {
+        x: plotLeft + catIndex * slotWidth + slotWidth / 2 - catLabelWidth / 2,
+        y: baselineY - 12,
+        size: 8,
+        font: this.regular,
+        color: MUTED,
+      });
+    });
+
+    const legendY = baselineY - labelBandHeight - 6;
+    const legendItemWidths = series.map(
+      (s) => 12 + this.regular.widthOfTextAtSize(s.label, 8) + 18,
+    );
+    const totalLegendWidth = legendItemWidths.reduce((sum, w) => sum + w, 0);
+    let legendX = MARGIN + (this.contentWidth() - totalLegendWidth) / 2;
+    series.forEach((s, i) => {
+      const color = CHART_PALETTE[i % CHART_PALETTE.length];
+      this.page.drawCircle({ x: legendX + 4, y: legendY, size: 4, color });
+      this.page.drawText(s.label, {
+        x: legendX + 12,
+        y: legendY - 3,
+        size: 8,
+        font: this.regular,
+        color: INK,
+      });
+      legendX += legendItemWidths[i] ?? 0;
+    });
+
+    this.y = cardBottom - 10;
+  }
+
+  /**
    * Donut chart: pie wedges via `drawSvgPath` (an `M`ove to center, `L`ine
    * to the arc's start, `A`rc to its end, `Z` close — the only way to draw
    * an arbitrary shape pdf-lib doesn't have a primitive for; arc math is
@@ -652,6 +774,9 @@ export async function generateAuditReportPdf(
       layout.paragraph(
         `${ct.code} — ${ct.elementCategory.replace(/_/g, " ")} (${ct.scenario}) — U = ${fmt(ct.uValueWPerM2K, 3)} W/m²K`,
       );
+      if (ct.description) {
+        layout.note(ct.description);
+      }
       layout.table(
         ["Layer", "Material", "Thickness (m)", "Conductivity (W/mK)", "R (m²K/W)"],
         ct.layers.map((l, i) => [
@@ -676,22 +801,17 @@ export async function generateAuditReportPdf(
         ...new Set(carrier.months.flatMap((m) => m.byYear.map((y) => y.year))),
       ].sort((a, b) => a - b);
       layout.paragraph(carrier.energyCarrier.replace(/_/g, " "));
-      layout.table(
-        ["Month", ...years.map(String), "Average (baseline)"],
-        carrier.months.map((m) => [
-          MONTH_NAMES[m.month - 1] ?? String(m.month),
-          ...years.map((year) => {
-            const yearRow = m.byYear.find((y) => y.year === year);
-            return yearRow ? fmt(yearRow.consumptionKwh, 0) : "—";
-          }),
-          fmt(m.averageConsumptionKwh, 0),
-        ]),
-        [70, ...years.map(() => 70), 100],
-      );
-      layout.barChart(
-        carrier.months.map((m) => ({
-          label: MONTH_NAMES[m.month - 1] ?? String(m.month),
-          value: m.averageConsumptionKwh,
+      // Grouped, year-by-year bars (matching the platform's own
+      // MonthlyComparisonChart) already carry every value the old
+      // month×year table showed — no separate table needed
+      // (docs/report-redesign-proposal.md's chart-implies-no-table rule).
+      layout.groupedBarChart(
+        carrier.months.map((m) => MONTH_NAMES[m.month - 1] ?? String(m.month)),
+        years.map((year) => ({
+          label: String(year),
+          values: carrier.months.map(
+            (m) => m.byYear.find((y) => y.year === year)?.consumptionKwh ?? 0,
+          ),
         })),
       );
     }

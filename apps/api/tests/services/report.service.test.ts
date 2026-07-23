@@ -267,6 +267,7 @@ function fullExtrasFixture(): ReportExtras {
         code: "W1",
         elementCategory: "external_wall",
         scenario: "before",
+        description: "Primary facade wall, floors 1-3.",
         layers: [
           { materialName: "Plaster", thicknessM: 0.02, thermalConductivityWPerMk: 0.7, resistanceM2KPerW: 0.029 },
           { materialName: "Brick", thicknessM: 0.5, thermalConductivityWPerMk: 0.73, resistanceM2KPerW: 0.68 },
