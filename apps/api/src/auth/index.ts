@@ -75,7 +75,14 @@ export function createAuth(env: Env, db: Database) {
     user: {
       additionalFields: {
         role: { type: "string", required: false, defaultValue: "auditor", input: false },
-        username: { type: "string", required: true, input: false },
+        // `required: true` here was the bug: Better Auth checks additionalField
+        // `required` against the client-supplied signUp payload — which never
+        // includes username (`input: false`) — *before* databaseHooks.user.
+        // create.before runs, so every signup failed with "username is
+        // required" before the hook got a chance to backfill it from email.
+        // `required: false` defers entirely to the hook + the DB's own NOT
+        // NULL constraint as the real guarantee.
+        username: { type: "string", required: false, input: false },
         isActive: { type: "boolean", required: false, defaultValue: true, input: false },
       },
     },

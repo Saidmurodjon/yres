@@ -1912,3 +1912,25 @@ so'rov qilmaydi, faqat submit'da) mock-API kerak emas — faqat brauzer preview'
 Loyiha egasi qo'lda tekshirishi tavsiya etiladi: `lg+`da split-screen, `lg`dan pastda
 ixcham logotip-satri + to'liq kenglikdagi forma, parol ko'rsatish/yashirish, Google
 tugmasidagi rasmiy "G" belgisi.
+
+Keyingi kichik so'rovlar bo'yicha davom etildi: brend paneli matni rasmiy/umumiy ohangga
+o'tkazildi (energiya samaradorlik/energo audit atamalari bilan, "bino"ga xos so'zlar olib
+tashlandi — loyiha egasi kelajakda sanoat korxonalarini ham audit qilishni rejalashtirgani
+sababli, xotiraga yozildi), register'dagi ortiqcha "Bino egalari, ESCO'lar..." qatori olib
+tashlandi, register formasiga "Parolni tasdiqlang" maydoni qo'shildi (mos kelmasa
+`signUp.email()` chaqirilishidan oldin to'xtaydi).
+
+**Haqiqiy brauzerda tekshirilganda topilgan bug (tuzatildi)**: register submit qilinganda
+"username is required" xatosi chiqib, hisob yaratilmasdi. Sabab: `apps/api/src/auth/
+index.ts`ning `user.additionalFields.username`i `required: true` deb belgilangan edi, lekin
+`defaultValue` yo'q edi — Better Auth bu talabni `databaseHooks.user.create.before` hook
+ishga tushishidan **oldin**, client yuborgan xom so'rov (`username`ni umuman
+o'z ichiga olmaydi, chunki `input: false`) ustida tekshiradi, shuning uchun hook email'ni
+username sifatida qo'yishga ulgurmasdan oldin har bir ro'yxatdan o'tish muvaffaqiyatsiz
+bo'lardi. Bu aslida "Social Phase 1" bosqichida ("Diqqat: bu hook'ning aniq shakli Better
+Auth hujjatlariga qarshi tasdiqlanmagan... haqiqiy deploy'dan keyin signup oqimini qo'lda
+tekshirish tavsiya etiladi" deb) oldindan ogohlantirilgan xavf edi. Tuzatish: `required:
+false`ga o'zgartirildi (`role`/`isActive` bilan bir xil naqsh) — haqiqiy kafolat
+hook + bazaning NOT NULL cheklovi orqali ta'minlanadi. Tekshirildi: `bun run --cwd apps/api
+type-check`, `bunx biome check`. Haqiqiy signup oqimini qayta sinash — foydalanuvchi
+tomonidan.
