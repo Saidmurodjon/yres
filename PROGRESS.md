@@ -1524,6 +1524,25 @@ to'liq chaqiradigan 5 testi — natija o'zgarmagani tasdiqlandi), `bunx biome ch
 Integratsiya testi (`tests/integration/`) bu sandbox'da lokal Postgres yo'qligi sababli
 ishlamaydi (kutilgan holat, `testing-and-verification.md`).
 
+### 3-bosqich: `chat.ts`dagi N+1'ni tuzatish (tugallandi)
+
+`apps/api/src/routes/chat.ts`ning `GET /conversations`i har suhbat uchun 2 ta qo'shimcha
+so'rov qilardi (oxirgi xabar + o'qilmagan son) — 2N+1. `buildings.ts`dagi
+`collaboratorCount`ning `inArray`+`groupBy` naqshi ko'chirilib, 3 ta so'rovga tushirildi
+(suhbatdoshlik + 2 ta batched so'rov, `Promise.all`ga birlashtirilgan):
+- Oxirgi xabar — `db.selectDistinctOn([message.conversationId], {...})` (Postgres'ning
+  `DISTINCT ON` naqshi, har suhbat uchun bitta eng so'nggi qatorni tanlaydi).
+- O'qilmagan son — `message`ni `conversationMember`ga (joriy foydalanuvchining o'ziga)
+  `innerJoin` qilib, har suhbatning o'z `lastReadAt`i bilan solishtiriladi, `groupBy` bilan
+  `count()`. Bu avvalgi kod xotiradagi `membership.lastReadAt`ni ishlatgan bo'lsa, endi join
+  orqali xuddi shu solishtirishni bitta SQL so'rovda amalga oshiradi.
+
+Javob formati o'zgarmadi. Tekshirildi: `bun run --cwd apps/api type-check`, `bunx biome check
+--write`. Bu route'ning maxsus unit testi yo'q (integratsiya testi orqali tekshiriladi, u bu
+sandbox'da lokal Postgres yo'qligi sababli ishlamaydi) — shuning uchun bu yerda faqat
+tip-tekshiruv va qo'lda kod ko'rib chiqish bilan cheklandi, haqiqiy chat oqimini brauzerda
+tekshirish tavsiya etiladi.
+
 **Haqiqiy tekshiruv**: lokal `.dev.vars` Neon bazasida `0006` migratsiyasi hali qo'llanilmagan
 edi — `database.md`dagi qo'lda-qo'llash tartibi (`pg` Client, non-pooler host, tranzaksiya,
 `drizzle.__drizzle_migrations`ga hash+timestamp yozish) bilan qo'llandi. Keyin **haqiqiy

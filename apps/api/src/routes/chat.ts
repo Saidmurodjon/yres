@@ -1,5 +1,5 @@
 import { conversation, conversationMember, message, user } from "@yres/db";
-import { and, desc, eq, gt, ilike, inArray, ne } from "drizzle-orm";
+import { and, count, desc, eq, gt, ilike, inArray, isNull, ne, or } from "drizzle-orm";
 import { Hono } from "hono";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import {
@@ -27,57 +27,85 @@ chatRoutes.get("/conversations", async (c) => {
     },
   });
 
-  const conversations = await Promise.all(
-    memberships.map(async (membership) => {
-      const conv = membership.conversation;
+  // Batched across all of the caller's conversations (2 queries total)
+  // instead of 2 queries per conversation — see collaboratorCount in
+  // buildings.ts for the same inArray+groupBy idiom.
+  const convIds = memberships.map((m) => m.conversationId);
+  const [lastMessages, unreadCounts] = await Promise.all([
+    convIds.length > 0
+      ? db
+          .selectDistinctOn([message.conversationId], {
+            id: message.id,
+            conversationId: message.conversationId,
+            body: message.body,
+            deletedAt: message.deletedAt,
+            senderId: message.senderId,
+            createdAt: message.createdAt,
+          })
+          .from(message)
+          .where(inArray(message.conversationId, convIds))
+          .orderBy(message.conversationId, desc(message.createdAt))
+      : [],
+    convIds.length > 0
+      ? db
+          .select({ conversationId: message.conversationId, count: count() })
+          .from(message)
+          .innerJoin(
+            conversationMember,
+            and(
+              eq(conversationMember.conversationId, message.conversationId),
+              eq(conversationMember.userId, authUser.id),
+            ),
+          )
+          .where(
+            and(
+              inArray(message.conversationId, convIds),
+              ne(message.senderId, authUser.id),
+              or(
+                isNull(conversationMember.lastReadAt),
+                gt(message.createdAt, conversationMember.lastReadAt),
+              ),
+            ),
+          )
+          .groupBy(message.conversationId)
+      : [],
+  ]);
+  const lastMessageByConversationId = new Map(lastMessages.map((m) => [m.conversationId, m]));
+  const unreadCountByConversationId = new Map(unreadCounts.map((u) => [u.conversationId, u.count]));
 
-      const [lastMessage] = await db
-        .select()
-        .from(message)
-        .where(eq(message.conversationId, conv.id))
-        .orderBy(desc(message.createdAt))
-        .limit(1);
+  const conversations = memberships.map((membership) => {
+    const conv = membership.conversation;
+    const lastMessage = lastMessageByConversationId.get(conv.id);
 
-      const unread = await db
-        .select({ id: message.id })
-        .from(message)
-        .where(
-          and(
-            eq(message.conversationId, conv.id),
-            ne(message.senderId, authUser.id),
-            membership.lastReadAt ? gt(message.createdAt, membership.lastReadAt) : undefined,
-          ),
-        );
+    const members = conv.members.map((m) => ({
+      id: m.user.id,
+      name: m.user.name,
+      username: m.user.username,
+      image: m.user.image,
+      role: m.role,
+    }));
+    const otherMember = members.find((m) => m.id !== authUser.id);
+    const displayName =
+      conv.type === "group" ? (conv.name ?? "Group") : (otherMember?.name ?? "Conversation");
 
-      const members = conv.members.map((m) => ({
-        id: m.user.id,
-        name: m.user.name,
-        username: m.user.username,
-        image: m.user.image,
-        role: m.role,
-      }));
-      const otherMember = members.find((m) => m.id !== authUser.id);
-      const displayName = conv.type === "group" ? (conv.name ?? "Group") : (otherMember?.name ?? "Conversation");
-
-      return {
-        id: conv.id,
-        type: conv.type,
-        name: displayName,
-        members,
-        myRole: membership.role,
-        lastMessage: lastMessage
-          ? {
-              id: lastMessage.id,
-              body: lastMessage.deletedAt ? null : lastMessage.body,
-              deletedAt: lastMessage.deletedAt,
-              senderId: lastMessage.senderId,
-              createdAt: lastMessage.createdAt,
-            }
-          : null,
-        unreadCount: unread.length,
-      };
-    }),
-  );
+    return {
+      id: conv.id,
+      type: conv.type,
+      name: displayName,
+      members,
+      myRole: membership.role,
+      lastMessage: lastMessage
+        ? {
+            id: lastMessage.id,
+            body: lastMessage.deletedAt ? null : lastMessage.body,
+            deletedAt: lastMessage.deletedAt,
+            senderId: lastMessage.senderId,
+            createdAt: lastMessage.createdAt,
+          }
+        : null,
+      unreadCount: unreadCountByConversationId.get(conv.id) ?? 0,
+    };
+  });
 
   conversations.sort((a, b) => {
     const aTime = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : 0;
@@ -194,7 +222,10 @@ chatRoutes.get("/conversations/:id/messages", async (c) => {
     .select()
     .from(conversationMember)
     .where(
-      and(eq(conversationMember.conversationId, conversationId), eq(conversationMember.userId, authUser.id)),
+      and(
+        eq(conversationMember.conversationId, conversationId),
+        eq(conversationMember.userId, authUser.id),
+      ),
     )
     .limit(1);
   if (!membership) {
@@ -209,7 +240,11 @@ chatRoutes.get("/conversations/:id/messages", async (c) => {
     .limit(limit)
     .offset(offset);
 
-  return c.json({ messages: rows, page: parsedQuery.data.page, pageSize: parsedQuery.data.pageSize });
+  return c.json({
+    messages: rows,
+    page: parsedQuery.data.page,
+    pageSize: parsedQuery.data.pageSize,
+  });
 });
 
 // GET /api/chat/conversations/:id/ws - upgrades to a WebSocket and forwards
@@ -225,7 +260,10 @@ chatRoutes.get("/conversations/:id/ws", async (c) => {
     .select()
     .from(conversationMember)
     .where(
-      and(eq(conversationMember.conversationId, conversationId), eq(conversationMember.userId, authUser.id)),
+      and(
+        eq(conversationMember.conversationId, conversationId),
+        eq(conversationMember.userId, authUser.id),
+      ),
     )
     .limit(1);
   if (!membership) {
@@ -252,7 +290,10 @@ chatRoutes.patch("/conversations/:id/read", async (c) => {
     .update(conversationMember)
     .set({ lastReadAt: new Date() })
     .where(
-      and(eq(conversationMember.conversationId, conversationId), eq(conversationMember.userId, authUser.id)),
+      and(
+        eq(conversationMember.conversationId, conversationId),
+        eq(conversationMember.userId, authUser.id),
+      ),
     )
     .returning();
   if (!updated) {
@@ -278,7 +319,10 @@ chatRoutes.patch("/conversations/:id", async (c) => {
     .select()
     .from(conversationMember)
     .where(
-      and(eq(conversationMember.conversationId, conversationId), eq(conversationMember.userId, authUser.id)),
+      and(
+        eq(conversationMember.conversationId, conversationId),
+        eq(conversationMember.userId, authUser.id),
+      ),
     )
     .limit(1);
   if (!membership) {
@@ -289,7 +333,10 @@ chatRoutes.patch("/conversations/:id", async (c) => {
   }
 
   if (parsed.data.name) {
-    await db.update(conversation).set({ name: parsed.data.name }).where(eq(conversation.id, conversationId));
+    await db
+      .update(conversation)
+      .set({ name: parsed.data.name })
+      .where(eq(conversation.id, conversationId));
   }
 
   if (parsed.data.addUsernames && parsed.data.addUsernames.length > 0) {
@@ -397,7 +444,10 @@ chatRoutes.post("/conversations/:id/attachments", async (c) => {
     .select()
     .from(conversationMember)
     .where(
-      and(eq(conversationMember.conversationId, conversationId), eq(conversationMember.userId, authUser.id)),
+      and(
+        eq(conversationMember.conversationId, conversationId),
+        eq(conversationMember.userId, authUser.id),
+      ),
     )
     .limit(1);
   if (!membership) {
@@ -451,7 +501,10 @@ chatRoutes.get("/attachments/*", async (c) => {
     .select()
     .from(conversationMember)
     .where(
-      and(eq(conversationMember.conversationId, conversationId), eq(conversationMember.userId, authUser.id)),
+      and(
+        eq(conversationMember.conversationId, conversationId),
+        eq(conversationMember.userId, authUser.id),
+      ),
     )
     .limit(1);
   if (!membership) {
