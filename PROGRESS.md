@@ -1874,3 +1874,41 @@ Tekshirildi: `bun run --cwd packages/db type-check`, `bun run --cwd apps/api typ
 (haqiqiy Vite build), `bunx biome check --write` (barcha tegilgan fayllar). Migratsiyani
 haqiqiy bazaga qo'llash va brauzerda tekshirish — foydalanuvchi tomonidan, deploy'dan keyin
 (bu sandbox'da baza yo'q).
+
+## Login/Register — zamonaviy split-screen dizayn
+
+Loyiha egasi login/register sahifalarini "interaktiv, zamonaviy" qilishni, mobilga
+moslashtirishni va Google tugmasini Google'ning o'z brendiga mos qilishni so'radi.
+`AskUserQuestion` orqali ikkita tuzilish (split-screen vs kengaytirilgan markazlashgan
+karta) taqdim qilindi, foydalanuvchi **split-screen**ni tanladi.
+
+- Yangi `apps/web/src/components/auth/auth-layout.tsx` (`AuthLayout`) — `lg+`da chapda
+  `bg-primary` brend paneli (YRES logotipi, tagline, 3 ta xususiyat ro'yxati, ikkita
+  dekorativ blur-doira), o'ngda forma; `lg`dan past (`docs/ui-guidelines.md`ning desktop
+  chegarasi) brend panel **butunlay yashiriladi**, o'rniga ixcham logotip-satri
+  ko'rsatiladi — katta rangli panelni telefon ekraniga siqish o'rniga, mobil tezkor va
+  ixcham qoladi. Forma `animate-in fade-in-0 slide-in-from-bottom-2` bilan kirib keladi
+  (`tw-animate-css`, `packages/ui/globals.css`da allaqachon ulangan, Dialog animatsiyalari
+  bilan bir xil mexanizm).
+- Yangi `apps/web/src/components/auth/google-icon.tsx` — Google'ning rasmiy 4-rangli "G"
+  belgisi (developers.google.com/identity/branding-guidelines), umumiy outline tugma
+  o'rniga.
+- `login.tsx`/`register.tsx`: `Card` o'rami olib tashlandi (split-screen'da o'ng panelning
+  o'zi allaqachon "karta"), email/parol/ism maydonlariga ikonka qo'shildi (`dashboard.tsx`
+  qidiruv maydonidagi bilan bir xil `absolute`+`pl-9` naqsh), parol maydoniga
+  ko'rsatish/yashirish tugmasi (`Eye`/`EyeOff`), tugmalarga `active:scale-[0.98]`
+  o'tish animatsiyasi.
+- `apps/web/src/i18n/locales/{en,ru,uz}/auth.json`ga yangi `brand.*` (tagline, 3 ta
+  xususiyat — mavjud `login.subtitle`/`register.subtitle` marketing ohangiga mos) va
+  `login.showPassword`/`hidePassword` kalitlari.
+
+Tekshirildi: `bun run --cwd apps/web type-check` (haqiqiy Vite build), `bunx biome check
+--write`. Qurilgan CSS'da `animate-in`/`slide-in-from-bottom-2`/`fade-in-0` klasslari
+haqiqatan chiqqani `grep` bilan tasdiqlandi (`frontend.md`dagi "className satrida bor ≠
+build'da bor" qoidasiga ko'ra). **Brauzerda vizual tekshirilmadi** — bu sessiyada Preview
+MCP vositasi mavjud emas edi (`testing-and-verification.md`dagi protsedura shu vositaga
+tayanadi). Login/register autentifikatsiyasiz sahifalar bo'lgani uchun (hech qanday GET
+so'rov qilmaydi, faqat submit'da) mock-API kerak emas — faqat brauzer preview'i yetishmadi.
+Loyiha egasi qo'lda tekshirishi tavsiya etiladi: `lg+`da split-screen, `lg`dan pastda
+ixcham logotip-satri + to'liq kenglikdagi forma, parol ko'rsatish/yashirish, Google
+tugmasidagi rasmiy "G" belgisi.

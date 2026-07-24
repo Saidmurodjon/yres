@@ -1,17 +1,10 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Input,
-  Label,
-  Separator,
-} from "@yres/ui";
+import { Button, Input, Label, Separator } from "@yres/ui";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { AuthLayout } from "../components/auth/auth-layout";
+import { GoogleIcon } from "../components/auth/google-icon";
 import { signIn } from "../lib/auth-client";
 
 interface LoginSearch {
@@ -33,9 +26,8 @@ function LoginPage() {
   const search = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(
-    search.error ? t("login.googleFailed") : null,
-  );
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(search.error ? t("login.googleFailed") : null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
 
@@ -83,74 +75,95 @@ function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>{t("login.title")}</CardTitle>
-          <CardDescription>{t("login.subtitle")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-              <Label htmlFor="email">{t("login.email")}</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">{t("login.password")}</Label>
-                <Link
-                  to="/forgot-password"
-                  className="text-xs font-medium text-primary underline-offset-4 hover:underline"
-                >
-                  {t("login.forgotPassword")}
-                </Link>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? t("login.signingIn") : t("login.signIn")}
-            </Button>
-          </form>
-          <div className="my-4 flex items-center gap-3">
-            <Separator className="flex-1" />
-            <span className="text-xs text-muted-foreground">{t("login.or")}</span>
-            <Separator className="flex-1" />
+    <AuthLayout>
+      <div className="mb-8 space-y-1.5">
+        <h1 className="text-2xl font-semibold tracking-tight">{t("login.title")}</h1>
+        <p className="text-muted-foreground">{t("login.subtitle")}</p>
+      </div>
+
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <div className="space-y-2">
+          <Label htmlFor="email">{t("login.email")}</Label>
+          <div className="relative">
+            <Mail className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="pl-9"
+            />
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            disabled={isGoogleSubmitting}
-            onClick={handleGoogleSignIn}
-          >
-            {isGoogleSubmitting ? t("login.redirecting") : t("login.continueWithGoogle")}
-          </Button>
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            {t("login.noAccount")}{" "}
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="password">{t("login.password")}</Label>
             <Link
-              to="/register"
-              className="font-medium text-primary underline-offset-4 hover:underline"
+              to="/forgot-password"
+              className="text-xs font-medium text-primary underline-offset-4 hover:underline"
             >
-              {t("login.createOne")}
+              {t("login.forgotPassword")}
             </Link>
-          </p>
-        </CardContent>
-      </Card>
-    </main>
+          </div>
+          <div className="relative">
+            <Lock className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="pr-9 pl-9"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? t("login.hidePassword") : t("login.showPassword")}
+              className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        <Button
+          type="submit"
+          className="w-full transition-transform active:scale-[0.98]"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? t("login.signingIn") : t("login.signIn")}
+        </Button>
+      </form>
+
+      <div className="my-6 flex items-center gap-3">
+        <Separator className="flex-1" />
+        <span className="text-xs text-muted-foreground">{t("login.or")}</span>
+        <Separator className="flex-1" />
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full gap-2 transition-transform active:scale-[0.98]"
+        disabled={isGoogleSubmitting}
+        onClick={handleGoogleSignIn}
+      >
+        <GoogleIcon className="h-4 w-4" />
+        {isGoogleSubmitting ? t("login.redirecting") : t("login.continueWithGoogle")}
+      </Button>
+
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        {t("login.noAccount")}{" "}
+        <Link
+          to="/register"
+          className="font-medium text-primary underline-offset-4 hover:underline"
+        >
+          {t("login.createOne")}
+        </Link>
+      </p>
+    </AuthLayout>
   );
 }
