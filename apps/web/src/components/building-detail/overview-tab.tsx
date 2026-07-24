@@ -1,6 +1,5 @@
-import { Link } from "@tanstack/react-router";
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@yres/ui";
-import { BarChart3, ClipboardCheck, LineChart, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -32,44 +31,22 @@ export function OverviewTab({ building, role }: { building: Building; role: Buil
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          <Button asChild size="sm">
-            <Link to="/buildings/$buildingId/audit" params={{ buildingId: building.id }}>
-              <ClipboardCheck className="h-4 w-4" />
-              {t("overview.runAudit")}
-            </Link>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link to="/buildings/$buildingId/results" params={{ buildingId: building.id }}>
-              <BarChart3 className="h-4 w-4" />
-              {t("overview.auditResults")}
-            </Link>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link to="/buildings/$buildingId/financial" params={{ buildingId: building.id }}>
-              <LineChart className="h-4 w-4" />
-              {t("overview.financialAnalysis")}
-            </Link>
-          </Button>
+      {(canEdit || canDelete) && (
+        <div className="flex flex-wrap justify-end gap-2">
+          {canEdit && (
+            <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
+              <Pencil className="h-4 w-4" />
+              {t("common:edit")}
+            </Button>
+          )}
+          {canDelete && (
+            <Button size="sm" variant="destructive" onClick={() => setDeleteOpen(true)}>
+              <Trash2 className="h-4 w-4" />
+              {t("common:delete")}
+            </Button>
+          )}
         </div>
-        {(canEdit || canDelete) && (
-          <div className="flex gap-2">
-            {canEdit && (
-              <Button size="sm" variant="outline" onClick={() => setEditOpen(true)}>
-                <Pencil className="h-4 w-4" />
-                {t("common:edit")}
-              </Button>
-            )}
-            {canDelete && (
-              <Button size="sm" variant="destructive" onClick={() => setDeleteOpen(true)}>
-                <Trash2 className="h-4 w-4" />
-                {t("common:delete")}
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

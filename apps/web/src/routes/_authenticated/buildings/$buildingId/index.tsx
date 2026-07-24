@@ -10,7 +10,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@yres/ui";
-import { ArrowLeft, Eye } from "lucide-react";
+import { ArrowLeft, BarChart3, ClipboardCheck, Eye, LineChart } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ConsumptionTab } from "../../../../components/building-detail/consumption-tab";
 import { EnvelopeTab } from "../../../../components/building-detail/envelope-tab";
@@ -89,14 +89,36 @@ function BuildingDetailPage() {
       </div>
 
       <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">{t("detail.tabOverview")}</TabsTrigger>
-          <TabsTrigger value="envelope">{t("detail.tabEnvelope")}</TabsTrigger>
-          <TabsTrigger value="systems">{t("detail.tabSystems")}</TabsTrigger>
-          <TabsTrigger value="consumption">{t("detail.tabConsumption")}</TabsTrigger>
-          <TabsTrigger value="measures">{t("detail.tabMeasures")}</TabsTrigger>
-          <TabsTrigger value="sharing">{t("detail.tabSharing")}</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <TabsList>
+            <TabsTrigger value="overview">{t("detail.tabOverview")}</TabsTrigger>
+            <TabsTrigger value="envelope">{t("detail.tabEnvelope")}</TabsTrigger>
+            <TabsTrigger value="systems">{t("detail.tabSystems")}</TabsTrigger>
+            <TabsTrigger value="consumption">{t("detail.tabConsumption")}</TabsTrigger>
+            <TabsTrigger value="measures">{t("detail.tabMeasures")}</TabsTrigger>
+            <TabsTrigger value="sharing">{t("detail.tabSharing")}</TabsTrigger>
+          </TabsList>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild size="sm">
+              <Link to="/buildings/$buildingId/audit" params={{ buildingId: building.id }}>
+                <ClipboardCheck className="h-4 w-4" />
+                {t("overview.runAudit")}
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link to="/buildings/$buildingId/results" params={{ buildingId: building.id }}>
+                <BarChart3 className="h-4 w-4" />
+                {t("overview.auditResults")}
+              </Link>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link to="/buildings/$buildingId/financial" params={{ buildingId: building.id }}>
+                <LineChart className="h-4 w-4" />
+                {t("overview.financialAnalysis")}
+              </Link>
+            </Button>
+          </div>
+        </div>
 
         <TabsContent value="overview">
           <OverviewTab building={building} role={role} />
