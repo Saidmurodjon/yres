@@ -1587,6 +1587,37 @@ Vite build), `bunx biome check --write` (barcha tegilgan fayllar). **Brauzerda v
 tekshirilmadi** — bu sandbox'da haqiqiy baza yo'q (`testing-and-verification.md`dagi mock-API +
 Preview MCP protsedurasi orqali tekshirish tavsiya etiladi, lekin bu sessiyada bajarilmadi).
 
+### 5-bosqich: Ma'lumotnoma endpoint'lariga Cache API (tugallandi)
+
+Foydalanuvchi ikkita variantdan (Cache API vs KV Namespace) **Cache API**ni tanladi — hech
+qanday yangi Cloudflare resursi provisioning kerak emas, `wrangler.toml`ga tegilmaydi.
+
+Yangi `apps/api/src/lib/http-cache.ts`ning `withEdgeCache(c, ttlSeconds, fetchData)`i —
+Workers'ning `caches.default`idan so'rov URL'i bo'yicha kalitlangan holda foydalanadi, kesh
+topilmasa `fetchData()`ni chaqirib natijani `c.executionCtx.waitUntil(cache.put(...))` orqali
+javobni bloklamasdan keshlaydi. **Faqat foydalanuvchiga xos bo'lmagan** (barcha
+foydalanuvchilar uchun bir xil) endpoint'larga qo'llanildi:
+- `apps/api/src/routes/reference.ts` — `/materials`, `/lamp-types`, `/surface-resistance`
+  (uch tasi ham, 1 soatlik TTL).
+- `apps/api/src/routes/climate.ts`ning `GET /regions`i (kesh kaliti query-string'ni ham
+  o'z ichiga oladi, shuning uchun har xil page/pageSize alohida keshlanadi).
+
+`energyTariff` (audit.engine.ts ichida ishlatiladigan, alohida HTTP endpoint emas) bu
+bosqichga kiritilmadi — rejada aytilganidek, uning tezligi Bosqich 2'dagi
+parallellashtirish orqali allaqachon hal qilingan, Cache API so'rov-asoslangan bo'lgani
+uchun unga mos kelmaydi.
+
+Tekshirildi: `bun run --cwd apps/api type-check`, `bunx biome check --write`,
+`bun run --cwd apps/api test tests/services` (64/64). Cache API'ning haqiqatan keshlanishi
+faqat `wrangler dev`/deploy'dan keyin qo'lda tekshiriladi (bu sessiyada bajarilmadi —
+`realtime.md`dagi Miniflare eslatmasiga o'xshab, bu ham brauzer/wrangler dev serveriga
+ulanishni talab qiladi).
+
+**5 bosqichning barchasi tugallandi.** Har biri alohida commit qilindi
+(`git log --oneline`da ko'rinadi). Haqiqiy bazaga qarshi tekshirilmagan narsalar: Bosqich 1
+migratsiyasini production'ga qo'llash, Bosqich 3/4/5'ning brauzerda vizual tasdiqlanishi —
+bularning barchasi ushbu sandbox cheklovlari tufayli (`database.md`/`testing-and-verification.md`).
+
 **Haqiqiy tekshiruv**: lokal `.dev.vars` Neon bazasida `0006` migratsiyasi hali qo'llanilmagan
 edi — `database.md`dagi qo'lda-qo'llash tartibi (`pg` Client, non-pooler host, tranzaksiya,
 `drizzle.__drizzle_migrations`ga hash+timestamp yozish) bilan qo'llandi. Keyin **haqiqiy
