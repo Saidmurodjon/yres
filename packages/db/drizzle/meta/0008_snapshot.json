@@ -1,0 +1,3440 @@
+{
+  "id": "4b21aa6b-f3be-4374-936b-7bce821aa4a0",
+  "prevId": "9baf67ef-9f76-4f0f-83d5-fb6b1156dc88",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.account": {
+      "name": "account",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_id": {
+          "name": "provider_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "access_token": {
+          "name": "access_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_token": {
+          "name": "id_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "access_token_expires_at": {
+          "name": "access_token_expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refresh_token_expires_at": {
+          "name": "refresh_token_expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "account_user_id_user_id_fk": {
+          "name": "account_user_id_user_id_fk",
+          "tableFrom": "account",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.session": {
+      "name": "session",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ip_address": {
+          "name": "ip_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "session_user_id_user_id_fk": {
+          "name": "session_user_id_user_id_fk",
+          "tableFrom": "session",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "session_token_unique": {
+          "name": "session_token_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user": {
+      "name": "user",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email_verified": {
+          "name": "email_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "role": {
+          "name": "role",
+          "type": "user_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'auditor'"
+        },
+        "username": {
+          "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_seen_at": {
+          "name": "last_seen_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "user_email_unique": {
+          "name": "user_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        },
+        "user_username_unique": {
+          "name": "user_username_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "username"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.verification": {
+      "name": "verification",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "identifier": {
+          "name": "identifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.climate_monthly_normal": {
+      "name": "climate_monthly_normal",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "climate_region_id": {
+          "name": "climate_region_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "month": {
+          "name": "month",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "avg_outdoor_temp_c": {
+          "name": "avg_outdoor_temp_c",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "heating_days_in_month": {
+          "name": "heating_days_in_month",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solar_radiation_south_kwh_m2": {
+          "name": "solar_radiation_south_kwh_m2",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solar_radiation_north_kwh_m2": {
+          "name": "solar_radiation_north_kwh_m2",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solar_radiation_east_west_kwh_m2": {
+          "name": "solar_radiation_east_west_kwh_m2",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solar_radiation_se_sw_kwh_m2": {
+          "name": "solar_radiation_se_sw_kwh_m2",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solar_radiation_ne_nw_kwh_m2": {
+          "name": "solar_radiation_ne_nw_kwh_m2",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "solar_radiation_horizontal_kwh_m2": {
+          "name": "solar_radiation_horizontal_kwh_m2",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_heating_season_month": {
+          "name": "is_heating_season_month",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "climate_monthly_normal_climate_region_id_climate_region_id_fk": {
+          "name": "climate_monthly_normal_climate_region_id_climate_region_id_fk",
+          "tableFrom": "climate_monthly_normal",
+          "tableTo": "climate_region",
+          "columnsFrom": [
+            "climate_region_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.climate_region": {
+      "name": "climate_region",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "design_outdoor_temp_c": {
+          "name": "design_outdoor_temp_c",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "avg_annual_temp_c": {
+          "name": "avg_annual_temp_c",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "min_absolute_temp_c": {
+          "name": "min_absolute_temp_c",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "max_absolute_temp_c": {
+          "name": "max_absolute_temp_c",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lamp_type": {
+      "name": "lamp_type",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "power_density_w_per_m2": {
+          "name": "power_density_w_per_m2",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "lamp_type_name_unique": {
+          "name": "lamp_type_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.material": {
+      "name": "material",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "thermal_conductivity_w_per_mk": {
+          "name": "thermal_conductivity_w_per_mk",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "material_name_unique": {
+          "name": "material_name_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "name"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.pipe_loss_reference": {
+      "name": "pipe_loss_reference",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "diameter_class": {
+          "name": "diameter_class",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "insulated": {
+          "name": "insulated",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mean_fluid_temp_c": {
+          "name": "mean_fluid_temp_c",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "max_heat_flux_w_per_m": {
+          "name": "max_heat_flux_w_per_m",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.surface_resistance": {
+      "name": "surface_resistance",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "element_category": {
+          "name": "element_category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "interior_resistance_m2k_per_w": {
+          "name": "interior_resistance_m2k_per_w",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "exterior_resistance_m2k_per_w": {
+          "name": "exterior_resistance_m2k_per_w",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "surface_resistance_element_category_unique": {
+          "name": "surface_resistance_element_category_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "element_category"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.building": {
+      "name": "building",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "location": {
+          "name": "location",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "climate_region_id": {
+          "name": "climate_region_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "building_type": {
+          "name": "building_type",
+          "type": "building_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'other'"
+        },
+        "year_built": {
+          "name": "year_built",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "building_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'not_started'"
+        },
+        "deadline": {
+          "name": "deadline",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "latitude": {
+          "name": "latitude",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "longitude": {
+          "name": "longitude",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "net_cooled_floor_area_m2": {
+          "name": "net_cooled_floor_area_m2",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "heating_season_duration_days": {
+          "name": "heating_season_duration_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "indoor_temp_non_operation_c": {
+          "name": "indoor_temp_non_operation_c",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "indoor_temp_operation_c": {
+          "name": "indoor_temp_operation_c",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outdoor_avg_heating_season_temp_c": {
+          "name": "outdoor_avg_heating_season_temp_c",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "outdoor_design_temp_c": {
+          "name": "outdoor_design_temp_c",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "non_operation_hours_per_day": {
+          "name": "non_operation_hours_per_day",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "operation_hours_per_day": {
+          "name": "operation_hours_per_day",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "occupant_count": {
+          "name": "occupant_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "cooling_enthalpy_inside_kj_kg": {
+          "name": "cooling_enthalpy_inside_kj_kg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cooling_enthalpy_outside_kj_kg": {
+          "name": "cooling_enthalpy_outside_kj_kg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cooling_enthalpy_hottest_day_kj_kg": {
+          "name": "cooling_enthalpy_hottest_day_kj_kg",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "building_user_id_idx": {
+          "name": "building_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "building_user_id_user_id_fk": {
+          "name": "building_user_id_user_id_fk",
+          "tableFrom": "building",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "building_climate_region_id_climate_region_id_fk": {
+          "name": "building_climate_region_id_climate_region_id_fk",
+          "tableFrom": "building",
+          "tableTo": "climate_region",
+          "columnsFrom": [
+            "climate_region_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.building_block": {
+      "name": "building_block",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "footprint_length_m": {
+          "name": "footprint_length_m",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "footprint_width_m": {
+          "name": "footprint_width_m",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "number_of_floors": {
+          "name": "number_of_floors",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "floor_to_floor_height_m": {
+          "name": "floor_to_floor_height_m",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "perimeter_m": {
+          "name": "perimeter_m",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "perimeter_loss_coefficient": {
+          "name": "perimeter_loss_coefficient",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0.4
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "building_block_building_id_building_id_fk": {
+          "name": "building_block_building_id_building_id_fk",
+          "tableFrom": "building_block",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.construction_layer": {
+      "name": "construction_layer",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "construction_type_id": {
+          "name": "construction_type_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "layer_order": {
+          "name": "layer_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "material_id": {
+          "name": "material_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "thickness_m": {
+          "name": "thickness_m",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "construction_layer_construction_type_id_construction_type_id_fk": {
+          "name": "construction_layer_construction_type_id_construction_type_id_fk",
+          "tableFrom": "construction_layer",
+          "tableTo": "construction_type",
+          "columnsFrom": [
+            "construction_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "construction_layer_material_id_material_id_fk": {
+          "name": "construction_layer_material_id_material_id_fk",
+          "tableFrom": "construction_layer",
+          "tableTo": "material",
+          "columnsFrom": [
+            "material_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.construction_type": {
+      "name": "construction_type",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "element_category": {
+          "name": "element_category",
+          "type": "envelope_element_category",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scenario": {
+          "name": "scenario",
+          "type": "scenario",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'before'"
+        },
+        "retrofit_of_id": {
+          "name": "retrofit_of_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "construction_type_building_id_building_id_fk": {
+          "name": "construction_type_building_id_building_id_fk",
+          "tableFrom": "construction_type",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "construction_type_retrofit_of_id_construction_type_id_fk": {
+          "name": "construction_type_retrofit_of_id_construction_type_id_fk",
+          "tableFrom": "construction_type",
+          "tableTo": "construction_type",
+          "columnsFrom": [
+            "retrofit_of_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.envelope_element": {
+      "name": "envelope_element",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "block_name": {
+          "name": "block_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orientation": {
+          "name": "orientation",
+          "type": "orientation",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "side_code": {
+          "name": "side_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "construction_type_id": {
+          "name": "construction_type_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "length_m": {
+          "name": "length_m",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "height_env_contact_m": {
+          "name": "height_env_contact_m",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "height_ground_contact_m": {
+          "name": "height_ground_contact_m",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "envelope_element_building_id_building_id_fk": {
+          "name": "envelope_element_building_id_building_id_fk",
+          "tableFrom": "envelope_element",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "envelope_element_construction_type_id_construction_type_id_fk": {
+          "name": "envelope_element_construction_type_id_construction_type_id_fk",
+          "tableFrom": "envelope_element",
+          "tableTo": "construction_type",
+          "columnsFrom": [
+            "construction_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.envelope_opening": {
+      "name": "envelope_opening",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "envelope_element_id": {
+          "name": "envelope_element_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opening_type_id": {
+          "name": "opening_type_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "envelope_opening_envelope_element_id_envelope_element_id_fk": {
+          "name": "envelope_opening_envelope_element_id_envelope_element_id_fk",
+          "tableFrom": "envelope_opening",
+          "tableTo": "envelope_element",
+          "columnsFrom": [
+            "envelope_element_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "envelope_opening_opening_type_id_opening_type_id_fk": {
+          "name": "envelope_opening_opening_type_id_opening_type_id_fk",
+          "tableFrom": "envelope_opening",
+          "tableTo": "opening_type",
+          "columnsFrom": [
+            "opening_type_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.opening_type": {
+      "name": "opening_type",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "opening_category",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scenario": {
+          "name": "scenario",
+          "type": "scenario",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'before'"
+        },
+        "retrofit_of_id": {
+          "name": "retrofit_of_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "u_value_w_m2k": {
+          "name": "u_value_w_m2k",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "width_m": {
+          "name": "width_m",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "height_m": {
+          "name": "height_m",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "g_value": {
+          "name": "g_value",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "frame_factor": {
+          "name": "frame_factor",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "shading_factor": {
+          "name": "shading_factor",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "opening_type_building_id_building_id_fk": {
+          "name": "opening_type_building_id_building_id_fk",
+          "tableFrom": "opening_type",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "opening_type_retrofit_of_id_opening_type_id_fk": {
+          "name": "opening_type_retrofit_of_id_opening_type_id_fk",
+          "tableFrom": "opening_type",
+          "tableTo": "opening_type",
+          "columnsFrom": [
+            "retrofit_of_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.ventilation_system": {
+      "name": "ventilation_system",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scenario": {
+          "name": "scenario",
+          "type": "scenario",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "system_type": {
+          "name": "system_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "air_change_rate_per_hour": {
+          "name": "air_change_rate_per_hour",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fresh_air_per_person_m3h": {
+          "name": "fresh_air_per_person_m3h",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "heat_recovery_efficiency": {
+          "name": "heat_recovery_efficiency",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "fan_electrical_power_kw": {
+          "name": "fan_electrical_power_kw",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cooling_season_hours": {
+          "name": "cooling_season_hours",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "ventilation_system_building_id_building_id_fk": {
+          "name": "ventilation_system_building_id_building_id_fk",
+          "tableFrom": "ventilation_system",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.dhw_source": {
+      "name": "dhw_source",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scenario": {
+          "name": "scenario",
+          "type": "scenario",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_name": {
+          "name": "source_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "energy_carrier": {
+          "name": "energy_carrier",
+          "type": "energy_carrier",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "specific_consumption_l_person_day": {
+          "name": "specific_consumption_l_person_day",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "persons_served": {
+          "name": "persons_served",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "dhw_source_building_id_building_id_fk": {
+          "name": "dhw_source_building_id_building_id_fk",
+          "tableFrom": "dhw_source",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.distribution_system": {
+      "name": "distribution_system",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "system_type": {
+          "name": "system_type",
+          "type": "distribution_system_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scenario": {
+          "name": "scenario",
+          "type": "scenario",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "pipe_diameter_class": {
+          "name": "pipe_diameter_class",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "length_m": {
+          "name": "length_m",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "insulated_fraction": {
+          "name": "insulated_fraction",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "mean_fluid_temp_c": {
+          "name": "mean_fluid_temp_c",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "distribution_system_building_id_building_id_fk": {
+          "name": "distribution_system_building_id_building_id_fk",
+          "tableFrom": "distribution_system",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.equipment_item": {
+      "name": "equipment_item",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scenario": {
+          "name": "scenario",
+          "type": "scenario",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "unit_power_kw": {
+          "name": "unit_power_kw",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "heating_season_hours": {
+          "name": "heating_season_hours",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "cooling_season_hours": {
+          "name": "cooling_season_hours",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "heating_utilization_factor": {
+          "name": "heating_utilization_factor",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "cooling_utilization_factor": {
+          "name": "cooling_utilization_factor",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "equipment_item_building_id_building_id_fk": {
+          "name": "equipment_item_building_id_building_id_fk",
+          "tableFrom": "equipment_item",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.lighting_zone": {
+      "name": "lighting_zone",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scenario": {
+          "name": "scenario",
+          "type": "scenario",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "area_m2": {
+          "name": "area_m2",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "technology_mix": {
+          "name": "technology_mix",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "utilization_factor": {
+          "name": "utilization_factor",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "lighting_zone_building_id_building_id_fk": {
+          "name": "lighting_zone_building_id_building_id_fk",
+          "tableFrom": "lighting_zone",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.cooling_system": {
+      "name": "cooling_system",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scenario": {
+          "name": "scenario",
+          "type": "scenario",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "seer": {
+          "name": "seer",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "cooling_system_building_id_building_id_fk": {
+          "name": "cooling_system_building_id_building_id_fk",
+          "tableFrom": "cooling_system",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.cooling_window": {
+      "name": "cooling_window",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scenario": {
+          "name": "scenario",
+          "type": "scenario",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orientation": {
+          "name": "orientation",
+          "type": "orientation",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "area_m2": {
+          "name": "area_m2",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "g_value": {
+          "name": "g_value",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shading_factor": {
+          "name": "shading_factor",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "cooling_window_building_id_building_id_fk": {
+          "name": "cooling_window_building_id_building_id_fk",
+          "tableFrom": "cooling_window",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.generation_source": {
+      "name": "generation_source",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_use": {
+          "name": "end_use",
+          "type": "end_use",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "scenario": {
+          "name": "scenario",
+          "type": "scenario",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_type": {
+          "name": "source_type",
+          "type": "generation_source_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "efficiency_or_seer": {
+          "name": "efficiency_or_seer",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "share_of_demand": {
+          "name": "share_of_demand",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "generation_source_building_id_building_id_fk": {
+          "name": "generation_source_building_id_building_id_fk",
+          "tableFrom": "generation_source",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.renewable_production_monthly": {
+      "name": "renewable_production_monthly",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "renewable_system_id": {
+          "name": "renewable_system_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "month": {
+          "name": "month",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "production_kwh": {
+          "name": "production_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "renewable_production_monthly_renewable_system_id_renewable_system_id_fk": {
+          "name": "renewable_production_monthly_renewable_system_id_renewable_system_id_fk",
+          "tableFrom": "renewable_production_monthly",
+          "tableTo": "renewable_system",
+          "columnsFrom": [
+            "renewable_system_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.renewable_system": {
+      "name": "renewable_system",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "system_type": {
+          "name": "system_type",
+          "type": "renewable_system_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "capacity_kw": {
+          "name": "capacity_kw",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "collector_count": {
+          "name": "collector_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "available_area_m2": {
+          "name": "available_area_m2",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit_cost_usd": {
+          "name": "unit_cost_usd",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "renewable_system_building_id_building_id_fk": {
+          "name": "renewable_system_building_id_building_id_fk",
+          "tableFrom": "renewable_system",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.shading_element": {
+      "name": "shading_element",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orientation": {
+          "name": "orientation",
+          "type": "orientation",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shading_factor": {
+          "name": "shading_factor",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit_cost_usd": {
+          "name": "unit_cost_usd",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "shading_element_building_id_building_id_fk": {
+          "name": "shading_element_building_id_building_id_fk",
+          "tableFrom": "shading_element",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.energy_measure": {
+      "name": "energy_measure",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "measure_category",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "investment_cost_usd": {
+          "name": "investment_cost_usd",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lifetime_years": {
+          "name": "lifetime_years",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 20
+        },
+        "maintenance_cost_percent": {
+          "name": "maintenance_cost_percent",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "proposed_for_implementation": {
+          "name": "proposed_for_implementation",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "source_sheet_ref": {
+          "name": "source_sheet_ref",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "energy_measure_building_id_building_id_fk": {
+          "name": "energy_measure_building_id_building_id_fk",
+          "tableFrom": "energy_measure",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.non_ee_measure": {
+      "name": "non_ee_measure",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit": {
+          "name": "unit",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
+        "unit_cost_usd": {
+          "name": "unit_cost_usd",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "non_ee_measure_building_id_building_id_fk": {
+          "name": "non_ee_measure_building_id_building_id_fk",
+          "tableFrom": "non_ee_measure",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.energy_tariff": {
+      "name": "energy_tariff",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "energy_carrier": {
+          "name": "energy_carrier",
+          "type": "energy_carrier",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit_cost_local": {
+          "name": "unit_cost_local",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit_cost_usd": {
+          "name": "unit_cost_usd",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "emission_factor_kg_co2_per_kwh": {
+          "name": "emission_factor_kg_co2_per_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "primary_energy_factor": {
+          "name": "primary_energy_factor",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "exchange_rate_local_per_usd": {
+          "name": "exchange_rate_local_per_usd",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "effective_date": {
+          "name": "effective_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.utility_bill": {
+      "name": "utility_bill",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "energy_carrier": {
+          "name": "energy_carrier",
+          "type": "energy_carrier",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "year": {
+          "name": "year",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "month": {
+          "name": "month",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "consumption_native": {
+          "name": "consumption_native",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "consumption_kwh": {
+          "name": "consumption_kwh",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "expense_local": {
+          "name": "expense_local",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tariff_local": {
+          "name": "tariff_local",
+          "type": "numeric",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "utility_bill_building_id_building_id_fk": {
+          "name": "utility_bill_building_id_building_id_fk",
+          "tableFrom": "utility_bill",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "utility_bill_building_id_energy_carrier_year_month_unique": {
+          "name": "utility_bill_building_id_energy_carrier_year_month_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "building_id",
+            "energy_carrier",
+            "year",
+            "month"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.audit_run": {
+      "name": "audit_run",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "triggered_by_user_id": {
+          "name": "triggered_by_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "audit_run_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "report_r2_key": {
+          "name": "report_r2_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error_message": {
+          "name": "error_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "audit_run_building_id_idx": {
+          "name": "audit_run_building_id_idx",
+          "columns": [
+            {
+              "expression": "building_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "audit_run_building_id_building_id_fk": {
+          "name": "audit_run_building_id_building_id_fk",
+          "tableFrom": "audit_run",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "audit_run_triggered_by_user_id_user_id_fk": {
+          "name": "audit_run_triggered_by_user_id_user_id_fk",
+          "tableFrom": "audit_run",
+          "tableTo": "user",
+          "columnsFrom": [
+            "triggered_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.building_member": {
+      "name": "building_member",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "building_member_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "invited_by_user_id": {
+          "name": "invited_by_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "building_member_user_id_idx": {
+          "name": "building_member_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "building_member_building_id_building_id_fk": {
+          "name": "building_member_building_id_building_id_fk",
+          "tableFrom": "building_member",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "building_member_user_id_user_id_fk": {
+          "name": "building_member_user_id_user_id_fk",
+          "tableFrom": "building_member",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "building_member_invited_by_user_id_user_id_fk": {
+          "name": "building_member_invited_by_user_id_user_id_fk",
+          "tableFrom": "building_member",
+          "tableTo": "user",
+          "columnsFrom": [
+            "invited_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "building_member_building_id_user_id_unique": {
+          "name": "building_member_building_id_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "building_id",
+            "user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.notification": {
+      "name": "notification",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "link_url": {
+          "name": "link_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "is_read": {
+          "name": "is_read",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "notification_user_created_at_idx": {
+          "name": "notification_user_created_at_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "notification_user_id_user_id_fk": {
+          "name": "notification_user_id_user_id_fk",
+          "tableFrom": "notification",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.conversation": {
+      "name": "conversation",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "type": {
+          "name": "type",
+          "type": "conversation_type",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "conversation_created_by_user_id_fk": {
+          "name": "conversation_created_by_user_id_fk",
+          "tableFrom": "conversation",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.conversation_member": {
+      "name": "conversation_member",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "conversation_member_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'member'"
+        },
+        "joined_at": {
+          "name": "joined_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "last_read_at": {
+          "name": "last_read_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "conversation_member_conversation_id_conversation_id_fk": {
+          "name": "conversation_member_conversation_id_conversation_id_fk",
+          "tableFrom": "conversation_member",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "conversation_member_user_id_user_id_fk": {
+          "name": "conversation_member_user_id_user_id_fk",
+          "tableFrom": "conversation_member",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "conversation_member_conversation_id_user_id_unique": {
+          "name": "conversation_member_conversation_id_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "conversation_id",
+            "user_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.message": {
+      "name": "message",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "conversation_id": {
+          "name": "conversation_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sender_id": {
+          "name": "sender_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reply_to_id": {
+          "name": "reply_to_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "edited_at": {
+          "name": "edited_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attachment_url": {
+          "name": "attachment_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attachment_name": {
+          "name": "attachment_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attachment_mime_type": {
+          "name": "attachment_mime_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "attachment_size_bytes": {
+          "name": "attachment_size_bytes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "message_conversation_created_at_idx": {
+          "name": "message_conversation_created_at_idx",
+          "columns": [
+            {
+              "expression": "conversation_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "message_conversation_id_conversation_id_fk": {
+          "name": "message_conversation_id_conversation_id_fk",
+          "tableFrom": "message",
+          "tableTo": "conversation",
+          "columnsFrom": [
+            "conversation_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "message_sender_id_user_id_fk": {
+          "name": "message_sender_id_user_id_fk",
+          "tableFrom": "message",
+          "tableTo": "user",
+          "columnsFrom": [
+            "sender_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "message_reply_to_id_message_id_fk": {
+          "name": "message_reply_to_id_message_id_fk",
+          "tableFrom": "message",
+          "tableTo": "message",
+          "columnsFrom": [
+            "reply_to_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.report_annotation": {
+      "name": "report_annotation",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "building_id": {
+          "name": "building_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "section_key": {
+          "name": "section_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by_user_id": {
+          "name": "created_by_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "report_annotation_building_id_building_id_fk": {
+          "name": "report_annotation_building_id_building_id_fk",
+          "tableFrom": "report_annotation",
+          "tableTo": "building",
+          "columnsFrom": [
+            "building_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "report_annotation_created_by_user_id_user_id_fk": {
+          "name": "report_annotation_created_by_user_id_user_id_fk",
+          "tableFrom": "report_annotation",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "report_annotation_building_id_section_key_unique": {
+          "name": "report_annotation_building_id_section_key_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "building_id",
+            "section_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.audit_run_status": {
+      "name": "audit_run_status",
+      "schema": "public",
+      "values": [
+        "pending",
+        "running",
+        "completed",
+        "failed"
+      ]
+    },
+    "public.building_member_role": {
+      "name": "building_member_role",
+      "schema": "public",
+      "values": [
+        "editor",
+        "viewer"
+      ]
+    },
+    "public.building_status": {
+      "name": "building_status",
+      "schema": "public",
+      "values": [
+        "not_started",
+        "in_progress",
+        "completed",
+        "on_hold"
+      ]
+    },
+    "public.building_type": {
+      "name": "building_type",
+      "schema": "public",
+      "values": [
+        "residential_mfh",
+        "residential_sfh",
+        "office",
+        "school",
+        "kindergarten",
+        "hospital",
+        "administrative",
+        "other"
+      ]
+    },
+    "public.distribution_system_type": {
+      "name": "distribution_system_type",
+      "schema": "public",
+      "values": [
+        "heating",
+        "dhw"
+      ]
+    },
+    "public.end_use": {
+      "name": "end_use",
+      "schema": "public",
+      "values": [
+        "heating",
+        "dhw",
+        "cooling"
+      ]
+    },
+    "public.energy_carrier": {
+      "name": "energy_carrier",
+      "schema": "public",
+      "values": [
+        "gas",
+        "electricity",
+        "district_heat",
+        "coal"
+      ]
+    },
+    "public.envelope_element_category": {
+      "name": "envelope_element_category",
+      "schema": "public",
+      "values": [
+        "external_wall",
+        "socle_heated",
+        "socle_unheated",
+        "socle_ground",
+        "roof",
+        "floor"
+      ]
+    },
+    "public.generation_source_type": {
+      "name": "generation_source_type",
+      "schema": "public",
+      "values": [
+        "gas_boiler",
+        "electric_boiler",
+        "district_heating",
+        "solar_dhw",
+        "split_ac",
+        "centralized_ac",
+        "heat_pump",
+        "other"
+      ]
+    },
+    "public.measure_category": {
+      "name": "measure_category",
+      "schema": "public",
+      "values": [
+        "envelope_wall_insulation",
+        "envelope_roof_insulation",
+        "envelope_floor_insulation",
+        "window_replacement",
+        "heating_system",
+        "gas_boiler_replacement",
+        "mechanical_ventilation_heat_recovery",
+        "lighting",
+        "equipment_replacement",
+        "pv",
+        "solar_dhw",
+        "ems",
+        "other"
+      ]
+    },
+    "public.opening_category": {
+      "name": "opening_category",
+      "schema": "public",
+      "values": [
+        "window",
+        "door"
+      ]
+    },
+    "public.orientation": {
+      "name": "orientation",
+      "schema": "public",
+      "values": [
+        "north",
+        "south",
+        "east",
+        "west",
+        "northeast",
+        "northwest",
+        "southeast",
+        "southwest",
+        "horizontal"
+      ]
+    },
+    "public.renewable_system_type": {
+      "name": "renewable_system_type",
+      "schema": "public",
+      "values": [
+        "pv",
+        "solar_dhw"
+      ]
+    },
+    "public.scenario": {
+      "name": "scenario",
+      "schema": "public",
+      "values": [
+        "before",
+        "after"
+      ]
+    },
+    "public.user_role": {
+      "name": "user_role",
+      "schema": "public",
+      "values": [
+        "admin",
+        "auditor",
+        "viewer"
+      ]
+    },
+    "public.conversation_member_role": {
+      "name": "conversation_member_role",
+      "schema": "public",
+      "values": [
+        "owner",
+        "member"
+      ]
+    },
+    "public.conversation_type": {
+      "name": "conversation_type",
+      "schema": "public",
+      "values": [
+        "direct",
+        "group"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

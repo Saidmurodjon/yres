@@ -1,48 +1,56 @@
 import { relations } from "drizzle-orm";
-import { date, integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { date, index, integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 import { climateRegion } from "./climate";
 import { buildingStatusEnum, buildingTypeEnum } from "./enums";
 
-export const building = pgTable("building", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  location: text("location").notNull(),
-  climateRegionId: uuid("climate_region_id")
-    .notNull()
-    .references(() => climateRegion.id),
-  buildingType: buildingTypeEnum("building_type").notNull().default("other"),
-  yearBuilt: integer("year_built"),
-  status: buildingStatusEnum("status").notNull().default("not_started"),
-  deadline: date("deadline"),
-  /** Optional — additive to `location`'s free-text region string, doesn't replace it (dashboard.md). Used for the PDF report's coordinates line + static map (docs/report-redesign-proposal.md §7). */
-  latitude: numeric("latitude", { mode: "number" }),
-  longitude: numeric("longitude", { mode: "number" }),
+export const building = pgTable(
+  "building",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    location: text("location").notNull(),
+    climateRegionId: uuid("climate_region_id")
+      .notNull()
+      .references(() => climateRegion.id),
+    buildingType: buildingTypeEnum("building_type").notNull().default("other"),
+    yearBuilt: integer("year_built"),
+    status: buildingStatusEnum("status").notNull().default("not_started"),
+    deadline: date("deadline"),
+    /** Optional — additive to `location`'s free-text region string, doesn't replace it (dashboard.md). Used for the PDF report's coordinates line + static map (docs/report-redesign-proposal.md §7). */
+    latitude: numeric("latitude", { mode: "number" }),
+    longitude: numeric("longitude", { mode: "number" }),
 
-  // Building_data sheet
-  netCooledFloorAreaM2: numeric("net_cooled_floor_area_m2", { mode: "number" }).default(0),
-  heatingSeasonDurationDays: integer("heating_season_duration_days").notNull(),
-  indoorTempNonOperationC: numeric("indoor_temp_non_operation_c", { mode: "number" }).notNull(),
-  indoorTempOperationC: numeric("indoor_temp_operation_c", { mode: "number" }).notNull(),
-  outdoorAvgHeatingSeasonTempC: numeric("outdoor_avg_heating_season_temp_c", {
-    mode: "number",
-  }).notNull(),
-  outdoorDesignTempC: numeric("outdoor_design_temp_c", { mode: "number" }).notNull(),
-  nonOperationHoursPerDay: numeric("non_operation_hours_per_day", { mode: "number" }).notNull(),
-  operationHoursPerDay: numeric("operation_hours_per_day", { mode: "number" }).notNull(),
-  occupantCount: integer("occupant_count").notNull().default(0),
-  coolingEnthalpyInsideKjKg: numeric("cooling_enthalpy_inside_kj_kg", { mode: "number" }),
-  coolingEnthalpyOutsideKjKg: numeric("cooling_enthalpy_outside_kj_kg", { mode: "number" }),
-  coolingEnthalpyHottestDayKjKg: numeric("cooling_enthalpy_hottest_day_kj_kg", {
-    mode: "number",
-  }),
+    // Building_data sheet
+    netCooledFloorAreaM2: numeric("net_cooled_floor_area_m2", { mode: "number" }).default(0),
+    heatingSeasonDurationDays: integer("heating_season_duration_days").notNull(),
+    indoorTempNonOperationC: numeric("indoor_temp_non_operation_c", {
+      mode: "number",
+    }).notNull(),
+    indoorTempOperationC: numeric("indoor_temp_operation_c", { mode: "number" }).notNull(),
+    outdoorAvgHeatingSeasonTempC: numeric("outdoor_avg_heating_season_temp_c", {
+      mode: "number",
+    }).notNull(),
+    outdoorDesignTempC: numeric("outdoor_design_temp_c", { mode: "number" }).notNull(),
+    nonOperationHoursPerDay: numeric("non_operation_hours_per_day", {
+      mode: "number",
+    }).notNull(),
+    operationHoursPerDay: numeric("operation_hours_per_day", { mode: "number" }).notNull(),
+    occupantCount: integer("occupant_count").notNull().default(0),
+    coolingEnthalpyInsideKjKg: numeric("cooling_enthalpy_inside_kj_kg", { mode: "number" }),
+    coolingEnthalpyOutsideKjKg: numeric("cooling_enthalpy_outside_kj_kg", { mode: "number" }),
+    coolingEnthalpyHottestDayKjKg: numeric("cooling_enthalpy_hottest_day_kj_kg", {
+      mode: "number",
+    }),
 
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [index("building_user_id_idx").on(table.userId)],
+);
 
 export const buildingBlock = pgTable("building_block", {
   id: uuid("id").primaryKey().defaultRandom(),

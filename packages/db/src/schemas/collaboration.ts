@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { index, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 import { building } from "./buildings";
 import { buildingMemberRoleEnum } from "./enums";
@@ -20,7 +20,10 @@ export const buildingMember = pgTable(
       .references(() => user.id),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
-  (table) => [unique().on(table.buildingId, table.userId)],
+  (table) => [
+    unique().on(table.buildingId, table.userId),
+    index("building_member_user_id_idx").on(table.userId),
+  ],
 );
 
 export const buildingMemberRelations = relations(buildingMember, ({ one }) => ({

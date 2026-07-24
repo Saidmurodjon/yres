@@ -1471,6 +1471,38 @@ rejimiga o'tadi); tahrirlash rejimi → `Textarea` + Saqlash/Bekor qilish. `cons
 va `results.tsx`ga (har bir energiya-balans bo'limi jadvali ostida) ulandi. `common.json`ga uch
 tilda yangi kalitlar qo'shildi (`auditorNote`/`auditorNotePlaceholder`/`addNote`).
 
+## Joriy sessiya: tezlik/masshtablanish tuzatishlari (5 bosqich)
+
+Loyiha egasi platformaning sekinlashayotganini va Neon bazaning yirik platforma uchun
+yetarliligini so'radi. 3 ta Explore agent bilan tekshiruv shuni ko'rsatdi: Neon'ning o'zi
+cheklov emas (hajm/jadval soni bo'yicha masshtabga mos), muammo besh aniq joyda — yo'q
+indekslar, `runFullAudit()`ning ~20 ketma-ket DB so'rovi, `chat.ts`dagi haqiqiy N+1,
+dashboard/buildings'ning to'liq client-side pagination'i, va ma'lumotnoma jadvallarida
+keshning yo'qligi. To'liq reja `EnterPlanMode` orqali tuzilib tasdiqlandi (5 mustaqil
+bosqich, har biri alohida commit qilinadi).
+
+### 1-bosqich: Yo'q indekslarni qo'shish (tugallandi)
+
+`packages/db/src/schemas/buildings.ts` (`building`), `audits.ts` (`auditRun`),
+`collaboration.ts` (`buildingMember`) — uchalasi ham mavjud `index()` andozasiga
+(`chat.ts`dagi `message_conversation_created_at_idx`) ko'ra 3-argumentli `pgTable`
+shakliga o'tkazildi:
+- `building_user_id_idx` — `building.userId` (buildings ro'yxati route'ining eng ko'p
+  ishlatiladigan filtri, hech qanday indeks bo'lmagan).
+- `audit_run_building_id_idx` — `auditRun.buildingId` (audit tarixi so'rovlarida
+  filtrlanadi, umuman indeks yo'q edi).
+- `building_member_user_id_idx` — `buildingMember.userId` (mavjud
+  `unique(buildingId, userId)`ning faqat ikkinchi ustuni bo'lgani uchun yakka `userId`
+  qidiruvi buni samarali ishlata olmasdi).
+
+Migratsiya `packages/db/drizzle/0008_rare_roxanne_simpson.sql` generatsiya qilindi
+(`DATABASE_URL` haqiqiy ulanishsiz, faqat o'rnatilgan holda — `database.md`ga ko'ra) va
+uchta `CREATE INDEX` bayonotidan iborat ekani qo'lda tasdiqlandi. Tekshirildi:
+`bun run --cwd packages/db type-check`, `bunx biome check --write` (formatlash avtomatik
+tuzatildi). **Haqiqiy bazaga qo'llash bu sessiyada qilinmadi** — sandbox'da na lokal
+Postgres, na haqiqiy Neon `DATABASE_URL` bor; migratsiyani production'ga qo'llash
+foydalanuvchi tomonidan deploy vaqtida amalga oshirilishi kerak.
+
 **Haqiqiy tekshiruv**: lokal `.dev.vars` Neon bazasida `0006` migratsiyasi hali qo'llanilmagan
 edi — `database.md`dagi qo'lda-qo'llash tartibi (`pg` Client, non-pooler host, tranzaksiya,
 `drizzle.__drizzle_migrations`ga hash+timestamp yozish) bilan qo'llandi. Keyin **haqiqiy
