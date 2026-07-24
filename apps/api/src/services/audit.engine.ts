@@ -1,6 +1,6 @@
 import {
-  LAMP_TYPE_NAMES,
   type Database,
+  LAMP_TYPE_NAMES,
   building,
   constructionType,
   coolingSystem,
@@ -55,7 +55,6 @@ import {
   type PipeSegmentInput,
   calculateDistributionLoss,
 } from "./distribution.service";
-import { type EquipmentItemInput, calculateEquipmentResult } from "./equipment.service";
 import {
   type BuildingBlockInput,
   type ConstructionTypeUValueInput,
@@ -66,6 +65,7 @@ import {
   getEffectiveOpeningType,
   resolveHeatLossGroups,
 } from "./envelope.service";
+import { type EquipmentItemInput, calculateEquipmentResult } from "./equipment.service";
 import {
   ENERGY_ESCALATION_RATES,
   calculateCo2ReductionTonnesPerYear,
@@ -117,10 +117,60 @@ const ORIENTATION_GROUP_BY_ENUM: Record<string, SolarOrientationGroup> = {
  * is persisted — every run recomputes from the building's stored inputs.
  */
 export async function runFullAudit(db: Database, buildingId: string): Promise<AuditResult> {
-  const buildingRecord = await db.query.building.findFirst({
-    where: eq(building.id, buildingId),
-    with: { climateRegion: { with: { monthlyNormals: true } }, blocks: true },
-  });
+  // Every one of these depends only on `buildingId` (or nothing, for the 4
+  // reference tables) — none depends on another's result — so they run as a
+  // single batch instead of ~16 sequential round trips against the Neon
+  // HTTP driver, which has no persistent connection to amortize that cost
+  // over.
+  const [
+    buildingRecord,
+    elementRows,
+    constructionTypeRows,
+    openingTypeRows,
+    surfaceResistanceRows,
+    ventilationSystemRows,
+    coolingWindowRows,
+    coolingSystemRows,
+    dhwSourceRows,
+    distributionSystemRows,
+    pipeLossReferenceRows,
+    generationSourceRows,
+    lightingZoneRows,
+    lampTypeRows,
+    equipmentItemRows,
+    renewableSystemRows,
+  ] = await Promise.all([
+    db.query.building.findFirst({
+      where: eq(building.id, buildingId),
+      with: { climateRegion: { with: { monthlyNormals: true } }, blocks: true },
+    }),
+    db.query.envelopeElement.findMany({
+      where: eq(envelopeElement.buildingId, buildingId),
+      with: { openings: { with: { openingType: true } } },
+    }),
+    db.query.constructionType.findMany({
+      where: eq(constructionType.buildingId, buildingId),
+      with: { layers: { with: { material: true } } },
+    }),
+    db.query.openingType.findMany({ where: eq(openingType.buildingId, buildingId) }),
+    db.select().from(surfaceResistance),
+    db.query.ventilationSystem.findMany({ where: eq(ventilationSystem.buildingId, buildingId) }),
+    db.query.coolingWindow.findMany({ where: eq(coolingWindow.buildingId, buildingId) }),
+    db.query.coolingSystem.findMany({ where: eq(coolingSystem.buildingId, buildingId) }),
+    db.query.dhwSource.findMany({ where: eq(dhwSource.buildingId, buildingId) }),
+    db.query.distributionSystem.findMany({
+      where: eq(distributionSystem.buildingId, buildingId),
+    }),
+    db.select().from(pipeLossReference),
+    db.query.generationSource.findMany({ where: eq(generationSource.buildingId, buildingId) }),
+    db.query.lightingZone.findMany({ where: eq(lightingZone.buildingId, buildingId) }),
+    db.select().from(lampType),
+    db.query.equipmentItem.findMany({ where: eq(equipmentItem.buildingId, buildingId) }),
+    db.query.renewableSystem.findMany({
+      where: eq(renewableSystem.buildingId, buildingId),
+      with: { monthlyProduction: true },
+    }),
+  ]);
   if (!buildingRecord) throw new Error(`Building ${buildingId} not found`);
 
   const buildingParams: HeatLossBuildingParams = {
@@ -161,19 +211,6 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     }));
 
   // --- Envelope ---
-  const [elementRows, constructionTypeRows, openingTypeRows] = await Promise.all([
-    db.query.envelopeElement.findMany({
-      where: eq(envelopeElement.buildingId, buildingId),
-      with: { openings: { with: { openingType: true } } },
-    }),
-    db.query.constructionType.findMany({
-      where: eq(constructionType.buildingId, buildingId),
-      with: { layers: { with: { material: true } } },
-    }),
-    db.query.openingType.findMany({ where: eq(openingType.buildingId, buildingId) }),
-  ]);
-
-  const surfaceResistanceRows = await db.select().from(surfaceResistance);
   const surfaceResistanceByCategory = new Map(
     surfaceResistanceRows.map((r) => [
       r.elementCategory,
@@ -234,27 +271,7 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
 
   const envelopeAreas = calculateEnvelopeAreas(envelopeElementInputs);
 
-  // --- Ventilation ---
-  const ventilationSystemRows = await db.query.ventilationSystem.findMany({
-    where: eq(ventilationSystem.buildingId, buildingId),
-  });
-
-  // --- Cooling ---
-  const [coolingWindowRows, coolingSystemRows] = await Promise.all([
-    db.query.coolingWindow.findMany({ where: eq(coolingWindow.buildingId, buildingId) }),
-    db.query.coolingSystem.findMany({ where: eq(coolingSystem.buildingId, buildingId) }),
-  ]);
-
-  // --- DHW ---
-  const dhwSourceRows = await db.query.dhwSource.findMany({
-    where: eq(dhwSource.buildingId, buildingId),
-  });
-
   // --- Distribution ---
-  const distributionSystemRows = await db.query.distributionSystem.findMany({
-    where: eq(distributionSystem.buildingId, buildingId),
-  });
-  const pipeLossReferenceRows = await db.select().from(pipeLossReference);
   const pipeLossReferenceInputs: PipeLossReferenceRow[] = pipeLossReferenceRows.map((r) => ({
     diameterClass: r.diameterClass,
     insulated: r.insulated === "insulated",
@@ -262,16 +279,7 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     maxHeatFluxWPerM: r.maxHeatFluxWPerM,
   }));
 
-  // --- Generation ---
-  const generationSourceRows = await db.query.generationSource.findMany({
-    where: eq(generationSource.buildingId, buildingId),
-  });
-
   // --- Lighting ---
-  const lightingZoneRows = await db.query.lightingZone.findMany({
-    where: eq(lightingZone.buildingId, buildingId),
-  });
-  const lampTypeRows = await db.select().from(lampType);
   const lampPowerDensityByName = new Map(lampTypeRows.map((l) => [l.name, l.powerDensityWPerM2]));
   const lampPowerDensity: LampPowerDensityWPerM2 = {
     incandescent: lampPowerDensityByName.get(LAMP_TYPE_NAMES.incandescent) ?? 0,
@@ -281,18 +289,9 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     led: lampPowerDensityByName.get(LAMP_TYPE_NAMES.led) ?? 0,
   };
 
-  // --- Equipment ---
-  const equipmentItemRows = await db.query.equipmentItem.findMany({
-    where: eq(equipmentItem.buildingId, buildingId),
-  });
-
   // --- Renewables (PV / Solar DHW) — not scenario-tagged: these represent a
   // proposed addition, so their production only ever offsets the "after"
   // scenario's totals (see buildAuditSummary).
-  const renewableSystemRows = await db.query.renewableSystem.findMany({
-    where: eq(renewableSystem.buildingId, buildingId),
-    with: { monthlyProduction: true },
-  });
   const renewableProduction = calculateRenewableProduction(
     renewableSystemRows.map(
       (r): RenewableSystemInput => ({
@@ -613,8 +612,10 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     energyBalanceBreakdown.push({
       category,
       section: "envelope_ventilation_loss",
-      beforeKwh: envelopeHeatLoss.find((e) => e.scenario === "before")?.annualByCategory[category] ?? 0,
-      afterKwh: envelopeHeatLoss.find((e) => e.scenario === "after")?.annualByCategory[category] ?? 0,
+      beforeKwh:
+        envelopeHeatLoss.find((e) => e.scenario === "before")?.annualByCategory[category] ?? 0,
+      afterKwh:
+        envelopeHeatLoss.find((e) => e.scenario === "after")?.annualByCategory[category] ?? 0,
     });
   }
   energyBalanceBreakdown.push({
@@ -672,14 +673,20 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
   // less depending on how the model over/under-shoots reality for that fuel.
   const theoreticalBeforeKwhByCarrier = new Map<string, number>();
   const addTheoretical = (carrier: string, kwh: number) => {
-    theoreticalBeforeKwhByCarrier.set(carrier, (theoreticalBeforeKwhByCarrier.get(carrier) ?? 0) + kwh);
+    theoreticalBeforeKwhByCarrier.set(
+      carrier,
+      (theoreticalBeforeKwhByCarrier.get(carrier) ?? 0) + kwh,
+    );
   };
   for (const g of generation.filter((g) => g.scenario === "before")) {
     const sourceType = generationSourceById.get(g.sourceId)?.sourceType;
     const carrier = sourceType && carrierForGenerationSourceType(sourceType);
     if (carrier) addTheoretical(carrier, g.finalEnergyConsumptionKwh);
   }
-  addTheoretical("electricity", lighting.find((l) => l.scenario === "before")?.annualConsumptionKwh ?? 0);
+  addTheoretical(
+    "electricity",
+    lighting.find((l) => l.scenario === "before")?.annualConsumptionKwh ?? 0,
+  );
   addTheoretical(
     "electricity",
     equipment.find((e) => e.scenario === "before")?.annualConsumptionKwh ?? 0,
@@ -689,7 +696,16 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     cooling.find((c) => c.scenario === "before")?.electricalEnergyForCoolingKwh ?? 0,
   );
 
-  const utilityBillRows = await db.select().from(utilityBill).where(eq(utilityBill.buildingId, buildingId));
+  // Batched with the measures/tariff queries below it (all four depend only
+  // on `buildingId` or nothing) even though they're not consumed until
+  // further down — same round-trip-reduction reasoning as the top-of-function
+  // batch.
+  const [utilityBillRows, measureRows, nonEeMeasureRows, tariffRows] = await Promise.all([
+    db.select().from(utilityBill).where(eq(utilityBill.buildingId, buildingId)),
+    db.query.energyMeasure.findMany({ where: eq(energyMeasure.buildingId, buildingId) }),
+    db.query.nonEeMeasure.findMany({ where: eq(nonEeMeasure.buildingId, buildingId) }),
+    db.select().from(energyTariff).orderBy(desc(energyTariff.effectiveDate)),
+  ]);
   const actualKwhByCarrierYear = new Map<string, Map<number, number>>();
   for (const bill of utilityBillRows) {
     if (bill.consumptionKwh == null) continue;
@@ -764,16 +780,9 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
   });
 
   // --- Measures & financials ---
-  const measureRows = await db.query.energyMeasure.findMany({
-    where: eq(energyMeasure.buildingId, buildingId),
-  });
-
   // Non-EE (ancillary) measures: `Non-EE measures` sheet — costs that add to
   // total project investment (`Measures_summary!D30/D31`) but never
   // generate energy savings, so they get no financial-indicator treatment.
-  const nonEeMeasureRows = await db.query.nonEeMeasure.findMany({
-    where: eq(nonEeMeasure.buildingId, buildingId),
-  });
   const nonEeMeasures: NonEeMeasureResult[] = nonEeMeasureRows.map((row) => ({
     id: row.id,
     description: row.description,
@@ -782,7 +791,6 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     unitCostUsd: row.unitCostUsd,
     totalCostUsd: row.quantity * row.unitCostUsd,
   }));
-  const tariffRows = await db.select().from(energyTariff).orderBy(desc(energyTariff.effectiveDate));
   const latestTariffByCarrier = new Map<string, (typeof tariffRows)[number]>();
   for (const tariff of tariffRows) {
     if (!latestTariffByCarrier.has(tariff.energyCarrier)) {
@@ -810,16 +818,15 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
       emissionFactorKgCo2PerKwh: 0.3,
     };
 
-    const { indicators: standardized, cashflow: standardizedCashflow } = calculateFinancialIndicators(
-      {
+    const { indicators: standardized, cashflow: standardizedCashflow } =
+      calculateFinancialIndicators({
         investmentCostUsd: measure.investmentCostUsd,
         maintenanceCostPercent: measure.maintenanceCostPercent,
         firstYearAnnualSavingsUsd: savingsKwh * tariff.unitCostUsd,
         annualEscalationRate: ENERGY_ESCALATION_RATES[carrier] ?? 0.02,
         lifetimeYears: measure.lifetimeYears,
         discountRate: 0.04,
-      },
-    );
+      });
 
     const baselineRatio = baselineRatioByCarrier.get(carrier) ?? 1;
     const actualSavingsKwh = savingsKwh * baselineRatio;
@@ -1026,14 +1033,18 @@ function resolveMeasureStandardizedSavingsKwh(
     // delta of the sheet's own total, same pattern as every envelope/
     // generation category above.
     case "lighting": {
-      const beforeL = context.lighting.find((l) => l.scenario === "before")?.annualConsumptionKwh ?? 0;
-      const afterL = context.lighting.find((l) => l.scenario === "after")?.annualConsumptionKwh ?? 0;
+      const beforeL =
+        context.lighting.find((l) => l.scenario === "before")?.annualConsumptionKwh ?? 0;
+      const afterL =
+        context.lighting.find((l) => l.scenario === "after")?.annualConsumptionKwh ?? 0;
       return beforeL - afterL;
     }
     // `Equipment` sheet: `Measures_summary!E12=Equipment!K102` (before/after total delta).
     case "equipment_replacement": {
-      const beforeE = context.equipment.find((e) => e.scenario === "before")?.annualConsumptionKwh ?? 0;
-      const afterE = context.equipment.find((e) => e.scenario === "after")?.annualConsumptionKwh ?? 0;
+      const beforeE =
+        context.equipment.find((e) => e.scenario === "before")?.annualConsumptionKwh ?? 0;
+      const afterE =
+        context.equipment.find((e) => e.scenario === "after")?.annualConsumptionKwh ?? 0;
       return beforeE - afterE;
     }
     // `PV`/`Solar DHW` sheets: there's no "before" state — installing the
@@ -1041,22 +1052,28 @@ function resolveMeasureStandardizedSavingsKwh(
     // production itself *is* the standardized saving (`Measures_summary!E13
     // =PV!C25`, `E14`-equivalent for Solar DHW).
     case "pv":
-      return context.renewableProduction.find((r) => r.systemType === "pv")?.annualProductionKwh ?? 0;
+      return (
+        context.renewableProduction.find((r) => r.systemType === "pv")?.annualProductionKwh ?? 0
+      );
     case "solar_dhw":
       return (
-        context.renewableProduction.find((r) => r.systemType === "solar_dhw")?.annualProductionKwh ?? 0
+        context.renewableProduction.find((r) => r.systemType === "solar_dhw")
+          ?.annualProductionKwh ?? 0
       );
     // `EMS` sheet: flat 3% of each "after" (i.e. after every other proposed
     // measure) end-use need — heating, DHW, cooling, and lighting.
     case "ems": {
       const afterHeatingKwh =
-        context.heatingEnergyBalance.find((h) => h.scenario === "after")?.annualNetEnergyNeedKwh ?? 0;
+        context.heatingEnergyBalance.find((h) => h.scenario === "after")?.annualNetEnergyNeedKwh ??
+        0;
       const afterDhwKwh = context.dhwDemand.find((d) => d.scenario === "after")?.totalKwh ?? 0;
       const afterCoolingKwh =
         context.cooling.find((c) => c.scenario === "after")?.electricalEnergyForCoolingKwh ?? 0;
       const afterLightingKwh =
         context.lighting.find((l) => l.scenario === "after")?.annualConsumptionKwh ?? 0;
-      return (afterHeatingKwh + afterDhwKwh + afterCoolingKwh + afterLightingKwh) * EMS_SAVINGS_RATE;
+      return (
+        (afterHeatingKwh + afterDhwKwh + afterCoolingKwh + afterLightingKwh) * EMS_SAVINGS_RATE
+      );
     }
     default:
       return 0;

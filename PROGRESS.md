@@ -1503,6 +1503,27 @@ tuzatildi). **Haqiqiy bazaga qo'llash bu sessiyada qilinmadi** — sandbox'da na
 Postgres, na haqiqiy Neon `DATABASE_URL` bor; migratsiyani production'ga qo'llash
 foydalanuvchi tomonidan deploy vaqtida amalga oshirilishi kerak.
 
+### 2-bosqich: `runFullAudit()` so'rovlarini parallellashtirish (tugallandi)
+
+`apps/api/src/services/audit.engine.ts` — tahlil 20 ta DB so'rovning hech biri boshqasining
+natijasiga bog'liq emasligini tasdiqladi (hammasi faqat boshlang'ich `buildingId`ga yoki 4 ta
+global ma'lumotnoma jadvaliga bog'liq, shartli so'rov yo'q). Ikkita `Promise.all` guruhi
+qo'shildi:
+- Funksiya boshida 16 ta so'rov (bino yozuvi + qobiq/ventilyatsiya/sovutish/DHW/taqsimot/
+  generatsiya/yoritish/uskuna/qayta-tiklanadigan manba jadvallari + 4 ta ma'lumotnoma jadvali)
+  bitta batch'ga birlashtirildi — bularning barchasi scenario tsiklidan (sof hisoblash, DB
+  so'rovsiz) oldin joylashgan edi.
+- `utilityBill`/`energyMeasure`/`nonEeMeasure`/`energyTariff` (funksiya oxiriga yaqin,
+  moliyaviy hisob-kitoblardan oldin) ikkinchi batch'ga birlashtirildi.
+
+Formulalarga tegilmadi — faqat so'rov bajarilish tartibi (ketma-ket `await` → `Promise.all`)
+o'zgardi, o'zgaruvchi nomlari va keyingi ishlatilish joylari aynan saqlandi. Tekshirildi:
+`bun run --cwd apps/api type-check`, `bun run --cwd apps/api test tests/services` (64/64 o'tdi,
+jumladan `report.service.test.ts`ning `generateAuditReportPdf` orqali `runFullAudit()`ni
+to'liq chaqiradigan 5 testi — natija o'zgarmagani tasdiqlandi), `bunx biome check --write`.
+Integratsiya testi (`tests/integration/`) bu sandbox'da lokal Postgres yo'qligi sababli
+ishlamaydi (kutilgan holat, `testing-and-verification.md`).
+
 **Haqiqiy tekshiruv**: lokal `.dev.vars` Neon bazasida `0006` migratsiyasi hali qo'llanilmagan
 edi — `database.md`dagi qo'lda-qo'llash tartibi (`pg` Client, non-pooler host, tranzaksiya,
 `drizzle.__drizzle_migrations`ga hash+timestamp yozish) bilan qo'llandi. Keyin **haqiqiy
