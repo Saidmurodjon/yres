@@ -7,6 +7,34 @@
   "columnUsername": "Foydalanuvchi nomi",
   "columnEmail": "Email",
   "columnRole": "Roli",
+  "columnStatus": "Holati",
   "columnJoined": "Qo'shilgan sana",
-  "roleUpdateFailed": "Rolni o'zgartirib bo'lmadi."
+  "columnActions": "Amallar",
+  "roleUpdateFailed": "Rolni o'zgartirib bo'lmadi.",
+  "statusActive": "Faol",
+  "statusInactive": "Faolsizlantirilgan",
+  "edit": {
+    "editButton": "Tahrirlash",
+    "title": "{{name}}ni tahrirlash",
+    "nameLabel": "Ismi",
+    "usernameLabel": "Foydalanuvchi nomi",
+    "nameRequired": "Ism kiritilishi shart.",
+    "usernameRequired": "Foydalanuvchi nomi kiritilishi shart.",
+    "save": "O'zgarishlarni saqlash",
+    "cancel": "Bekor qilish",
+    "updateFailed": "Foydalanuvchini yangilab bo'lmadi."
+  },
+  "deactivate": {
+    "deactivateButton": "Faolsizlantirish",
+    "title": "{{name}}ni faolsizlantirasizmi?",
+    "description": "Uning barcha sessiyalari darhol tugatiladi va qayta faollashtirilmaguncha tizimga kira olmaydi. Hech narsa o'chirilmaydi.",
+    "confirm": "Faolsizlantirish",
+    "deactivating": "Faolsizlantirilmoqda...",
+    "cancel": "Bekor qilish",
+    "failed": "Foydalanuvchini faolsizlantirib bo'lmadi."
+  },
+  "activate": {
+    "activateButton": "Faollashtirish",
+    "failed": "Foydalanuvchini qayta faollashtirib bo'lmadi."
+  }
 }

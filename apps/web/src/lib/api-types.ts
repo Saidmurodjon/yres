@@ -102,6 +102,7 @@ export interface AdminUser {
   username: string;
   role: UserRole;
   emailVerified: boolean;
+  isActive: boolean;
   createdAt: string;
 }
 

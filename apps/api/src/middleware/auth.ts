@@ -36,6 +36,13 @@ export const authMiddleware = createMiddleware<AppEnv>(async (c, next) => {
   if (!session) {
     return c.json({ error: "Unauthorized" }, 401);
   }
+  if (!session.user.isActive) {
+    // Blocks every gated route immediately, even for a still-valid session
+    // cookie — an admin deactivating an account should take effect right
+    // away, not just on the next login (see admin-users.ts's PATCH
+    // /users/:id/status).
+    return c.json({ error: "Your account has been deactivated." }, 403);
+  }
 
   c.set("user", session.user);
   await next();

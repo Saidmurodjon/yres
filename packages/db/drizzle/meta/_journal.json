@@ -64,6 +64,13 @@
       "when": 1784855970218,
       "tag": "0008_rare_roxanne_simpson",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1784858271833,
+      "tag": "0009_heavy_madame_masque",
+      "breakpoints": true
     }
   ]
 }

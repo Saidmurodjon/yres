@@ -1,5 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
+  Badge,
+  Button,
   Card,
   CardContent,
   CardHeader,
@@ -19,8 +21,12 @@ import {
 } from "@yres/ui";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useAdminUsers, useUpdateUserRole } from "../../../hooks";
+import { DeactivateUserDialog } from "../../../components/admin/deactivate-user-dialog";
+import { EditUserDialog } from "../../../components/admin/edit-user-dialog";
+import { useAdminUsers, useUpdateUserRole, useUpdateUserStatus } from "../../../hooks";
 import { ApiError } from "../../../lib/api";
+import type { AdminUser } from "../../../lib/api-types";
+import { useSession } from "../../../lib/auth-client";
 import type { SessionUser, UserRole } from "../../../lib/auth-types";
 import { USER_ROLE_LABELS, formatDate } from "../../../lib/labels";
 
@@ -39,10 +45,16 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
 function AdminUsersPage() {
   const { t } = useTranslation("admin");
   const { data, isLoading, isError, error } = useAdminUsers({ pageSize: 200 });
+  const { data: session } = useSession();
   const updateRole = useUpdateUserRole();
+  const updateStatus = useUpdateUserStatus();
   const [roleError, setRoleError] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [deactivatingUser, setDeactivatingUser] = useState<AdminUser | null>(null);
 
   const users = data?.users ?? [];
+  const currentUserId = session?.user.id;
 
   async function handleRoleChange(userId: string, role: UserRole) {
     setRoleError(null);
@@ -50,6 +62,15 @@ function AdminUsersPage() {
       await updateRole.mutateAsync({ userId, role });
     } catch (err) {
       setRoleError(err instanceof ApiError ? err.message : t("roleUpdateFailed"));
+    }
+  }
+
+  async function handleActivate(userId: string) {
+    setStatusError(null);
+    try {
+      await updateStatus.mutateAsync({ userId, isActive: true });
+    } catch (err) {
+      setStatusError(err instanceof ApiError ? err.message : t("activate.failed"));
     }
   }
 
@@ -88,7 +109,9 @@ function AdminUsersPage() {
                   <TableHead>{t("columnUsername")}</TableHead>
                   <TableHead>{t("columnEmail")}</TableHead>
                   <TableHead>{t("columnRole")}</TableHead>
+                  <TableHead>{t("columnStatus")}</TableHead>
                   <TableHead>{t("columnJoined")}</TableHead>
+                  <TableHead className="text-right">{t("columnActions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -115,15 +138,63 @@ function AdminUsersPage() {
                         </SelectContent>
                       </Select>
                     </TableCell>
+                    <TableCell>
+                      <Badge variant={u.isActive ? "success" : "secondary"}>
+                        {u.isActive ? t("statusActive") : t("statusInactive")}
+                      </Badge>
+                    </TableCell>
                     <TableCell>{formatDate(u.createdAt)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setEditingUser(u)}>
+                          {t("edit.editButton")}
+                        </Button>
+                        {u.isActive ? (
+                          u.id !== currentUserId && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setDeactivatingUser(u)}
+                            >
+                              {t("deactivate.deactivateButton")}
+                            </Button>
+                          )
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={updateStatus.isPending}
+                            onClick={() => handleActivate(u.id)}
+                          >
+                            {t("activate.activateButton")}
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           )}
           {roleError && <p className="mt-4 text-sm text-destructive">{roleError}</p>}
+          {statusError && <p className="mt-4 text-sm text-destructive">{statusError}</p>}
         </CardContent>
       </Card>
+
+      {editingUser && (
+        <EditUserDialog
+          user={editingUser}
+          open={!!editingUser}
+          onOpenChange={(open) => !open && setEditingUser(null)}
+        />
+      )}
+      {deactivatingUser && (
+        <DeactivateUserDialog
+          user={deactivatingUser}
+          open={!!deactivatingUser}
+          onOpenChange={(open) => !open && setDeactivatingUser(null)}
+        />
+      )}
     </div>
   );
 }

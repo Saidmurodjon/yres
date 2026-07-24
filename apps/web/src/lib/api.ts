@@ -186,6 +186,16 @@ export const api = {
         method: "PATCH",
         body: JSON.stringify({ role }),
       }),
+    update: (userId: string, data: { name?: string; username?: string }) =>
+      request<{ user: { id: string; name: string; username: string } }>(
+        `/api/admin/users/${userId}`,
+        { method: "PATCH", body: JSON.stringify(data) },
+      ),
+    updateStatus: (userId: string, isActive: boolean) =>
+      request<{ user: { id: string; isActive: boolean } }>(`/api/admin/users/${userId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ isActive }),
+      }),
   },
 
   buildings: {

@@ -7,6 +7,34 @@
   "columnUsername": "Имя пользователя",
   "columnEmail": "Email",
   "columnRole": "Роль",
+  "columnStatus": "Статус",
   "columnJoined": "Дата регистрации",
-  "roleUpdateFailed": "Не удалось изменить роль."
+  "columnActions": "Действия",
+  "roleUpdateFailed": "Не удалось изменить роль.",
+  "statusActive": "Активен",
+  "statusInactive": "Деактивирован",
+  "edit": {
+    "editButton": "Изменить",
+    "title": "Изменить {{name}}",
+    "nameLabel": "Имя",
+    "usernameLabel": "Имя пользователя",
+    "nameRequired": "Имя обязательно.",
+    "usernameRequired": "Имя пользователя обязательно.",
+    "save": "Сохранить изменения",
+    "cancel": "Отмена",
+    "updateFailed": "Не удалось обновить пользователя."
+  },
+  "deactivate": {
+    "deactivateButton": "Деактивировать",
+    "title": "Деактивировать {{name}}?",
+    "description": "Все его сессии будут немедленно завершены, и он не сможет войти снова до повторной активации. Ничего не удаляется.",
+    "confirm": "Деактивировать",
+    "deactivating": "Деактивация...",
+    "cancel": "Отмена",
+    "failed": "Не удалось деактивировать пользователя."
+  },
+  "activate": {
+    "activateButton": "Активировать",
+    "failed": "Не удалось повторно активировать пользователя."
+  }
 }

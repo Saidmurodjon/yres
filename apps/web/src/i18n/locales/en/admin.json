@@ -7,6 +7,34 @@
   "columnUsername": "Username",
   "columnEmail": "Email",
   "columnRole": "Role",
+  "columnStatus": "Status",
   "columnJoined": "Joined",
-  "roleUpdateFailed": "Failed to update role."
+  "columnActions": "Actions",
+  "roleUpdateFailed": "Failed to update role.",
+  "statusActive": "Active",
+  "statusInactive": "Deactivated",
+  "edit": {
+    "editButton": "Edit",
+    "title": "Edit {{name}}",
+    "nameLabel": "Name",
+    "usernameLabel": "Username",
+    "nameRequired": "Name is required.",
+    "usernameRequired": "Username is required.",
+    "save": "Save changes",
+    "cancel": "Cancel",
+    "updateFailed": "Failed to update user."
+  },
+  "deactivate": {
+    "deactivateButton": "Deactivate",
+    "title": "Deactivate {{name}}?",
+    "description": "They'll be immediately signed out of every session and unable to sign back in until reactivated. Nothing is deleted.",
+    "confirm": "Deactivate",
+    "deactivating": "Deactivating...",
+    "cancel": "Cancel",
+    "failed": "Failed to deactivate user."
+  },
+  "activate": {
+    "activateButton": "Activate",
+    "failed": "Failed to reactivate user."
+  }
 }

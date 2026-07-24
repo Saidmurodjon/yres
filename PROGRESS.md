@@ -1830,3 +1830,47 @@ test tests/services` (64/64). Haqiqiy Neon bazadagi "3-DMTT" binosiga qarshi to'
 qayta generatsiya qilinib, barcha 24 sahifa sahifama-sahifa `pymupdf` bilan rasmga aylantirilib
 vizual tekshirildi — U-qiymat va pul-oqimi bo'limlari endi bir nechta elementni bitta zich
 sahifada ketma-ket chizadi, hech qanday matn kesilishi/ustma-ust tushishi topilmadi.
+
+## Admin: foydalanuvchini tahrirlash va faolsizlantirish
+
+Loyiha egasi admin panelida foydalanuvchini tahrirlash va "kerak bo'lsa o'chirish" imkonini
+so'radi. Bazaning FK grafigini tekshirib chiqdim: haqiqiy `DELETE FROM "user"` xavfli —
+`building.userId`da `onDelete: cascade` bor (o'chirilsa, foydalanuvchining barcha binolari/
+audit natijalari jimgina o'chib ketardi), `audit_run.triggeredByUserId`/
+`conversation.createdBy`/`building_member.invitedByUserId`/`message.senderId`da esa hech
+qanday cascade yo'q (Postgres standart RESTRICT) — agar o'sha foydalanuvchi biror audit
+ishga tushirgan yoki xabar yozgan bo'lsa, o'chirish FK-xatosi bilan butunlay muvaffaqiyatsiz
+bo'lardi. Shu tahlil asosida `EnterPlanMode` orqali reja tuzildi va tasdiqlandi, foydalanuvchi
+ikkita xavfli variant (bo'sh akkauntlarni o'chirish / to'liq cascade o'chirish) o'rniga
+**"faqat faolsizlantirish"** (soft deactivate)ni tanladi.
+
+**Sxema**: `packages/db/src/schemas/auth.ts`ning `user`iga `isActive: boolean` (default
+`true`) qo'shildi, migratsiya `0009_heavy_madame_masque.sql`.
+
+**Backend**:
+- `apps/api/src/auth/index.ts`ning `user.additionalFields`iga `isActive` qo'shildi
+  (`role`/`username` bilan bir xil naqsh — `input: false`, faqat admin route orqali
+  o'zgaradi), shunda `session.user.isActive` mavjud va tiplangan bo'ladi.
+- `apps/api/src/middleware/auth.ts`ning `authMiddleware`i endi `session.user.isActive`ni
+  tekshiradi va `false` bo'lsa 403 qaytaradi — **darhol** ta'sir qiladi, hatto foydalanuvchi
+  allaqachon tizimga kirgan (sessiya hali amal qilayotgan) bo'lsa ham, keyingi har qanday
+  himoyalangan so'rov shu yerda to'xtaydi.
+- `apps/api/src/routes/admin-users.ts`ga ikkita yangi route: `PATCH /users/:id` (ism/
+  username tahrirlash, `users.ts`ning `/me`sidagi bilan bir xil username-conflict 409
+  tekshiruvi) va `PATCH /users/:id/status` (`isActive`ni o'rnatadi, o'zini-o'zi
+  faolsizlantirishni bloklaydi — mavjud o'zini-o'zi past darajaga tushira olmaslik qoidasi
+  bilan bir xil mantiq).
+
+**Frontend**: `EditUserDialog`/`DeactivateUserDialog` (`components/admin/`,
+`delete-building-dialog.tsx`/`profile.tsx`ning naqshlarini birlashtirgan holda),
+`admin/users.tsx`ga Status ustuni (Badge) va har qatorga Tahrirlash/Faolsizlantirish-
+Faollashtirish tugmalari qo'shildi. Faollashtirish (buzg'unchi emas) tasdiqlashsiz oddiy
+tugma, faolsizlantirish esa `Dialog`-asoslangan tasdiqlash talab qiladi. Joriy admin o'z
+qatorida "Faolsizlantirish" tugmasini ko'rmaydi (backend baribir bloklaydi, bu faqat UI
+tozaligi uchun).
+
+Tekshirildi: `bun run --cwd packages/db type-check`, `bun run --cwd apps/api type-check`,
+`bun run --cwd apps/api test tests/services` (64/64), `bun run --cwd apps/web type-check`
+(haqiqiy Vite build), `bunx biome check --write` (barcha tegilgan fayllar). Migratsiyani
+haqiqiy bazaga qo'llash va brauzerda tekshirish — foydalanuvchi tomonidan, deploy'dan keyin
+(bu sandbox'da baza yo'q).

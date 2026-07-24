@@ -12,6 +12,8 @@ export const user = pgTable("user", {
   username: text("username").notNull().unique(),
   /** Chat presence "last seen" — updated when the user's UserNotificationChannel socket disconnects, not tied to login/session. */
   lastSeenAt: timestamp("last_seen_at"),
+  /** Admin-only soft deactivation (see admin-users.ts) — blocks every authMiddleware-gated request immediately, even with a live session. Never hard-deletes a user: building.userId cascades (would destroy their buildings), while audit_run/message/conversation FKs to user.id have no cascade at all (a hard delete would just fail once they have any activity). */
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

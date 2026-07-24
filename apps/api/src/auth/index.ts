@@ -67,14 +67,16 @@ export function createAuth(env: Env, db: Database) {
     },
     // Exposes these DB columns through Better Auth's session/user responses
     // (Better Auth otherwise only serializes its own core fields). `input:
-    // false` on both — role is admin-only (see requireRole middleware,
-    // apps/api/src/routes/admin-users.ts) and username has its own PATCH
-    // /api/users/me route with a uniqueness check; neither should be
-    // settable through Better Auth's generic update-user endpoint.
+    // false` on all three — role and isActive are admin-only (see
+    // requireRole/authMiddleware and apps/api/src/routes/admin-users.ts) and
+    // username has its own PATCH /api/users/me route with a uniqueness
+    // check; none of these should be settable through Better Auth's generic
+    // update-user endpoint.
     user: {
       additionalFields: {
         role: { type: "string", required: false, defaultValue: "auditor", input: false },
         username: { type: "string", required: true, input: false },
+        isActive: { type: "boolean", required: false, defaultValue: true, input: false },
       },
     },
     account: {
