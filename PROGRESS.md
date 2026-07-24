@@ -1570,6 +1570,17 @@ o'tish ko'rib chiqiladi. Kod tomondan hech narsa o'zgartirilishi shart emas —
 qaytarib, matn-fallback bilan ishlaydi, shuning uchun bu holat hisobot generatsiyasini
 buzmaydi.
 
+**Yangilanish — endi to'liq ishlayapti**: bir necha soatdan keyin (503'ning propagatsiya/
+akkaunt-faollashish muddati tugagach bo'lsa kerak) xuddi shu kalit bilan qayta tekshirilganda
+`curl` to'g'ridan-to'g'ri `200 OK` va haqiqiy PNG qaytardi (`static-maps.yandex.ru/v1?ll=...`,
+kod ichida ishlatilgan URL formati **to'g'ri ekanligi tasdiqlandi**, hech qanday o'zgarish
+kerak bo'lmadi). Haqiqiy "3-DMTT" binosiga sinov koordinatalari (41.3111, 69.2797 — Toshkent,
+Amir Temur maydoni) qayta kiritilib, haqiqiy PDF hisobot generatsiya qilindi: bino bo'limining
+eng boshida koordinatalar matni + **haqiqiy Yandex xarita rasmi** (marker bilan, to'g'ri
+joylashuvda) muvaffaqiyatli chiqdi, sahifa buzilmadi. Test koordinatalari so'ngra UI orqali
+tozalandi. `docs/report-redesign-proposal.md`ning §7 (koordinatalar+xarita) bosqichi endi
+**to'liq, haqiqiy provayder bilan tasdiqlangan holda** yakunlandi.
+
 ### 9-bosqich: QR-kod + tekshiruv sahifasi (tugallandi)
 
 `docs/report-redesign-proposal.md`ning §9'idagi oxirgi bosqich. Kutilganidan kichikroq chiqdi —
