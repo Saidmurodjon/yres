@@ -14,28 +14,37 @@ import {
   TableRow,
 } from "@yres/ui";
 import { Building2, PlusCircle, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useBuildings } from "../../../hooks";
+import { Pagination } from "../../../components/pagination";
+import { useBuildings, useDebouncedValue } from "../../../hooks";
 import { BUILDING_TYPE_LABELS, formatNumber } from "../../../lib/labels";
 
 export const Route = createFileRoute("/_authenticated/buildings/")({
   component: BuildingsListPage,
 });
 
+const PAGE_SIZE = 20;
+
 function BuildingsListPage() {
   const { t } = useTranslation("buildings");
-  const { data, isLoading, isError, error } = useBuildings({ pageSize: 100 });
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebouncedValue(search);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reset to page 1 only when the search term changes, not on every `page` change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const { data, isLoading, isError, error } = useBuildings({
+    page,
+    pageSize: PAGE_SIZE,
+    search: debouncedSearch.trim() || undefined,
+  });
   const buildings = data?.buildings ?? [];
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return buildings;
-    return buildings.filter(
-      (b) => b.name.toLowerCase().includes(q) || b.location.toLowerCase().includes(q),
-    );
-  }, [buildings, search]);
+  const total = data?.total ?? 0;
+  const isEmptyAccount = debouncedSearch.trim() === "" && total === 0;
 
   return (
     <div className="space-y-6">
@@ -65,7 +74,8 @@ function BuildingsListPage() {
       {isError ? (
         <Card className="border-destructive/50">
           <CardContent className="p-6 text-sm text-destructive">
-            {t("list.failedToLoad")}: {error instanceof Error ? error.message : t("common:unknownError")}
+            {t("list.failedToLoad")}:{" "}
+            {error instanceof Error ? error.message : t("common:unknownError")}
           </CardContent>
         </Card>
       ) : isLoading ? (
@@ -78,20 +88,22 @@ function BuildingsListPage() {
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
             <Building2 className="h-10 w-10 text-muted-foreground" />
-            <p className="font-medium">{t("list.noBuildingsYet")}</p>
-            <p className="max-w-sm text-sm text-muted-foreground">{t("list.noBuildingsDescription")}</p>
-            <Button asChild className="mt-2">
-              <Link to="/buildings/new">
-                <PlusCircle className="h-4 w-4" />
-                {t("list.newBuilding")}
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : filtered.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-sm text-muted-foreground">
-            {t("list.noMatch", { search })}
+            {isEmptyAccount ? (
+              <>
+                <p className="font-medium">{t("list.noBuildingsYet")}</p>
+                <p className="max-w-sm text-sm text-muted-foreground">
+                  {t("list.noBuildingsDescription")}
+                </p>
+                <Button asChild className="mt-2">
+                  <Link to="/buildings/new">
+                    <PlusCircle className="h-4 w-4" />
+                    {t("list.newBuilding")}
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">{t("list.noMatch", { search })}</p>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -107,7 +119,7 @@ function BuildingsListPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((building) => (
+              {buildings.map((building) => (
                 <TableRow key={building.id}>
                   <TableCell className="font-medium">
                     <Link
@@ -135,6 +147,10 @@ function BuildingsListPage() {
             </TableBody>
           </Table>
         </Card>
+      )}
+
+      {!isError && !isLoading && buildings.length > 0 && (
+        <Pagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
       )}
     </div>
   );

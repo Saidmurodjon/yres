@@ -1,4 +1,10 @@
-import type { AuditResult, ReportAnnotationSectionKey } from "@yres/types";
+import type {
+  AuditResult,
+  BuildingStatus,
+  BuildingType,
+  ReportAnnotationSectionKey,
+} from "@yres/types";
+import i18n from "../i18n";
 import type {
   AdminUser,
   ApiErrorBody,
@@ -45,7 +51,6 @@ import type {
   UtilityBill,
 } from "./api-types";
 import type { UserRole } from "./auth-types";
-import i18n from "../i18n";
 
 export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -85,11 +90,25 @@ export interface ListParams {
   pageSize?: number;
 }
 
-function toQueryString(params?: ListParams): string {
+export interface BuildingListParams extends ListParams {
+  search?: string;
+  type?: BuildingType;
+  status?: BuildingStatus;
+  region?: string;
+}
+
+export interface BuildingStatsParams {
+  search?: string;
+  type?: BuildingType;
+  status?: BuildingStatus;
+}
+
+function toQueryString(params?: ListParams | BuildingListParams | BuildingStatsParams): string {
   if (!params) return "";
   const search = new URLSearchParams();
-  if (params.page) search.set("page", String(params.page));
-  if (params.pageSize) search.set("pageSize", String(params.pageSize));
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== "") search.set(key, String(value));
+  }
   const query = search.toString();
   return query ? `?${query}` : "";
 }
@@ -124,7 +143,9 @@ export const api = {
     markRead: (id: string) =>
       request<{ ok: true }>(`/api/chat/conversations/${id}/read`, { method: "PATCH" }),
     searchUsers: (q: string) =>
-      request<{ users: ChatUserSearchResult[] }>(`/api/chat/users/search?q=${encodeURIComponent(q)}`),
+      request<{ users: ChatUserSearchResult[] }>(
+        `/api/chat/users/search?q=${encodeURIComponent(q)}`,
+      ),
     uploadAttachment: async (conversationId: string, file: File) => {
       const formData = new FormData();
       formData.append("file", file);
@@ -142,9 +163,12 @@ export const api = {
 
   notifications: {
     list: (params?: ListParams) =>
-      request<{ notifications: Notification[]; unreadCount: number; page: number; pageSize: number }>(
-        `/api/notifications${toQueryString(params)}`,
-      ),
+      request<{
+        notifications: Notification[];
+        unreadCount: number;
+        page: number;
+        pageSize: number;
+      }>(`/api/notifications${toQueryString(params)}`),
     markRead: (id: string) =>
       request<{ notification: Notification }>(`/api/notifications/${id}/read`, {
         method: "PATCH",
@@ -165,10 +189,17 @@ export const api = {
   },
 
   buildings: {
-    list: (params?: ListParams) =>
-      request<{ buildings: BuildingWithRole[]; page: number; pageSize: number }>(
+    list: (params?: BuildingListParams) =>
+      request<{ buildings: BuildingWithRole[]; page: number; pageSize: number; total: number }>(
         `/api/buildings${toQueryString(params)}`,
       ),
+    locations: () => request<{ locations: string[] }>("/api/buildings/locations"),
+    stats: (params?: BuildingStatsParams) =>
+      request<{
+        totalCount: number;
+        totalFloorAreaM2: number;
+        byRegion: { location: string; count: number }[];
+      }>(`/api/buildings/stats${toQueryString(params)}`),
     get: (id: string) =>
       request<{ building: Building; role: BuildingRole }>(`/api/buildings/${id}`),
     create: (data: CreateBuildingInput) =>
@@ -278,15 +309,21 @@ export const api = {
         { method: "PUT", body: JSON.stringify(payload) },
       ),
     replaceLighting: (buildingId: string, payload: ReplaceLightingPayload) =>
-      request<{ scenario: string; count: number }>(`/api/buildings/${buildingId}/systems/lighting`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-      }),
+      request<{ scenario: string; count: number }>(
+        `/api/buildings/${buildingId}/systems/lighting`,
+        {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        },
+      ),
     replaceEquipment: (buildingId: string, payload: ReplaceEquipmentPayload) =>
-      request<{ scenario: string; count: number }>(`/api/buildings/${buildingId}/systems/equipment`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-      }),
+      request<{ scenario: string; count: number }>(
+        `/api/buildings/${buildingId}/systems/equipment`,
+        {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        },
+      ),
     replaceRenewables: (buildingId: string, payload: ReplaceRenewablesPayload) =>
       request<{ count: number }>(`/api/buildings/${buildingId}/systems/renewables`, {
         method: "PUT",

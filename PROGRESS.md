@@ -1543,6 +1543,50 @@ sandbox'da lokal Postgres yo'qligi sababli ishlamaydi) — shuning uchun bu yerd
 tip-tekshiruv va qo'lda kod ko'rib chiqish bilan cheklandi, haqiqiy chat oqimini brauzerda
 tekshirish tavsiya etiladi.
 
+### 4-bosqich: Buildings/dashboard uchun to'liq server-side pagination (tugallandi)
+
+Foydalanuvchi ikkita variantdan (chegarani oshirish vs to'liq server-side pagination) **B**ni
+tanladi. `dashboard.md`da hujjatlashtirilgan "real ko'p-bino stsenariysi paydo bo'lguncha"
+degan cheklov endi hal qilindi.
+
+**Backend** (`apps/api/src/routes/buildings.ts`, `apps/api/src/schemas/building.ts`):
+- `GET /api/buildings` endi `search` (ism/joylashuv, `ilike`), `type`, `status`, `region`
+  (aniq moslik) filtrlarini qabul qiladi, va javobga hozirgача umuman yo'q bo'lgan `total`
+  maydonini qo'shadi (sahifalash UI'si uchun shart).
+- Yangi `GET /api/buildings/locations` — foydalanuvchiga accessible barcha binolarning
+  distinct `location` qiymatlari, sahifalanmagan (hudud dropdown'i uchun — joriy sahifadagi
+  emas, hammasi).
+- Yangi `GET /api/buildings/stats` — `search`/`type`/`status` filtrlari bilan (`region`siz —
+  hudud grafigi butun filtrlangan to'plam bo'yicha kerak, tanlangan bitta hudud emas):
+  `totalCount`, `totalFloorAreaM2` (SUM), `byRegion` (GROUP BY) — bitta so'rovda, dashboard
+  metrikalari va hudud grafigi shu yerdan.
+- Access-shart (`or(eq(building.userId,...), inArray(...))`) va filtr shartlari
+  `accessibleBuildingsCondition()`/`buildingFilterConditions()` yordamchi funksiyalariga
+  chiqarildi (3 endpoint orasida takrorlanmasin deb).
+
+**Frontend** (`apps/web/src/lib/api.ts`, `hooks/use-buildings.ts`, yangi
+`hooks/use-debounced-value.ts` va `components/pagination.tsx`, `dashboard.tsx`,
+`buildings/index.tsx`):
+- `dashboard.tsx`/`buildings/index.tsx`dagi `useMemo`-asoslangan client-side filtrlash butunlay
+  olib tashlandi — qidiruv/tur/status/hudud state'lari endi to'g'ridan-to'g'ri
+  `useBuildings({ page, pageSize: 20, search, type, status, region })`ga uzatiladi (TanStack
+  Query `queryKey`ga kirgani uchun filtr o'zgarganda avtomatik qayta so'raydi). Qidiruv matni
+  `useDebouncedValue` (400ms) bilan debounce qilinadi — `ui-guidelines.md`ning yuqori-chastotali
+  hodisa qoidasiga ko'ra, har harfda so'rov yubormaslik uchun.
+- Filtr o'zgarganda sahifa avtomatik 1-ga qaytariladi (`useEffect`, `biome-ignore
+  useExhaustiveDependencies` — repo'da allaqachon bir necha joyda ishlatilgan naqsh).
+- Yangi `useBuildingLocations()`/`useBuildingStats()` hook'lari, va oddiy `Pagination`
+  komponenti (`@yres/ui`da tayyor komponent yo'q edi — oldingi/keyingi tugma + "N-sahifa,
+  jami M", `common.json`ga uch tilda yangi `pagination.*` kalitlari bilan).
+- "Binolar umuman yo'q" (bo'sh akkaunt) va "filtr natijasi yo'q" holatlari endi
+  `hasFilters`/`total === 0` orqali ajratiladi (avval `buildings.length === 0`ga tayangan edi,
+  bu endi noto'g'ri bo'lardi — `buildings` allaqachon sahifalangan/filtrlangan natija).
+
+Tekshirildi: `bun run --cwd apps/api type-check`, `bun run --cwd apps/web type-check` (haqiqiy
+Vite build), `bunx biome check --write` (barcha tegilgan fayllar). **Brauzerda vizual
+tekshirilmadi** — bu sandbox'da haqiqiy baza yo'q (`testing-and-verification.md`dagi mock-API +
+Preview MCP protsedurasi orqali tekshirish tavsiya etiladi, lekin bu sessiyada bajarilmadi).
+
 **Haqiqiy tekshiruv**: lokal `.dev.vars` Neon bazasida `0006` migratsiyasi hali qo'llanilmagan
 edi — `database.md`dagi qo'lda-qo'llash tartibi (`pg` Client, non-pooler host, tranzaksiya,
 `drizzle.__drizzle_migrations`ga hash+timestamp yozish) bilan qo'llandi. Keyin **haqiqiy

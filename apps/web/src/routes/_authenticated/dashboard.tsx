@@ -24,24 +24,21 @@ import {
   TableRow,
 } from "@yres/ui";
 import { Building2, PlusCircle, Ruler, Search, Users } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChartTooltip } from "../../components/chart-tooltip";
-import { useBuildings } from "../../hooks";
-import type { BuildingWithRole } from "../../lib/api-types";
+import { Pagination } from "../../components/pagination";
+import {
+  useBuildingLocations,
+  useBuildingStats,
+  useBuildings,
+  useDebouncedValue,
+} from "../../hooks";
 import { CHART_COLORS } from "../../lib/chart-colors";
 import {
-  BUILDING_STATUS_TRANSLATION_KEYS,
   BUILDING_STATUSES,
+  BUILDING_STATUS_TRANSLATION_KEYS,
   BUILDING_TYPES,
   BUILDING_TYPE_LABELS,
   formatDate,
@@ -64,46 +61,57 @@ const STATUS_BADGE_VARIANT: Record<
 };
 
 const ALL = "all";
+const PAGE_SIZE = 20;
 
 function DashboardPage() {
   const { t } = useTranslation("dashboard");
-  const { data, isLoading, isError, error } = useBuildings({ pageSize: 100 });
-  const buildings = data?.buildings ?? [];
 
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<BuildingType | typeof ALL>(ALL);
   const [statusFilter, setStatusFilter] = useState<BuildingStatus | typeof ALL>(ALL);
   const [regionFilter, setRegionFilter] = useState(ALL);
+  const [page, setPage] = useState(1);
 
-  const regions = useMemo(
-    () => Array.from(new Set(buildings.map((b) => b.location))).sort(),
-    [buildings],
-  );
+  const debouncedSearch = useDebouncedValue(search);
+  const hasFilters =
+    debouncedSearch.trim() !== "" ||
+    typeFilter !== ALL ||
+    statusFilter !== ALL ||
+    regionFilter !== ALL;
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return buildings.filter((b) => {
-      if (q && !b.name.toLowerCase().includes(q) && !b.location.toLowerCase().includes(q)) {
-        return false;
-      }
-      if (typeFilter !== ALL && b.buildingType !== typeFilter) return false;
-      if (statusFilter !== ALL && b.status !== statusFilter) return false;
-      if (regionFilter !== ALL && b.location !== regionFilter) return false;
-      return true;
-    });
-  }, [buildings, search, typeFilter, statusFilter, regionFilter]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally reset to page 1 only when a filter changes, not on every `page` change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, typeFilter, statusFilter, regionFilter]);
 
-  const totalFloorArea = filtered.reduce((sum, b) => sum + (b.netCooledFloorAreaM2 ?? 0), 0);
+  const listParams = {
+    page,
+    pageSize: PAGE_SIZE,
+    search: debouncedSearch.trim() || undefined,
+    type: typeFilter !== ALL ? typeFilter : undefined,
+    status: statusFilter !== ALL ? statusFilter : undefined,
+    region: regionFilter !== ALL ? regionFilter : undefined,
+  };
+  const statsParams = {
+    search: debouncedSearch.trim() || undefined,
+    type: typeFilter !== ALL ? typeFilter : undefined,
+    status: statusFilter !== ALL ? statusFilter : undefined,
+  };
 
-  const regionChartData = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const b of filtered) counts.set(b.location, (counts.get(b.location) ?? 0) + 1);
-    return Array.from(counts.entries())
-      .map(([location, count]) => ({ location, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [filtered]);
+  const { data, isLoading, isError, error } = useBuildings(listParams);
+  const buildings = data?.buildings ?? [];
+  const total = data?.total ?? 0;
 
-  const hasFilters = search.trim() !== "" || typeFilter !== ALL || statusFilter !== ALL || regionFilter !== ALL;
+  const { data: locationsData } = useBuildingLocations();
+  const regions = locationsData?.locations ?? [];
+
+  const { data: statsData } = useBuildingStats(statsParams);
+  const totalBuildings = statsData?.totalCount ?? 0;
+  const totalFloorArea = statsData?.totalFloorAreaM2 ?? 0;
+  const regionChartData = statsData?.byRegion ?? [];
+
+  // No buildings at all (not just "no results for the current filter") — only true when unfiltered, since `total` already reflects the active filters.
+  const isEmptyAccount = !hasFilters && total === 0;
 
   return (
     <div className="space-y-8">
@@ -128,7 +136,7 @@ function DashboardPage() {
         </Card>
       )}
 
-      {!isError && !isLoading && buildings.length > 0 && (
+      {!isError && !isLoading && !isEmptyAccount && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="relative sm:col-span-2 lg:col-span-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -139,7 +147,10 @@ function DashboardPage() {
               className="pl-9"
             />
           </div>
-          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as BuildingType | "all")}>
+          <Select
+            value={typeFilter}
+            onValueChange={(v) => setTypeFilter(v as BuildingType | "all")}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -195,7 +206,7 @@ function DashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard
               label={t("totalBuildings")}
-              value={String(filtered.length)}
+              value={String(totalBuildings)}
               icon={<Building2 className="h-5 w-5" />}
             />
             <MetricCard
@@ -207,7 +218,7 @@ function DashboardPage() {
         )
       )}
 
-      {!isError && !isLoading && buildings.length > 0 && (
+      {!isError && !isLoading && !isEmptyAccount && (
         <Card>
           <CardHeader>
             <CardTitle>{t("regionChart.title")}</CardTitle>
@@ -264,70 +275,79 @@ function DashboardPage() {
               <Skeleton className="h-12 w-full" />
             </div>
           ) : buildings.length === 0 ? (
-            <div className="flex flex-col items-center gap-3 py-10 text-center">
-              <Building2 className="h-10 w-10 text-muted-foreground" />
-              <p className="font-medium">{t("noBuildingsYet")}</p>
-              <p className="max-w-sm text-sm text-muted-foreground">{t("noBuildingsDescription")}</p>
-              <Button asChild className="mt-2">
-                <Link to="/buildings/new">
-                  <PlusCircle className="h-4 w-4" />
-                  {t("newBuilding")}
-                </Link>
-              </Button>
-            </div>
-          ) : filtered.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">
-              {hasFilters ? t("filters.noMatch") : t("noBuildingsYet")}
-            </p>
+            isEmptyAccount ? (
+              <div className="flex flex-col items-center gap-3 py-10 text-center">
+                <Building2 className="h-10 w-10 text-muted-foreground" />
+                <p className="font-medium">{t("noBuildingsYet")}</p>
+                <p className="max-w-sm text-sm text-muted-foreground">
+                  {t("noBuildingsDescription")}
+                </p>
+                <Button asChild className="mt-2">
+                  <Link to="/buildings/new">
+                    <PlusCircle className="h-4 w-4" />
+                    {t("newBuilding")}
+                  </Link>
+                </Button>
+              </div>
+            ) : (
+              <p className="py-10 text-center text-sm text-muted-foreground">
+                {hasFilters ? t("filters.noMatch") : t("noBuildingsYet")}
+              </p>
+            )
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("columnName")}</TableHead>
-                  <TableHead>{t("columnLocation")}</TableHead>
-                  <TableHead>{t("columnStatus")}</TableHead>
-                  <TableHead>{t("columnAuditors")}</TableHead>
-                  <TableHead>{t("columnStarted")}</TableHead>
-                  <TableHead>{t("columnDeadline")}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((building: BuildingWithRole) => (
-                  <TableRow key={building.id}>
-                    <TableCell className="font-medium">
-                      <Link
-                        to="/buildings/$buildingId"
-                        params={{ buildingId: building.id }}
-                        className="hover:underline"
-                      >
-                        {building.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{building.location}</TableCell>
-                    <TableCell>
-                      <Badge variant={STATUS_BADGE_VARIANT[building.status]}>
-                        {t(`buildings:status.${BUILDING_STATUS_TRANSLATION_KEYS[building.status]}`)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                        {building.collaboratorCount}
-                      </span>
-                    </TableCell>
-                    <TableCell>{formatDate(building.createdAt)}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span>{formatDate(building.deadline)}</span>
-                        {isBuildingOverdue(building) && (
-                          <Badge variant="destructive">{t("overdueBadge")}</Badge>
-                        )}
-                      </div>
-                    </TableCell>
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t("columnName")}</TableHead>
+                    <TableHead>{t("columnLocation")}</TableHead>
+                    <TableHead>{t("columnStatus")}</TableHead>
+                    <TableHead>{t("columnAuditors")}</TableHead>
+                    <TableHead>{t("columnStarted")}</TableHead>
+                    <TableHead>{t("columnDeadline")}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {buildings.map((building) => (
+                    <TableRow key={building.id}>
+                      <TableCell className="font-medium">
+                        <Link
+                          to="/buildings/$buildingId"
+                          params={{ buildingId: building.id }}
+                          className="hover:underline"
+                        >
+                          {building.name}
+                        </Link>
+                      </TableCell>
+                      <TableCell>{building.location}</TableCell>
+                      <TableCell>
+                        <Badge variant={STATUS_BADGE_VARIANT[building.status]}>
+                          {t(
+                            `buildings:status.${BUILDING_STATUS_TRANSLATION_KEYS[building.status]}`,
+                          )}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center gap-1.5">
+                          <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                          {building.collaboratorCount}
+                        </span>
+                      </TableCell>
+                      <TableCell>{formatDate(building.createdAt)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span>{formatDate(building.deadline)}</span>
+                          {isBuildingOverdue(building) && (
+                            <Badge variant="destructive">{t("overdueBadge")}</Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <Pagination page={page} pageSize={PAGE_SIZE} total={total} onPageChange={setPage} />
+            </>
           )}
         </CardContent>
       </Card>

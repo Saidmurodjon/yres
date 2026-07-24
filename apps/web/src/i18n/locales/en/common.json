@@ -22,5 +22,10 @@
   "noDataAvailable": "No data available.",
   "auditorNote": "Auditor note (optional)",
   "auditorNotePlaceholder": "Add context for the report reader — e.g. why this chart looks the way it does.",
-  "addNote": "Add note"
+  "addNote": "Add note",
+  "pagination": {
+    "pageOf": "Page {{page}} of {{pageCount}}",
+    "previous": "Previous",
+    "next": "Next"
+  }
 }

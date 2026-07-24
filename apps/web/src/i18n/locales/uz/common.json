@@ -22,5 +22,10 @@
   "noDataAvailable": "Ma'lumot mavjud emas.",
   "auditorNote": "Auditor izohi (ixtiyoriy)",
   "auditorNotePlaceholder": "Hisobot o'quvchisi uchun tushuntirish qo'shing — masalan, bu grafik nega shunday ko'rinishda ekanligi.",
-  "addNote": "Izoh qo'shish"
+  "addNote": "Izoh qo'shish",
+  "pagination": {
+    "pageOf": "{{page}}-sahifa, jami {{pageCount}}",
+    "previous": "Oldingi",
+    "next": "Keyingi"
+  }
 }
