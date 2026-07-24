@@ -68,7 +68,6 @@ function RegisterPage() {
     <AuthLayout>
       <div className="mb-8 space-y-1.5">
         <h1 className="text-2xl font-semibold tracking-tight">{t("register.title")}</h1>
-        <p className="text-muted-foreground">{t("register.subtitle")}</p>
       </div>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
