@@ -57,8 +57,8 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         <span className="text-lg font-semibold">YRES</span>
       </div>
 
-      <div className="flex flex-1 items-center justify-center px-4 pt-4 pb-10 sm:px-6 lg:px-12 lg:py-16">
-        <div className="w-full max-w-sm animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
+      <div className="flex-1 px-4 pt-4 pb-10 sm:px-6 lg:flex lg:items-center lg:justify-center lg:px-12 lg:py-16">
+        <div className="mx-auto w-full max-w-sm animate-in fade-in-0 slide-in-from-bottom-2 duration-500">
           {children}
         </div>
       </div>

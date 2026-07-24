@@ -1,7 +1,7 @@
 # Auth (Better Auth)
 
 `apps/api/src/auth/index.ts` Better Auth'ni sozlaydi (email/parol + Google OAuth). Har biri bir
-marta haqiqiy production bug'iga sabab bo'lgan uchta aniq bo'lmagan narsa — ularni orqaga
+marta haqiqiy production bug'iga sabab bo'lgan to'rtta aniq bo'lmagan narsa — ularni orqaga
 qaytarmang:
 
 - **`crossSubDomainCookies`** veb-ilova va API bir xil registrable domenning qo'shni
@@ -29,3 +29,12 @@ qaytarmang:
   `wrangler tail --env production`ni ishga tushirish eng tez haqiqiy diagnostikadir — Better Auth
   aniq xato kodini (`account_not_linked`, `state_mismatch`, va h.k.) logga yozadi, buni curl
   orqali oqimni qayta hosil qilish odatda o'zi topa olmaydi.
+- **`user.additionalFields`da `required: true` va `input: false`ni birga ishlatmang, agar
+  `defaultValue` bo'lmasa.** Better Auth `required`ni client yuborgan xom `signUp` so'rovi
+  ustida, `databaseHooks.user.create.before` ishga tushishidan **oldin** tekshiradi —
+  `input: false` client'dan o'sha maydonni umuman yubormasligini bildiradi, shuning uchun
+  `required: true` + defaultValue yo'q kombinatsiyasi har bir ro'yxatdan o'tishni hook
+  email'ni backfill qilishga ulgurmasdan turib "X is required" xatosi bilan buzadi (aynan
+  `username`da shunday bo'lgan). Yo `defaultValue` bering, yo `required: false` qiling va
+  haqiqiy kafolatni hook + bazaning NOT NULL cheklovi orqali ta'minlang (`role`/`isActive`
+  qanday qilinganidek).
