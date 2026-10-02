@@ -79,6 +79,7 @@ Maqsad: production'dagi mavjud xavflar va jimgina ma'lumot yo'qolishini yopish.
 **Chiqish mezoni:** production D1'da ishlaydi, Neon o'chirilgan; CI yashil (to'liq sxema, integratsiya testlari lokal D1'da); `12,5` uchala tilda to'g'ri saqlanadi; tiklash mashqi bajarilgan.
 
 ### Faza 1 — Hisob to'g'riligi: dvigatelni v7.20 ga yetkazish (3–4 hafta)
+**Ijro paketi:** `docs/production/faza-1/README.md` (F01–F10, 2026-10-02). v5 fidelity golden qatlami qurilmaydi (K1 — README §0).
 Maqsad: YRES raqamlari auditorning Excel'i bilan mos kelsin.
 
 1. **Golden test infratuzilmasi avval** (06 §2): Python ekstraktor → `inputs.json`/`expected.json`;
@@ -217,6 +218,9 @@ Agentlarning ~45 savoli takrorlanishlardan tozalandi. **Qalin** — keyingi faza
 | K18 | 3-MTM loyihasini YRES'ga import qilish kerakmi yoki u faqat regressiya etaloni bo'ladimi? | Avval etalon, keyin import (UAT uchun) | Faza 1/3 | 01 Q7 |
 | K19 | Excel'dagi eskirgan izohlar v7.21 da tuzatiladimi (`Checks` D-bo'limi, C2, `Breakdown!72`)? | Ha, golden'dan oldin | Faza 1 | 01 Q12 |
 | **K20** | Baza: Neon Postgres'da qolamizmi yoki Cloudflare D1'ga o'tamizmi? | ✅ **Qaror (2026-10-02): D1; kod ijro etildi (D01–D03, 2026-10-02; production cutover — D04 §C kutilmoqda)** — to'liq Cloudflare; production'da faqat test ma'lumot, ko'chirilmaydi, bo'sh bazadan. `docs/adr/ADR-016-cloudflare-d1.md` | Faza 0 | loyiha egasi |
+| **K21** | v7.20 diskontlangan qoplanish formulasi (`Financial indicators!D19`) 1 yilga ortiq beradi (FES: 5,18 o'rniga 4,18) — Excel tuzatiladimi? | Dvigatel to'g'ri qoladi, v7.21 da Excel tuzatiladi | Faza 1 | `faza-1/F05` |
+| **K22** | `Losses env.`: grunt bilan tutashgan elementlar faqat ish soatlari bilan, noish davrida manfiy Δt ham qo'shiladi — metodik asos? | Auditor tasdiqlasin; dvigatel tasdiqlangan qoidaga keltiriladi | Faza 1/2 | `faza-1/F03`, `F10` |
+| **K23** | P1 tafovutlar (infiltratsiya ulushi, oylik SCOP, BEMS, soyalash, nasoslar atributsiyasi) Faza 1 chiqishini to'smaydimi? | To'smaydi — `accepted` + keyingi faza | Faza 1 | `faza-1/F10` |
 
 ---
 

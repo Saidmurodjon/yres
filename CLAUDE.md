@@ -62,8 +62,10 @@ tuzatish ishlayotganini faqat diff'ni o'qib da'vo qilmang.
 
 ## Joriy faza
 
-Production rejasi: `docs/production/00-MASTER-PLAN.md`. **Joriy ijro paketi — Faza 0:**
-`docs/production/faza-0/README.md` (D01–D03 bajarilgan — Neon → D1 ko'chirish; D04 §C production cutover loyiha egasini kutadi; keyin T01–T10; har biri kodga qarshi tekshirilgan spec).
+Production rejasi: `docs/production/00-MASTER-PLAN.md`. **Joriy ijro paketi — Faza 1:**
+`docs/production/faza-1/README.md` (F01–F10 — dvigatelni v7.20 ga yetkazish, golden test bilan; har biri kodga va v7.20 kitobiga
+qarshi tekshirilgan spec). Faza 0 ning kod topshiriqlari bajarilgan (`faza-0/README.md` §4); D04 §C production cutover va tiklash
+mashqi loyiha egasini kutadi.
 Kod yozuvchi sessiya avval shu README'ni o'qiydi va unga qat'iy amal qiladi.
 
 ## Ko'p bosqichli yoki uzoq davom etadigan topshiriqlarda ishlash tartibi

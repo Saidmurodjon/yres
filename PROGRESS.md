@@ -2380,3 +2380,16 @@ T06b — qamrab olinganlar:
 - [ ] ADR-011 ni tasdiqlash.
 
 **Faza 0 holati:** barcha topshiriqlar bajarildi, D04 §C (production cutover) va tiklash mashqi loyiha egasini kutadi.
+
+## Faza 1 · ijro paketi tayyorlandi (boshqaruvchi, 2026-10-02)
+
+- `docs/production/faza-1/` — README + F01–F10. Har spec kodga (`b89386a`) va `3-DMTT v7.20.xlsx` ning keshlangan qiymatlariga qarshi
+  tekshirilgan (sha256 `187d1996…f5a`, OneDrive `3-MTM/`). Tartib: F01 (bazasiz `computeAudit`) → F02/F03 (golden) → F04 X33 → F05 moliya →
+  F06 chora-tadbir atributsiyasi → F07 "keyin" ochiq joylar + UI → F08 pol → F09 FES → F10 yakun.
+- Paketda topilgan, rejada yo'q: (1) web UI qobiqning "keyin" holatini kirita olmaydi (`EDIT_SCENARIO = "before"`) — qobiq chora-tadbirlari
+  UI'da doim 0 tejash beradi → F07; (2) v7.20 diskontlangan qoplanish formulasi +1 yil xato (FES 5,18 vs 4,18) → K21;
+  (3) `Losses env.` da grunt elementlari faqat ish soatlari bilan → K22; (4) 06 §2.4 dagi `D39`/`N39` eskirgan (kitobda 706 124,26 / −382 339,98).
+- Master rejadan chetlanish: v5 fidelity golden qatlami qurilmaydi (K1) — `faza-1/README.md` §0.
+- `00-MASTER-PLAN.md`: K21–K23, Faza 1 paket havolasi; `CLAUDE.md` "Joriy faza" → Faza 1.
+
+**Navbatda:** F01 (coder sessiya). Loyiha egasi: K21–K23 qarorlari (F10 gacha), Faza 0 dagi qolgan ro'yxat.
