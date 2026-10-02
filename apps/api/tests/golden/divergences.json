@@ -7,7 +7,9 @@
       "status": "open",
       "closesIn": "F08",
       "expectedIds": [
+        "envelope.after.total.building",
         "envelope.after.total.floor",
+        "envelope.before.total.building",
         "envelope.before.total.floor",
         "financial.5.irrActual",
         "financial.5.npvActualUsd",
@@ -22,7 +24,7 @@
         "measures.5.standardizedSavingsKwh",
         "measures.5.standardizedSavingsUsd"
       ],
-      "note": "Floor heat loss (envelope.*.total.floor) and measure 5 savings."
+      "note": "Floor heat loss (envelope.*.total.floor), measure 5 savings, and envelope.*.total.building (dominated by the floor difference; also carries D9)."
     },
     {
       "id": "D5",
@@ -95,11 +97,16 @@
     {
       "id": "D9",
       "x": [],
-      "title": "Socle/ground/floor elements: working vs non-working hours in Losses env. rows 42-57",
+      "title": "Working-hours-only rule (K22): Socle 1/2, F1, windows, doors use working hours only",
       "status": "open",
       "closesIn": "F08",
-      "expectedIds": ["envelope.after.total.walls", "envelope.before.total.walls"],
-      "note": "envelope.*.total.walls differ by 7-9% (before 99824 vs 93270; after 19522 vs 17972). Cause per the spec (D9) — to be confirmed against the workbook when F08 lands."
+      "expectedIds": [
+        "envelope.after.total.walls",
+        "envelope.after.total.windowsDoors",
+        "envelope.before.total.walls",
+        "envelope.before.total.windowsDoors"
+      ],
+      "note": "Socle 1/2, F1, windows, doors — working hours only (Losses env. before!E61/E62/E64 = E*F*N39*N40, no non-working row); engine adds the non-working period. Affects walls (+7-9%) and windowsDoors (before 47523 vs 27423; after 21154 vs 22059)."
     },
     {
       "id": "D11",
@@ -230,25 +237,11 @@
       "note": "Measure 15 actual savings and USD/NPV."
     },
     {
-      "id": "D13",
-      "x": [],
-      "title": "Window/door heat loss differs: before 47523 vs 27423 kWh (+73%), after 21154 vs 22059",
-      "status": "unexplained",
-      "closesIn": "?",
-      "expectedIds": [
-        "envelope.after.total.building",
-        "envelope.after.total.windowsDoors",
-        "envelope.before.total.building",
-        "envelope.before.total.windowsDoors"
-      ],
-      "note": "Not explained by the spec's D-list; cause not yet identified — owner question in PROGRESS.md."
-    },
-    {
-      "id": "D14",
-      "x": [],
-      "title": "Lighting 'before' 17045 vs 26143 kWh; 'after' 16128 vs 15352",
-      "status": "unexplained",
-      "closesIn": "?",
+      "id": "D20",
+      "x": ["X98"],
+      "title": "Lighting hours: workbook uses Building_data!D19 x D14 = 2500 h/y (Lighting!J8), engine uses heating-season operation hours (1630)",
+      "status": "open",
+      "closesIn": "F04",
       "expectedIds": [
         "financial.16.irrActual",
         "financial.16.npvActualUsd",
@@ -266,38 +259,14 @@
         "measures.16.standardizedSavingsKwh",
         "measures.16.standardizedSavingsUsd"
       ],
-      "note": "Not explained by the spec's D-list; cause not yet identified — owner question in PROGRESS.md."
+      "note": "Lighting before 17045 vs 26143 kWh = ratio 1630/2500 exactly; after and measure 16 follow. Lighting!K13 utilisation factor (0.53083, constants only) is read as an input; L13 = D13*I13*2500*K13 = 15351.6."
     },
     {
-      "id": "D15",
+      "id": "D21",
       "x": [],
-      "title": "Equipment 'after' 31731 vs 24160 kWh",
-      "status": "unexplained",
-      "closesIn": "?",
-      "expectedIds": [
-        "equipment.after.annualKwh",
-        "financial.17.irrActual",
-        "financial.17.npvActualUsd",
-        "measures.17.actualSavingsKwh",
-        "measures.17.actualSavingsUsd",
-        "measures.17.co2ReductionTonnesPerYear",
-        "measures.17.discountedPaybackActualYears",
-        "measures.17.discountedPaybackStandardizedYears",
-        "measures.17.irrStandardized",
-        "measures.17.npvStandardizedUsd",
-        "measures.17.simplePaybackActualYears",
-        "measures.17.simplePaybackStandardizedYears",
-        "measures.17.standardizedSavingsKwh",
-        "measures.17.standardizedSavingsUsd"
-      ],
-      "note": "Not explained by the spec's D-list; cause not yet identified — owner question in PROGRESS.md."
-    },
-    {
-      "id": "D16",
-      "x": [],
-      "title": "Measure 13 (heating system): 5477 vs 48563 kWh",
-      "status": "unexplained",
-      "closesIn": "?",
+      "title": "Heating system measure: engine omits the /eta_boiler step of Measures_summary!E17",
+      "status": "open",
+      "closesIn": "F06",
       "expectedIds": [
         "financial.13.npvActualUsd",
         "measures.13.actualSavingsKwh",
@@ -309,14 +278,14 @@
         "measures.13.standardizedSavingsKwh",
         "measures.13.standardizedSavingsUsd"
       ],
-      "note": "Not explained by the spec's D-list; cause not yet identified — owner question in PROGRESS.md."
+      "note": "Useful delta now matches (28166.4 = Heat distr. efficiency!L20, after fixing the pipe-reference input); Excel divides by Overall gener. G7 = 0.58 -> 48562.76."
     },
     {
-      "id": "D17",
+      "id": "D22",
       "x": [],
-      "title": "Measure 14 (solar DHW): kWh 15549 vs 18145, USD 270 vs 1644 (different carrier tariff?)",
-      "status": "unexplained",
-      "closesIn": "?",
+      "title": "Solar DHW measure: engine takes raw production with the gas tariff; Excel uses Measures_summary!D64 (after distribution/backup) with the electricity tariff",
+      "status": "open",
+      "closesIn": "F06",
       "expectedIds": [
         "financial.14.irrActual",
         "financial.14.npvActualUsd",
@@ -331,7 +300,30 @@
         "measures.14.standardizedSavingsKwh",
         "measures.14.standardizedSavingsUsd"
       ],
-      "note": "Not explained by the spec's D-list; cause not yet identified — owner question in PROGRESS.md."
+      "note": "kWh 15549 vs 18145; USD 270 vs 1644 (inferCarrierForMeasure('solar_dhw') = gas)."
+    },
+    {
+      "id": "D14",
+      "x": [],
+      "title": "Circulation pumps attributed to the equipment measure (Measures_summary!E21 = Equipment!K102 + D65)",
+      "status": "open",
+      "closesIn": "F06",
+      "expectedIds": [
+        "financial.17.irrActual",
+        "financial.17.npvActualUsd",
+        "measures.17.actualSavingsKwh",
+        "measures.17.actualSavingsUsd",
+        "measures.17.co2ReductionTonnesPerYear",
+        "measures.17.discountedPaybackActualYears",
+        "measures.17.discountedPaybackStandardizedYears",
+        "measures.17.irrStandardized",
+        "measures.17.npvStandardizedUsd",
+        "measures.17.simplePaybackActualYears",
+        "measures.17.simplePaybackStandardizedYears",
+        "measures.17.standardizedSavingsKwh",
+        "measures.17.standardizedSavingsUsd"
+      ],
+      "note": "Engine gives K102 alone (-2508.64, matches the workbook); Excel adds D65 = 7808.64 pumps -> 5300."
     }
   ],
   "notModelled": [

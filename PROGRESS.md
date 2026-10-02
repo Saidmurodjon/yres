@@ -2446,3 +2446,17 @@ T06b — qamrab olinganlar:
   - D17 — №14 quyosh suv isitgichi: kWh 15 549 vs 18 145, USD 270 vs 1 644 (tarif tashuvchisi?).
   D13–D15 kirish xaritasi (ekstraktor) xatosi bo'lishi ham mumkin — F04 dan oldin yres-01 bilan tekshirish kerak.
 **Navbatda:** F04 (X33, D10). Avval D13–D17 sabablarini aniqlash tavsiya etiladi.
+
+## Faza 1 · F03c — golden kirish xaritasi tuzatildi, unexplained tafovutlar sinflandi (2026-10-02)
+
+- **Kirish xatolari (ekstraktor):** (1) `pipeLossReference.insulated` matn enum (`'insulated'`/`'non_insulated'`) bo'lishi kerak, ekstraktor boolean berardi → dvigatel izolyatsiyasiz quvur qiymatini 0 olardi; tuzatildi: №13 foydali delta endi 28 166,4 (`Heat distr. efficiency!L20` bilan aynan). (2) `Equipment!85–86` (chiqarish ventilyatorlari + 72 rekuperator) uskunalardan chiqarildi (kitob ularni ventilyatsiyaga qo'shadi); `equipment.after` endi mos (K100 = 24 160,219). Ventilyator elektri `fanElectricalPowerKw` nominal yig'indisi bilan qoladi (dvigatel ishlatilish koeffitsientsiz, 1630 soat) — mapping'da `Ventilation losses!I50` id si yo'q, shuning uchun alohida tafovut ochilmadi.
+- Oldingi hisobotdagi "356 notModelled" noto'g'ri edi: haqiqiy raqamlar — 385 id mapping'da (180 tolerans ichida, 205 tafovutda), 368 `notModelled`.
+- **Tafovut ID'lari qayta berildi** (spec'dagi D13 = diskontlangan qoplanish/F05, D14 = nasoslar/F06 bilan to'qnashmaslik uchun): 
+  - D9 kengaytirildi: Socle 1/2, F1, derazalar, eshiklar — faqat ish soatlari (K22), `windowsDoors` id lari qo'shildi.
+  - D3: pol + `envelope.*.total.building` (pol farqi hukmron, D9 ham ta'sir qiladi).
+  - D14 (F06): №17 uskunalar `E21 = Equipment!K102 + D65` — dvigatel K102 ni (−2508,64) aynan beradi, nasoslar D65 = 7808,64 yo'q.
+  - D20 (F04): yoritish soatlari 2500 vs 1630 (nisbat aynan); `K13` kirish sifatida o'qilgan.
+  - D21 (F06): №13 — `/η_b` (28166,4 / 0,58 = 48562,76).
+  - D22 (F06): №14 gelio — `D64` va elektr tarifi o'rniga xom ishlab chiqarish va gaz tarifi.
+- `unexplained` = 0. Tekshiruv: type-check, biome, `bun run test` yashil (api 203, web 68).
+**Navbatda:** F04.

@@ -433,7 +433,7 @@ def distribution(r: Reader) -> tuple[list[dict], list[dict]]:
     for row in (9, 10, 11):
         diameter = r.text(s, f"P{row}", ("P5", "Nominal internal pipe diameter"))
         for col, temp in (("Q", 50), ("R", 60), ("S", 70)):
-            refs.append({"diameterClass": diameter, "insulated": True, "meanFluidTempC": temp,
+            refs.append({"diameterClass": diameter, "insulated": "insulated", "meanFluidTempC": temp,
                          "maxHeatFluxWPerM": r.num(s, f"{col}{row}")})
     r.x.check_label(s, "Q15", "Mean temperature of the heat carrier - 60")
     for row in (17, 18, 19):
@@ -486,6 +486,11 @@ def equipment(r: Reader) -> list[dict]:
     for scenario, first, last, header in (("before", 6, 48, "B2"), ("after", 56, 99, "B52")):
         r.x.check_label(s, header, "No.")
         for row in range(first, last + 1):
+            if scenario == "after" and row in (85, 86):
+                # exhaust fans + 72 ERV units: the workbook counts them under mechanical ventilation
+                # (Ventilation losses!I50), not in Equipment!K100 -> they feed ventilationSystem.fanElectricalPowerKw
+                r.x.check_label(s, f"C{row}", "Exhaust fans" if row == 85 else "72 decentralised")
+                continue
             power, units = r.num_or_none(s, f"D{row}"), r.num_or_none(s, f"E{row}")
             if not power or not units:
                 continue

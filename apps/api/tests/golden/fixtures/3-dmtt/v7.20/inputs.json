@@ -4,7 +4,7 @@
     "sha256": "187d19962269d25ff6b241b97374ba868b9b38c94a9b9d27f5ac78ddf6dc5f6a",
     "version": "v7.20",
     "lastDecision": "X98",
-    "extractedAt": "2026-10-02T15:36:44+00:00",
+    "extractedAt": "2026-10-02T15:43:37+00:00",
     "extractor": "tools/golden/extract_inputs.py",
     "lampTypeNote": "lampTypes[].name '@LAMP:<key>' is replaced by LAMP_TYPE_NAMES[<key>] when the test loads the fixture"
   },
@@ -1337,55 +1337,55 @@
     "pipeLossReferences": [
       {
         "diameterClass": "15 – 25",
-        "insulated": true,
+        "insulated": "insulated",
         "meanFluidTempC": 50,
         "maxHeatFluxWPerM": 7
       },
       {
         "diameterClass": "15 – 25",
-        "insulated": true,
+        "insulated": "insulated",
         "meanFluidTempC": 60,
         "maxHeatFluxWPerM": 11
       },
       {
         "diameterClass": "15 – 25",
-        "insulated": true,
+        "insulated": "insulated",
         "meanFluidTempC": 70,
         "maxHeatFluxWPerM": 13
       },
       {
         "diameterClass": "32 – 50",
-        "insulated": true,
+        "insulated": "insulated",
         "meanFluidTempC": 50,
         "maxHeatFluxWPerM": 10
       },
       {
         "diameterClass": "32 – 50",
-        "insulated": true,
+        "insulated": "insulated",
         "meanFluidTempC": 60,
         "maxHeatFluxWPerM": 14
       },
       {
         "diameterClass": "32 – 50",
-        "insulated": true,
+        "insulated": "insulated",
         "meanFluidTempC": 70,
         "maxHeatFluxWPerM": 16
       },
       {
         "diameterClass": "65 – 100",
-        "insulated": true,
+        "insulated": "insulated",
         "meanFluidTempC": 50,
         "maxHeatFluxWPerM": 14
       },
       {
         "diameterClass": "65 – 100",
-        "insulated": true,
+        "insulated": "insulated",
         "meanFluidTempC": 60,
         "maxHeatFluxWPerM": 19
       },
       {
         "diameterClass": "65 – 100",
-        "insulated": true,
+        "insulated": "insulated",
         "meanFluidTempC": 70,
         "maxHeatFluxWPerM": 22
       },
@@ -1679,24 +1679,6 @@
         "coolingSeasonHours": 417,
         "heatingUtilizationFactor": 0.45,
         "coolingUtilizationFactor": 0.46
-      },
-      {
-        "scenario": "after",
-        "unitPowerKw": 2.105,
-        "quantity": 1,
-        "heatingSeasonHours": 1857,
-        "coolingSeasonHours": 643,
-        "heatingUtilizationFactor": 0.5,
-        "coolingUtilizationFactor": 0.5
-      },
-      {
-        "scenario": "after",
-        "unitPowerKw": 0.00049,
-        "quantity": 5040,
-        "heatingSeasonHours": 1857,
-        "coolingSeasonHours": 643,
-        "heatingUtilizationFactor": 0.8,
-        "coolingUtilizationFactor": 0.8
       },
       {
         "scenario": "after",
