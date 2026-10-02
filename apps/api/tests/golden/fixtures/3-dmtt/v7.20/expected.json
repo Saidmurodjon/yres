@@ -4,7 +4,7 @@
     "sha256": "187d19962269d25ff6b241b97374ba868b9b38c94a9b9d27f5ac78ddf6dc5f6a",
     "version": "v7.20",
     "lastDecision": "X98",
-    "extractedAt": "2026-10-02T15:27:43+00:00",
+    "extractedAt": "2026-10-02T15:28:47+00:00",
     "extractor": "tools/golden/extract_expected.py"
   },
   "entries": [
@@ -987,6 +987,12 @@
       "class": "G2"
     },
     {
+      "id": "balance.electrical.lighting.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H16",
+      "value": 10791.029302624998,
+      "class": "G2"
+    },
+    {
       "id": "balance.electrical.equipment.theoreticalBeforeKwh",
       "excel": "Breakdown Baseline & Balance!D17",
       "value": 21651.579,
@@ -996,6 +1002,12 @@
       "id": "balance.electrical.equipment.afterKwh",
       "excel": "Breakdown Baseline & Balance!G17",
       "value": 24160.219,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.equipment.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H17",
+      "value": -2508.6399999999994,
       "class": "G2"
     },
     {
@@ -1011,6 +1023,12 @@
       "class": "G2"
     },
     {
+      "id": "balance.electrical.cooling.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H18",
+      "value": 2688.0211117421386,
+      "class": "G2"
+    },
+    {
       "id": "balance.electrical.dhw.theoreticalBeforeKwh",
       "excel": "Breakdown Baseline & Balance!D19",
       "value": 25921.943900880004,
@@ -1020,6 +1038,12 @@
       "id": "balance.electrical.dhw.afterKwh",
       "excel": "Breakdown Baseline & Balance!G19",
       "value": 7776.583170264003,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.dhw.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H19",
+      "value": 18145.360730616,
       "class": "G2"
     },
     {
@@ -1035,6 +1059,12 @@
       "class": "G2"
     },
     {
+      "id": "balance.electrical.heatingElectric.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H20",
+      "value": -11708.067100459348,
+      "class": "G2"
+    },
+    {
       "id": "balance.electrical.ventilation.theoreticalBeforeKwh",
       "excel": "Breakdown Baseline & Balance!D21",
       "value": 0,
@@ -1047,9 +1077,21 @@
       "class": "G2"
     },
     {
+      "id": "balance.electrical.ventilation.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H21",
+      "value": -7570.450000000001,
+      "class": "G2"
+    },
+    {
       "id": "balance.electrical.pv.afterKwh",
       "excel": "Breakdown Baseline & Balance!G22",
       "value": -150954.93999999986,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.pv.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H22",
+      "value": 150954.93999999986,
       "class": "G2"
     },
     {
@@ -1062,6 +1104,12 @@
       "id": "balance.electrical.ems.afterKwh",
       "excel": "Breakdown Baseline & Balance!G24",
       "value": -6640.806961989703,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.ems.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H24",
+      "value": 6640.806961989703,
       "class": "G2"
     },
     {
@@ -3990,10 +4038,40 @@
       "class": "G3"
     },
     {
+      "id": "totals.proposed.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G39",
+      "value": 30.84994817069503,
+      "class": "G4"
+    },
+    {
       "id": "totals.proposed.actualSavingsKwh",
       "excel": "Measures_summary!I39",
       "value": 327686.24225632724,
       "class": "G3"
+    },
+    {
+      "id": "totals.proposed.actualSavingsUsd",
+      "excel": "Measures_summary!J39",
+      "value": 12680.876184954246,
+      "class": "G3"
+    },
+    {
+      "id": "totals.proposed.simplePaybackActualYears",
+      "excel": "Measures_summary!K39",
+      "value": 55.68418535919551,
+      "class": "G4"
+    },
+    {
+      "id": "totals.proposed.npvStandardizedUsd",
+      "excel": "Measures_summary!N39",
+      "value": -382339.97512024996,
+      "class": "G4"
+    },
+    {
+      "id": "totals.proposed.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P39",
+      "value": 193.64248647442892,
+      "class": "G5"
     },
     {
       "id": "totals.proposed.standardizedGasUsd",
@@ -4006,12 +4084,6 @@
       "excel": "Measures_summary!U39",
       "value": 14568.217164032678,
       "class": "G3"
-    },
-    {
-      "id": "totals.proposed.npvStandardizedUsd",
-      "excel": "Measures_summary!N39",
-      "value": -382339.97512024996,
-      "class": "G4"
     },
     {
       "id": "composition.gasSavedByHeatPumpKwh",

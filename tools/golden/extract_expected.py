@@ -168,8 +168,8 @@ def g2_balance(x: Extractor) -> None:
                 # D4:D12 / D16:D21 and G/H 4:14 / 16:24 are per spec; totals carry every column.
                 if key != "total" and col == "D" and row in (13, 14, 22, 23, 24):
                     continue  # no "before" value in these rows (the sheet leaves them empty)
-                if block == "electrical" and key != "total" and col == "H":
-                    continue  # per-row electrical savings are not golden checkpoints (spec: H4:H14 and H25 only)
+                if col == "H" and row == 23:
+                    continue  # H23 (cooling-season gains) is empty in the sheet
                 x.put(f"balance.{block}.{key}.{name}", BB, f"{col}{row}", [(f"C{row}", label)], "G2")
     x.put("compare.specificBeforeKwhPerM2", BB, "G75", [("C75", "Specific, without PV")], "G2")
     x.put("compare.specificAfterKwhPerM2", BB, "H75", [("C75", "Specific, without PV")], "G2")
@@ -241,7 +241,7 @@ def g3_measures(x: Extractor) -> list[str]:
         x.put(f"nonEe.{n}.proposedForImplementation", MS, f"Q{row}", [(f"B{row}", n), ("Q3", "Proposed")], "G3", text=True)
     for total_row, label, cols in (
         (38, "Total (all measures)", "DEFIJTUGKNP"),
-        (39, "Total proposed for implementation", "DEFITUN"),
+        (39, "Total proposed for implementation", "DEFGIJKNPTU"),
     ):
         key = "all" if total_row == 38 else "proposed"
         for col in cols:
