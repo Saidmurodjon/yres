@@ -16,7 +16,7 @@ interface SendEmailInput {
  */
 export async function sendEmail(env: Env, { to, subject, html }: SendEmailInput): Promise<void> {
   if (!env.RESEND_API_KEY) {
-    console.warn(`[email] RESEND_API_KEY not set — skipping send of "${subject}" to ${to}`);
+    console.warn(`[email] RESEND_API_KEY not set — skipping send of "${subject}"`);
     return;
   }
 

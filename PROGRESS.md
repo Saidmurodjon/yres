@@ -2222,3 +2222,5 @@ shuning uchun T01 da yo spec'larni tuzatish, yo E2E'ni aniq izoh bilan CI'dan ch
   Tekshirilmagan qiymatlar (kengroq olingan): `occupantCount`, maydon/hajm yuqori chegarasi, `investmentCostUsd` yuqorisi — faqat `.finite()`.
   Testlar: `tests/services/schemas.test.ts` (17), `tests/integration/body-limit.test.ts` (3: 1 MB → 413, upload >1 MB o'tadi, >11 MB → 413).
   Tekshiruv: api 34 fayl / 173 test, type-check, E2E 7/7 yashil (forma qiymatlari yangi chegaralarga sig'adi).
+- **Log gigiyenasi (nazoratchi topilmasi, security.md "loglarda email yo'q"):** `lib/email.ts` dev logidan qabul qiluvchi email olib tashlandi (faqat mavzu).
+  `console.*` grep'i: boshqa email/token/URL yozadigan joy yo'q (`[chat] webSocketMessage failed` xato obyektini yozadi — shaxsiy ma'lumot emas, tegilmadi).
