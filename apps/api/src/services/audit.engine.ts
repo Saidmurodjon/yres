@@ -1,27 +1,4 @@
-import {
-  type Database,
-  LAMP_TYPE_NAMES,
-  building,
-  constructionType,
-  coolingSystem,
-  coolingWindow,
-  dhwSource,
-  distributionSystem,
-  energyMeasure,
-  energyTariff,
-  envelopeElement,
-  equipmentItem,
-  generationSource,
-  lampType,
-  lightingZone,
-  nonEeMeasure,
-  openingType,
-  pipeLossReference,
-  renewableSystem,
-  surfaceResistance,
-  utilityBill,
-  ventilationSystem,
-} from "@yres/db";
+import { LAMP_TYPE_NAMES, type Database } from "@yres/db";
 import type {
   AuditResult,
   AuditSummary,
@@ -43,7 +20,6 @@ import type {
   SpecificConsumptionRow,
   VentilationLossResult,
 } from "@yres/types";
-import { desc, eq } from "drizzle-orm";
 import {
   type CoolingWindowInput,
   calculateCoolingResult,
@@ -65,6 +41,7 @@ import {
   getEffectiveOpeningType,
   resolveHeatLossGroups,
 } from "./envelope.service";
+import { type AuditInputs, loadAuditInputs } from "./audit-inputs";
 import { type EquipmentItemInput, calculateEquipmentResult } from "./equipment.service";
 import {
   ENERGY_ESCALATION_RATES,
@@ -117,60 +94,41 @@ const ORIENTATION_GROUP_BY_ENUM: Record<string, SolarOrientationGroup> = {
  * is persisted — every run recomputes from the building's stored inputs.
  */
 export async function runFullAudit(db: Database, buildingId: string): Promise<AuditResult> {
-  // Every one of these depends only on `buildingId` (or nothing, for the 4
-  // reference tables) — none depends on another's result — so they run as a
-  // single batch instead of ~16 sequential round trips to D1 (each
-  // query is its own binding call, so serial awaits add up).
-  const [
-    buildingRecord,
-    elementRows,
-    constructionTypeRows,
-    openingTypeRows,
-    surfaceResistanceRows,
-    ventilationSystemRows,
-    coolingWindowRows,
-    coolingSystemRows,
-    dhwSourceRows,
-    distributionSystemRows,
-    pipeLossReferenceRows,
-    generationSourceRows,
-    lightingZoneRows,
-    lampTypeRows,
-    equipmentItemRows,
-    renewableSystemRows,
-  ] = await Promise.all([
-    db.query.building.findFirst({
-      where: eq(building.id, buildingId),
-      with: { climateRegion: { with: { monthlyNormals: true } }, blocks: true },
-    }),
-    db.query.envelopeElement.findMany({
-      where: eq(envelopeElement.buildingId, buildingId),
-      with: { openings: { with: { openingType: true } } },
-    }),
-    db.query.constructionType.findMany({
-      where: eq(constructionType.buildingId, buildingId),
-      with: { layers: { with: { material: true } } },
-    }),
-    db.query.openingType.findMany({ where: eq(openingType.buildingId, buildingId) }),
-    db.select().from(surfaceResistance),
-    db.query.ventilationSystem.findMany({ where: eq(ventilationSystem.buildingId, buildingId) }),
-    db.query.coolingWindow.findMany({ where: eq(coolingWindow.buildingId, buildingId) }),
-    db.query.coolingSystem.findMany({ where: eq(coolingSystem.buildingId, buildingId) }),
-    db.query.dhwSource.findMany({ where: eq(dhwSource.buildingId, buildingId) }),
-    db.query.distributionSystem.findMany({
-      where: eq(distributionSystem.buildingId, buildingId),
-    }),
-    db.select().from(pipeLossReference),
-    db.query.generationSource.findMany({ where: eq(generationSource.buildingId, buildingId) }),
-    db.query.lightingZone.findMany({ where: eq(lightingZone.buildingId, buildingId) }),
-    db.select().from(lampType),
-    db.query.equipmentItem.findMany({ where: eq(equipmentItem.buildingId, buildingId) }),
-    db.query.renewableSystem.findMany({
-      where: eq(renewableSystem.buildingId, buildingId),
-      with: { monthlyProduction: true },
-    }),
-  ]);
-  if (!buildingRecord) throw new Error(`Building ${buildingId} not found`);
+  return computeAudit(await loadAuditInputs(db, buildingId), {
+    generatedAt: new Date().toISOString(),
+  });
+}
+
+/**
+ * Pure, synchronous core of the audit: all calculation, no database. Takes the
+ * already-loaded `AuditInputs` so the golden test can run it from a fixture.
+ */
+export function computeAudit(inputs: AuditInputs, options: { generatedAt: string }): AuditResult {
+  const buildingRecord = {
+    ...inputs.building,
+    climateRegion: inputs.climateRegion,
+    blocks: inputs.blocks,
+  };
+  const buildingId = inputs.building.id;
+  const elementRows = inputs.envelopeElements;
+  const constructionTypeRows = inputs.constructionTypes;
+  const openingTypeRows = inputs.openingTypes;
+  const surfaceResistanceRows = inputs.surfaceResistances;
+  const ventilationSystemRows = inputs.ventilationSystems;
+  const coolingWindowRows = inputs.coolingWindows;
+  const coolingSystemRows = inputs.coolingSystems;
+  const dhwSourceRows = inputs.dhwSources;
+  const distributionSystemRows = inputs.distributionSystems;
+  const pipeLossReferenceRows = inputs.pipeLossReferences;
+  const generationSourceRows = inputs.generationSources;
+  const lightingZoneRows = inputs.lightingZones;
+  const lampTypeRows = inputs.lampTypes;
+  const equipmentItemRows = inputs.equipmentItems;
+  const renewableSystemRows = inputs.renewableSystems;
+  const utilityBillRows = inputs.utilityBills;
+  const measureRows = inputs.energyMeasures;
+  const nonEeMeasureRows = inputs.nonEeMeasures;
+  const tariffRows = inputs.tariffs;
 
   const buildingParams: HeatLossBuildingParams = {
     indoorTempOperationC: buildingRecord.indoorTempOperationC,
@@ -695,16 +653,6 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
     cooling.find((c) => c.scenario === "before")?.electricalEnergyForCoolingKwh ?? 0,
   );
 
-  // Batched with the measures/tariff queries below it (all four depend only
-  // on `buildingId` or nothing) even though they're not consumed until
-  // further down — same round-trip-reduction reasoning as the top-of-function
-  // batch.
-  const [utilityBillRows, measureRows, nonEeMeasureRows, tariffRows] = await Promise.all([
-    db.select().from(utilityBill).where(eq(utilityBill.buildingId, buildingId)),
-    db.query.energyMeasure.findMany({ where: eq(energyMeasure.buildingId, buildingId) }),
-    db.query.nonEeMeasure.findMany({ where: eq(nonEeMeasure.buildingId, buildingId) }),
-    db.select().from(energyTariff).orderBy(desc(energyTariff.effectiveDate)),
-  ]);
   const actualKwhByCarrierYear = new Map<string, Map<number, number>>();
   for (const bill of utilityBillRows) {
     if (bill.consumptionKwh == null) continue;
@@ -873,7 +821,7 @@ export async function runFullAudit(db: Database, buildingId: string): Promise<Au
 
   return {
     buildingId,
-    generatedAt: new Date().toISOString(),
+    generatedAt: options.generatedAt,
     summary,
     envelopeAreas,
     envelopeHeatLoss,

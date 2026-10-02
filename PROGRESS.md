@@ -2393,3 +2393,11 @@ T06b — qamrab olinganlar:
 - `00-MASTER-PLAN.md`: K21–K23, Faza 1 paket havolasi; `CLAUDE.md` "Joriy faza" → Faza 1.
 
 **Navbatda:** F01 (coder sessiya). Loyiha egasi: K21–K23 qarorlari (F10 gacha), Faza 0 dagi qolgan ro'yxat.
+
+## Faza 1 · F01 — `computeAudit` / `loadAuditInputs` ajratildi (2026-10-02)
+
+- Yangi `apps/api/src/services/audit-inputs.ts`: `AuditInputs` (DB tiplaridan `createdAt`/`updatedAt`/`userId` olib tashlangan — JSON-mos) va `loadAuditInputs(db, buildingId)` (bitta `Promise.all`, 20 o'qish; avvalgi 16+4 bilan bir xil so'rovlar).
+- `audit.engine.ts`: `computeAudit(inputs, { generatedAt })` — sinxron, `db` siz; `runFullAudit` = `computeAudit(await loadAuditInputs(...))`. Formulalar o'zgarmadi.
+- Test: `tests/services/compute-audit.test.ts` (bazasiz). Eslatma: fixture `as unknown as AuditInputs` orqali yozilgan (butun DB qator shakli qo'lda to'ldirilmaydi).
+- Tekshiruv: type-check, biome, api 198 test (integratsiya `audit`/`report` o'zgarishsiz yashil).
+**Navbatda:** F02.

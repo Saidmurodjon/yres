@@ -61,7 +61,7 @@ branch'ga; deploy va production bazaga tegilmaydi). Qo'shimcha:
 
 | # | Topshiriq | Fayl | Commit(lar) | Holat |
 |---|---|---|---|---|
-| F01 | `runFullAudit` → `loadAuditInputs` + sof `computeAudit` (xatti-harakat o'zgarmaydi) | `F01-compute-audit.md` | 1 | ⬜ |
+| F01 | `runFullAudit` → `loadAuditInputs` + sof `computeAudit` (xatti-harakat o'zgarmaydi) | `F01-compute-audit.md` | 1 | ✅ |
 | F02 | Golden ekstraktor: `expected.json` (natijalar) | `F02-golden-expected.md` | 1 | ⬜ |
 | F03 | Golden ekstraktor: `inputs.json` + `golden.test.ts` + `divergences.json` | `F03-golden-inputs-test.md` | 2 (a, b) | ⬜ |
 | F04 | X33 generatsiya `(Q+Qd)/η` (COP), sovutish/ISI taqsimot yo'qotishi | `F04-generatsiya.md` | 1 | ⬜ |
