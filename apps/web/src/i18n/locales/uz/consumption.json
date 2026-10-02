@@ -20,6 +20,8 @@
     "description": "Oxirgi 3 yil, oylar kesimida, jami energiya iste'moli (barcha tashuvchilar, kVt·soatda).",
     "noData": "Taqqoslash uchun hali ma'lumot yo'q."
   },
+  "invalidNumberAt": "{{where}}: raqam kiriting, masalan 12,5 — hech narsa saqlanmadi.",
+  "invalidNumberAtMore": "…yana {{count}} ta.",
   "excel": {
     "downloadTemplate": "Shablonni yuklab olish",
     "uploadButton": "Excel yuklash",
@@ -47,6 +49,7 @@
       "invalidMonth": "{{row}}-qator: oy 1 dan 12 gacha bo'lishi kerak.",
       "invalidCarrier": "{{row}}-qator: tashuvchi tanilmadi.",
       "invalidConsumption": "{{row}}-qator: miqdor raqam bo'lishi kerak.",
+      "invalidTariff": "{{row}}-qator: tarif raqam bo'lishi kerak.",
       "parseFailed": "Faylni o'qib bo'lmadi — u haqiqiy .xlsx fayl ekanini tekshiring."
     }
   }

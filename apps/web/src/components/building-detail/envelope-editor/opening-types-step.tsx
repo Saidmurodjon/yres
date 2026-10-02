@@ -1,8 +1,18 @@
-import { Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@yres/ui";
+import {
+  Button,
+  Input,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@yres/ui";
 import { Plus } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { OPENING_CATEGORY_LABELS } from "../../../lib/labels";
+import { NumberInput } from "../../number-input";
 import { RowCard } from "./row-card";
 import { type OpeningTypeRow, emptyOpeningType } from "./state";
 
@@ -76,48 +86,40 @@ export function OpeningTypesStep({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor={`${formId}-${row.rowId}-u`}>{t("editor.openingTypes.uValue")}</Label>
-              <Input
+              <NumberInput
                 id={`${formId}-${row.rowId}-u`}
-                type="number"
-                step="any"
                 value={row.uValueWm2k}
-                onChange={(e) => updateRow(row.rowId, { uValueWm2k: e.target.value })}
+                onValueChange={(raw) => updateRow(row.rowId, { uValueWm2k: raw })}
               />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor={`${formId}-${row.rowId}-shading`}>
                 {t("editor.openingTypes.shadingFactor")}
               </Label>
-              <Input
+              <NumberInput
                 id={`${formId}-${row.rowId}-shading`}
-                type="number"
-                step="any"
                 value={row.shadingFactor}
-                onChange={(e) => updateRow(row.rowId, { shadingFactor: e.target.value })}
+                onValueChange={(raw) => updateRow(row.rowId, { shadingFactor: raw })}
               />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor={`${formId}-${row.rowId}-width`}>
                 {t("editor.openingTypes.width")}
               </Label>
-              <Input
+              <NumberInput
                 id={`${formId}-${row.rowId}-width`}
-                type="number"
-                step="any"
                 value={row.widthM}
-                onChange={(e) => updateRow(row.rowId, { widthM: e.target.value })}
+                onValueChange={(raw) => updateRow(row.rowId, { widthM: raw })}
               />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor={`${formId}-${row.rowId}-height`}>
                 {t("editor.openingTypes.height")}
               </Label>
-              <Input
+              <NumberInput
                 id={`${formId}-${row.rowId}-height`}
-                type="number"
-                step="any"
                 value={row.heightM}
-                onChange={(e) => updateRow(row.rowId, { heightM: e.target.value })}
+                onValueChange={(raw) => updateRow(row.rowId, { heightM: raw })}
               />
             </div>
             {row.category === "window" && (
@@ -126,24 +128,20 @@ export function OpeningTypesStep({
                   <Label htmlFor={`${formId}-${row.rowId}-g`}>
                     {t("editor.openingTypes.gValue")}
                   </Label>
-                  <Input
+                  <NumberInput
                     id={`${formId}-${row.rowId}-g`}
-                    type="number"
-                    step="any"
                     value={row.gValue}
-                    onChange={(e) => updateRow(row.rowId, { gValue: e.target.value })}
+                    onValueChange={(raw) => updateRow(row.rowId, { gValue: raw })}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor={`${formId}-${row.rowId}-frame`}>
                     {t("editor.openingTypes.frameFactor")}
                   </Label>
-                  <Input
+                  <NumberInput
                     id={`${formId}-${row.rowId}-frame`}
-                    type="number"
-                    step="any"
                     value={row.frameFactor}
-                    onChange={(e) => updateRow(row.rowId, { frameFactor: e.target.value })}
+                    onValueChange={(raw) => updateRow(row.rowId, { frameFactor: raw })}
                   />
                 </div>
               </>

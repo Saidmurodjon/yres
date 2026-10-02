@@ -1,17 +1,11 @@
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@yres/ui";
+import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@yres/ui";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMaterials, useReplaceEnvelope, useSurfaceResistance } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import type { EnvelopeData } from "../../lib/api-types";
+import { toNumberLocale } from "../../lib/number";
 import { BuildingBlocksStep } from "./envelope-editor/building-blocks-step";
 import { ConstructionTypesStep } from "./envelope-editor/construction-types-step";
 import { EnvelopeElementsStep } from "./envelope-editor/envelope-elements-step";
@@ -34,14 +28,15 @@ export function EnvelopeEditorDialog({
   open,
   onOpenChange,
 }: EnvelopeEditorDialogProps) {
-  const { t } = useTranslation("envelope");
+  const { t, i18n } = useTranslation("envelope");
+  const locale = toNumberLocale(i18n.language);
   const { data: materialsData, isLoading: materialsLoading } = useMaterials();
   const { data: surfaceResistanceData } = useSurfaceResistance();
   const replaceEnvelope = useReplaceEnvelope(buildingId);
   const materials = materialsData?.materials ?? [];
   const surfaceResistances = surfaceResistanceData?.surfaceResistances ?? [];
 
-  const [state, setState] = useState<EditorState>(() => toEditorState(envelope));
+  const [state, setState] = useState<EditorState>(() => toEditorState(envelope, locale));
   const [step, setStep] = useState<EditorStep>("blocks");
   const [errors, setErrors] = useState<string[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -49,7 +44,7 @@ export function EnvelopeEditorDialog({
   // biome-ignore lint/correctness/useExhaustiveDependencies: only re-sync from server data when the dialog transitions to open, not on every envelope refetch while it's open (that would clobber in-progress edits).
   useEffect(() => {
     if (open) {
-      setState(toEditorState(envelope));
+      setState(toEditorState(envelope, locale));
       setStep("blocks");
       setErrors([]);
       setApiError(null);
@@ -58,7 +53,7 @@ export function EnvelopeEditorDialog({
 
   async function handleSubmit() {
     setApiError(null);
-    const { payload, errors: validationErrors } = parseEditorState(state, t);
+    const { payload, errors: validationErrors } = parseEditorState(state, t, locale);
     setErrors(validationErrors);
     if (!payload) return;
 

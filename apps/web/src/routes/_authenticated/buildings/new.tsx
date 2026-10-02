@@ -11,13 +11,14 @@ import {
 import { useCreateBuilding } from "../../../hooks";
 import { useClimateRegions } from "../../../hooks";
 import { ApiError } from "../../../lib/api";
+import { toNumberLocale } from "../../../lib/number";
 
 export const Route = createFileRoute("/_authenticated/buildings/new")({
   component: NewBuildingPage,
 });
 
 function NewBuildingPage() {
-  const { t } = useTranslation("buildings");
+  const { t, i18n } = useTranslation("buildings");
   const navigate = useNavigate();
   const { data: climateData, isLoading: climateLoading } = useClimateRegions({ pageSize: 100 });
   const createBuilding = useCreateBuilding();
@@ -32,7 +33,7 @@ function NewBuildingPage() {
     event.preventDefault();
     setApiError(null);
 
-    const { data, errors } = parseBuildingFormValues(values, t);
+    const { data, errors } = parseBuildingFormValues(values, t, toNumberLocale(i18n.language));
     setValidationErrors(errors);
     if (!data) return;
 

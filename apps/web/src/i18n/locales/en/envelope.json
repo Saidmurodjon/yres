@@ -134,6 +134,7 @@
       "buildingBlockFootprintWidthInvalid": "Block \"{{name}}\" needs a positive footprint width.",
       "buildingBlockFloorHeightInvalid": "Block \"{{name}}\" needs a positive floor-to-floor height.",
       "buildingBlockPerimeterInvalid": "Block \"{{name}}\" needs a positive perimeter.",
+      "numberInvalid": "{{where}}: not a valid number, for example 12.5.",
       "buildingBlockFloorsInvalid": "Block \"{{name}}\" needs a positive whole number of floors.",
       "constructionTypeCodeRequired": "Every construction type needs a code.",
       "constructionTypeCodeDuplicate": "Construction type code \"{{code}}\" is duplicated.",

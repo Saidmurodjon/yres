@@ -6,7 +6,9 @@
   "common": {
     "noneDefined": "Ushbu stsenariy uchun hech narsa belgilanmagan.",
     "addRow": "Qator qo'shish",
-    "removeRow": "Qatorni o'chirish"
+    "removeRow": "Qatorni o'chirish",
+    "invalidNumbers": "Ba'zi kataklar raqam emas (qizil bilan belgilangan) yoki majburiy kataklar bo'sh. Hech narsa saqlanmadi.",
+    "invalidCell": "Raqam emas — masalan 12,5"
   },
   "ventilation": {
     "title": "Ventilyatsiya",

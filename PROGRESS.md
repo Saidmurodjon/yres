@@ -2269,3 +2269,30 @@ shuning uchun T01 da yo spec'larni tuzatish, yo E2E'ni aniq izoh bilan CI'dan ch
 - Tekshiruv: type-check, biome, `bun run build` (apps/web), `bun run test` yashil. Brauzerda tekshirilmadi (komponent hali hech qayerda ishlatilmaydi — T05b da).
 
 **Navbatda:** T05b — barcha `type="number"` iste'molchilarini o'tkazish.
+
+## Faza 0 · T05b — barcha raqam maydonlari `NumberInput` + `parseLocaleNumber` ga o'tkazildi (2026-10-02)
+
+Har fayl bo'yicha:
+- `components/buildings/building-form-fields.tsx` (+ `edit-building-dialog.tsx`, `routes/…/buildings/new.tsx`): 15 ta `type="number"` → `NumberInput` (butun: yil, aholi, isitish kunlari); `parseRequiredNumber/OptionalNumber`
+  endi `parseLocaleNumber` (imzo + `locale`); server qiymatlari `formatNumberForInput`; bo'sh majburiy maydon va noto'g'ri qiymat — xato, `occupantCount` bo'sh bo'lsa `0` (backend default, faqat BO'SH uchun).
+- `consumption-tab.tsx`: oylik/tarif/yil kataklari `NumberInput` (tor katakda `showMessage={false}`: qizil chegara + `title`), `buildBillGroupsForYear` endi invalid katakni **tashlamaydi** — saqlash to'xtaydi va "qaysi katak"lar ro'yxati
+  ko'rsatiladi; yil 1990–2100 (API bilan bir xil); jonli kWh yig'indisi (faqat ko'rsatish) invalid katakni hisoblamaydi. Bir yilni ko'p tashuvchiga ketma-ket saqlash (atomik emas) — T07.
+- `consumption-excel.ts`: `readNumberCell` (raqamli katak o'zi; matn — `parseLocaleNumber`, ilova lokali); noto'g'ri **tarif** endi jimgina `null` bo'lmaydi — qator xato bilan o'tkazib yuboriladi (yangi `invalidTariff`); o'qib bo'lmaydigan miqdor legacy ustunga qaytmaydi.
+- `measures-tab.tsx`: `Number(x) || 20` / `|| 0` olib tashlandi — bo'sh bo'lsa default (20 yil, 0), noto'g'ri bo'lsa xato (`lifetimeInvalid`, `maintenanceInvalid`); investitsiya/narx/miqdor `parseLocaleNumber`.
+- `systems-tab.tsx`: `num()`/`numOrNull()` o'rniga `RowParser` (9 bo'lim): majburiy bo'sh yoki noto'g'ri — saqlash to'xtaydi, kataklar qizil bilan belgilanadi + umumiy xabar (`invalidNumbers`); ixtiyoriy (nullable) maydonlar bo'sh = `null`;
+  butun ustunlar (`personsServed`, `quantity`, `collectorCount`) `integer`; `Math.round` jimgina yaxlitlash yo'q.
+- `envelope-editor/state.ts`: validatsiya `parseLocaleNumber` orqali; ixtiyoriy maydonlar (kenglik, balandlik, g, ramka, soyalanish, perimetr koeff., balandliklar) endi noto'g'ri bo'lsa **xato** (avval NaN API'ga ketardi); `toEditorState(data, locale)`.
+  `calculations.ts`: `previewNumber` — noto'g'ri → 0 **faqat ko'rsatish uchun** (izoh bilan; saqlashdan oldin `state.ts` to'xtatadi). 4 ta step fayl `NumberInput` (6+1+4+6).
+- `routes/…/audit.tsx` (tezkor qobiq + iste'mol qadami): `|| 0` / `|| 1` / `Math.round` yo'q; barcha maydon majburiy — bo'sh yoki noto'g'ri bo'lsa maydonlar belgilanadi va saqlanmaydi (`fixNumbers`); iste'mol qatorida yil/oy/miqdor tekshiruvi. `financial.tsx:188` dagi `type="number"` — recharts `XAxis`, forma emas.
+- i18n (uz/ru/en): `common.number.*`, `consumption.invalidNumberAt*`/`invalidTariff`, `measures.ee.lifetimeInvalid`/`maintenanceInvalid`, `systems.common.invalidNumbers`/`invalidCell`, `envelope.editor.errors.numberInvalid`, `audit.wizard.*`.
+  **Ruscha/o'zbekcha matnlarni loyiha egasi ko'rib chiqsin** (`i18n-and-appearance.md`).
+- `NumberInput`: `showMessage` (tor katak), qizil chegara `border-destructive!` — **build'dagi CSS tekshirildi**: oddiy `border-destructive` `border-input` dan OLDIN chiqadi va yutqazardi; `!` bilan `…!important` qoidasi bor. `pr-12`, `text-destructive`, `inset-y-0` ham CSS'da.
+
+Qabul mezonlari: `grep 'type="number"' apps/web/src` — faqat izohlar va `financial.tsx` (chart o'qi). `Number(`/`parseFloat` qoldiqlari: `consumption-tab.tsx` `Number(activeYear)` (ilovaning o'z `String(yil)` — foydalanuvchi matni emas), `chart-tooltip.tsx` (ko'rsatish).
+`|| 0`/`?? 0` — faqat server ma'lumoti/ko'rsatish yoki BO'SH uchun backend default'i.
+Tekshiruv: type-check, biome lint, `bun run build`, `bun run test` (web 62 + api), **Playwright 12/12 haqiqiy brauzerda** — yangi `tests/e2e/number-input.spec.ts` (5 test, bino formasi, saqlangan qiymat API'dan o'qiladi):
+uz `12,5`/`12.5` → 12.5; ru `1 234,5` → 1234.5; en `1,234` → 1234; uz `1,234` → 1.234; en `12abc` → inline `⚠` xabar + `aria-invalid`, saqlash to'xtaydi.
+**Qo'lda tekshirilmagan (loyiha egasi, 375 px va `sm+`):** tizimlar kartasi, iste'mol katakchalari, qobiq muharriri, tezkor audit, o'lchovlar — `12,5`, `12.5`, `1 234,5`, `12abc`, bo'sh uz/ru/en'da; xato matni 375 px da joyidan chiqmasligi (kataklarda matn yo'q, faqat belgi — shu maqsadda).
+Ma'lum cheklov: tahrirlash dialoglaridagi `useEffect([open/building])` qayta-sinxronlash (U2) — T06 da `useSyncedRows` bilan.
+
+**Navbatda:** T06 (dirty-himoya, blocker, o'chirishga tasdiq).

@@ -1,6 +1,7 @@
 import type { EnvelopeElementCategory, Orientation, Scenario } from "@yres/types";
 import type { TFunction } from "i18next";
 import type { EnvelopeData, ReplaceEnvelopePayload } from "../../../lib/api-types";
+import { type NumberLocale, formatNumberForInput, parseLocaleNumber } from "../../../lib/number";
 
 export const EDIT_SCENARIO: Scenario = "before";
 
@@ -130,16 +131,16 @@ export function emptyEnvelopeElement(
   };
 }
 
-export function toEditorState(data: EnvelopeData): EditorState {
+export function toEditorState(data: EnvelopeData, locale: NumberLocale): EditorState {
   const buildingBlocks = data.blocks.map((b) => ({
     rowId: uid(),
     name: b.name,
-    footprintLengthM: String(b.footprintLengthM),
-    footprintWidthM: String(b.footprintWidthM),
-    numberOfFloors: String(b.numberOfFloors),
-    floorToFloorHeightM: String(b.floorToFloorHeightM),
-    perimeterM: String(b.perimeterM),
-    perimeterLossCoefficient: String(b.perimeterLossCoefficient),
+    footprintLengthM: formatNumberForInput(b.footprintLengthM, locale),
+    footprintWidthM: formatNumberForInput(b.footprintWidthM, locale),
+    numberOfFloors: formatNumberForInput(b.numberOfFloors, locale),
+    floorToFloorHeightM: formatNumberForInput(b.floorToFloorHeightM, locale),
+    perimeterM: formatNumberForInput(b.perimeterM, locale),
+    perimeterLossCoefficient: formatNumberForInput(b.perimeterLossCoefficient, locale),
   }));
 
   const constructionTypes = data.constructionTypes
@@ -155,7 +156,7 @@ export function toEditorState(data: EnvelopeData): EditorState {
           rowId: uid(),
           layerOrder: l.layerOrder,
           materialId: l.materialId,
-          thicknessM: String(l.thicknessM),
+          thicknessM: formatNumberForInput(l.thicknessM, locale),
         })),
     }));
 
@@ -165,12 +166,12 @@ export function toEditorState(data: EnvelopeData): EditorState {
       rowId: uid(),
       code: ot.code,
       category: ot.category,
-      uValueWm2k: String(ot.uValueWm2k),
-      widthM: ot.widthM !== null ? String(ot.widthM) : "",
-      heightM: ot.heightM !== null ? String(ot.heightM) : "",
-      gValue: ot.gValue !== null ? String(ot.gValue) : "",
-      frameFactor: ot.frameFactor !== null ? String(ot.frameFactor) : "",
-      shadingFactor: String(ot.shadingFactor),
+      uValueWm2k: formatNumberForInput(ot.uValueWm2k, locale),
+      widthM: formatNumberForInput(ot.widthM, locale),
+      heightM: formatNumberForInput(ot.heightM, locale),
+      gValue: formatNumberForInput(ot.gValue, locale),
+      frameFactor: formatNumberForInput(ot.frameFactor, locale),
+      shadingFactor: formatNumberForInput(ot.shadingFactor, locale),
       description: ot.description ?? "",
     }));
 
@@ -183,13 +184,13 @@ export function toEditorState(data: EnvelopeData): EditorState {
       sideCode: el.sideCode ?? "",
       description: el.description ?? "",
       constructionTypeCode: el.constructionType?.code ?? "",
-      lengthM: String(el.lengthM),
-      heightEnvContactM: el.heightEnvContactM !== null ? String(el.heightEnvContactM) : "",
-      heightGroundContactM: el.heightGroundContactM !== null ? String(el.heightGroundContactM) : "",
+      lengthM: formatNumberForInput(el.lengthM, locale),
+      heightEnvContactM: formatNumberForInput(el.heightEnvContactM, locale),
+      heightGroundContactM: formatNumberForInput(el.heightGroundContactM, locale),
       openings: el.openings.map((o) => ({
         rowId: uid(),
         openingTypeCode: o.openingType?.code ?? "",
-        count: String(o.count),
+        count: formatNumberForInput(o.count, locale),
       })),
     }));
 
@@ -199,11 +200,32 @@ export function toEditorState(data: EnvelopeData): EditorState {
 export function parseEditorState(
   state: EditorState,
   t: TFunction,
+  locale: NumberLocale,
 ): {
   payload: ReplaceEnvelopePayload | null;
   errors: string[];
 } {
   const errors: string[] = [];
+
+  // Text → number the way the user meant it (12,5 / 12.5). Everything is validated below BEFORE the payload
+  // is built, so the NaN a bad value would give here never reaches the API.
+  const read = (raw: string, integer = false) => {
+    const parsed = parseLocaleNumber(raw, locale, { integer });
+    return parsed.ok ? parsed.value : Number.NaN;
+  };
+  /** Optional field: empty is "not given"; text that is not a number is an error, never silently dropped. */
+  const readOptional = (raw: string, where: string): number | undefined => {
+    const parsed = parseLocaleNumber(raw, locale);
+    if (parsed.ok) return parsed.value;
+    if (parsed.reason === "invalid") {
+      errors.push(t("envelope:editor.errors.numberInvalid", { where }));
+    }
+    return undefined;
+  };
+  const positive = (raw: string, integer = false) => {
+    const value = read(raw, integer);
+    return Number.isFinite(value) && value > 0;
+  };
 
   const blockNames = new Set<string>();
   for (const b of state.buildingBlocks) {
@@ -217,16 +239,11 @@ export function parseEditorState(
       ["floorToFloorHeightM", "buildingBlockFloorHeightInvalid"],
       ["perimeterM", "buildingBlockPerimeterInvalid"],
     ] as const) {
-      const raw = b[field];
-      if (!raw || Number.isNaN(Number(raw)) || Number(raw) <= 0) {
+      if (!positive(b[field])) {
         errors.push(t(`envelope:editor.errors.${messageKey}`, { name: b.name || "?" }));
       }
     }
-    if (
-      !b.numberOfFloors ||
-      !Number.isInteger(Number(b.numberOfFloors)) ||
-      Number(b.numberOfFloors) <= 0
-    ) {
+    if (!positive(b.numberOfFloors, true)) {
       errors.push(t("envelope:editor.errors.buildingBlockFloorsInvalid", { name: b.name || "?" }));
     }
   }
@@ -240,11 +257,7 @@ export function parseEditorState(
     for (const layer of ct.layers) {
       if (!layer.materialId)
         errors.push(t("envelope:editor.errors.layerMaterialRequired", { code: ct.code || "?" }));
-      if (
-        !layer.thicknessM ||
-        Number.isNaN(Number(layer.thicknessM)) ||
-        Number(layer.thicknessM) <= 0
-      ) {
+      if (!positive(layer.thicknessM)) {
         errors.push(t("envelope:editor.errors.layerThicknessInvalid", { code: ct.code || "?" }));
       }
     }
@@ -256,7 +269,7 @@ export function parseEditorState(
     else if (otCodes.has(ot.code.trim()))
       errors.push(t("envelope:editor.errors.openingTypeCodeDuplicate", { code: ot.code }));
     else otCodes.add(ot.code.trim());
-    if (!ot.uValueWm2k || Number.isNaN(Number(ot.uValueWm2k)) || Number(ot.uValueWm2k) <= 0) {
+    if (!positive(ot.uValueWm2k)) {
       errors.push(t("envelope:editor.errors.openingTypeUValueInvalid", { code: ot.code || "?" }));
     }
   }
@@ -277,7 +290,7 @@ export function parseEditorState(
         }),
       );
     }
-    if (!el.lengthM || Number.isNaN(Number(el.lengthM)) || Number(el.lengthM) <= 0) {
+    if (!positive(el.lengthM)) {
       errors.push(
         t("envelope:editor.errors.elementLengthInvalid", { blockName: el.blockName || "?" }),
       );
@@ -297,29 +310,57 @@ export function parseEditorState(
           }),
         );
       }
-      if (!o.count || Number.isNaN(Number(o.count)) || Number(o.count) <= 0) {
+      if (!positive(o.count, true)) {
         errors.push(
-          t("envelope:editor.errors.elementOpeningCountInvalid", { blockName: el.blockName || "?" }),
+          t("envelope:editor.errors.elementOpeningCountInvalid", {
+            blockName: el.blockName || "?",
+          }),
         );
       }
     }
   }
 
+  // Optional numeric fields: empty is fine, unreadable text is an error (collected here, parsed again below).
+  const label = (key: string) => t(`envelope:editor.${key}`).replace(/\s*\*$/, "");
+  for (const b of state.buildingBlocks) {
+    readOptional(
+      b.perimeterLossCoefficient,
+      `${b.name || "?"} — ${label("buildingBlocks.perimeterLossCoefficient")}`,
+    );
+  }
+  for (const ot of state.openingTypes) {
+    const who = ot.code || "?";
+    readOptional(ot.widthM, `${who} — ${label("openingTypes.width")}`);
+    readOptional(ot.heightM, `${who} — ${label("openingTypes.height")}`);
+    readOptional(ot.gValue, `${who} — ${label("openingTypes.gValue")}`);
+    readOptional(ot.frameFactor, `${who} — ${label("openingTypes.frameFactor")}`);
+    readOptional(ot.shadingFactor, `${who} — ${label("openingTypes.shadingFactor")}`);
+  }
+  for (const el of state.envelopeElements) {
+    const who = el.blockName || "?";
+    readOptional(el.heightEnvContactM, `${who} — ${label("elements.heightEnvContact")}`);
+    readOptional(el.heightGroundContactM, `${who} — ${label("elements.heightGroundContact")}`);
+  }
+
   if (errors.length > 0) return { payload: null, errors };
+
+  // Reads an optional field that was validated above: empty → undefined.
+  const optional = (raw: string): number | undefined => {
+    const parsed = parseLocaleNumber(raw, locale);
+    return parsed.ok ? parsed.value : undefined;
+  };
 
   return {
     payload: {
       scenario: EDIT_SCENARIO,
       buildingBlocks: state.buildingBlocks.map((b) => ({
         name: b.name.trim(),
-        footprintLengthM: Number(b.footprintLengthM),
-        footprintWidthM: Number(b.footprintWidthM),
-        numberOfFloors: Number(b.numberOfFloors),
-        floorToFloorHeightM: Number(b.floorToFloorHeightM),
-        perimeterM: Number(b.perimeterM),
-        perimeterLossCoefficient: b.perimeterLossCoefficient.trim()
-          ? Number(b.perimeterLossCoefficient)
-          : undefined,
+        footprintLengthM: read(b.footprintLengthM),
+        footprintWidthM: read(b.footprintWidthM),
+        numberOfFloors: read(b.numberOfFloors, true),
+        floorToFloorHeightM: read(b.floorToFloorHeightM),
+        perimeterM: read(b.perimeterM),
+        perimeterLossCoefficient: optional(b.perimeterLossCoefficient),
       })),
       constructionTypes: state.constructionTypes.map((ct) => ({
         code: ct.code.trim(),
@@ -328,18 +369,18 @@ export function parseEditorState(
         layers: ct.layers.map((l, idx) => ({
           layerOrder: idx,
           materialId: l.materialId,
-          thicknessM: Number(l.thicknessM),
+          thicknessM: read(l.thicknessM),
         })),
       })),
       openingTypes: state.openingTypes.map((ot) => ({
         code: ot.code.trim(),
         category: ot.category,
-        uValueWm2k: Number(ot.uValueWm2k),
-        widthM: ot.widthM.trim() ? Number(ot.widthM) : null,
-        heightM: ot.heightM.trim() ? Number(ot.heightM) : null,
-        gValue: ot.gValue.trim() ? Number(ot.gValue) : null,
-        frameFactor: ot.frameFactor.trim() ? Number(ot.frameFactor) : null,
-        shadingFactor: ot.shadingFactor.trim() ? Number(ot.shadingFactor) : undefined,
+        uValueWm2k: read(ot.uValueWm2k),
+        widthM: optional(ot.widthM) ?? null,
+        heightM: optional(ot.heightM) ?? null,
+        gValue: optional(ot.gValue) ?? null,
+        frameFactor: optional(ot.frameFactor) ?? null,
+        shadingFactor: optional(ot.shadingFactor),
         description: ot.description.trim() || null,
       })),
       envelopeElements: state.envelopeElements.map((el) => ({
@@ -348,14 +389,12 @@ export function parseEditorState(
         sideCode: el.sideCode.trim() || null,
         description: el.description.trim() || null,
         constructionTypeCode: el.constructionTypeCode,
-        lengthM: Number(el.lengthM),
-        heightEnvContactM: el.heightEnvContactM.trim() ? Number(el.heightEnvContactM) : undefined,
-        heightGroundContactM: el.heightGroundContactM.trim()
-          ? Number(el.heightGroundContactM)
-          : undefined,
+        lengthM: read(el.lengthM),
+        heightEnvContactM: optional(el.heightEnvContactM),
+        heightGroundContactM: optional(el.heightGroundContactM),
         openings: el.openings.map((o) => ({
           openingTypeCode: o.openingTypeCode,
-          count: Number(o.count),
+          count: read(o.count, true),
         })),
       })),
     },

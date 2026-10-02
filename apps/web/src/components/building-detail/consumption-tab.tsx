@@ -1,3 +1,4 @@
+import { consumptionAnnotationSectionKey } from "@yres/types";
 import {
   Button,
   Card,
@@ -20,7 +21,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@yres/ui";
-import { consumptionAnnotationSectionKey } from "@yres/types";
+import type { TFunction } from "i18next";
 import { Download, Plus, Save, Upload } from "lucide-react";
 import type { ClipboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -28,11 +29,31 @@ import { useTranslation } from "react-i18next";
 import { useConsumption, useReplaceConsumption } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import type { EnergyCarrier, MonthlyBillInput, UtilityBill } from "../../lib/api-types";
+import {
+  ENERGY_CARRIERS,
+  ENERGY_CARRIER_LABELS,
+  MONTH_LABELS,
+  formatNumber,
+} from "../../lib/labels";
+import {
+  type NumberLocale,
+  formatNumberForInput,
+  parseLocaleNumber,
+  toNumberLocale,
+} from "../../lib/number";
 import { AuditorNote } from "../auditor-note";
-import { ENERGY_CARRIERS, ENERGY_CARRIER_LABELS, MONTH_LABELS, formatNumber } from "../../lib/labels";
+import { NumberInput } from "../number-input";
 import { MonthlyComparisonChart } from "./consumption-comparison-chart";
-import { type ParsedBillRow, downloadConsumptionTemplate, parseConsumptionWorkbook } from "./consumption-excel";
+import {
+  type ParsedBillRow,
+  downloadConsumptionTemplate,
+  parseConsumptionWorkbook,
+} from "./consumption-excel";
 import { ENERGY_CARRIER_NATIVE_UNIT_LABELS, previewConsumptionKwh } from "./consumption-units";
+
+/** Matches the API (schemas/consumption.ts). */
+const MIN_YEAR = 1990;
+const MAX_YEAR = 2100;
 
 // One row per carrier (not per month) — 12 native-unit readings plus a
 // single tariff that applies to the whole year, matching how these bills
@@ -53,53 +74,86 @@ function emptyYearGrid(): YearGrid {
   return Object.fromEntries(ENERGY_CARRIERS.map((c) => [c, emptyCarrierRow()])) as YearGrid;
 }
 
-function gridsFromBills(bills: UtilityBill[], years: number[]): Record<number, YearGrid> {
+function gridsFromBills(
+  bills: UtilityBill[],
+  years: number[],
+  locale: NumberLocale,
+): Record<number, YearGrid> {
   const grids: Record<number, YearGrid> = {};
   for (const year of years) grids[year] = emptyYearGrid();
   for (const bill of bills) {
     const yearGrid = grids[bill.year] ?? emptyYearGrid();
     grids[bill.year] = yearGrid;
     const row = yearGrid[bill.energyCarrier];
-    row.months[bill.month - 1] = String(bill.consumptionNative);
-    if (bill.tariffLocal !== null && !row.tariffLocal) row.tariffLocal = String(bill.tariffLocal);
+    row.months[bill.month - 1] = formatNumberForInput(bill.consumptionNative, locale);
+    if (bill.tariffLocal !== null && !row.tariffLocal) {
+      row.tariffLocal = formatNumberForInput(bill.tariffLocal, locale);
+    }
   }
   return grids;
 }
 
-function mergeParsedRows(prev: Record<number, YearGrid>, rows: ParsedBillRow[]): Record<number, YearGrid> {
+function mergeParsedRows(
+  prev: Record<number, YearGrid>,
+  rows: ParsedBillRow[],
+  locale: NumberLocale,
+): Record<number, YearGrid> {
   const next = { ...prev };
   for (const parsed of rows) {
     const existingYearGrid = next[parsed.year];
     const yearGrid = existingYearGrid ? { ...existingYearGrid } : emptyYearGrid();
     const existingRow = yearGrid[parsed.energyCarrier];
     const months = [...existingRow.months];
-    months[parsed.month - 1] = String(parsed.consumptionNative);
+    months[parsed.month - 1] = formatNumberForInput(parsed.consumptionNative, locale);
     yearGrid[parsed.energyCarrier] = {
       months,
-      tariffLocal: parsed.tariffLocal !== null ? String(parsed.tariffLocal) : existingRow.tariffLocal,
+      tariffLocal:
+        parsed.tariffLocal !== null
+          ? formatNumberForInput(parsed.tariffLocal, locale)
+          : existingRow.tariffLocal,
     };
     next[parsed.year] = yearGrid;
   }
   return next;
 }
 
+/**
+ * Parses one year's grid for saving. A cell that has text but is not a number is reported in `invalid`
+ * (with where it is) and the caller must NOT save — it is never skipped or turned into 0, which used to
+ * drop a mistyped month silently. Empty cells are simply "no bill for that month".
+ */
 function buildBillGroupsForYear(
   yearGrid: YearGrid,
-): { energyCarrier: EnergyCarrier; bills: MonthlyBillInput[] }[] {
+  locale: NumberLocale,
+  t: TFunction,
+): { groups: { energyCarrier: EnergyCarrier; bills: MonthlyBillInput[] }[]; invalid: string[] } {
   const groups: { energyCarrier: EnergyCarrier; bills: MonthlyBillInput[] }[] = [];
+  const invalid: string[] = [];
   for (const carrier of ENERGY_CARRIERS) {
     const row = yearGrid[carrier];
-    const tariffLocal = row.tariffLocal.trim() ? Number(row.tariffLocal) : null;
+    const carrierLabel = ENERGY_CARRIER_LABELS[carrier];
+
+    let tariffLocal: number | null = null;
+    const tariff = parseLocaleNumber(row.tariffLocal, locale);
+    if (tariff.ok) tariffLocal = tariff.value;
+    else if (tariff.reason === "invalid") invalid.push(`${carrierLabel} — ${t("columnTariff")}`);
+
     const bills: MonthlyBillInput[] = [];
     for (const [idx, raw] of row.months.entries()) {
-      if (!raw.trim()) continue;
-      const consumptionNative = Number(raw);
-      if (Number.isNaN(consumptionNative)) continue;
-      bills.push({ month: idx + 1, consumptionNative, tariffLocal });
+      const parsed = parseLocaleNumber(raw, locale);
+      if (!parsed.ok) {
+        if (parsed.reason === "invalid") {
+          invalid.push(
+            `${carrierLabel} — ${MONTH_LABELS[idx] ?? t("monthFallback", { n: idx + 1 })}`,
+          );
+        }
+        continue;
+      }
+      bills.push({ month: idx + 1, consumptionNative: parsed.value, tariffLocal });
     }
     if (bills.length > 0) groups.push({ energyCarrier: carrier, bills });
   }
-  return groups;
+  return { groups, invalid };
 }
 
 /** Splits pasted Excel text into trimmed values — a copied row is tab-separated, a copied column is newline-separated. */
@@ -116,7 +170,8 @@ export function ConsumptionTab({
   buildingId,
   readOnly = false,
 }: { buildingId: string; readOnly?: boolean }) {
-  const { t } = useTranslation("consumption");
+  const { t, i18n } = useTranslation("consumption");
+  const locale = toNumberLocale(i18n.language);
   const { data, isLoading, isError, error } = useConsumption(buildingId, { pageSize: 500 });
   const replaceConsumption = useReplaceConsumption(buildingId);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -144,7 +199,7 @@ export function ConsumptionTab({
     const fromData = bills.map((b) => b.year);
     const initialYears = [...new Set([...fromData, ...years])].sort((a, b) => b - a);
     setYears(initialYears);
-    setGridsByYear(gridsFromBills(bills, initialYears));
+    setGridsByYear(gridsFromBills(bills, initialYears, locale));
     setInitialized(true);
   }, [isLoading, initialized]);
 
@@ -171,7 +226,12 @@ export function ConsumptionTab({
     setSaved(false);
   }
 
-  function handleMonthPaste(e: ClipboardEvent<HTMLInputElement>, year: number, carrier: EnergyCarrier, startIdx: number) {
+  function handleMonthPaste(
+    e: ClipboardEvent<HTMLInputElement>,
+    year: number,
+    carrier: EnergyCarrier,
+    startIdx: number,
+  ) {
     const values = splitPastedValues(e.clipboardData.getData("text"));
     if (values.length <= 1) return;
     e.preventDefault();
@@ -190,8 +250,10 @@ export function ConsumptionTab({
   }
 
   function addYear() {
-    const parsed = Number(newYearValue);
-    if (!Number.isInteger(parsed)) return;
+    const parsedYear = parseLocaleNumber(newYearValue, locale, { integer: true });
+    // An unreadable or out-of-range year adds nothing; the field itself shows why (NumberInput, on blur).
+    if (!parsedYear.ok || parsedYear.value < MIN_YEAR || parsedYear.value > MAX_YEAR) return;
+    const parsed = parsedYear.value;
     if (!years.includes(parsed)) {
       setYears((y) => [...y, parsed].sort((a, b) => b - a));
       setGridsByYear((prev) => ({ ...prev, [parsed]: prev[parsed] ?? emptyYearGrid() }));
@@ -202,8 +264,16 @@ export function ConsumptionTab({
   async function handleSaveActiveYear() {
     setSaveError(null);
     setSaved(false);
+    // `activeYear` is the app's own String(year) of an integer tab, not user text.
     const year = Number(activeYear);
-    const groups = buildBillGroupsForYear(gridFor(year));
+    const { groups, invalid } = buildBillGroupsForYear(gridFor(year), locale, t);
+    if (invalid.length > 0) {
+      const shown = invalid.slice(0, 3).join("; ");
+      const more =
+        invalid.length > 3 ? ` ${t("invalidNumberAtMore", { count: invalid.length - 3 })}` : "";
+      setSaveError(`${t("invalidNumberAt", { where: shown })}${more}`);
+      return;
+    }
 
     try {
       for (const group of groups) {
@@ -224,9 +294,9 @@ export function ConsumptionTab({
     setImportMessage(null);
     setImportErrorDetails([]);
     try {
-      const { rows, errors } = await parseConsumptionWorkbook(file, t);
+      const { rows, errors } = await parseConsumptionWorkbook(file, t, locale);
 
-      setGridsByYear((prev) => mergeParsedRows(prev, rows));
+      setGridsByYear((prev) => mergeParsedRows(prev, rows, locale));
 
       const importedYears = [...new Set(rows.map((r) => r.year))].sort((a, b) => b - a);
       if (importedYears.length > 0) {
@@ -239,7 +309,9 @@ export function ConsumptionTab({
           ? t("excel.importedSummary", { count: rows.length, years: importedYears.join(", ") })
           : t("excel.importedNothing");
       setImportMessage(
-        errors.length > 0 ? `${summary} ${t("excel.importedErrors", { count: errors.length })}` : summary,
+        errors.length > 0
+          ? `${summary} ${t("excel.importedErrors", { count: errors.length })}`
+          : summary,
       );
       setImportErrorDetails(errors);
       setSaved(false);
@@ -258,10 +330,17 @@ export function ConsumptionTab({
           <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
             <div>
               <CardTitle className="text-base">{t("enterMonthlyBills")}</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">{t("enterMonthlyBillsDescription")}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t("enterMonthlyBillsDescription")}
+              </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => downloadConsumptionTemplate(t)}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => downloadConsumptionTemplate(t)}
+              >
                 <Download className="h-4 w-4" />
                 {t("excel.downloadTemplate")}
               </Button>
@@ -318,7 +397,12 @@ export function ConsumptionTab({
                 </TabsList>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button type="button" variant="ghost" size="icon" aria-label={t("yearTabs.addYear")}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={t("yearTabs.addYear")}
+                    >
                       <Plus className="h-4 w-4" />
                     </Button>
                   </PopoverTrigger>
@@ -326,11 +410,13 @@ export function ConsumptionTab({
                     <div className="space-y-2">
                       <Label htmlFor="new-year-input">{t("yearTabs.addYear")}</Label>
                       <div className="flex gap-2">
-                        <Input
+                        <NumberInput
+                          integer
                           id="new-year-input"
-                          type="number"
+                          min={MIN_YEAR}
+                          max={MAX_YEAR}
                           value={newYearValue}
-                          onChange={(e) => setNewYearValue(e.target.value)}
+                          onValueChange={(raw) => setNewYearValue(raw)}
                         />
                         <Button type="button" size="sm" onClick={addYear}>
                           {t("yearTabs.add")}
@@ -346,14 +432,16 @@ export function ConsumptionTab({
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                     {ENERGY_CARRIERS.map((carrier) => {
                       const row = gridFor(y)[carrier];
+                      // Display only: an unreadable cell contributes nothing to this preview; saving refuses it.
                       const totalKwh = row.months.reduce((sum, raw) => {
-                        const value = Number(raw);
-                        return raw.trim() && !Number.isNaN(value)
-                          ? sum + previewConsumptionKwh(carrier, value)
-                          : sum;
+                        const parsed = parseLocaleNumber(raw, locale);
+                        return parsed.ok ? sum + previewConsumptionKwh(carrier, parsed.value) : sum;
                       }, 0);
                       return (
-                        <div key={carrier} className="overflow-hidden rounded-md border border-border">
+                        <div
+                          key={carrier}
+                          className="overflow-hidden rounded-md border border-border"
+                        >
                           <div className="border-b border-border px-2 py-1.5 text-sm font-medium">
                             {ENERGY_CARRIER_LABELS[carrier]}{" "}
                             <span className="text-xs font-normal text-muted-foreground">
@@ -363,27 +451,27 @@ export function ConsumptionTab({
                           <Table>
                             <TableBody>
                               {row.months.map((value, idx) => {
-                                const monthLabel = MONTH_LABELS[idx] ?? t("monthFallback", { n: idx + 1 });
+                                const monthLabel =
+                                  MONTH_LABELS[idx] ?? t("monthFallback", { n: idx + 1 });
                                 return (
-                                <TableRow key={monthLabel}>
-                                  <TableCell className="w-12 p-1 pl-2 text-xs text-muted-foreground">
-                                    {monthLabel.slice(0, 3)}
-                                  </TableCell>
-                                  <TableCell className="p-1 pr-2">
-                                    <Input
-                                      type="number"
-                                      step="any"
-                                      className="h-7 px-1.5 text-sm"
-                                      aria-label={t("ariaConsumption", {
-                                        month: monthLabel,
-                                        carrier: ENERGY_CARRIER_LABELS[carrier],
-                                      })}
-                                      value={value}
-                                      onChange={(e) => updateMonth(y, carrier, idx, e.target.value)}
-                                      onPaste={(e) => handleMonthPaste(e, y, carrier, idx)}
-                                    />
-                                  </TableCell>
-                                </TableRow>
+                                  <TableRow key={monthLabel}>
+                                    <TableCell className="w-12 p-1 pl-2 text-xs text-muted-foreground">
+                                      {monthLabel.slice(0, 3)}
+                                    </TableCell>
+                                    <TableCell className="p-1 pr-2">
+                                      <NumberInput
+                                        className="h-7 px-1.5 text-sm"
+                                        showMessage={false}
+                                        aria-label={t("ariaConsumption", {
+                                          month: monthLabel,
+                                          carrier: ENERGY_CARRIER_LABELS[carrier],
+                                        })}
+                                        value={value}
+                                        onValueChange={(raw) => updateMonth(y, carrier, idx, raw)}
+                                        onPaste={(e) => handleMonthPaste(e, y, carrier, idx)}
+                                      />
+                                    </TableCell>
+                                  </TableRow>
                                 );
                               })}
                             </TableBody>
@@ -392,12 +480,11 @@ export function ConsumptionTab({
                             <Label className="shrink-0 text-xs text-muted-foreground">
                               {t("columnTariff")}
                             </Label>
-                            <Input
-                              type="number"
-                              step="any"
+                            <NumberInput
                               className="h-7 w-20 px-1.5 text-sm"
+                              showMessage={false}
                               value={row.tariffLocal}
-                              onChange={(e) => updateTariff(y, carrier, e.target.value)}
+                              onValueChange={(raw) => updateTariff(y, carrier, raw)}
                             />
                           </div>
                           <div className="border-t border-border bg-muted/30 px-2 py-1.5 text-xs text-muted-foreground">
@@ -413,7 +500,9 @@ export function ConsumptionTab({
 
             {saveError && <p className="text-sm text-destructive">{saveError}</p>}
             {saved && !saveError && (
-              <p className="text-sm text-muted-foreground">{t("savedMessage", { year: activeYear })}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("savedMessage", { year: activeYear })}
+              </p>
             )}
           </CardContent>
           <CardFooter className="justify-end">

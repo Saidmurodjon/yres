@@ -36,7 +36,8 @@
       "width": "Kengligi (m)",
       "height": "Balandligi (m)",
       "uValue": "U-qiymati (Vt/m²K)",
-      "saveAndContinue": "Saqlash va davom etish"
+      "saveAndContinue": "Saqlash va davom etish",
+      "fixNumbers": "Ba'zi raqamlar bo'sh yoki noto'g'ri (quyida belgilangan). Hech narsa saqlanmadi."
     },
     "consumption": {
       "title": "Tarixiy kommunal to'lov hisoblari (ixtiyoriy)",
@@ -50,7 +51,9 @@
       "saveFailed": "Kommunal hisoblarni saqlab bo'lmadi.",
       "back": "Orqaga",
       "skip": "O'tkazib yuborish",
-      "saveAndContinue": "Saqlash va davom etish"
+      "saveAndContinue": "Saqlash va davom etish",
+      "yearInvalid": "1990 va 2100 oralig'idagi yilni kiriting.",
+      "monthInvalid": "1 dan 12 gacha oyni kiriting."
     },
     "run": {
       "title": "Ishga tushirishga tayyor",

@@ -18,6 +18,7 @@ import {
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { NumberInput } from "../../../../components/number-input";
 import {
   useBuilding,
   useCreateConsumption,
@@ -29,6 +30,7 @@ import {
 import { ApiError } from "../../../../lib/api";
 import type { ReplaceEnvelopePayload } from "../../../../lib/api-types";
 import { ENERGY_CARRIERS, ENERGY_CARRIER_LABELS, formatNumber } from "../../../../lib/labels";
+import { type NumberLocale, parseLocaleNumber, toNumberLocale } from "../../../../lib/number";
 
 export const Route = createFileRoute("/_authenticated/buildings/$buildingId/audit")({
   component: AuditWizardPage,
@@ -163,31 +165,51 @@ const DEFAULT_QUICK_ENVELOPE: QuickEnvelopeValues = {
   windowUValue: "2.6",
 };
 
-function buildQuickEnvelopePayload(v: QuickEnvelopeValues): ReplaceEnvelopePayload {
-  const num = (s: string) => Number.parseFloat(s) || 0;
-  const footprintLengthM = num(v.footprintLengthM);
-  const footprintWidthM = num(v.footprintWidthM);
-  const windowAreaM2 = num(v.windowWidthM) * num(v.windowHeightM) * num(v.windowCount);
+/**
+ * Builds the quick-setup payload from the text fields. Every field here is required and has a visible
+ * default, so an empty or unreadable one is an error (`invalid` names it) — nothing is turned into 0 or
+ * a default (no `|| 0`, no `|| 1` floors). When `invalid` is not empty the payload must not be sent;
+ * the 0 used for such a field only lets the rest of the object be built.
+ */
+function buildQuickEnvelopePayload(
+  v: QuickEnvelopeValues,
+  locale: NumberLocale,
+): { payload: ReplaceEnvelopePayload; invalid: ReadonlySet<keyof QuickEnvelopeValues> } {
+  const invalid = new Set<keyof QuickEnvelopeValues>();
+  const num = (key: keyof QuickEnvelopeValues, integer = false): number => {
+    const parsed = parseLocaleNumber(v[key], locale, { integer });
+    if (parsed.ok) return parsed.value;
+    invalid.add(key);
+    return 0;
+  };
+  const footprintLengthM = num("footprintLengthM");
+  const footprintWidthM = num("footprintWidthM");
+  const windowCount = num("windowCount", true);
+  const windowAreaM2 = num("windowWidthM") * num("windowHeightM") * windowCount;
+  const numberOfFloors = num("numberOfFloors", true);
+  const floorToFloorHeightM = num("floorToFloorHeightM");
+  const windowUValue = num("windowUValue");
+  const windowWidthM = num("windowWidthM");
+  const windowHeightM = num("windowHeightM");
 
   const constructionTypes: ReplaceEnvelopePayload["constructionTypes"] = [];
   const envelopeElements: ReplaceEnvelopePayload["envelopeElements"] = [];
   const openingTypes: ReplaceEnvelopePayload["openingTypes"] = [];
 
-  const wallAreaM2 = num(v.wallAreaM2);
+  const wallAreaM2 = num("wallAreaM2");
   if (wallAreaM2 > 0 && v.wallMaterialId) {
     constructionTypes.push({
       code: "wall",
       elementCategory: "external_wall",
-      layers: [{ layerOrder: 1, materialId: v.wallMaterialId, thicknessM: num(v.wallThicknessM) }],
+      layers: [{ layerOrder: 1, materialId: v.wallMaterialId, thicknessM: num("wallThicknessM") }],
     });
-    const windowCount = Math.round(num(v.windowCount));
     if (windowCount > 0) {
       openingTypes.push({
         code: "window",
         category: "window",
-        uValueWm2k: num(v.windowUValue),
-        widthM: num(v.windowWidthM),
-        heightM: num(v.windowHeightM),
+        uValueWm2k: windowUValue,
+        widthM: windowWidthM,
+        heightM: windowHeightM,
         gValue: 0.75,
         frameFactor: 0.6,
         shadingFactor: 1,
@@ -205,12 +227,12 @@ function buildQuickEnvelopePayload(v: QuickEnvelopeValues): ReplaceEnvelopePaylo
     });
   }
 
-  const roofAreaM2 = num(v.roofAreaM2);
+  const roofAreaM2 = num("roofAreaM2");
   if (roofAreaM2 > 0 && v.roofMaterialId) {
     constructionTypes.push({
       code: "roof",
       elementCategory: "roof",
-      layers: [{ layerOrder: 1, materialId: v.roofMaterialId, thicknessM: num(v.roofThicknessM) }],
+      layers: [{ layerOrder: 1, materialId: v.roofMaterialId, thicknessM: num("roofThicknessM") }],
     });
     envelopeElements.push({
       blockName: "Main block",
@@ -222,13 +244,13 @@ function buildQuickEnvelopePayload(v: QuickEnvelopeValues): ReplaceEnvelopePaylo
     });
   }
 
-  const floorAreaM2 = num(v.floorAreaM2);
+  const floorAreaM2 = num("floorAreaM2");
   if (floorAreaM2 > 0 && v.floorMaterialId) {
     constructionTypes.push({
       code: "floor",
       elementCategory: "floor",
       layers: [
-        { layerOrder: 1, materialId: v.floorMaterialId, thicknessM: num(v.floorThicknessM) },
+        { layerOrder: 1, materialId: v.floorMaterialId, thicknessM: num("floorThicknessM") },
       ],
     });
     envelopeElements.push({
@@ -241,15 +263,15 @@ function buildQuickEnvelopePayload(v: QuickEnvelopeValues): ReplaceEnvelopePaylo
     });
   }
 
-  return {
+  const payload: ReplaceEnvelopePayload = {
     scenario: "before",
     buildingBlocks: [
       {
         name: "Main block",
         footprintLengthM,
         footprintWidthM,
-        numberOfFloors: Math.round(num(v.numberOfFloors)) || 1,
-        floorToFloorHeightM: num(v.floorToFloorHeightM),
+        numberOfFloors,
+        floorToFloorHeightM,
         perimeterM: 2 * (footprintLengthM + footprintWidthM),
         perimeterLossCoefficient: 0.4,
       },
@@ -258,6 +280,7 @@ function buildQuickEnvelopePayload(v: QuickEnvelopeValues): ReplaceEnvelopePaylo
     openingTypes,
     envelopeElements,
   };
+  return { payload, invalid };
 }
 
 function EnvelopeStep({
@@ -269,7 +292,11 @@ function EnvelopeStep({
   hasEnvelope: boolean;
   onDone: () => void;
 }) {
-  const { t } = useTranslation("audit");
+  const { t, i18n } = useTranslation("audit");
+  const locale = toNumberLocale(i18n.language);
+  const [invalidFields, setInvalidFields] = useState<ReadonlySet<keyof QuickEnvelopeValues>>(
+    new Set(),
+  );
   const { data: materialsData, isLoading: materialsLoading } = useMaterials();
   const replaceEnvelope = useReplaceEnvelope(buildingId);
   const [values, setValues] = useState(DEFAULT_QUICK_ENVELOPE);
@@ -283,8 +310,14 @@ function EnvelopeStep({
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError(null);
+    const { payload, invalid } = buildQuickEnvelopePayload(values, locale);
+    setInvalidFields(invalid);
+    if (invalid.size > 0) {
+      setError(t("wizard.envelope.fixNumbers"));
+      return;
+    }
     try {
-      await replaceEnvelope.mutateAsync(buildQuickEnvelopePayload(values));
+      await replaceEnvelope.mutateAsync(payload);
       onDone();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("wizard.envelope.saveFailed"));
@@ -324,39 +357,38 @@ function EnvelopeStep({
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <Field label={t("wizard.envelope.footprintLength")}>
-            <Input
-              type="number"
+            <NumberInput
               min={0}
-              step="0.1"
               value={values.footprintLengthM}
-              onChange={(e) => set("footprintLengthM", e.target.value)}
+              error={invalidFields.has("footprintLengthM") ? t("common:number.invalid") : undefined}
+              onValueChange={(raw) => set("footprintLengthM", raw)}
             />
           </Field>
           <Field label={t("wizard.envelope.footprintWidth")}>
-            <Input
-              type="number"
+            <NumberInput
               min={0}
-              step="0.1"
               value={values.footprintWidthM}
-              onChange={(e) => set("footprintWidthM", e.target.value)}
+              error={invalidFields.has("footprintWidthM") ? t("common:number.invalid") : undefined}
+              onValueChange={(raw) => set("footprintWidthM", raw)}
             />
           </Field>
           <Field label={t("wizard.envelope.numberOfFloors")}>
-            <Input
-              type="number"
+            <NumberInput
+              integer
               min={1}
-              step="1"
               value={values.numberOfFloors}
-              onChange={(e) => set("numberOfFloors", e.target.value)}
+              error={invalidFields.has("numberOfFloors") ? t("common:number.invalid") : undefined}
+              onValueChange={(raw) => set("numberOfFloors", raw)}
             />
           </Field>
           <Field label={t("wizard.envelope.floorToFloorHeight")}>
-            <Input
-              type="number"
+            <NumberInput
               min={0}
-              step="0.1"
               value={values.floorToFloorHeightM}
-              onChange={(e) => set("floorToFloorHeightM", e.target.value)}
+              error={
+                invalidFields.has("floorToFloorHeightM") ? t("common:number.invalid") : undefined
+              }
+              onValueChange={(raw) => set("floorToFloorHeightM", raw)}
             />
           </Field>
         </CardContent>
@@ -405,39 +437,35 @@ function EnvelopeStep({
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-4">
           <Field label={t("wizard.envelope.count")}>
-            <Input
-              type="number"
+            <NumberInput
               min={0}
-              step="1"
               value={values.windowCount}
-              onChange={(e) => set("windowCount", e.target.value)}
+              error={invalidFields.has("windowCount") ? t("common:number.invalid") : undefined}
+              onValueChange={(raw) => set("windowCount", raw)}
             />
           </Field>
           <Field label={t("wizard.envelope.width")}>
-            <Input
-              type="number"
+            <NumberInput
               min={0}
-              step="0.1"
               value={values.windowWidthM}
-              onChange={(e) => set("windowWidthM", e.target.value)}
+              error={invalidFields.has("windowWidthM") ? t("common:number.invalid") : undefined}
+              onValueChange={(raw) => set("windowWidthM", raw)}
             />
           </Field>
           <Field label={t("wizard.envelope.height")}>
-            <Input
-              type="number"
+            <NumberInput
               min={0}
-              step="0.1"
               value={values.windowHeightM}
-              onChange={(e) => set("windowHeightM", e.target.value)}
+              error={invalidFields.has("windowHeightM") ? t("common:number.invalid") : undefined}
+              onValueChange={(raw) => set("windowHeightM", raw)}
             />
           </Field>
           <Field label={t("wizard.envelope.uValue")}>
-            <Input
-              type="number"
+            <NumberInput
               min={0}
-              step="0.01"
               value={values.windowUValue}
-              onChange={(e) => set("windowUValue", e.target.value)}
+              error={invalidFields.has("windowUValue") ? t("common:number.invalid") : undefined}
+              onValueChange={(raw) => set("windowUValue", raw)}
             />
           </Field>
         </CardContent>
@@ -495,13 +523,7 @@ function QuickCategoryCard({
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-3">
         <Field label={areaLabel} className="sm:col-span-1">
-          <Input
-            type="number"
-            min={0}
-            step="0.1"
-            value={areaValue}
-            onChange={(e) => onAreaChange(e.target.value)}
-          />
+          <NumberInput min={0} value={areaValue} onValueChange={(raw) => onAreaChange(raw)} />
         </Field>
         <Field label={t("wizard.envelope.material")}>
           <Select value={materialId} onValueChange={onMaterialChange}>
@@ -518,12 +540,10 @@ function QuickCategoryCard({
           </Select>
         </Field>
         <Field label={t("wizard.envelope.thickness")}>
-          <Input
-            type="number"
+          <NumberInput
             min={0}
-            step="0.01"
             value={thicknessValue}
-            onChange={(e) => onThicknessChange(e.target.value)}
+            onValueChange={(raw) => onThicknessChange(raw)}
           />
         </Field>
       </CardContent>
@@ -557,7 +577,8 @@ function ConsumptionStep({
   onDone: () => void;
   onBack: () => void;
 }) {
-  const { t } = useTranslation("audit");
+  const { t, i18n } = useTranslation("audit");
+  const locale = toNumberLocale(i18n.language);
   const createConsumption = useCreateConsumption(buildingId);
   const currentYear = new Date().getFullYear();
   const [carrier, setCarrier] = useState<(typeof ENERGY_CARRIERS)[number]>("gas");
@@ -570,12 +591,25 @@ function ConsumptionStep({
   const [error, setError] = useState<string | null>(null);
 
   function addRow() {
-    const value = Number.parseFloat(consumption);
-    if (!value || value <= 0) {
+    const amount = parseLocaleNumber(consumption, locale);
+    const yearResult = parseLocaleNumber(year, locale, { integer: true });
+    const monthResult = parseLocaleNumber(month, locale, { integer: true });
+    if (!amount.ok || amount.value <= 0) {
       setError(t("wizard.consumption.positiveValueRequired"));
       return;
     }
-    setAdded((prev) => [...prev, { carrier, year: Number(year), month: Number(month), value }]);
+    if (!yearResult.ok || yearResult.value < 1990 || yearResult.value > 2100) {
+      setError(t("wizard.consumption.yearInvalid"));
+      return;
+    }
+    if (!monthResult.ok || monthResult.value < 1 || monthResult.value > 12) {
+      setError(t("wizard.consumption.monthInvalid"));
+      return;
+    }
+    setAdded((prev) => [
+      ...prev,
+      { carrier, year: yearResult.value, month: monthResult.value, value: amount.value },
+    ]);
     setConsumption("");
     setError(null);
   }
@@ -624,23 +658,16 @@ function ConsumptionStep({
               </Select>
             </Field>
             <Field label={t("wizard.consumption.year")}>
-              <Input type="number" value={year} onChange={(e) => setYear(e.target.value)} />
+              <NumberInput integer min={1990} max={2100} value={year} onValueChange={setYear} />
             </Field>
             <Field label={t("wizard.consumption.month")}>
-              <Input
-                type="number"
-                min={1}
-                max={12}
-                value={month}
-                onChange={(e) => setMonth(e.target.value)}
-              />
+              <NumberInput min={1} max={12} value={month} onValueChange={(raw) => setMonth(raw)} />
             </Field>
             <Field label={t("wizard.consumption.consumptionAmount")}>
-              <Input
-                type="number"
+              <NumberInput
                 min={0}
                 value={consumption}
-                onChange={(e) => setConsumption(e.target.value)}
+                onValueChange={(raw) => setConsumption(raw)}
               />
             </Field>
           </div>

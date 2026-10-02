@@ -36,6 +36,8 @@ import {
 import { ApiError } from "../../lib/api";
 import type { MeasureCategory } from "../../lib/api-types";
 import { MEASURE_CATEGORY_LABELS, formatNumber } from "../../lib/labels";
+import { parseLocaleNumber, toNumberLocale } from "../../lib/number";
+import { NumberInput } from "../number-input";
 
 const MEASURE_CATEGORIES = Object.keys(MEASURE_CATEGORY_LABELS) as MeasureCategory[];
 
@@ -46,6 +48,9 @@ interface NewMeasureForm {
   lifetimeYears: string;
   maintenanceCostPercent: string;
 }
+
+/** Applied only when the lifetime field is left empty (a business rule, not a fallback for bad input). */
+const DEFAULT_LIFETIME_YEARS = 20;
 
 function emptyForm(): NewMeasureForm {
   return {
@@ -72,7 +77,8 @@ export function MeasuresTab({
   buildingId,
   readOnly = false,
 }: { buildingId: string; readOnly?: boolean }) {
-  const { t } = useTranslation("measures");
+  const { t, i18n } = useTranslation("measures");
+  const locale = toNumberLocale(i18n.language);
   const { data, isLoading, isError, error } = useMeasures(buildingId, { pageSize: 200 });
   const selectMeasures = useSelectMeasures(buildingId);
   const createMeasure = useCreateMeasure(buildingId);
@@ -129,13 +135,33 @@ export function MeasuresTab({
     event.preventDefault();
     setFormError(null);
 
-    const investmentCostUsd = Number(form.investmentCostUsd);
     if (!form.name.trim()) {
       setFormError(t("ee.nameRequired"));
       return;
     }
-    if (!form.investmentCostUsd.trim() || Number.isNaN(investmentCostUsd) || investmentCostUsd < 0) {
+    const investment = parseLocaleNumber(form.investmentCostUsd, locale);
+    if (!investment.ok || investment.value < 0) {
       setFormError(t("ee.investmentInvalid"));
+      return;
+    }
+    const investmentCostUsd = investment.value;
+    // The defaults (20 years, 0 maintenance) are business rules for an EMPTY field only; a value that is
+    // typed but unreadable is an error, never silently replaced by the default.
+    const lifetime = parseLocaleNumber(form.lifetimeYears, locale, { integer: true });
+    if (!lifetime.ok && lifetime.reason === "invalid") {
+      setFormError(t("ee.lifetimeInvalid"));
+      return;
+    }
+    if (lifetime.ok && lifetime.value <= 0) {
+      setFormError(t("ee.lifetimeInvalid"));
+      return;
+    }
+    const maintenance = parseLocaleNumber(form.maintenanceCostPercent, locale);
+    if (
+      (!maintenance.ok && maintenance.reason === "invalid") ||
+      (maintenance.ok && maintenance.value < 0)
+    ) {
+      setFormError(t("ee.maintenanceInvalid"));
       return;
     }
 
@@ -144,8 +170,8 @@ export function MeasuresTab({
         name: form.name.trim(),
         category: form.category,
         investmentCostUsd,
-        lifetimeYears: Number(form.lifetimeYears) || 20,
-        maintenanceCostPercent: Number(form.maintenanceCostPercent) || 0,
+        lifetimeYears: lifetime.ok ? lifetime.value : DEFAULT_LIFETIME_YEARS,
+        maintenanceCostPercent: maintenance.ok ? maintenance.value : 0,
       });
       setForm(emptyForm());
     } catch (err) {
@@ -170,20 +196,22 @@ export function MeasuresTab({
     event.preventDefault();
     setNonEeFormError(null);
 
-    const unitCostUsd = Number(nonEeForm.unitCostUsd);
-    const quantity = Number(nonEeForm.quantity);
     if (!nonEeForm.description.trim()) {
       setNonEeFormError(t("ancillary.descriptionRequired"));
       return;
     }
-    if (!nonEeForm.unitCostUsd.trim() || Number.isNaN(unitCostUsd) || unitCostUsd < 0) {
+    const unitCost = parseLocaleNumber(nonEeForm.unitCostUsd, locale);
+    if (!unitCost.ok || unitCost.value < 0) {
       setNonEeFormError(t("ancillary.unitCostInvalid"));
       return;
     }
-    if (Number.isNaN(quantity) || quantity <= 0) {
+    const quantityResult = parseLocaleNumber(nonEeForm.quantity, locale);
+    if (!quantityResult.ok || quantityResult.value <= 0) {
       setNonEeFormError(t("ancillary.quantityInvalid"));
       return;
     }
+    const unitCostUsd = unitCost.value;
+    const quantity = quantityResult.value;
 
     try {
       await createNonEeMeasure.mutateAsync({
@@ -313,76 +341,75 @@ export function MeasuresTab({
       </Card>
 
       {!readOnly && (
-      <form onSubmit={handleCreate}>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">{t("ee.addTitle")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="space-y-1.5 lg:col-span-2">
-                <Label htmlFor="measure-name">{t("ee.name")}</Label>
-                <Input
-                  id="measure-name"
-                  value={form.name}
-                  onChange={(e) => set("name", e.target.value)}
-                />
+        <form onSubmit={handleCreate}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">{t("ee.addTitle")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="space-y-1.5 lg:col-span-2">
+                  <Label htmlFor="measure-name">{t("ee.name")}</Label>
+                  <Input
+                    id="measure-name"
+                    value={form.name}
+                    onChange={(e) => set("name", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>{t("ee.category")}</Label>
+                  <Select
+                    value={form.category}
+                    onValueChange={(v) => set("category", v as MeasureCategory)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MEASURE_CATEGORIES.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {MEASURE_CATEGORY_LABELS[c]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="measure-investment">{t("ee.investment")}</Label>
+                  <NumberInput
+                    id="measure-investment"
+                    value={form.investmentCostUsd}
+                    onValueChange={(raw) => set("investmentCostUsd", raw)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="measure-lifetime">{t("ee.lifetime")}</Label>
+                  <NumberInput
+                    integer
+                    id="measure-lifetime"
+                    value={form.lifetimeYears}
+                    onValueChange={(raw) => set("lifetimeYears", raw)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="measure-maintenance">{t("ee.maintenance")}</Label>
+                  <NumberInput
+                    id="measure-maintenance"
+                    value={form.maintenanceCostPercent}
+                    onValueChange={(raw) => set("maintenanceCostPercent", raw)}
+                  />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>{t("ee.category")}</Label>
-                <Select value={form.category} onValueChange={(v) => set("category", v as MeasureCategory)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MEASURE_CATEGORIES.map((c) => (
-                      <SelectItem key={c} value={c}>
-                        {MEASURE_CATEGORY_LABELS[c]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="measure-investment">{t("ee.investment")}</Label>
-                <Input
-                  id="measure-investment"
-                  type="number"
-                  step="any"
-                  value={form.investmentCostUsd}
-                  onChange={(e) => set("investmentCostUsd", e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="measure-lifetime">{t("ee.lifetime")}</Label>
-                <Input
-                  id="measure-lifetime"
-                  type="number"
-                  value={form.lifetimeYears}
-                  onChange={(e) => set("lifetimeYears", e.target.value)}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="measure-maintenance">{t("ee.maintenance")}</Label>
-                <Input
-                  id="measure-maintenance"
-                  type="number"
-                  step="any"
-                  value={form.maintenanceCostPercent}
-                  onChange={(e) => set("maintenanceCostPercent", e.target.value)}
-                />
-              </div>
-            </div>
-            {formError && <p className="mt-4 text-sm text-destructive">{formError}</p>}
-          </CardContent>
-          <CardFooter className="justify-end">
-            <Button type="submit" disabled={createMeasure.isPending}>
-              <Plus className="h-4 w-4" />
-              {createMeasure.isPending ? t("ee.adding") : t("ee.addButton")}
-            </Button>
-          </CardFooter>
-        </Card>
-      </form>
+              {formError && <p className="mt-4 text-sm text-destructive">{formError}</p>}
+            </CardContent>
+            <CardFooter className="justify-end">
+              <Button type="submit" disabled={createMeasure.isPending}>
+                <Plus className="h-4 w-4" />
+                {createMeasure.isPending ? t("ee.adding") : t("ee.addButton")}
+              </Button>
+            </CardFooter>
+          </Card>
+        </form>
       )}
 
       <Card>
@@ -455,12 +482,10 @@ export function MeasuresTab({
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="non-ee-quantity">{t("ancillary.quantityLabel")}</Label>
-                  <Input
+                  <NumberInput
                     id="non-ee-quantity"
-                    type="number"
-                    step="any"
                     value={nonEeForm.quantity}
-                    onChange={(e) => setNonEe("quantity", e.target.value)}
+                    onValueChange={(raw) => setNonEe("quantity", raw)}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -474,12 +499,10 @@ export function MeasuresTab({
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="non-ee-unit-cost">{t("ancillary.unitCostLabel")}</Label>
-                  <Input
+                  <NumberInput
                     id="non-ee-unit-cost"
-                    type="number"
-                    step="any"
                     value={nonEeForm.unitCostUsd}
-                    onChange={(e) => setNonEe("unitCostUsd", e.target.value)}
+                    onValueChange={(raw) => setNonEe("unitCostUsd", raw)}
                   />
                 </div>
               </div>

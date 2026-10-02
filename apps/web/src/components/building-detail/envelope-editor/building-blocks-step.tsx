@@ -2,6 +2,7 @@ import { Button, Input, Label } from "@yres/ui";
 import { Plus } from "lucide-react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
+import { NumberInput } from "../../number-input";
 import { RowCard } from "./row-card";
 import { type BuildingBlockRow, emptyBuildingBlock } from "./state";
 
@@ -61,75 +62,64 @@ export function BuildingBlocksStep({
               <Label htmlFor={`${formId}-${row.rowId}-length`}>
                 {t("editor.buildingBlocks.footprintLength")}
               </Label>
-              <Input
+              <NumberInput
                 id={`${formId}-${row.rowId}-length`}
-                type="number"
-                step="any"
                 value={row.footprintLengthM}
-                onChange={(e) => updateRow(row.rowId, { footprintLengthM: e.target.value })}
+                onValueChange={(raw) => updateRow(row.rowId, { footprintLengthM: raw })}
               />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor={`${formId}-${row.rowId}-width`}>
                 {t("editor.buildingBlocks.footprintWidth")}
               </Label>
-              <Input
+              <NumberInput
                 id={`${formId}-${row.rowId}-width`}
-                type="number"
-                step="any"
                 value={row.footprintWidthM}
-                onChange={(e) => updateRow(row.rowId, { footprintWidthM: e.target.value })}
+                onValueChange={(raw) => updateRow(row.rowId, { footprintWidthM: raw })}
               />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor={`${formId}-${row.rowId}-floors`}>
                 {t("editor.buildingBlocks.numberOfFloors")}
               </Label>
-              <Input
+              <NumberInput
+                integer
                 id={`${formId}-${row.rowId}-floors`}
-                type="number"
-                step="1"
                 min={1}
                 value={row.numberOfFloors}
-                onChange={(e) => updateRow(row.rowId, { numberOfFloors: e.target.value })}
+                onValueChange={(raw) => updateRow(row.rowId, { numberOfFloors: raw })}
               />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor={`${formId}-${row.rowId}-floorheight`}>
                 {t("editor.buildingBlocks.floorToFloorHeight")}
               </Label>
-              <Input
+              <NumberInput
                 id={`${formId}-${row.rowId}-floorheight`}
-                type="number"
-                step="any"
                 value={row.floorToFloorHeightM}
-                onChange={(e) => updateRow(row.rowId, { floorToFloorHeightM: e.target.value })}
+                onValueChange={(raw) => updateRow(row.rowId, { floorToFloorHeightM: raw })}
               />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor={`${formId}-${row.rowId}-perimeter`}>
                 {t("editor.buildingBlocks.perimeter")}
               </Label>
-              <Input
+              <NumberInput
                 id={`${formId}-${row.rowId}-perimeter`}
-                type="number"
-                step="any"
                 value={row.perimeterM}
-                onChange={(e) => updateRow(row.rowId, { perimeterM: e.target.value })}
+                onValueChange={(raw) => updateRow(row.rowId, { perimeterM: raw })}
               />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor={`${formId}-${row.rowId}-lossco`}>
                 {t("editor.buildingBlocks.perimeterLossCoefficient")}
               </Label>
-              <Input
+              <NumberInput
                 id={`${formId}-${row.rowId}-lossco`}
-                type="number"
-                step="any"
                 min={0}
                 max={1}
                 value={row.perimeterLossCoefficient}
-                onChange={(e) => updateRow(row.rowId, { perimeterLossCoefficient: e.target.value })}
+                onValueChange={(raw) => updateRow(row.rowId, { perimeterLossCoefficient: raw })}
               />
             </div>
           </div>

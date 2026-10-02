@@ -7,7 +7,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Input,
   Select,
   SelectContent,
   SelectItem,
@@ -58,18 +57,25 @@ import type {
 } from "../../lib/api-types";
 import {
   DISTRIBUTION_SYSTEM_TYPE_LABELS,
-  ENERGY_CARRIER_LABELS,
-  ENERGY_CARRIERS,
-  END_USE_LABELS,
   END_USES,
-  GENERATION_SOURCE_TYPE_LABELS,
+  END_USE_LABELS,
+  ENERGY_CARRIERS,
+  ENERGY_CARRIER_LABELS,
   GENERATION_SOURCE_TYPES,
+  GENERATION_SOURCE_TYPE_LABELS,
   ORIENTATIONS,
   ORIENTATION_LABELS,
-  RENEWABLE_SYSTEM_TYPE_LABELS,
   RENEWABLE_SYSTEM_TYPES,
+  RENEWABLE_SYSTEM_TYPE_LABELS,
   VENTILATION_SYSTEM_TYPE_LABELS,
 } from "../../lib/labels";
+import {
+  type NumberLocale,
+  formatNumberForInput,
+  parseLocaleNumber,
+  toNumberLocale,
+} from "../../lib/number";
+import { NumberInput } from "../number-input";
 
 // Local editable rows always carry an `id` — real DB ids for rows loaded
 // from the server, transient `local-*` ones for rows newly added client
@@ -89,7 +95,8 @@ interface Column {
   label: string;
   type: "text" | "number" | "select";
   options?: { value: string; label: string }[];
-  step?: string;
+  /** Whole numbers only (counts). */
+  integer?: boolean;
 }
 
 function EditableRowsCard({
@@ -102,6 +109,7 @@ function EditableRowsCard({
   onSave,
   saving,
   error,
+  invalidCells = NO_INVALID_CELLS,
   readOnly = false,
 }: {
   title: string;
@@ -113,6 +121,8 @@ function EditableRowsCard({
   onSave: () => void;
   saving: boolean;
   error: string | null;
+  /** `${rowId}:${columnKey}` of cells the last save attempt could not read as numbers. */
+  invalidCells?: ReadonlySet<string>;
   readOnly?: boolean;
 }) {
   function updateCell(rowId: string, key: string, value: string) {
@@ -167,11 +177,18 @@ function EditableRowsCard({
                           </SelectContent>
                         </Select>
                       ) : (
-                        <Input
-                          type={col.type}
-                          step={col.step ?? "any"}
+                        <NumberInput
                           value={row[col.key] ?? ""}
-                          onChange={(e) => updateCell(row.id, col.key, e.target.value)}
+                          onValueChange={(raw) => updateCell(row.id, col.key, raw)}
+                          integer={col.integer}
+                          // Cramped table cell: flagged red with the message in `title`; the card's error line
+                          // says what to fix (a text line under every cell would break the layout).
+                          showMessage={false}
+                          error={
+                            invalidCells.has(`${row.id}:${col.key}`)
+                              ? t("common.invalidCell")
+                              : undefined
+                          }
                           disabled={readOnly}
                           className="h-9 min-w-[6rem] px-2 py-1"
                         />
@@ -228,16 +245,37 @@ function toRows<T extends { id: string }>(
     .map(map);
 }
 
-function num(row: Row, key: string): number {
-  const n = Number.parseFloat(row[key] ?? "");
-  return Number.isNaN(n) ? 0 : n;
-}
+const NO_INVALID_CELLS: ReadonlySet<string> = new Set();
 
-function numOrNull(row: Row, key: string): number | null {
-  const raw = (row[key] ?? "").trim();
-  if (raw === "") return null;
-  const n = Number.parseFloat(raw);
-  return Number.isNaN(n) ? null : n;
+/**
+ * Turns the text cells of a section into numbers for the save payload. A cell that cannot be read is
+ * recorded in `invalid` (by `${rowId}:${key}`) and the caller must not send anything — nothing is turned
+ * into 0 or dropped silently. `num` is for fields the backend requires (empty is an error too);
+ * `numOrNull` for nullable ones (empty means "not given"). The 0 returned for a bad cell is only a
+ * placeholder for building the payload object that is then thrown away.
+ */
+class RowParser {
+  readonly invalid = new Set<string>();
+
+  constructor(private readonly locale: NumberLocale) {}
+
+  get ok(): boolean {
+    return this.invalid.size === 0;
+  }
+
+  num(row: Row, key: string, opts?: { integer?: boolean }): number {
+    const parsed = parseLocaleNumber(row[key] ?? "", this.locale, opts);
+    if (parsed.ok) return parsed.value;
+    this.invalid.add(`${row.id}:${key}`);
+    return 0;
+  }
+
+  numOrNull(row: Row, key: string, opts?: { integer?: boolean }): number | null {
+    const parsed = parseLocaleNumber(row[key] ?? "", this.locale, opts);
+    if (parsed.ok) return parsed.value;
+    if (parsed.reason === "invalid") this.invalid.add(`${row.id}:${key}`);
+    return null;
+  }
 }
 
 export function SystemsTab({
@@ -352,37 +390,47 @@ function VentilationSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceVentilation(buildingId);
-  const { t } = useTranslation("systems");
+  const { t, i18n } = useTranslation("systems");
+  const locale = toNumberLocale(i18n.language);
+  const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
   useEffect(() => {
     setRows(
       toRows(systems, scenario, (s) => ({
         id: s.id,
         systemType: s.systemType,
-        airChangeRatePerHour: s.airChangeRatePerHour?.toString() ?? "",
-        freshAirPerPersonM3h: s.freshAirPerPersonM3h?.toString() ?? "",
-        heatRecoveryEfficiency: s.heatRecoveryEfficiency?.toString() ?? "",
-        fanElectricalPowerKw: s.fanElectricalPowerKw?.toString() ?? "",
-        coolingSeasonHours: s.coolingSeasonHours?.toString() ?? "",
+        airChangeRatePerHour: formatNumberForInput(s.airChangeRatePerHour, locale),
+        freshAirPerPersonM3h: formatNumberForInput(s.freshAirPerPersonM3h, locale),
+        heatRecoveryEfficiency: formatNumberForInput(s.heatRecoveryEfficiency, locale),
+        fanElectricalPowerKw: formatNumberForInput(s.fanElectricalPowerKw, locale),
+        coolingSeasonHours: formatNumberForInput(s.coolingSeasonHours, locale),
       })),
     );
     setError(null);
-  }, [systems, scenario]);
+  }, [systems, scenario, locale]);
 
   async function handleSave() {
     setError(null);
+    const parser = new RowParser(locale);
+    const payload = {
+      scenario,
+      systems: rows.map((r) => ({
+        systemType: (r.systemType || "natural") as VentilationSystemType,
+        airChangeRatePerHour: parser.numOrNull(r, "airChangeRatePerHour"),
+        freshAirPerPersonM3h: parser.numOrNull(r, "freshAirPerPersonM3h"),
+        heatRecoveryEfficiency: parser.numOrNull(r, "heatRecoveryEfficiency"),
+        fanElectricalPowerKw: parser.numOrNull(r, "fanElectricalPowerKw"),
+        coolingSeasonHours: parser.numOrNull(r, "coolingSeasonHours"),
+      })),
+    };
+    if (!parser.ok) {
+      setInvalidCells(parser.invalid);
+      setError(t("common.invalidNumbers"));
+      return;
+    }
+    setInvalidCells(NO_INVALID_CELLS);
     try {
-      await replace.mutateAsync({
-        scenario,
-        systems: rows.map((r) => ({
-          systemType: (r.systemType || "natural") as VentilationSystemType,
-          airChangeRatePerHour: numOrNull(r, "airChangeRatePerHour"),
-          freshAirPerPersonM3h: numOrNull(r, "freshAirPerPersonM3h"),
-          heatRecoveryEfficiency: numOrNull(r, "heatRecoveryEfficiency"),
-          fanElectricalPowerKw: numOrNull(r, "fanElectricalPowerKw"),
-          coolingSeasonHours: numOrNull(r, "coolingSeasonHours"),
-        })),
-      });
+      await replace.mutateAsync(payload);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("ventilation.saveError"));
     }
@@ -402,7 +450,11 @@ function VentilationSection({
             label,
           })),
         },
-        { key: "airChangeRatePerHour", label: t("ventilation.columnAirChangeRate"), type: "number" },
+        {
+          key: "airChangeRatePerHour",
+          label: t("ventilation.columnAirChangeRate"),
+          type: "number",
+        },
         {
           key: "freshAirPerPersonM3h",
           label: t("ventilation.columnFreshAirPerPerson"),
@@ -426,6 +478,7 @@ function VentilationSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      invalidCells={invalidCells}
       readOnly={readOnly}
     />
   );
@@ -440,7 +493,9 @@ function DhwSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceDhw(buildingId);
-  const { t } = useTranslation("systems");
+  const { t, i18n } = useTranslation("systems");
+  const locale = toNumberLocale(i18n.language);
+  const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
   useEffect(() => {
     setRows(
@@ -448,25 +503,36 @@ function DhwSection({
         id: s.id,
         sourceName: s.sourceName,
         energyCarrier: s.energyCarrier,
-        specificConsumptionLPersonDay: s.specificConsumptionLPersonDay.toString(),
-        personsServed: s.personsServed.toString(),
+        specificConsumptionLPersonDay: formatNumberForInput(
+          s.specificConsumptionLPersonDay,
+          locale,
+        ),
+        personsServed: formatNumberForInput(s.personsServed, locale),
       })),
     );
     setError(null);
-  }, [sources, scenario]);
+  }, [sources, scenario, locale]);
 
   async function handleSave() {
     setError(null);
+    const parser = new RowParser(locale);
+    const payload = {
+      scenario,
+      sources: rows.map((r) => ({
+        sourceName: r.sourceName || t("dhw.defaultName"),
+        energyCarrier: (r.energyCarrier || "gas") as EnergyCarrier,
+        specificConsumptionLPersonDay: parser.num(r, "specificConsumptionLPersonDay"),
+        personsServed: parser.num(r, "personsServed", { integer: true }),
+      })),
+    };
+    if (!parser.ok) {
+      setInvalidCells(parser.invalid);
+      setError(t("common.invalidNumbers"));
+      return;
+    }
+    setInvalidCells(NO_INVALID_CELLS);
     try {
-      await replace.mutateAsync({
-        scenario,
-        sources: rows.map((r) => ({
-          sourceName: r.sourceName || t("dhw.defaultName"),
-          energyCarrier: (r.energyCarrier || "gas") as EnergyCarrier,
-          specificConsumptionLPersonDay: num(r, "specificConsumptionLPersonDay"),
-          personsServed: Math.round(num(r, "personsServed")),
-        })),
-      });
+      await replace.mutateAsync(payload);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("dhw.saveError"));
     }
@@ -485,7 +551,12 @@ function DhwSection({
           options: ENERGY_CARRIERS.map((c) => ({ value: c, label: ENERGY_CARRIER_LABELS[c] })),
         },
         { key: "specificConsumptionLPersonDay", label: t("dhw.columnConsumption"), type: "number" },
-        { key: "personsServed", label: t("dhw.columnPersonsServed"), type: "number" },
+        {
+          key: "personsServed",
+          label: t("dhw.columnPersonsServed"),
+          type: "number",
+          integer: true,
+        },
       ]}
       rows={rows}
       onRowsChange={setRows}
@@ -499,6 +570,7 @@ function DhwSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      invalidCells={invalidCells}
       readOnly={readOnly}
     />
   );
@@ -513,7 +585,9 @@ function DistributionSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceDistribution(buildingId);
-  const { t } = useTranslation("systems");
+  const { t, i18n } = useTranslation("systems");
+  const locale = toNumberLocale(i18n.language);
+  const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
   useEffect(() => {
     setRows(
@@ -521,27 +595,35 @@ function DistributionSection({
         id: s.id,
         systemType: s.systemType,
         pipeDiameterClass: s.pipeDiameterClass,
-        lengthM: s.lengthM.toString(),
-        insulatedFraction: s.insulatedFraction.toString(),
-        meanFluidTempC: s.meanFluidTempC.toString(),
+        lengthM: formatNumberForInput(s.lengthM, locale),
+        insulatedFraction: formatNumberForInput(s.insulatedFraction, locale),
+        meanFluidTempC: formatNumberForInput(s.meanFluidTempC, locale),
       })),
     );
     setError(null);
-  }, [systems, scenario]);
+  }, [systems, scenario, locale]);
 
   async function handleSave() {
     setError(null);
+    const parser = new RowParser(locale);
+    const payload = {
+      scenario,
+      systems: rows.map((r) => ({
+        systemType: (r.systemType || "heating") as DistributionSystemType,
+        pipeDiameterClass: r.pipeDiameterClass || "32-50",
+        lengthM: parser.num(r, "lengthM"),
+        insulatedFraction: parser.num(r, "insulatedFraction"),
+        meanFluidTempC: parser.num(r, "meanFluidTempC"),
+      })),
+    };
+    if (!parser.ok) {
+      setInvalidCells(parser.invalid);
+      setError(t("common.invalidNumbers"));
+      return;
+    }
+    setInvalidCells(NO_INVALID_CELLS);
     try {
-      await replace.mutateAsync({
-        scenario,
-        systems: rows.map((r) => ({
-          systemType: (r.systemType || "heating") as DistributionSystemType,
-          pipeDiameterClass: r.pipeDiameterClass || "32-50",
-          lengthM: num(r, "lengthM"),
-          insulatedFraction: num(r, "insulatedFraction"),
-          meanFluidTempC: num(r, "meanFluidTempC"),
-        })),
-      });
+      await replace.mutateAsync(payload);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("distribution.saveError"));
     }
@@ -583,6 +665,7 @@ function DistributionSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      invalidCells={invalidCells}
       readOnly={readOnly}
     />
   );
@@ -597,7 +680,9 @@ function GenerationSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceGeneration(buildingId);
-  const { t } = useTranslation("systems");
+  const { t, i18n } = useTranslation("systems");
+  const locale = toNumberLocale(i18n.language);
+  const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
   useEffect(() => {
     setRows(
@@ -605,25 +690,33 @@ function GenerationSection({
         id: s.id,
         endUse: s.endUse,
         sourceType: s.sourceType,
-        efficiencyOrSeer: s.efficiencyOrSeer.toString(),
-        shareOfDemand: s.shareOfDemand.toString(),
+        efficiencyOrSeer: formatNumberForInput(s.efficiencyOrSeer, locale),
+        shareOfDemand: formatNumberForInput(s.shareOfDemand, locale),
       })),
     );
     setError(null);
-  }, [sources, scenario]);
+  }, [sources, scenario, locale]);
 
   async function handleSave() {
     setError(null);
+    const parser = new RowParser(locale);
+    const payload = {
+      scenario,
+      sources: rows.map((r) => ({
+        endUse: (r.endUse || "heating") as "heating" | "dhw" | "cooling",
+        sourceType: (r.sourceType || "gas_boiler") as GenerationSourceType,
+        efficiencyOrSeer: parser.num(r, "efficiencyOrSeer"),
+        shareOfDemand: parser.num(r, "shareOfDemand"),
+      })),
+    };
+    if (!parser.ok) {
+      setInvalidCells(parser.invalid);
+      setError(t("common.invalidNumbers"));
+      return;
+    }
+    setInvalidCells(NO_INVALID_CELLS);
     try {
-      await replace.mutateAsync({
-        scenario,
-        sources: rows.map((r) => ({
-          endUse: (r.endUse || "heating") as "heating" | "dhw" | "cooling",
-          sourceType: (r.sourceType || "gas_boiler") as GenerationSourceType,
-          efficiencyOrSeer: num(r, "efficiencyOrSeer"),
-          shareOfDemand: num(r, "shareOfDemand"),
-        })),
-      });
+      await replace.mutateAsync(payload);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("generation.saveError"));
     }
@@ -664,6 +757,7 @@ function GenerationSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      invalidCells={invalidCells}
       readOnly={readOnly}
     />
   );
@@ -678,33 +772,43 @@ function CoolingWindowsSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceCoolingWindows(buildingId);
-  const { t } = useTranslation("systems");
+  const { t, i18n } = useTranslation("systems");
+  const locale = toNumberLocale(i18n.language);
+  const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
   useEffect(() => {
     setRows(
       toRows(windows, scenario, (w) => ({
         id: w.id,
         orientation: w.orientation,
-        areaM2: w.areaM2.toString(),
-        gValue: w.gValue.toString(),
-        shadingFactor: w.shadingFactor.toString(),
+        areaM2: formatNumberForInput(w.areaM2, locale),
+        gValue: formatNumberForInput(w.gValue, locale),
+        shadingFactor: formatNumberForInput(w.shadingFactor, locale),
       })),
     );
     setError(null);
-  }, [windows, scenario]);
+  }, [windows, scenario, locale]);
 
   async function handleSave() {
     setError(null);
+    const parser = new RowParser(locale);
+    const payload = {
+      scenario,
+      windows: rows.map((r) => ({
+        orientation: (r.orientation || "south") as (typeof ORIENTATIONS)[number],
+        areaM2: parser.num(r, "areaM2"),
+        gValue: parser.num(r, "gValue"),
+        shadingFactor: parser.num(r, "shadingFactor"),
+      })),
+    };
+    if (!parser.ok) {
+      setInvalidCells(parser.invalid);
+      setError(t("common.invalidNumbers"));
+      return;
+    }
+    setInvalidCells(NO_INVALID_CELLS);
     try {
-      await replace.mutateAsync({
-        scenario,
-        windows: rows.map((r) => ({
-          orientation: (r.orientation || "south") as (typeof ORIENTATIONS)[number],
-          areaM2: num(r, "areaM2"),
-          gValue: num(r, "gValue"),
-          shadingFactor: num(r, "shadingFactor"),
-        })),
-      });
+      await replace.mutateAsync(payload);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("coolingWindows.saveError"));
     }
@@ -737,6 +841,7 @@ function CoolingWindowsSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      invalidCells={invalidCells}
       readOnly={readOnly}
     />
   );
@@ -751,29 +856,39 @@ function CoolingSystemsSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceCoolingSystems(buildingId);
-  const { t } = useTranslation("systems");
+  const { t, i18n } = useTranslation("systems");
+  const locale = toNumberLocale(i18n.language);
+  const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
   useEffect(() => {
     setRows(
       toRows(systems, scenario, (s) => ({
         id: s.id,
         description: s.description ?? "",
-        seer: s.seer.toString(),
+        seer: formatNumberForInput(s.seer, locale),
       })),
     );
     setError(null);
-  }, [systems, scenario]);
+  }, [systems, scenario, locale]);
 
   async function handleSave() {
     setError(null);
+    const parser = new RowParser(locale);
+    const payload = {
+      scenario,
+      systems: rows.map((r) => ({
+        description: r.description || null,
+        seer: parser.num(r, "seer"),
+      })),
+    };
+    if (!parser.ok) {
+      setInvalidCells(parser.invalid);
+      setError(t("common.invalidNumbers"));
+      return;
+    }
+    setInvalidCells(NO_INVALID_CELLS);
     try {
-      await replace.mutateAsync({
-        scenario,
-        systems: rows.map((r) => ({
-          description: r.description || null,
-          seer: num(r, "seer"),
-        })),
-      });
+      await replace.mutateAsync(payload);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("coolingSystems.saveError"));
     }
@@ -793,6 +908,7 @@ function CoolingSystemsSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      invalidCells={invalidCells}
       readOnly={readOnly}
     />
   );
@@ -807,42 +923,57 @@ function LightingSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceLighting(buildingId);
-  const { t } = useTranslation("systems");
+  const { t, i18n } = useTranslation("systems");
+  const locale = toNumberLocale(i18n.language);
+  const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
   useEffect(() => {
     setRows(
       toRows(zones, scenario, (z) => ({
         id: z.id,
         name: z.name,
-        areaM2: z.areaM2.toString(),
-        incandescentFraction: z.technologyMix.incandescentFraction.toString(),
-        fluorescentElectromagneticFraction:
-          z.technologyMix.fluorescentElectromagneticFraction.toString(),
-        fluorescentElectronicFraction: z.technologyMix.fluorescentElectronicFraction.toString(),
-        ledFraction: z.technologyMix.ledFraction.toString(),
-        utilizationFactor: z.utilizationFactor.toString(),
+        areaM2: formatNumberForInput(z.areaM2, locale),
+        incandescentFraction: formatNumberForInput(z.technologyMix.incandescentFraction, locale),
+        fluorescentElectromagneticFraction: formatNumberForInput(
+          z.technologyMix.fluorescentElectromagneticFraction,
+          locale,
+        ),
+        fluorescentElectronicFraction: formatNumberForInput(
+          z.technologyMix.fluorescentElectronicFraction,
+          locale,
+        ),
+        ledFraction: formatNumberForInput(z.technologyMix.ledFraction, locale),
+        utilizationFactor: formatNumberForInput(z.utilizationFactor, locale),
       })),
     );
     setError(null);
-  }, [zones, scenario]);
+  }, [zones, scenario, locale]);
 
   async function handleSave() {
     setError(null);
+    const parser = new RowParser(locale);
+    const payload = {
+      scenario,
+      zones: rows.map((r) => ({
+        name: r.name || t("lighting.defaultName"),
+        areaM2: parser.num(r, "areaM2"),
+        technologyMix: {
+          incandescentFraction: parser.num(r, "incandescentFraction"),
+          fluorescentElectromagneticFraction: parser.num(r, "fluorescentElectromagneticFraction"),
+          fluorescentElectronicFraction: parser.num(r, "fluorescentElectronicFraction"),
+          ledFraction: parser.num(r, "ledFraction"),
+        },
+        utilizationFactor: parser.num(r, "utilizationFactor"),
+      })),
+    };
+    if (!parser.ok) {
+      setInvalidCells(parser.invalid);
+      setError(t("common.invalidNumbers"));
+      return;
+    }
+    setInvalidCells(NO_INVALID_CELLS);
     try {
-      await replace.mutateAsync({
-        scenario,
-        zones: rows.map((r) => ({
-          name: r.name || t("lighting.defaultName"),
-          areaM2: num(r, "areaM2"),
-          technologyMix: {
-            incandescentFraction: num(r, "incandescentFraction"),
-            fluorescentElectromagneticFraction: num(r, "fluorescentElectromagneticFraction"),
-            fluorescentElectronicFraction: num(r, "fluorescentElectronicFraction"),
-            ledFraction: num(r, "ledFraction"),
-          },
-          utilizationFactor: num(r, "utilizationFactor"),
-        })),
-      });
+      await replace.mutateAsync(payload);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("lighting.saveError"));
     }
@@ -888,6 +1019,7 @@ function LightingSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      invalidCells={invalidCells}
       readOnly={readOnly}
     />
   );
@@ -902,7 +1034,9 @@ function EquipmentSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceEquipment(buildingId);
-  const { t } = useTranslation("systems");
+  const { t, i18n } = useTranslation("systems");
+  const locale = toNumberLocale(i18n.language);
+  const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
   useEffect(() => {
     setRows(
@@ -910,33 +1044,41 @@ function EquipmentSection({
         id: i.id,
         name: i.name,
         category: i.category ?? "",
-        unitPowerKw: i.unitPowerKw.toString(),
-        quantity: i.quantity.toString(),
-        heatingSeasonHours: i.heatingSeasonHours.toString(),
-        coolingSeasonHours: i.coolingSeasonHours.toString(),
-        heatingUtilizationFactor: i.heatingUtilizationFactor.toString(),
-        coolingUtilizationFactor: i.coolingUtilizationFactor.toString(),
+        unitPowerKw: formatNumberForInput(i.unitPowerKw, locale),
+        quantity: formatNumberForInput(i.quantity, locale),
+        heatingSeasonHours: formatNumberForInput(i.heatingSeasonHours, locale),
+        coolingSeasonHours: formatNumberForInput(i.coolingSeasonHours, locale),
+        heatingUtilizationFactor: formatNumberForInput(i.heatingUtilizationFactor, locale),
+        coolingUtilizationFactor: formatNumberForInput(i.coolingUtilizationFactor, locale),
       })),
     );
     setError(null);
-  }, [items, scenario]);
+  }, [items, scenario, locale]);
 
   async function handleSave() {
     setError(null);
+    const parser = new RowParser(locale);
+    const payload = {
+      scenario,
+      items: rows.map((r) => ({
+        name: r.name || t("equipment.defaultName"),
+        category: r.category || null,
+        unitPowerKw: parser.num(r, "unitPowerKw"),
+        quantity: parser.num(r, "quantity", { integer: true }),
+        heatingSeasonHours: parser.num(r, "heatingSeasonHours"),
+        coolingSeasonHours: parser.num(r, "coolingSeasonHours"),
+        heatingUtilizationFactor: parser.num(r, "heatingUtilizationFactor"),
+        coolingUtilizationFactor: parser.num(r, "coolingUtilizationFactor"),
+      })),
+    };
+    if (!parser.ok) {
+      setInvalidCells(parser.invalid);
+      setError(t("common.invalidNumbers"));
+      return;
+    }
+    setInvalidCells(NO_INVALID_CELLS);
     try {
-      await replace.mutateAsync({
-        scenario,
-        items: rows.map((r) => ({
-          name: r.name || t("equipment.defaultName"),
-          category: r.category || null,
-          unitPowerKw: num(r, "unitPowerKw"),
-          quantity: Math.round(num(r, "quantity")),
-          heatingSeasonHours: num(r, "heatingSeasonHours"),
-          coolingSeasonHours: num(r, "coolingSeasonHours"),
-          heatingUtilizationFactor: num(r, "heatingUtilizationFactor"),
-          coolingUtilizationFactor: num(r, "coolingUtilizationFactor"),
-        })),
-      });
+      await replace.mutateAsync(payload);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("equipment.saveError"));
     }
@@ -950,7 +1092,7 @@ function EquipmentSection({
         { key: "name", label: t("equipment.columnName"), type: "text" },
         { key: "category", label: t("equipment.columnCategory"), type: "text" },
         { key: "unitPowerKw", label: t("equipment.columnUnitPower"), type: "number" },
-        { key: "quantity", label: t("equipment.columnQuantity"), type: "number" },
+        { key: "quantity", label: t("equipment.columnQuantity"), type: "number", integer: true },
         {
           key: "heatingSeasonHours",
           label: t("equipment.columnHeatingSeasonHours"),
@@ -988,6 +1130,7 @@ function EquipmentSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      invalidCells={invalidCells}
       readOnly={readOnly}
     />
   );
@@ -1001,46 +1144,59 @@ function RenewablesSection({
   const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceRenewables(buildingId);
-  const { t } = useTranslation("systems");
+  const { t, i18n } = useTranslation("systems");
+  const locale = toNumberLocale(i18n.language);
+  const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
   useEffect(() => {
     setRows(
       systems.map((s) => ({
         id: s.id,
         systemType: s.systemType,
-        capacityKw: s.capacityKw?.toString() ?? "",
-        collectorCount: s.collectorCount?.toString() ?? "",
-        availableAreaM2: s.availableAreaM2.toString(),
-        unitCostUsd: s.unitCostUsd.toString(),
-        annualProductionKwh: s.monthlyProduction
-          .reduce((sum, m) => sum + m.productionKwh, 0)
-          .toString(),
+        capacityKw: formatNumberForInput(s.capacityKw, locale),
+        collectorCount: formatNumberForInput(s.collectorCount, locale),
+        availableAreaM2: formatNumberForInput(s.availableAreaM2, locale),
+        unitCostUsd: formatNumberForInput(s.unitCostUsd, locale),
+        annualProductionKwh: formatNumberForInput(
+          s.monthlyProduction.reduce((sum, m) => sum + m.productionKwh, 0),
+          locale,
+        ),
       })),
     );
     setError(null);
-  }, [systems]);
+  }, [systems, locale]);
 
   async function handleSave() {
     setError(null);
+    const parser = new RowParser(locale);
+    const payload = {
+      systems: rows.map((r) => {
+        const collectorCount = parser.numOrNull(r, "collectorCount", { integer: true });
+        // Entered as a single annual total (matching this tab's other
+        // fields) rather than a 12-value PVGIS-style table — spread
+        // evenly across months for storage. See EditableRowsCard's
+        // description text on this section for why.
+        const monthlyProductionKwh = Array<number>(12).fill(
+          parser.num(r, "annualProductionKwh") / 12,
+        );
+        return {
+          systemType: (r.systemType || "pv") as RenewableSystemType,
+          capacityKw: parser.numOrNull(r, "capacityKw"),
+          collectorCount,
+          availableAreaM2: parser.num(r, "availableAreaM2"),
+          unitCostUsd: parser.num(r, "unitCostUsd"),
+          monthlyProductionKwh,
+        };
+      }),
+    };
+    if (!parser.ok) {
+      setInvalidCells(parser.invalid);
+      setError(t("common.invalidNumbers"));
+      return;
+    }
+    setInvalidCells(NO_INVALID_CELLS);
     try {
-      await replace.mutateAsync({
-        systems: rows.map((r) => {
-          const collectorCount = numOrNull(r, "collectorCount");
-          // Entered as a single annual total (matching this tab's other
-          // fields) rather than a 12-value PVGIS-style table — spread
-          // evenly across months for storage. See EditableRowsCard's
-          // description text on this section for why.
-          const monthlyProductionKwh = Array<number>(12).fill(num(r, "annualProductionKwh") / 12);
-          return {
-            systemType: (r.systemType || "pv") as RenewableSystemType,
-            capacityKw: numOrNull(r, "capacityKw"),
-            collectorCount: collectorCount !== null ? Math.round(collectorCount) : null,
-            availableAreaM2: num(r, "availableAreaM2"),
-            unitCostUsd: num(r, "unitCostUsd"),
-            monthlyProductionKwh,
-          };
-        }),
-      });
+      await replace.mutateAsync(payload);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("renewables.saveError"));
     }
@@ -1061,7 +1217,12 @@ function RenewablesSection({
           })),
         },
         { key: "capacityKw", label: t("renewables.columnCapacity"), type: "number" },
-        { key: "collectorCount", label: t("renewables.columnCollectors"), type: "number" },
+        {
+          key: "collectorCount",
+          label: t("renewables.columnCollectors"),
+          type: "number",
+          integer: true,
+        },
         { key: "availableAreaM2", label: t("renewables.columnAvailableArea"), type: "number" },
         { key: "unitCostUsd", label: t("renewables.columnCost"), type: "number" },
         {
@@ -1084,6 +1245,7 @@ function RenewablesSection({
       onSave={handleSave}
       saving={replace.isPending}
       error={error}
+      invalidCells={invalidCells}
       readOnly={readOnly}
     />
   );

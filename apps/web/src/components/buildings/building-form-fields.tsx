@@ -12,11 +12,18 @@ import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import type { Building, ClimateRegion, CreateBuildingInput } from "../../lib/api-types";
 import {
-  BUILDING_STATUS_TRANSLATION_KEYS,
   BUILDING_STATUSES,
+  BUILDING_STATUS_TRANSLATION_KEYS,
   BUILDING_TYPES,
   BUILDING_TYPE_LABELS,
 } from "../../lib/labels";
+import {
+  type NumberLocale,
+  formatNumberForInput,
+  parseLocaleNumber,
+  toNumberLocale,
+} from "../../lib/number";
+import { NumberInput } from "../number-input";
 
 export interface BuildingFormValues {
   name: string;
@@ -71,72 +78,81 @@ export const DEFAULT_BUILDING_FORM_VALUES: BuildingFormValues = {
   coolingEnthalpyHottestDayKjKg: "",
 };
 
-export function buildingToFormValues(building: Building): BuildingFormValues {
+export function buildingToFormValues(building: Building, locale: NumberLocale): BuildingFormValues {
   return {
     name: building.name,
     location: building.location,
     climateRegionId: building.climateRegionId,
     buildingType: building.buildingType,
-    yearBuilt: building.yearBuilt !== null ? String(building.yearBuilt) : "",
+    yearBuilt: formatNumberForInput(building.yearBuilt, locale),
     status: building.status,
     deadline: building.deadline ?? "",
-    latitude: building.latitude !== null ? String(building.latitude) : "",
-    longitude: building.longitude !== null ? String(building.longitude) : "",
-    netCooledFloorAreaM2:
-      building.netCooledFloorAreaM2 !== null ? String(building.netCooledFloorAreaM2) : "",
-    heatingSeasonDurationDays: String(building.heatingSeasonDurationDays),
-    indoorTempNonOperationC: String(building.indoorTempNonOperationC),
-    indoorTempOperationC: String(building.indoorTempOperationC),
-    outdoorAvgHeatingSeasonTempC: String(building.outdoorAvgHeatingSeasonTempC),
-    outdoorDesignTempC: String(building.outdoorDesignTempC),
-    nonOperationHoursPerDay: String(building.nonOperationHoursPerDay),
-    operationHoursPerDay: String(building.operationHoursPerDay),
-    occupantCount: String(building.occupantCount),
-    coolingEnthalpyInsideKjKg:
-      building.coolingEnthalpyInsideKjKg !== null ? String(building.coolingEnthalpyInsideKjKg) : "",
-    coolingEnthalpyOutsideKjKg:
-      building.coolingEnthalpyOutsideKjKg !== null
-        ? String(building.coolingEnthalpyOutsideKjKg)
-        : "",
-    coolingEnthalpyHottestDayKjKg:
-      building.coolingEnthalpyHottestDayKjKg !== null
-        ? String(building.coolingEnthalpyHottestDayKjKg)
-        : "",
+    latitude: formatNumberForInput(building.latitude, locale),
+    longitude: formatNumberForInput(building.longitude, locale),
+    netCooledFloorAreaM2: formatNumberForInput(building.netCooledFloorAreaM2, locale),
+    heatingSeasonDurationDays: formatNumberForInput(building.heatingSeasonDurationDays, locale),
+    indoorTempNonOperationC: formatNumberForInput(building.indoorTempNonOperationC, locale),
+    indoorTempOperationC: formatNumberForInput(building.indoorTempOperationC, locale),
+    outdoorAvgHeatingSeasonTempC: formatNumberForInput(
+      building.outdoorAvgHeatingSeasonTempC,
+      locale,
+    ),
+    outdoorDesignTempC: formatNumberForInput(building.outdoorDesignTempC, locale),
+    nonOperationHoursPerDay: formatNumberForInput(building.nonOperationHoursPerDay, locale),
+    operationHoursPerDay: formatNumberForInput(building.operationHoursPerDay, locale),
+    occupantCount: formatNumberForInput(building.occupantCount, locale),
+    coolingEnthalpyInsideKjKg: formatNumberForInput(building.coolingEnthalpyInsideKjKg, locale),
+    coolingEnthalpyOutsideKjKg: formatNumberForInput(building.coolingEnthalpyOutsideKjKg, locale),
+    coolingEnthalpyHottestDayKjKg: formatNumberForInput(
+      building.coolingEnthalpyHottestDayKjKg,
+      locale,
+    ),
   };
 }
 
+/**
+ * A required number field: empty or unparsable is an error (never 0). `0` is returned only so the caller
+ * can keep going and collect every error; it is never sent anywhere because `errors` is then non-empty.
+ */
 function parseRequiredNumber(
   value: string,
   fieldLabel: string,
   errors: string[],
   t: TFunction,
+  locale: NumberLocale,
+  opts?: { integer?: boolean },
 ): number {
-  const n = Number(value);
-  if (value.trim() === "" || Number.isNaN(n)) {
+  const parsed = parseLocaleNumber(value, locale, opts);
+  if (!parsed.ok) {
     errors.push(t("buildings:form.fieldMustBeNumber", { field: fieldLabel }));
     return 0;
   }
-  return n;
+  return parsed.value;
 }
 
+/** An optional number field: empty is "not given", unparsable is an error. */
 function parseOptionalNumber(
   value: string,
   fieldLabel: string,
   errors: string[],
   t: TFunction,
+  locale: NumberLocale,
+  opts?: { integer?: boolean },
 ): number | undefined {
-  if (value.trim() === "") return undefined;
-  const n = Number(value);
-  if (Number.isNaN(n)) {
-    errors.push(t("buildings:form.fieldMustBeNumber", { field: fieldLabel }));
+  const parsed = parseLocaleNumber(value, locale, opts);
+  if (!parsed.ok) {
+    if (parsed.reason === "invalid") {
+      errors.push(t("buildings:form.fieldMustBeNumber", { field: fieldLabel }));
+    }
     return undefined;
   }
-  return n;
+  return parsed.value;
 }
 
 export function parseBuildingFormValues(
   values: BuildingFormValues,
   t: TFunction,
+  locale: NumberLocale,
 ): {
   data: CreateBuildingInput | null;
   errors: string[];
@@ -147,7 +163,9 @@ export function parseBuildingFormValues(
     errors.push(t("buildings:form.fieldRequired", { field: t("buildings:form.fieldNameLabel") }));
   }
   if (!values.location.trim()) {
-    errors.push(t("buildings:form.fieldRequired", { field: t("buildings:form.fieldLocationLabel") }));
+    errors.push(
+      t("buildings:form.fieldRequired", { field: t("buildings:form.fieldLocationLabel") }),
+    );
   }
   if (!values.climateRegionId) {
     errors.push(
@@ -160,42 +178,50 @@ export function parseBuildingFormValues(
     t("buildings:form.fieldHeatingSeasonDurationLabel"),
     errors,
     t,
+    locale,
+    { integer: true },
   );
   const indoorTempNonOperationC = parseRequiredNumber(
     values.indoorTempNonOperationC,
     t("buildings:form.fieldIndoorTempNonOperationLabel"),
     errors,
     t,
+    locale,
   );
   const indoorTempOperationC = parseRequiredNumber(
     values.indoorTempOperationC,
     t("buildings:form.fieldIndoorTempOperationLabel"),
     errors,
     t,
+    locale,
   );
   const outdoorAvgHeatingSeasonTempC = parseRequiredNumber(
     values.outdoorAvgHeatingSeasonTempC,
     t("buildings:form.fieldAvgOutdoorTempLabel"),
     errors,
     t,
+    locale,
   );
   const outdoorDesignTempC = parseRequiredNumber(
     values.outdoorDesignTempC,
     t("buildings:form.fieldOutdoorDesignTempLabel"),
     errors,
     t,
+    locale,
   );
   const nonOperationHoursPerDay = parseRequiredNumber(
     values.nonOperationHoursPerDay,
     t("buildings:form.fieldNonOperationHoursLabel"),
     errors,
     t,
+    locale,
   );
   const operationHoursPerDay = parseRequiredNumber(
     values.operationHoursPerDay,
     t("buildings:form.fieldOperationHoursLabel"),
     errors,
     t,
+    locale,
   );
 
   const yearBuilt = parseOptionalNumber(
@@ -203,12 +229,15 @@ export function parseBuildingFormValues(
     t("buildings:form.fieldYearBuiltLabel"),
     errors,
     t,
+    locale,
+    { integer: true },
   );
   const latitude = parseOptionalNumber(
     values.latitude,
     t("buildings:form.fieldLatitudeLabel"),
     errors,
     t,
+    locale,
   );
   if (latitude !== undefined && (latitude < -90 || latitude > 90)) {
     errors.push(
@@ -224,6 +253,7 @@ export function parseBuildingFormValues(
     t("buildings:form.fieldLongitudeLabel"),
     errors,
     t,
+    locale,
   );
   if (longitude !== undefined && (longitude < -180 || longitude > 180)) {
     errors.push(
@@ -239,30 +269,36 @@ export function parseBuildingFormValues(
     t("buildings:form.fieldFloorAreaLabel"),
     errors,
     t,
+    locale,
   );
   const occupantCount = parseOptionalNumber(
     values.occupantCount,
     t("buildings:form.fieldOccupantCountLabel"),
     errors,
     t,
+    locale,
+    { integer: true },
   );
   const coolingEnthalpyInsideKjKg = parseOptionalNumber(
     values.coolingEnthalpyInsideKjKg,
     t("buildings:form.fieldEnthalpyInsideLabel"),
     errors,
     t,
+    locale,
   );
   const coolingEnthalpyOutsideKjKg = parseOptionalNumber(
     values.coolingEnthalpyOutsideKjKg,
     t("buildings:form.fieldEnthalpyOutsideLabel"),
     errors,
     t,
+    locale,
   );
   const coolingEnthalpyHottestDayKjKg = parseOptionalNumber(
     values.coolingEnthalpyHottestDayKjKg,
     t("buildings:form.fieldEnthalpyHottestLabel"),
     errors,
     t,
+    locale,
   );
 
   if (errors.length > 0) return { data: null, errors };
@@ -391,30 +427,28 @@ export function BuildingFormFields({
           </div>
           <div className="space-y-2">
             <Label htmlFor={id("yearBuilt")}>{t("form.yearBuilt")}</Label>
-            <Input
+            <NumberInput
+              integer
               id={id("yearBuilt")}
-              type="number"
               value={values.yearBuilt}
-              onChange={(e) => set("yearBuilt", e.target.value)}
+              onValueChange={(raw) => set("yearBuilt", raw)}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor={id("floorArea")}>{t("form.floorArea")}</Label>
-            <Input
+            <NumberInput
               id={id("floorArea")}
-              type="number"
-              step="any"
               value={values.netCooledFloorAreaM2}
-              onChange={(e) => set("netCooledFloorAreaM2", e.target.value)}
+              onValueChange={(raw) => set("netCooledFloorAreaM2", raw)}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor={id("occupantCount")}>{t("form.occupantCount")}</Label>
-            <Input
+            <NumberInput
+              integer
               id={id("occupantCount")}
-              type="number"
               value={values.occupantCount}
-              onChange={(e) => set("occupantCount", e.target.value)}
+              onValueChange={(raw) => set("occupantCount", raw)}
             />
           </div>
           <div className="space-y-2">
@@ -443,24 +477,20 @@ export function BuildingFormFields({
           </div>
           <div className="space-y-2">
             <Label htmlFor={id("latitude")}>{t("form.latitude")}</Label>
-            <Input
+            <NumberInput
               id={id("latitude")}
-              type="number"
-              step="any"
               placeholder="41.2995"
               value={values.latitude}
-              onChange={(e) => set("latitude", e.target.value)}
+              onValueChange={(raw) => set("latitude", raw)}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor={id("longitude")}>{t("form.longitude")}</Label>
-            <Input
+            <NumberInput
               id={id("longitude")}
-              type="number"
-              step="any"
               placeholder="69.2401"
               value={values.longitude}
-              onChange={(e) => set("longitude", e.target.value)}
+              onValueChange={(raw) => set("longitude", raw)}
             />
             <p className="text-xs text-muted-foreground">{t("form.coordinatesHelp")}</p>
           </div>
@@ -471,35 +501,33 @@ export function BuildingFormFields({
         <legend className="text-sm font-semibold">{t("form.heatingSeasonConfig")}</legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor={id("heatingSeasonDurationDays")}>{t("form.heatingSeasonDuration")}</Label>
-            <Input
+            <Label htmlFor={id("heatingSeasonDurationDays")}>
+              {t("form.heatingSeasonDuration")}
+            </Label>
+            <NumberInput
+              integer
               id={id("heatingSeasonDurationDays")}
-              type="number"
               required
               value={values.heatingSeasonDurationDays}
-              onChange={(e) => set("heatingSeasonDurationDays", e.target.value)}
+              onValueChange={(raw) => set("heatingSeasonDurationDays", raw)}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor={id("outdoorAvgHeatingSeasonTempC")}>{t("form.avgOutdoorTemp")}</Label>
-            <Input
+            <NumberInput
               id={id("outdoorAvgHeatingSeasonTempC")}
-              type="number"
-              step="any"
               required
               value={values.outdoorAvgHeatingSeasonTempC}
-              onChange={(e) => set("outdoorAvgHeatingSeasonTempC", e.target.value)}
+              onValueChange={(raw) => set("outdoorAvgHeatingSeasonTempC", raw)}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor={id("outdoorDesignTempC")}>{t("form.outdoorDesignTemp")}</Label>
-            <Input
+            <NumberInput
               id={id("outdoorDesignTempC")}
-              type="number"
-              step="any"
               required
               value={values.outdoorDesignTempC}
-              onChange={(e) => set("outdoorDesignTempC", e.target.value)}
+              onValueChange={(raw) => set("outdoorDesignTempC", raw)}
             />
           </div>
         </div>
@@ -510,46 +538,40 @@ export function BuildingFormFields({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor={id("indoorTempOperationC")}>{t("form.indoorTempOperation")}</Label>
-            <Input
+            <NumberInput
               id={id("indoorTempOperationC")}
-              type="number"
-              step="any"
               required
               value={values.indoorTempOperationC}
-              onChange={(e) => set("indoorTempOperationC", e.target.value)}
+              onValueChange={(raw) => set("indoorTempOperationC", raw)}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor={id("indoorTempNonOperationC")}>{t("form.indoorTempNonOperation")}</Label>
-            <Input
+            <Label htmlFor={id("indoorTempNonOperationC")}>
+              {t("form.indoorTempNonOperation")}
+            </Label>
+            <NumberInput
               id={id("indoorTempNonOperationC")}
-              type="number"
-              step="any"
               required
               value={values.indoorTempNonOperationC}
-              onChange={(e) => set("indoorTempNonOperationC", e.target.value)}
+              onValueChange={(raw) => set("indoorTempNonOperationC", raw)}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor={id("operationHoursPerDay")}>{t("form.operationHours")}</Label>
-            <Input
+            <NumberInput
               id={id("operationHoursPerDay")}
-              type="number"
-              step="any"
               required
               value={values.operationHoursPerDay}
-              onChange={(e) => set("operationHoursPerDay", e.target.value)}
+              onValueChange={(raw) => set("operationHoursPerDay", raw)}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor={id("nonOperationHoursPerDay")}>{t("form.nonOperationHours")}</Label>
-            <Input
+            <NumberInput
               id={id("nonOperationHoursPerDay")}
-              type="number"
-              step="any"
               required
               value={values.nonOperationHoursPerDay}
-              onChange={(e) => set("nonOperationHoursPerDay", e.target.value)}
+              onValueChange={(raw) => set("nonOperationHoursPerDay", raw)}
             />
           </div>
         </div>
@@ -563,32 +585,26 @@ export function BuildingFormFields({
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor={id("enthalpyInside")}>{t("form.inside")}</Label>
-            <Input
+            <NumberInput
               id={id("enthalpyInside")}
-              type="number"
-              step="any"
               value={values.coolingEnthalpyInsideKjKg}
-              onChange={(e) => set("coolingEnthalpyInsideKjKg", e.target.value)}
+              onValueChange={(raw) => set("coolingEnthalpyInsideKjKg", raw)}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor={id("enthalpyOutside")}>{t("form.outside")}</Label>
-            <Input
+            <NumberInput
               id={id("enthalpyOutside")}
-              type="number"
-              step="any"
               value={values.coolingEnthalpyOutsideKjKg}
-              onChange={(e) => set("coolingEnthalpyOutsideKjKg", e.target.value)}
+              onValueChange={(raw) => set("coolingEnthalpyOutsideKjKg", raw)}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor={id("enthalpyHottest")}>{t("form.hottestDay")}</Label>
-            <Input
+            <NumberInput
               id={id("enthalpyHottest")}
-              type="number"
-              step="any"
               value={values.coolingEnthalpyHottestDayKjKg}
-              onChange={(e) => set("coolingEnthalpyHottestDayKjKg", e.target.value)}
+              onValueChange={(raw) => set("coolingEnthalpyHottestDayKjKg", raw)}
             />
           </div>
         </div>

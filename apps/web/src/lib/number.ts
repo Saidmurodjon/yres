@@ -16,7 +16,7 @@ export type ParseResult = { ok: true; value: number } | { ok: false; reason: "em
 const GROUPING_CLASS = "[ \\u00a0\\u202f\\u2009']";
 const GROUPING_CHAR = new RegExp(GROUPING_CLASS);
 const GROUPING_CHARS = new RegExp(GROUPING_CLASS, "g");
-const UNICODE_MINUS = new RegExp("\\u2212", "g");
+const UNICODE_MINUS = /−/g;
 const STRICT_NUMBER = /^-?(\d+(\.\d*)?|\.\d+)$/;
 // A thousands-grouped integer part: 1–3 digits (no leading zero), then groups of exactly 3.
 const GROUPED_WITH_COMMA = /^-?[1-9]\d{0,2}(,\d{3})+$/;

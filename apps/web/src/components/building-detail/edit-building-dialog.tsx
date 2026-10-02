@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useClimateRegions, useUpdateBuilding } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import type { Building } from "../../lib/api-types";
+import { toNumberLocale } from "../../lib/number";
 import {
   BuildingFormFields,
   type BuildingFormValues,
@@ -18,27 +19,30 @@ interface EditBuildingDialogProps {
 }
 
 export function EditBuildingDialog({ building, open, onOpenChange }: EditBuildingDialogProps) {
-  const { t } = useTranslation("buildings");
+  const { t, i18n } = useTranslation("buildings");
+  const numberLocale = toNumberLocale(i18n.language);
   const { data: climateData, isLoading: climateLoading } = useClimateRegions({ pageSize: 100 });
   const updateBuilding = useUpdateBuilding(building.id);
 
-  const [values, setValues] = useState<BuildingFormValues>(() => buildingToFormValues(building));
+  const [values, setValues] = useState<BuildingFormValues>(() =>
+    buildingToFormValues(building, numberLocale),
+  );
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [apiError, setApiError] = useState<{ message: string; details?: unknown } | null>(null);
 
   useEffect(() => {
     if (open) {
-      setValues(buildingToFormValues(building));
+      setValues(buildingToFormValues(building, numberLocale));
       setValidationErrors([]);
       setApiError(null);
     }
-  }, [open, building]);
+  }, [open, building, numberLocale]);
 
   const climateRegions = climateData?.regions ?? [];
 
   async function handleSubmit() {
     setApiError(null);
-    const { data, errors } = parseBuildingFormValues(values, t);
+    const { data, errors } = parseBuildingFormValues(values, t, numberLocale);
     setValidationErrors(errors);
     if (!data) return;
 

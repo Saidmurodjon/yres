@@ -36,7 +36,8 @@
       "width": "Width (m)",
       "height": "Height (m)",
       "uValue": "U-value (W/m²K)",
-      "saveAndContinue": "Save and continue"
+      "saveAndContinue": "Save and continue",
+      "fixNumbers": "Some numbers are empty or not valid (marked below). Nothing was saved."
     },
     "consumption": {
       "title": "Historical utility bills (optional)",
@@ -50,7 +51,9 @@
       "saveFailed": "Failed to save utility bills.",
       "back": "Back",
       "skip": "Skip",
-      "saveAndContinue": "Save and continue"
+      "saveAndContinue": "Save and continue",
+      "yearInvalid": "Enter a year between 1990 and 2100.",
+      "monthInvalid": "Enter a month between 1 and 12."
     },
     "run": {
       "title": "Ready to run",

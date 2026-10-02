@@ -20,6 +20,8 @@
     "description": "Total energy consumption (every carrier, in kWh) for the last 3 years, by month.",
     "noData": "No data to compare yet."
   },
+  "invalidNumberAt": "{{where}}: enter a number, for example 12.5 — nothing was saved.",
+  "invalidNumberAtMore": "…and {{count}} more.",
   "excel": {
     "downloadTemplate": "Download template",
     "uploadButton": "Upload Excel",
@@ -47,6 +49,7 @@
       "invalidMonth": "Row {{row}}: month must be between 1 and 12.",
       "invalidCarrier": "Row {{row}}: unrecognized carrier.",
       "invalidConsumption": "Row {{row}}: amount must be a number.",
+      "invalidTariff": "Row {{row}}: tariff must be a number.",
       "parseFailed": "Couldn't read the file — make sure it's a valid .xlsx file."
     }
   }

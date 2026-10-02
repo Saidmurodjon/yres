@@ -28,7 +28,9 @@
     "adding": "Qo'shilmoqda...",
     "addButton": "Chora-tadbir qo'shish",
     "nameRequired": "Nomi to'ldirilishi shart.",
-    "investmentInvalid": "Investitsiya xarajati manfiy bo'lmagan raqam bo'lishi kerak."
+    "investmentInvalid": "Investitsiya xarajati manfiy bo'lmagan raqam bo'lishi kerak.",
+    "lifetimeInvalid": "Xizmat muddati 0 dan katta butun yil bo'lishi kerak.",
+    "maintenanceInvalid": "Texnik xizmat xarajati manfiy bo'lmagan raqam bo'lishi kerak, masalan 0,01."
   },
   "ancillary": {
     "title": "Yordamchi xarajatlar (energiya tejamaydigan)",

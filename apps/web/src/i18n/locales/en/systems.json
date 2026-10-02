@@ -6,7 +6,9 @@
   "common": {
     "noneDefined": "None defined for this scenario.",
     "addRow": "Add row",
-    "removeRow": "Remove row"
+    "removeRow": "Remove row",
+    "invalidNumbers": "Some cells are not valid numbers (highlighted in red) or required cells are empty. Nothing was saved.",
+    "invalidCell": "Not a valid number — for example 12.5"
   },
   "ventilation": {
     "title": "Ventilation",

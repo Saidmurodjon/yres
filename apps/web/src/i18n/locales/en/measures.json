@@ -28,7 +28,9 @@
     "adding": "Adding...",
     "addButton": "Add measure",
     "nameRequired": "Name is required.",
-    "investmentInvalid": "Investment cost must be a non-negative number."
+    "investmentInvalid": "Investment cost must be a non-negative number.",
+    "lifetimeInvalid": "Lifetime must be a whole number of years greater than 0.",
+    "maintenanceInvalid": "Maintenance cost must be a non-negative number, for example 0.01."
   },
   "ancillary": {
     "title": "Ancillary costs (non-energy-saving)",

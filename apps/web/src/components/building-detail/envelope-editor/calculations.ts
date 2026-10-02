@@ -1,8 +1,22 @@
 import type { Material, SurfaceResistance } from "../../../lib/api-types";
+import { type NumberLocale, parseLocaleNumber } from "../../../lib/number";
 import type { ConstructionTypeRow, EnvelopeElementRow, OpeningTypeRow } from "./state";
 
+/**
+ * The text a user typed as a number, FOR DISPLAY ONLY (live previews and running totals): unreadable or
+ * empty counts as 0 here so a half-typed field does not blank the whole preview. Nothing computed from
+ * this is ever saved — `parseEditorState` (state.ts) rejects unreadable fields before any payload exists.
+ */
+function previewNumber(raw: string, locale: NumberLocale): number {
+  const parsed = parseLocaleNumber(raw, locale);
+  return parsed.ok ? parsed.value : 0;
+}
+
 /** Fallback matching `audit.engine.ts`'s default when a category isn't in the reference table. */
-const DEFAULT_SURFACE_RESISTANCE = { interiorResistanceM2kPerW: 0.13, exteriorResistanceM2kPerW: 0.04 };
+const DEFAULT_SURFACE_RESISTANCE = {
+  interiorResistanceM2kPerW: 0.13,
+  exteriorResistanceM2kPerW: 0.04,
+};
 
 /**
  * Live client-side preview of a construction type's U-value, using the exact
@@ -15,13 +29,14 @@ export function computeUValuePreview(
   type: ConstructionTypeRow,
   materials: Material[],
   surfaceResistances: SurfaceResistance[],
+  locale: NumberLocale,
 ): number | null {
   if (type.layers.length === 0) return null;
 
   let layerResistance = 0;
   for (const layer of type.layers) {
     const material = materials.find((m) => m.id === layer.materialId);
-    const thickness = Number(layer.thicknessM);
+    const thickness = previewNumber(layer.thicknessM, locale);
     if (!material || !Number.isFinite(thickness) || thickness <= 0) return null;
     if (material.thermalConductivityWPerMk <= 0) return null;
     layerResistance += thickness / material.thermalConductivityWPerMk;
@@ -41,12 +56,13 @@ export function openingAreaM2(
   openingTypeCode: string,
   count: string,
   openingTypesByCode: Map<string, OpeningTypeRow>,
+  locale: NumberLocale,
 ): number {
   const type = openingTypesByCode.get(openingTypeCode);
   if (!type) return 0;
-  const width = Number(type.widthM) || 0;
-  const height = Number(type.heightM) || 0;
-  const n = Number(count) || 0;
+  const width = previewNumber(type.widthM, locale);
+  const height = previewNumber(type.heightM, locale);
+  const n = previewNumber(count, locale);
   return width * height * n;
 }
 
@@ -54,13 +70,14 @@ export function openingAreaM2(
 export function elementNetAreaM2(
   el: EnvelopeElementRow,
   openingTypesByCode: Map<string, OpeningTypeRow>,
+  locale: NumberLocale,
 ): number {
-  const length = Number(el.lengthM) || 0;
-  const heightEnv = Number(el.heightEnvContactM) || 0;
-  const heightGround = Number(el.heightGroundContactM) || 0;
+  const length = previewNumber(el.lengthM, locale);
+  const heightEnv = previewNumber(el.heightEnvContactM, locale);
+  const heightGround = previewNumber(el.heightGroundContactM, locale);
   const gross = length * (heightEnv + heightGround);
   const openings = el.openings.reduce(
-    (sum, o) => sum + openingAreaM2(o.openingTypeCode, o.count, openingTypesByCode),
+    (sum, o) => sum + openingAreaM2(o.openingTypeCode, o.count, openingTypesByCode, locale),
     0,
   );
   return Math.max(0, gross - openings);
@@ -83,6 +100,7 @@ export function computeElementAreaTotals(
   rows: EnvelopeElementRow[],
   constructionTypesByCode: Map<string, ConstructionTypeRow>,
   openingTypesByCode: Map<string, OpeningTypeRow>,
+  locale: NumberLocale,
 ): ElementAreaTotals {
   const byCategory: Record<string, number> = {};
   let windowAreaM2 = 0;
@@ -90,14 +108,14 @@ export function computeElementAreaTotals(
 
   for (const el of rows) {
     const constructionType = constructionTypesByCode.get(el.constructionTypeCode);
-    const net = elementNetAreaM2(el, openingTypesByCode);
+    const net = elementNetAreaM2(el, openingTypesByCode, locale);
     if (constructionType) {
       byCategory[constructionType.elementCategory] =
         (byCategory[constructionType.elementCategory] ?? 0) + net;
     }
     for (const o of el.openings) {
       const openingType = openingTypesByCode.get(o.openingTypeCode);
-      const area = openingAreaM2(o.openingTypeCode, o.count, openingTypesByCode);
+      const area = openingAreaM2(o.openingTypeCode, o.count, openingTypesByCode, locale);
       if (openingType?.category === "window") windowAreaM2 += area;
       else if (openingType?.category === "door") doorAreaM2 += area;
     }

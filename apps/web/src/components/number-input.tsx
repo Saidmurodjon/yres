@@ -19,6 +19,12 @@ export interface NumberInputProps
   unit?: string;
   /** Message from the form's own validation; shown instead of the field's blur check. */
   error?: string;
+  /**
+   * Set to false for cramped cells (dense grids, table rows) where a text line would break the layout:
+   * the field is still flagged (`aria-invalid`, red border, message in `title`) and the form must list the
+   * problem itself on save. Default true.
+   */
+  showMessage?: boolean;
 }
 
 /**
@@ -36,6 +42,7 @@ export function NumberInput({
   max,
   unit,
   error,
+  showMessage = true,
   className,
   id,
   onBlur,
@@ -85,8 +92,13 @@ export function NumberInput({
             onBlur?.(event);
           }}
           aria-invalid={message ? true : undefined}
-          aria-describedby={message ? errorId : rest["aria-describedby"]}
-          className={[unit ? "pr-12" : "", className].filter(Boolean).join(" ") || undefined}
+          aria-describedby={message && showMessage ? errorId : rest["aria-describedby"]}
+          title={!showMessage && message ? message : rest.title}
+          className={
+            [unit ? "pr-12" : "", message ? "border-destructive!" : "", className]
+              .filter(Boolean)
+              .join(" ") || undefined
+          }
         />
         {unit && (
           <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground">
@@ -94,7 +106,7 @@ export function NumberInput({
           </span>
         )}
       </div>
-      {message && (
+      {message && showMessage && (
         <p id={errorId} role="alert" className="mt-1 text-xs text-destructive">
           ⚠ {message}
         </p>

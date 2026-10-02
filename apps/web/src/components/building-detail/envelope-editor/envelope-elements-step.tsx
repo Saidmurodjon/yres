@@ -15,11 +15,13 @@ import { useId, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ENVELOPE_ELEMENT_CATEGORY_LABELS,
+  OPENING_CATEGORY_LABELS,
   ORIENTATIONS,
   ORIENTATION_LABELS,
-  OPENING_CATEGORY_LABELS,
   formatNumber,
 } from "../../../lib/labels";
+import { toNumberLocale } from "../../../lib/number";
+import { NumberInput } from "../../number-input";
 import { computeElementAreaTotals, elementNetAreaM2 } from "./calculations";
 import { RowCard } from "./row-card";
 import {
@@ -49,7 +51,8 @@ export function EnvelopeElementsStep({
   blockNames: string[];
   onChange: (rows: EnvelopeElementRow[]) => void;
 }) {
-  const { t } = useTranslation("envelope");
+  const { t, i18n } = useTranslation("envelope");
+  const locale = toNumberLocale(i18n.language);
   const formId = useId();
 
   const constructionTypeCodes = useMemo(
@@ -70,8 +73,8 @@ export function EnvelopeElementsStep({
   );
 
   const totals = useMemo(
-    () => computeElementAreaTotals(rows, constructionTypesByCode, openingTypesByCode),
-    [rows, constructionTypesByCode, openingTypesByCode],
+    () => computeElementAreaTotals(rows, constructionTypesByCode, openingTypesByCode, locale),
+    [rows, constructionTypesByCode, openingTypesByCode, locale],
   );
 
   const groups = useMemo<Group[]>(() => {
@@ -93,7 +96,11 @@ export function EnvelopeElementsStep({
     }
     const result = Array.from(sideMap.values());
     if (horizontal.length > 0) {
-      result.push({ key: "horizontal", label: t("editor.elements.roofAndFloor"), rows: horizontal });
+      result.push({
+        key: "horizontal",
+        label: t("editor.elements.roofAndFloor"),
+        rows: horizontal,
+      });
     }
     return result;
   }, [rows, t]);
@@ -117,16 +124,27 @@ export function EnvelopeElementsStep({
       emptyEnvelopeElement(
         group.key === "horizontal"
           ? { orientation: "horizontal" }
-          : { blockName: first?.blockName, orientation: first?.orientation, sideCode: first?.sideCode },
+          : {
+              blockName: first?.blockName,
+              orientation: first?.orientation,
+              sideCode: first?.sideCode,
+            },
       ),
     ]);
   }
 
-  function updateOpening(rowId: string, openingId: string, patch: Partial<EnvelopeElementRow["openings"][number]>) {
+  function updateOpening(
+    rowId: string,
+    openingId: string,
+    patch: Partial<EnvelopeElementRow["openings"][number]>,
+  ) {
     onChange(
       rows.map((r) =>
         r.rowId === rowId
-          ? { ...r, openings: r.openings.map((o) => (o.rowId === openingId ? { ...o, ...patch } : o)) }
+          ? {
+              ...r,
+              openings: r.openings.map((o) => (o.rowId === openingId ? { ...o, ...patch } : o)),
+            }
           : r,
       ),
     );
@@ -170,8 +188,9 @@ export function EnvelopeElementsStep({
           {Object.entries(totals.byCategory).map(([category, area]) => (
             <span key={category}>
               <span className="text-muted-foreground">
-                {ENVELOPE_ELEMENT_CATEGORY_LABELS[category as keyof typeof ENVELOPE_ELEMENT_CATEGORY_LABELS] ??
-                  category}
+                {ENVELOPE_ELEMENT_CATEGORY_LABELS[
+                  category as keyof typeof ENVELOPE_ELEMENT_CATEGORY_LABELS
+                ] ?? category}
                 :{" "}
               </span>
               <span className="font-medium">{formatNumber(area)} m²</span>
@@ -194,7 +213,7 @@ export function EnvelopeElementsStep({
 
       {groups.map((group) => {
         const groupAreaM2 = group.rows.reduce(
-          (sum, el) => sum + elementNetAreaM2(el, openingTypesByCode),
+          (sum, el) => sum + elementNetAreaM2(el, openingTypesByCode, locale),
           0,
         );
         return (
@@ -216,7 +235,7 @@ export function EnvelopeElementsStep({
                   onRemove={() => removeRow(row.rowId)}
                   headerExtra={
                     <Badge variant="secondary">
-                      {formatNumber(elementNetAreaM2(row, openingTypesByCode))} m²
+                      {formatNumber(elementNetAreaM2(row, openingTypesByCode, locale))} m²
                     </Badge>
                   }
                 >
@@ -250,7 +269,9 @@ export function EnvelopeElementsStep({
                       <Label>{t("editor.elements.orientation")}</Label>
                       <Select
                         value={row.orientation}
-                        onValueChange={(v) => updateRow(row.rowId, { orientation: v as Orientation })}
+                        onValueChange={(v) =>
+                          updateRow(row.rowId, { orientation: v as Orientation })
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -303,38 +324,30 @@ export function EnvelopeElementsStep({
                       <Label htmlFor={`${formId}-${row.rowId}-length`}>
                         {t("editor.elements.length")}
                       </Label>
-                      <Input
+                      <NumberInput
                         id={`${formId}-${row.rowId}-length`}
-                        type="number"
-                        step="any"
                         value={row.lengthM}
-                        onChange={(e) => updateRow(row.rowId, { lengthM: e.target.value })}
+                        onValueChange={(raw) => updateRow(row.rowId, { lengthM: raw })}
                       />
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor={`${formId}-${row.rowId}-heightEnv`}>
                         {t("editor.elements.heightEnvContact")}
                       </Label>
-                      <Input
+                      <NumberInput
                         id={`${formId}-${row.rowId}-heightEnv`}
-                        type="number"
-                        step="any"
                         value={row.heightEnvContactM}
-                        onChange={(e) => updateRow(row.rowId, { heightEnvContactM: e.target.value })}
+                        onValueChange={(raw) => updateRow(row.rowId, { heightEnvContactM: raw })}
                       />
                     </div>
                     <div className="space-y-1.5">
                       <Label htmlFor={`${formId}-${row.rowId}-heightGround`}>
                         {t("editor.elements.heightGroundContact")}
                       </Label>
-                      <Input
+                      <NumberInput
                         id={`${formId}-${row.rowId}-heightGround`}
-                        type="number"
-                        step="any"
                         value={row.heightGroundContactM}
-                        onChange={(e) =>
-                          updateRow(row.rowId, { heightGroundContactM: e.target.value })
-                        }
+                        onValueChange={(raw) => updateRow(row.rowId, { heightGroundContactM: raw })}
                       />
                     </div>
                     <div className="space-y-1.5 sm:col-span-2">
@@ -395,13 +408,13 @@ export function EnvelopeElementsStep({
                             ))}
                           </SelectContent>
                         </Select>
-                        <Input
+                        <NumberInput
+                          integer
                           className="w-24"
-                          type="number"
                           placeholder={t("editor.elements.countPlaceholder")}
                           value={opening.count}
-                          onChange={(e) =>
-                            updateOpening(row.rowId, opening.rowId, { count: e.target.value })
+                          onValueChange={(raw) =>
+                            updateOpening(row.rowId, opening.rowId, { count: raw })
                           }
                         />
                         <Button

@@ -138,6 +138,7 @@
       "buildingBlockFootprintWidthInvalid": "Блок «{{name}}» должен иметь положительную ширину габарита.",
       "buildingBlockFloorHeightInvalid": "Блок «{{name}}» должен иметь положительную высоту этажа.",
       "buildingBlockPerimeterInvalid": "Блок «{{name}}» должен иметь положительный периметр.",
+      "numberInvalid": "{{where}}: не число, например 12,5.",
       "buildingBlockFloorsInvalid": "Блок «{{name}}» должен иметь положительное целое число этажей.",
       "constructionTypeCodeRequired": "Каждому типу конструкции нужен код.",
       "constructionTypeCodeDuplicate": "Код типа конструкции «{{code}}» повторяется.",

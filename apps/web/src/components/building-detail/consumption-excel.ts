@@ -1,6 +1,7 @@
 import type { TFunction } from "i18next";
 import type { EnergyCarrier } from "../../lib/api-types";
 import { ENERGY_CARRIERS, ENERGY_CARRIER_LABELS } from "../../lib/labels";
+import { type NumberLocale, parseLocaleNumber } from "../../lib/number";
 import { ENERGY_CARRIER_NATIVE_UNIT_LABELS } from "./consumption-units";
 
 export interface ParsedBillRow {
@@ -33,7 +34,14 @@ const HEADER_ALIASES: Record<
   year: ["yil", "year", "год"],
   month: ["oy", "month", "месяц"],
   carrier: ["tashuvchi", "carrier", "energy carrier", "носитель", "энергоноситель"],
-  consumptionNative: ["miqdor (asl birlik)", "amount (native unit)", "количество (в своей единице)", "miqdor", "amount", "количество"],
+  consumptionNative: [
+    "miqdor (asl birlik)",
+    "amount (native unit)",
+    "количество (в своей единице)",
+    "miqdor",
+    "amount",
+    "количество",
+  ],
   consumptionKwhLegacy: [
     "miqdor (kvt·soat)",
     "miqdor (kvt soat)",
@@ -64,9 +72,28 @@ function findColumn(headerRow: unknown[], aliases: string[]): number {
   return headerRow.findIndex((cell) => aliases.includes(normalizeHeader(cell)));
 }
 
+type CellNumber = { ok: true; value: number } | { ok: false; reason: "empty" | "invalid" };
+
+/**
+ * A spreadsheet cell as a number: real numeric cells as-is, text cells ("12,5") through
+ * `parseLocaleNumber` in the app's language (the file's own locale is unknown). Nothing is guessed — an
+ * unreadable cell is "invalid", never 0 and never skipped silently.
+ */
+function readNumberCell(cell: unknown, locale: NumberLocale, integer = false): CellNumber {
+  if (cell === undefined || cell === null || cell === "") return { ok: false, reason: "empty" };
+  if (typeof cell === "number") {
+    return Number.isFinite(cell) && (!integer || Number.isInteger(cell))
+      ? { ok: true, value: cell }
+      : { ok: false, reason: "invalid" };
+  }
+  if (typeof cell === "string") return parseLocaleNumber(cell, locale, { integer });
+  return { ok: false, reason: "invalid" };
+}
+
 export async function parseConsumptionWorkbook(
   file: File,
   t: TFunction,
+  locale: NumberLocale,
 ): Promise<{ rows: ParsedBillRow[]; errors: string[] }> {
   const XLSX = await import("xlsx");
   const buffer = await file.arrayBuffer();
@@ -103,44 +130,57 @@ export async function parseConsumptionWorkbook(
     if (!dataRow || dataRow.length === 0) continue;
     const rowNumber = i + 1;
 
-    const year = Number(dataRow[columnIndex.year]);
-    const month = Number(dataRow[columnIndex.month]);
+    const yearCell = readNumberCell(dataRow[columnIndex.year], locale, true);
+    const monthCell = readNumberCell(dataRow[columnIndex.month], locale, true);
     const carrier = matchCarrier(String(dataRow[columnIndex.carrier] ?? ""));
 
-    if (!Number.isFinite(year)) {
+    if (!yearCell.ok) {
       errors.push(t("excel.errors.invalidYear", { row: rowNumber }));
       continue;
     }
-    if (!Number.isFinite(month) || month < 1 || month > 12) {
+    if (!monthCell.ok || monthCell.value < 1 || monthCell.value > 12) {
       errors.push(t("excel.errors.invalidMonth", { row: rowNumber }));
       continue;
     }
+    const year = yearCell.value;
+    const month = monthCell.value;
     if (!carrier) {
       errors.push(t("excel.errors.invalidCarrier", { row: rowNumber }));
       continue;
     }
 
-    const nativeFromColumn =
-      columnIndex.consumptionNative !== -1 ? Number(dataRow[columnIndex.consumptionNative]) : Number.NaN;
+    const nativeCell =
+      columnIndex.consumptionNative !== -1
+        ? readNumberCell(dataRow[columnIndex.consumptionNative], locale)
+        : ({ ok: false, reason: "empty" } as const);
     // A legacy "kWh" column is only usable as-is for electricity (native
     // unit = kWh already); for other carriers a pre-converted figure can't
     // be reversed back to a native reading, so it's ignored for them.
-    const legacyKwh =
+    const legacyCell =
       carrier === "electricity" && columnIndex.consumptionKwhLegacy !== -1
-        ? Number(dataRow[columnIndex.consumptionKwhLegacy])
-        : Number.NaN;
-    const consumptionNative = Number.isFinite(nativeFromColumn) ? nativeFromColumn : legacyKwh;
+        ? readNumberCell(dataRow[columnIndex.consumptionKwhLegacy], locale)
+        : ({ ok: false, reason: "empty" } as const);
+    // The legacy column only fills in an EMPTY amount cell; an unreadable amount is an error, not a reason to
+    // fall back to another column.
+    const consumptionCell =
+      nativeCell.ok || nativeCell.reason === "invalid" ? nativeCell : legacyCell;
 
-    if (!Number.isFinite(consumptionNative)) {
+    if (!consumptionCell.ok) {
       errors.push(t("excel.errors.invalidConsumption", { row: rowNumber }));
       continue;
     }
+    const consumptionNative = consumptionCell.value;
 
-    const tariffRaw = columnIndex.tariffLocal !== -1 ? dataRow[columnIndex.tariffLocal] : undefined;
-    const tariffLocal =
-      tariffRaw !== undefined && tariffRaw !== null && tariffRaw !== "" && Number.isFinite(Number(tariffRaw))
-        ? Number(tariffRaw)
-        : null;
+    const tariffCell =
+      columnIndex.tariffLocal !== -1
+        ? readNumberCell(dataRow[columnIndex.tariffLocal], locale)
+        : ({ ok: false, reason: "empty" } as const);
+    if (!tariffCell.ok && tariffCell.reason === "invalid") {
+      // A tariff that cannot be read must not silently become "no tariff".
+      errors.push(t("excel.errors.invalidTariff", { row: rowNumber }));
+      continue;
+    }
+    const tariffLocal = tariffCell.ok ? tariffCell.value : null;
 
     rows.push({ year, month, energyCarrier: carrier, consumptionNative, tariffLocal });
   }
@@ -169,7 +209,9 @@ export async function downloadConsumptionTemplate(t: TFunction): Promise<void> {
     [t("excel.template.readMeTitle")],
     [t("excel.template.readMeInstructions")],
     [t("excel.template.readMeCarriersLabel")],
-    ...ENERGY_CARRIERS.map((c) => [`${ENERGY_CARRIER_LABELS[c]} — ${ENERGY_CARRIER_NATIVE_UNIT_LABELS[c]}`]),
+    ...ENERGY_CARRIERS.map((c) => [
+      `${ENERGY_CARRIER_LABELS[c]} — ${ENERGY_CARRIER_NATIVE_UNIT_LABELS[c]}`,
+    ]),
   ];
   const readMeSheet = XLSX.utils.aoa_to_sheet(readMeRows);
   XLSX.utils.book_append_sheet(workbook, readMeSheet, t("excel.template.readMeSheetName"));

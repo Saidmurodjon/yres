@@ -132,6 +132,7 @@
       "buildingBlockFootprintWidthInvalid": "\"{{name}}\" bloki uchun musbat gabarit kengligi kerak.",
       "buildingBlockFloorHeightInvalid": "\"{{name}}\" bloki uchun musbat qavat balandligi kerak.",
       "buildingBlockPerimeterInvalid": "\"{{name}}\" bloki uchun musbat perimetr kerak.",
+      "numberInvalid": "{{where}}: raqam emas, masalan 12,5.",
       "buildingBlockFloorsInvalid": "\"{{name}}\" bloki uchun musbat butun qavatlar soni kerak.",
       "constructionTypeCodeRequired": "Har bir konstruksiya turi uchun kod kerak.",
       "constructionTypeCodeDuplicate": "\"{{code}}\" konstruksiya turi kodi takrorlangan.",

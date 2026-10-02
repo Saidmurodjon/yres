@@ -19,6 +19,8 @@ import {
   ENVELOPE_ELEMENT_CATEGORY_LABELS,
   formatNumber,
 } from "../../../lib/labels";
+import { toNumberLocale } from "../../../lib/number";
+import { NumberInput } from "../../number-input";
 import { computeUValuePreview } from "./calculations";
 import { RowCard } from "./row-card";
 import { type ConstructionTypeRow, emptyConstructionType, uid } from "./state";
@@ -36,14 +38,19 @@ export function ConstructionTypesStep({
   surfaceResistances: SurfaceResistance[];
   onChange: (rows: ConstructionTypeRow[]) => void;
 }) {
-  const { t } = useTranslation("envelope");
+  const { t, i18n } = useTranslation("envelope");
+  const locale = toNumberLocale(i18n.language);
   const formId = useId();
 
   function updateRow(rowId: string, patch: Partial<ConstructionTypeRow>) {
     onChange(rows.map((r) => (r.rowId === rowId ? { ...r, ...patch } : r)));
   }
 
-  function updateLayer(rowId: string, layerId: string, patch: Partial<ConstructionTypeRow["layers"][number]>) {
+  function updateLayer(
+    rowId: string,
+    layerId: string,
+    patch: Partial<ConstructionTypeRow["layers"][number]>,
+  ) {
     onChange(
       rows.map((r) =>
         r.rowId === rowId
@@ -92,14 +99,16 @@ export function ConstructionTypesStep({
         </Button>
       </div>
 
-      <p className="text-sm text-muted-foreground">{t("editor.constructionTypes.stepDescription")}</p>
+      <p className="text-sm text-muted-foreground">
+        {t("editor.constructionTypes.stepDescription")}
+      </p>
 
       {rows.length === 0 && (
         <p className="text-sm text-muted-foreground">{t("editor.constructionTypes.empty")}</p>
       )}
 
       {rows.map((row) => {
-        const uValue = computeUValuePreview(row, materials, surfaceResistances);
+        const uValue = computeUValuePreview(row, materials, surfaceResistances, locale);
         return (
           <RowCard
             key={row.rowId}
@@ -195,14 +204,12 @@ export function ConstructionTypesStep({
                       ))}
                     </SelectContent>
                   </Select>
-                  <Input
+                  <NumberInput
                     className="w-32"
-                    type="number"
-                    step="any"
                     placeholder={t("editor.constructionTypes.thicknessPlaceholder")}
                     value={layer.thicknessM}
-                    onChange={(e) =>
-                      updateLayer(row.rowId, layer.rowId, { thicknessM: e.target.value })
+                    onValueChange={(raw) =>
+                      updateLayer(row.rowId, layer.rowId, { thicknessM: raw })
                     }
                   />
                   <Button
