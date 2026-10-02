@@ -1,10 +1,22 @@
 # Hisoblash dvigateli (`apps/api/src/services/`, `audit.engine.ts` tomonidan boshqariladi)
 
-- **Dvigatel muayyan Excel jadvalini qayta amalga oshiradi** (`3-DMTT v5.xlsx`,
-  EN ISO 13790'ga asoslangan) — `docs/data-dictionary.md` har bir hisoblash nima qilishi va
-  qaysi katak/formulaga mos kelishi bo'yicha varaq-varaq haqiqat manbaidir. Hisoblash noto'g'ri
-  ko'rinsa, kod xato deb yoki formulani "yaxshilash" kerak deb o'ylashdan oldin tegishli varaqni
-  tekshiring — maqsad umuman "to'g'riroq" model emas, jadvalga sodiqlik.
+- **Haqiqat manbai — `3-DMTT v7.20.xlsx` metodikasi (K1 qarori, 2026-10-02).** Avval bu qoida
+  "`3-DMTT v5.xlsx`ga sodiqlik" edi — **bekor qilindi**. Auditor v7.20 bilan ishlaydi, v5 → v7.20
+  oralig'idagi ~80 ta tuzatish esa dvigatelga hali o'tmagan (`docs/production/01-audit-metodologiya.md`
+  §1–2). Joriy kod hali v5 xatti-harakatida; o'tish — `docs/production/00-MASTER-PLAN.md`ning
+  Faza 1i. Shundan kelib chiqadigan qoidalar:
+  1. v5 dan qolgan, v7.20 dan farq qiladigan formulani "ataylab Excel bilan bir xil" deb himoya
+     qilmang — u tuzatilishi kerak bo'lgan tafovut. Eng muhimi: `generation.service.ts`ning
+     `(Q+Qd)·(2−η)`i (X33) — gaz qozonda iste'molni ~17 % kam, COP > 2 bo'lgan issiqlik nasosida
+     **manfiy** beradi. Kod izohlaridagi "kept as-is for parity" iboralari endi v5 ga ishora qiladi.
+  2. Dvigatel o'zgarishi faqat golden test bilan birga kiritiladi (`3-dmtt/v7.20` fixture va
+     `divergences.json`, `docs/production/06-sifat-test-va-reliz.md` §2) — o'zgarish qaysi tafovutni
+     yopganini test ko'rsatsin. Maqsad hamon umuman "to'g'riroq" model emas, **v7.20 ga sodiqlik**:
+     hisoblash noto'g'ri ko'rinsa, formulani o'zingizcha "yaxshilashdan" oldin v7.20 dagi tegishli
+     varaqni tekshiring.
+  3. `docs/data-dictionary.md` hali v5 bo'yicha yozilgan — varaq/katak tuzilishi uchun foydali, lekin
+     v7.20 farqlari uchun `01-audit-metodologiya.md`ni ustun deb oling. v7.20 fayli repo'da yo'q
+     (`3-MTM/` papkasida, loyiha egasida) — kerak bo'lsa so'rang, taxmin qilmang.
 - **`runFullAudit()` har chaqiruvda saqlangan kirishlardan hammasini qayta hisoblaydi — `audit_run`
   holat qatoridan tashqari hech narsa saqlanmaydi.** Buni tushunmasdan ichiga keshlash/memoizatsiya
   qo'shmang (binolarning kirishlari tahrirlash paytida doimo o'zgaradi; eskirgan keshlangan natija
@@ -45,7 +57,9 @@
 qarshi bevosita tekshirildi va joriy kod bilan solishtirildi — to'liq natija
 `docs/calculation-engine-audit.md`da. Qisqacha:
 - **8 tasi allaqachon to'g'ri hal qilingan** (yo ataylab Excel bilan bir xil qoldirilgan aniq
-  izoh bilan, yo to'g'ri tuzatilgan aniq izoh bilan) — qayta ko'rib chiqishga hojat yo'q.
+  izoh bilan, yo to'g'ri tuzatilgan aniq izoh bilan). **Diqqat:** bu tekshiruv v5 ga nisbatan
+  qilingan — "Excel bilan bir xil qoldirilgan" qarorlar K1 dan keyin v7.20 ga nisbatan qayta
+  ko'rib chiqiladi (Faza 1).
 - **2 ta haqiqiy kamchilik topildi, ikkalasi ham tuzatildi**: (1) `non_ee_measure` (yordamchi
   renovatsiya xarajatlari) endi `apps/api/src/routes/measures.ts`dagi CRUD route'lari orqali
   boshqariladi va `audit.engine.ts` uni `AuditSummary.totalInvestmentUsd`ga qo'shadi; (2) mexanik

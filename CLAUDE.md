@@ -6,7 +6,8 @@ batafsil qoidalar va joriy holatga havola qiladi, ularni takrorlamaydi.
 ## Bu nima
 
 YRES (Yagona Raqamli Energiya Samaradorligi Tizimi) — bino energiya auditini (hozirda katta Excel
-hisob-kitob jadvalida (`3-DMTT v5.xlsx`) bajariladigan) bankka tayyor veb-ilovaga aylantiruvchi
+hisob-kitob jadvalida bajariladigan; metodika haqiqat manbai — `3-DMTT v7.20.xlsx`, dvigatel hali
+`v5`da, `calculation-engine.md`ga qarang) bankka tayyor veb-ilovaga aylantiruvchi
 SaaS platforma. Arxitektura jadvali va repo tuzilishi uchun `README.md`ga, nima qurilgani va
 navbatda nima turgani uchun `PROGRESS.md`ga qarang.
 

@@ -196,7 +196,7 @@ Agentlarning ~45 savoli takrorlanishlardan tozalandi. **Qalin** — keyingi faza
 
 | ID | Qaror | Tavsiya | Bloklaydi | Manba |
 |---|---|---|---|---|
-| **K1** | YRES uchun haqiqat manbai endi v7.20 mi ("v5 ga sodiqlik" qoidasi bekor qilinadimi)? | Ha | Faza 1 | 01 Q1 |
+| **K1** | YRES uchun haqiqat manbai endi v7.20 mi ("v5 ga sodiqlik" qoidasi bekor qilinadimi)? | Ha — ✅ **Qaror (2026-10-02): Ha.** `calculation-engine.md` yangilandi | Faza 1 | 01 Q1 |
 | **K2** | Moliya: nominal yoki real narxlar (WB talabi)? Diskont, o'sish sur'atlari, bazaviy yil, kurs manbasi (shartnoma 12 140,91 yoki MB) | v7.20 dagi kabi nominal 6,08 %, kurs loyiha darajasida | Faza 1 | 01 Q10, 05 Q4 |
 | **K3** | Konvert tejashi hisobotda foydali issiqlik (kWh) yoki yakuniy yoqilg'i (÷η) ko'rinishida beriladimi? | Ikkalasi, tariflash yakuniy bo'yicha | Faza 1 | 01 Q2 |
 | **K4** | FES eksport daromadi (1 100 so'm/kWh) byudjet tashkiloti uchun standart holatda yoqilganmi? | Loyiha parametri, sukut bo'yicha o'chiq | Faza 1 | 01 Q4 |
