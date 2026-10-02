@@ -148,3 +148,7 @@ bun run deploy:web     # vite build (needs VITE_API_URL) + wrangler pages deploy
 No Cloudflare account needed — see the root `README.md`. `bun run dev` starts the Vite dev
 server (5173) and `wrangler dev` (3000) side by side via Turborepo; `wrangler dev` uses a local D1
 (Miniflare), created from the migrations by `bun run db:migrate:local` (the API's `predev` step runs it).
+
+## Backup va tiklash
+
+Runbook: `docs/runbooks/backup-va-tiklash.md` (D1 Time Travel, tiklash mashqi). ADR: `docs/adr/ADR-011-backup-dr.md`, `ADR-015-workers-paid.md`.

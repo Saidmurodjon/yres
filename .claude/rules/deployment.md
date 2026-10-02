@@ -59,3 +59,7 @@ Wrangler
 sirlari faqat-yozish uchun — CLI orqali sir qiymatini qaytarib o'qishning iloji yo'q. Baza uchun sir
 yo'q: D1 `wrangler.toml`dagi `DB` binding'i orqali ulanadi. Production D1'ga yozish (`--remote`) — faqat
 loyiha egasi buyrug'i bilan (`database.md`).
+
+## Backup va tiklash
+
+`docs/runbooks/backup-va-tiklash.md` — D1 Time Travel va choraklik tiklash mashqi; buyruqlarni faqat loyiha egasi ishga tushiradi.

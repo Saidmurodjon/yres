@@ -2364,3 +2364,19 @@ T06b — qamrab olinganlar:
   Eslatma: grid server ma'lumoti yuklangach quriladi — undan oldin yozilgan matn ustidan yoziladi (oldindan bor, kichik poyga; testda `networkidle` kutiladi).
 - Tekshiruv: type-check, biome, web 68 test, api 197 test, **Playwright 24/24** (UI topshirig'i oxirida bir marta).
 **Navbatda:** T08 (audit tugmasi mavjud qobiqni almashtirmasin).
+
+## Faza 0 · T10 — backup/tiklash runbook va ADR'lar (faqat hujjat) (2026-10-02)
+
+- Yangi: `docs/runbooks/backup-va-tiklash.md` (Time Travel, choraklik mashq, falokat restore'i, mashqlar jurnali), `docs/adr/ADR-011-backup-dr.md` (Taklif — egasi tasdig'i kutilmoqda), `docs/adr/ADR-015-workers-paid.md` (Kechiktirilgan — Free). `docs/deployment.md` va `.claude/rules/deployment.md` ga havola.
+- README §4 da T09 ✅ belgisi T09 commit'ida tushib qolgan edi — shu commit'da tuzatildi.
+- Tekshiruv: faqat markdown; sir/parol yo'q.
+
+**Loyiha egasi uchun ro'yxat:**
+- [ ] Birinchi tiklash mashqini runbook bo'yicha bajarib jurnalga yozish (Faza 0 chiqish mezoni).
+- [ ] Cloudflare hozir Free; Paid'ga o'tish faqat ADR-016 triggerlari bo'yicha (`1102`/CPU, 40-so'rov byudjeti, 400 MB, Time Travel).
+- [ ] GitHub Actions: T01 push'idan keyingi CI natijasini ko'rish; yiqilgan integratsiya testlari bo'lsa ro'yxatini Claude'ga berish.
+- [ ] T02–T04 deploy qilingach: S-1 qo'lda tekshiruvi, CSP konsol tekshiruvi (T04d), chat yuklash (T03).
+- [ ] Branch strategiyasi: `main` ochilsinmi (CI `push: main` va `deploy.yml` unga bog'liq)?
+- [ ] ADR-011 ni tasdiqlash.
+
+**Faza 0 holati:** barcha topshiriqlar bajarildi, D04 §C (production cutover) va tiklash mashqi loyiha egasini kutadi.

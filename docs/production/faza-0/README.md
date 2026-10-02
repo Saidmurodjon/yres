@@ -67,8 +67,8 @@ D03 dan oldin yozilgan integratsiya testining lokal yiqilishini "o'tdi" deb da'v
 | T06 | Dirty-himoya, chiqishda blocker, o'chirishga tasdiq | `T06-dirty-himoya.md` | 3 (a–c) | ✅ |
 | T07 | Iste'mol: bo'sh tashuvchini o'chirish + ko'p yilni atomik saqlash | `T07-istemol-saqlash.md` | 2 (a, b) | ✅ |
 | T08 | "Auditni ishga tushirish" mavjud qobiqni almashtirmasin | `T08-audit-tugmasi.md` | 1 | ✅ |
-| T09 | `xlsx@0.18.5` zaifligi | `T09-xlsx.md` | 1 | ⬜ |
-| T10 | Backup/PITR runbook + ADR-011/ADR-015 (faqat hujjat) va loyiha egasi ro'yxati | `T10-ops-hujjatlar.md` | 1 | ⬜ |
+| T09 | `xlsx@0.18.5` zaifligi | `T09-xlsx.md` | 1 | ✅ |
+| T10 | Backup/PITR runbook + ADR-011/ADR-015 (faqat hujjat) va loyiha egasi ro'yxati | `T10-ops-hujjatlar.md` | 1 | ✅ (tiklash mashqi — egasi) |
 
 Tartib — yuqoridan pastga. D01 → D02 → D03 majburiy va hamma narsadan oldin (har keyingi topshiriqning
 integratsiya testi lokal D1'ga tayanadi). D04 §C (production cutover) loyiha egasiga bog'liq — u kutilayotganda
