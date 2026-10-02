@@ -2179,3 +2179,24 @@ shuning uchun T01 da yo spec'larni tuzatish, yo E2E'ni aniq izoh bilan CI'dan ch
   (4) parol kerak bo'lsa "Parolni unutdim" yangi parol beradi (`social-features.md`: u o'zgarmaydi).
 
 **Navbatda:** T03 (V-1 chat biriktirmalari XSS).
+
+## Faza 0 · T03 — V-1: chat biriktirmalari orqali stored XSS yopildi (2026-10-02)
+
+- `apps/api/src/lib/attachments.ts`: `normalizeAttachmentMime` (allowlist: png/jpeg/webp/gif, pdf, txt, csv, doc/docx, xls/xlsx, zip; SVG/HTML/XML/JS
+  hech qachon), `sanitizeAttachmentFileName` (spec'dagi belgilar + `#` va `%` — nom R2 kaliti orqali URL yo'liga kirgani uchun; 120 belgi, kengaytma
+  saqlanadi), `attachmentResponseHeaders` (saqlangan turni QAYTA tekshiradi — eski obyektlar `application/octet-stream` + `attachment`;
+  `nosniff`, `CSP: sandbox; default-src 'none'`, `Cache-Control: private, max-age=3600`; faqat inline-rasm `inline`; `filename` ASCII + `filename*` RFC 5987).
+- `routes/chat.ts`: yuklash — ruxsatsiz tur `400 { code: "ATTACHMENT_TYPE_NOT_ALLOWED" }`, kalit va javobdagi nom tozalangan; berish — `attachmentResponseHeaders`
+  (a'zolik tekshiruvi o'zgarmagan).
+- Web: fayl `<input accept>` (server ro'yxati bilan bir xil), yuklash xatosi inline `⚠` xabar sifatida (uz/ru/en `chat.json`: `attachmentTypeNotAllowed`,
+  `attachmentUploadFailed`); `ApiError.code` qo'shildi. Avval `mutateAsync` xatosi ushlanmay qolardi — endi yozilgan xabar va tanlangan fayl saqlanadi.
+- Testlar: `tests/services/attachments.test.ts` (14, spec'dagi hammasi + RFC 5987), `tests/integration/chat-attachments.test.ts` (5: HTML/SVG/bo'sh tur → 400 va
+  R2'ga hech narsa yozilmaydi; rasm inline + sarlavhalar; PDF attachment; eski `text/html` obyekt zararsizlanadi; begona foydalanuvchi 404).
+- Tekshiruv: api testlar 28→30 fayl yashil, type-check, biome, `apps/web` build yashil.
+- **Brauzerda tekshirilmadi** (chat'ga fayl yuklash). Loyiha egasi uchun qo'lda: (1) `.html` va `.svg` yuklashga urinish — chat'da qizil `⚠` xabar, 400;
+  (2) PDF havolasini bosish — brauzerda ochilmaydi, yuklab olinadi; (3) rasm chat ichida ko'rinadi (preview `<img>`); (4) fayl tanlash oynasi
+  faqat ruxsat etilgan turlarni taklif qiladi.
+- Eslatma (kengroq muammo, bu commit'da emas): xabar WebSocket orqali `attachmentUrl` ni mijoz bergan satr sifatida qabul qiladi — kalit `chat/<conversationId>/`
+  bilan tekshirilmaydi; bu T04e (V-2, WS freymlari zod) ko'lamida.
+
+**Navbatda:** T04 (xavfsizlik gigiyenasi: a–e).

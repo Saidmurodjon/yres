@@ -41,6 +41,8 @@
     "replyingTo": "Ответ на: {{body}}",
     "cancelAria": "Отмена",
     "removeAttachmentAria": "Удалить вложение",
+    "attachmentTypeNotAllowed": "Этот тип файла не разрешён. Используйте изображение, PDF, текст, Word, Excel или ZIP.",
+    "attachmentUploadFailed": "Не удалось загрузить файл. Попробуйте ещё раз.",
     "attachFileAria": "Прикрепить файл",
     "sendAria": "Отправить",
     "placeholder": "Введите сообщение..."

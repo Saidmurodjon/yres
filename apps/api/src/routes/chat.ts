@@ -2,6 +2,11 @@ import { conversation, conversationMember, insertChunked, message, user } from "
 import { and, count, desc, eq, gt, inArray, isNull, max, ne, or } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
+import {
+  attachmentResponseHeaders,
+  normalizeAttachmentMime,
+  sanitizeAttachmentFileName,
+} from "../lib/attachments";
 import { likeContains } from "../lib/search";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import {
@@ -489,16 +494,24 @@ chatRoutes.post("/conversations/:id/attachments", async (c) => {
     return c.json({ error: "File is too large (max 10 MB)." }, 400);
   }
 
-  const key = `chat/${conversationId}/${crypto.randomUUID()}-${file.name}`;
+  // Allowlist, not blocklist — and the type the client claims is the only one we have, so it is
+  // normalized and stored; the download route re-checks it (lib/attachments.ts, V-1).
+  const mimeType = normalizeAttachmentMime(file.type);
+  if (!mimeType) {
+    return c.json({ error: "Unsupported file type.", code: "ATTACHMENT_TYPE_NOT_ALLOWED" }, 400);
+  }
+
+  const fileName = sanitizeAttachmentFileName(file.name);
+  const key = `chat/${conversationId}/${crypto.randomUUID()}-${fileName}`;
   await c.env.CHAT_ATTACHMENTS_BUCKET.put(key, await file.arrayBuffer(), {
-    httpMetadata: { contentType: file.type || "application/octet-stream" },
+    httpMetadata: { contentType: mimeType },
   });
 
   return c.json(
     {
       attachmentUrl: `/api/chat/attachments/${key}`,
-      attachmentName: file.name,
-      attachmentMimeType: file.type || "application/octet-stream",
+      attachmentName: fileName,
+      attachmentMimeType: mimeType,
       attachmentSizeBytes: file.size,
     },
     201,
@@ -542,7 +555,9 @@ chatRoutes.get("/attachments/*", async (c) => {
     return c.json({ error: "Not found" }, 404);
   }
 
+  // key = chat/<conversationId>/<uuid>-<file name>; the uuid is 36 characters.
+  const fileName = key.split("/").slice(2).join("/").slice(37) || "file";
   return new Response(object.body, {
-    headers: { "Content-Type": object.httpMetadata?.contentType ?? "application/octet-stream" },
+    headers: attachmentResponseHeaders(object.httpMetadata?.contentType, fileName),
   });
 });

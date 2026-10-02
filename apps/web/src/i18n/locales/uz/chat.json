@@ -41,6 +41,8 @@
     "replyingTo": "Javob: {{body}}",
     "cancelAria": "Bekor qilish",
     "removeAttachmentAria": "Ilovani olib tashlash",
+    "attachmentTypeNotAllowed": "Bu fayl turi ruxsat etilmagan. Rasm, PDF, matn, Word, Excel yoki ZIP faylidan foydalaning.",
+    "attachmentUploadFailed": "Faylni yuklab bo'lmadi. Qayta urinib ko'ring.",
     "attachFileAria": "Fayl biriktirish",
     "sendAria": "Yuborish",
     "placeholder": "Xabar yozing..."

@@ -4,13 +4,13 @@ import { Paperclip, Send, X } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  useConversations,
   useConversationSocket,
+  useConversations,
   useMarkConversationRead,
   useMessages,
   useUploadChatAttachment,
 } from "../../../hooks";
-import { API_URL } from "../../../lib/api";
+import { API_URL, ApiError } from "../../../lib/api";
 import type { ChatMessage } from "../../../lib/api-types";
 import { useSession } from "../../../lib/auth-client";
 import type { SessionUser } from "../../../lib/auth-types";
@@ -47,6 +47,7 @@ function ChatThreadPage() {
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [editing, setEditing] = useState<ChatMessage | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -66,6 +67,7 @@ function ChatThreadPage() {
     setEditing(null);
     setBody("");
     setPendingFile(null);
+    setAttachmentError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -83,7 +85,17 @@ function ChatThreadPage() {
 
     let attachment: PendingAttachment | undefined;
     if (pendingFile) {
-      attachment = await uploadAttachment.mutateAsync(pendingFile);
+      try {
+        attachment = await uploadAttachment.mutateAsync(pendingFile);
+      } catch (error) {
+        // Keep the typed message and the chosen file; just say why the upload was refused.
+        setAttachmentError(
+          error instanceof ApiError && error.code === "ATTACHMENT_TYPE_NOT_ALLOWED"
+            ? t("thread.attachmentTypeNotAllowed")
+            : t("thread.attachmentUploadFailed"),
+        );
+        return;
+      }
     }
 
     socket.sendMessage(body.trim(), replyTo?.id ?? null, attachment);
@@ -228,13 +240,23 @@ function ChatThreadPage() {
           </button>
         </div>
       )}
+      {attachmentError && (
+        <p role="alert" className="mb-2 text-sm text-destructive">
+          ⚠ {attachmentError}
+        </p>
+      )}
 
       <form onSubmit={handleSend} className="flex items-end gap-2 border-t border-border pt-3">
         <input
           ref={fileInputRef}
           type="file"
+          // Mirrors the server allowlist (apps/api/src/lib/attachments.ts); the server is what enforces it.
+          accept="image/png,image/jpeg,image/webp,image/gif,.pdf,.txt,.csv,.doc,.docx,.xls,.xlsx,.zip"
           className="hidden"
-          onChange={(e) => setPendingFile(e.target.files?.[0] ?? null)}
+          onChange={(e) => {
+            setAttachmentError(null);
+            setPendingFile(e.target.files?.[0] ?? null);
+          }}
         />
         <Button
           type="button"

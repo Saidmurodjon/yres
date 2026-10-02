@@ -41,6 +41,8 @@
     "replyingTo": "Replying to: {{body}}",
     "cancelAria": "Cancel",
     "removeAttachmentAria": "Remove attachment",
+    "attachmentTypeNotAllowed": "This file type is not allowed. Use an image, PDF, text, Word, Excel or ZIP file.",
+    "attachmentUploadFailed": "Could not upload the file. Try again.",
     "attachFileAria": "Attach a file",
     "sendAria": "Send",
     "placeholder": "Type a message..."

@@ -671,5 +671,7 @@ export interface Paginated<T> {
 
 export interface ApiErrorBody {
   error: string;
+  /** Stable machine-readable code some endpoints add next to `error` (e.g. ATTACHMENT_TYPE_NOT_ALLOWED). */
+  code?: string;
   details?: unknown;
 }
