@@ -12,8 +12,11 @@ export type NumberLocale = "uz" | "ru" | "en";
 export type ParseResult = { ok: true; value: number } | { ok: false; reason: "empty" | "invalid" };
 
 // Thousands separators other than `,`/`.`: space, no-break space, narrow no-break space, thin space, apostrophe.
-const GROUPING_SEPARATORS = /[    ']/g;
-const UNICODE_MINUS = /−/g;
+// Built from strings so the invisible characters stay visible as escapes in the source.
+const GROUPING_CLASS = "[ \\u00a0\\u202f\\u2009']";
+const GROUPING_CHAR = new RegExp(GROUPING_CLASS);
+const GROUPING_CHARS = new RegExp(GROUPING_CLASS, "g");
+const UNICODE_MINUS = new RegExp("\\u2212", "g");
 const STRICT_NUMBER = /^-?(\d+(\.\d*)?|\.\d+)$/;
 // A thousands-grouped integer part: 1–3 digits (no leading zero), then groups of exactly 3.
 const GROUPED_WITH_COMMA = /^-?[1-9]\d{0,2}(,\d{3})+$/;
@@ -29,8 +32,24 @@ export function parseLocaleNumber(
   const trimmed = raw.trim();
   if (trimmed === "") return { ok: false, reason: "empty" };
 
-  let text = trimmed.replace(UNICODE_MINUS, "-").replace(GROUPING_SEPARATORS, "");
-  if (text === "") return { ok: false, reason: "empty" };
+  let text = trimmed.replace(UNICODE_MINUS, "-");
+
+  // Space-like and apostrophe separators are accepted only as real thousands grouping ("1 234 567,5",
+  // "1'234"); "12 5" or "1 2 3" would otherwise silently become a different number (125, 123).
+  const groupingUsed = text.match(GROUPING_CHARS);
+  if (groupingUsed) {
+    const kinds = new Set(groupingUsed.map((char) => (char === "'" ? "'" : " ")));
+    if (kinds.size > 1) return { ok: false, reason: "invalid" };
+    const lastMark = Math.max(text.lastIndexOf(","), text.lastIndexOf("."));
+    const integerPart = lastMark >= 0 ? text.slice(0, lastMark) : text;
+    const fraction = lastMark >= 0 ? text.slice(lastMark) : "";
+    if (GROUPING_CHAR.test(fraction)) return { ok: false, reason: "invalid" };
+    const separator = kinds.has("'") ? "'" : GROUPING_CLASS;
+    if (!new RegExp(`^-?[1-9]\\d{0,2}(?:${separator}\\d{3})+$`).test(integerPart)) {
+      return { ok: false, reason: "invalid" };
+    }
+    text = integerPart.replace(GROUPING_CHARS, "") + fraction;
+  }
 
   const commas = count(text, ",");
   const dots = count(text, ".");
