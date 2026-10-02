@@ -14,7 +14,8 @@
     "generate": "drizzle-kit generate",
     "seed": "bun run src/seed.ts",
     "type-check": "tsc --noEmit",
-    "lint": "biome lint ."
+    "lint": "biome lint .",
+    "build:reference-migration": "bun run scripts/build-reference-migration.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2"

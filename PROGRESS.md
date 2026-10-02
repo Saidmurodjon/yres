@@ -2017,3 +2017,25 @@ O'zgarishlar: `database.md` ga **so'rov byudjeti ≤ 40** qoidasi; T07 bulk endp
 qayta loyihalandi (avvalgi variant 60 ta delete bilan Free chegarasidan oshardi); D02 ga eng yomon holat hisobi; ADR-016 ga
 Paid'ga o'tish triggerlari (`1102`/CPU — eng ehtimolli PDF, byudjet, 400 MB, Time Travel 7 kun yetmasligi, Queues);
 ADR-015 "kechiktirilgan". Asosiy xavf D1 emas, Workers Free'ning CPU chegarasi (PDF) — D04 smoke'ida tekshiriladi.
+
+## Faza 0 · D01 — `packages/db` SQLite/D1 ga o'tkazildi (2026-10-02)
+
+**D01a (sxema + baseline):** 21 sxema fayli `sqlite-core` ga (tip xaritasi D01 spec'iga aynan), `createDb(d1: D1Database)`,
+`@neondatabase/serverless` va `migrate`/`studio` skriptlari olib tashlandi, `drizzle.config.ts` `dialect: "sqlite"`
+(`DATABASE_URL` talabisiz). 10 ta PG migratsiyasi o'rniga bitta `0000_baseline.sql`. `building.searchText` qo'shildi
+(ilova yozadi — D02). Enum'lar `defineEnum()` orqali `{ enumValues }` shaklida saqlandi — `apps/api` dagi
+`z.enum(xEnum.enumValues)` iste'molchilari o'zgarmaydi; ikkita chat enum'i `enums.ts` ga ko'chdi.
+**D01b (seed):** ma'lumot `src/reference-data.ts` ga (qiymatlar o'zgarmadi, `effectiveDate` = `2026-10-02` qat'iy),
+`seed.ts` faqat `seedReferenceDataWithDb` (Neon CLI entry olib tashlandi), `scripts/build-reference-migration.ts`
+(`bun run build:reference-migration <yo'l>`) → `drizzle/0001_reference_data.sql` (`INSERT OR IGNORE`).
+
+Tekshiruv: `packages/db` type-check va biome yashil; `sqlite3` da baseline + reference migratsiyasi xatosiz tushadi;
+sanoqlar mos: 39 jadval / 44 FK (33 cascade) / 15 indeks-unique (eski PG snapshot bilan bir xil), material 37,
+surface_resistance 6, pipe_loss 6, lamp 4, tariff 4, region 1, monthly 12. `apps/web`/`types`/`ui` yashil.
+`apps/api` type-check hozir **yiqiladi** (`BatchItem<"pg">` va h.k.) — D02 da tuzatiladi, shuning uchun D01 commit'lari push qilinmadi.
+
+D02 uchun eslatma: `seedReferenceDataWithDb` hozir `values(rows)` ni bo'laklamaydi (material 37×3, monthly 12×14 parametr
+> 100) — D02 da `insertChunked` kelgach shu yerda ham qo'llang (D03 testlari uni chaqiradi).
+Brauzerda tekshirilmadi (UI o'zgarmadi).
+
+**Navbatda:** D02 (`apps/api` → D1 binding). D01+D02 birga push.
