@@ -2240,3 +2240,11 @@ shuning uchun T01 da yo spec'larni tuzatish, yo E2E'ni aniq izoh bilan CI'dan ch
   **Tekshirilmadi:** Pages'dagi haqiqiy `_headers` qo'llanishi; Google OAuth, chat WS, PDF yuklab olish, Excel import CSP ostida (faqat login sahifasi sinaldi); Better Auth OAuth redirect javoblari
   secureHeaders bilan (Google'siz). **Egasi uchun deploy'dan keyin:** DevTools Console'da CSP xatosi yo'qligini tekshiring: (1) login/ro'yxatdan o'tish, (2) Google bilan kirish (redirect), (3) chat — matn,
   rasm preview, fayl yuborish, WebSocket, (4) PDF hisobotni yuklab olish, (5) Excel import/eksport (consumption tab), (6) tema almashtirish va til. CSP xato bersa — `_headers` ni shu yerga qaytib tuzating.
+- **T04e (V-2):** `schemas/chat.ts` — `makeIncomingWsMessageSchema(conversationId)` (`z.discriminatedUnion("type")`: message/typing/read/edit/delete; `body` ≤4000, `messageId`/`replyToId` uuid,
+  `attachmentName` ≤200, `attachmentMimeType` T03 allowlist'idan, `attachmentSizeBytes` 0–10 MB, **`attachmentUrl` faqat `^/api/chat/attachments/chat/<shu conversationId>/[^/?#]+$`**) va
+  `IncomingWsMessage = z.infer<…>` (eski qo'lda yozilgan interfeys o'chirildi — bitta manba). `ConversationRoom.webSocketMessage`: >64K belgili freym parse qilinmaydi; `JSON.parse` dan keyin `safeParse`,
+  muvaffaqiyatsiz bo'lsa `console.warn` (userId + zod kodi/yo'li, MATNSIZ) va jim `return`. Testlar: `tests/services/ws-schema.test.ts` (4: `@evil.com/x`, boshqa suhbat, `..`, `?`/`#`, 4001 belgi, noto'g'ri uuid/tur/MIME/hajm),
+  `tests/integration/conversation-room.test.ts` (3: DO'ning `webSocketMessage` i haqiqiy lokal D1 bilan fake socket'lar orqali — to'g'ri freym saqlanadi+broadcast; evil URL/uzun body/noma'lum tur/buzuq JSON/katta freym —
+  saqlanmaydi va broadcast bo'lmaydi).
+  **OCHIQ QOLDI:** (1) a'zolikdan chiqarilgan foydalanuvchining ochiq socket'ini yopish (DO RPC, `realtime.md`) — bu commit'da emas; (2) `notifyOfflineMembers` har a'zo uchun alohida INSERT + DO push qiladi —
+  50 a'zoli guruhda bitta xabar ~100+ D1 so'rovi, `database.md` ning DO xabari ≤ 40 byudjetidan oshadi (Free'da 50/chaqiruv) — keyingi ishda bitta batch'ga yig'ish kerak (T04 ko'lamida emas).

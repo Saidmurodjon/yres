@@ -8,18 +8,10 @@ import {
 } from "@yres/db";
 import { and, eq } from "drizzle-orm";
 import type { Env } from "../index";
+import { type IncomingWsMessage, makeIncomingWsMessageSchema } from "../schemas/chat";
 
-interface IncomingWsMessage {
-  type: "message" | "typing" | "read" | "edit" | "delete";
-  body?: string;
-  replyToId?: string | null;
-  attachmentUrl?: string | null;
-  attachmentName?: string | null;
-  attachmentMimeType?: string | null;
-  attachmentSizeBytes?: number | null;
-  /** Required for "edit"/"delete". */
-  messageId?: string;
-}
+/** A legitimate frame is a few KB at most (4000-character body); anything bigger is not parsed at all. */
+const MAX_FRAME_CHARS = 64 * 1024;
 
 /**
  * One instance per chat conversation, routed via
@@ -60,12 +52,31 @@ export class ConversationRoom extends DurableObject<Env> {
     const conversationId = this.ctx.id.name;
     if (!userId || !conversationId) return;
 
-    let incoming: IncomingWsMessage;
+    if (raw.length > MAX_FRAME_CHARS) {
+      console.warn("[chat] oversized frame dropped userId=", userId);
+      return;
+    }
+
+    let json: unknown;
     try {
-      incoming = JSON.parse(raw);
+      json = JSON.parse(raw);
     } catch {
       return;
     }
+    // JSON.parse output is untrusted input (V-2): validate the shape, and tie any attachment URL to
+    // this conversation. Invalid frames are dropped silently for the sender, logged without their content.
+    const parsed = makeIncomingWsMessageSchema(conversationId).safeParse(json);
+    if (!parsed.success) {
+      const issue = parsed.error.issues[0];
+      console.warn(
+        "[chat] invalid frame dropped userId=",
+        userId,
+        issue?.code,
+        issue?.path.join("."),
+      );
+      return;
+    }
+    const incoming: IncomingWsMessage = parsed.data;
 
     const db = createDb(this.env.DB);
 
