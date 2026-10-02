@@ -12,6 +12,8 @@ Quyidagi har qoida D1/SQLite'ning haqiqiy cheklovidan kelib chiqadi.
   (`packages/db/src/batch.ts`) orqali; u qatorlarni `100 / ustunlar_soni` bo'laklarga bo'lib, bir nechta insert bayonotini
   qaytaradi, ular **o'sha bitta** batch'ga qo'shiladi. Xom `values(rows)` 10 ta 10-ustunli qatordan oshganda
   `too many SQL variables` bilan yiqiladi.
+  **Bu chegara `inArray`/`notInArray` ga ham tegishli** — IN ro'yxatidagi har element bitta parametr: foydalanuvchiga bog'liq
+  uzunlikdagi JS massivini bermang, subquery (`inArray(col, db.select({ id }).from(...))`) yoki ≤ 90 lik bo'laklar ishlating.
 - **So'rov byudjeti: bitta HTTP so'rov / DO xabari ≤ 40 ta D1 so'rovi.** Hozirgi reja — Workers Free, unda chegara
   **50/chaqiruv** (Paid'da 1 000); batch ichidagi **har bayonot** va Better Auth sessiya tekshiruvi ham hisobga kiradi —
   40 shu sababli zaxira bilan. Sikl ichida so'rov yubormang; ko'p qatorli o'qishni `inArray` bilan bitta so'rovga yig'ing.

@@ -1,5 +1,5 @@
 import { energyMeasure, nonEeMeasure } from "@yres/db";
-import { and, eq, inArray, notInArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
@@ -10,6 +10,9 @@ import {
   selectMeasuresSchema,
 } from "../schemas/measures";
 import { paginationQuerySchema, toLimitOffset } from "../schemas/pagination";
+
+// Leaves headroom under D1's 100-parameter limit for the building-id parameter.
+const MEASURE_ID_CHUNK = 90;
 
 export const measuresRoutes = new Hono<AppEnv>();
 
@@ -140,18 +143,28 @@ measuresRoutes.post("/:id/measures/select", async (c) => {
     return c.json({ selected: [] });
   }
 
+  // D1 binds at most 100 parameters per statement and every id in an IN list counts, so the selection is
+  // applied in chunks. One batch (atomic): clear the building's flags, then set them chunk by chunk.
+  // Budget: 1 + ceil(500 ids / 90) = 7 statements (measureIds is capped at 500 in the schema).
   const statements: BatchItem<"sqlite">[] = [
     db
       .update(energyMeasure)
-      .set({ proposedForImplementation: true })
-      .where(and(eq(energyMeasure.buildingId, buildingId), inArray(energyMeasure.id, measureIds))),
-    db
-      .update(energyMeasure)
       .set({ proposedForImplementation: false })
-      .where(
-        and(eq(energyMeasure.buildingId, buildingId), notInArray(energyMeasure.id, measureIds)),
-      ),
+      .where(eq(energyMeasure.buildingId, buildingId)),
   ];
+  for (let i = 0; i < measureIds.length; i += MEASURE_ID_CHUNK) {
+    statements.push(
+      db
+        .update(energyMeasure)
+        .set({ proposedForImplementation: true })
+        .where(
+          and(
+            eq(energyMeasure.buildingId, buildingId),
+            inArray(energyMeasure.id, measureIds.slice(i, i + MEASURE_ID_CHUNK)),
+          ),
+        ),
+    );
+  }
 
   await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 

@@ -38,12 +38,18 @@ chatRoutes.get("/conversations", async (c) => {
   // instead of 2 queries per conversation — see collaboratorCount in
   // buildings.ts for the same inArray+groupBy idiom.
   const convIds = memberships.map((m) => m.conversationId);
+  // A subquery, not `convIds`: each element of a bound IN list counts toward D1's 100-parameter limit,
+  // and a user can be in any number of conversations (database.md).
+  const myConversationIds = db
+    .select({ id: conversationMember.conversationId })
+    .from(conversationMember)
+    .where(eq(conversationMember.userId, authUser.id));
   // SQLite has no DISTINCT ON: join each message to its conversation's newest createdAt.
   // (Two messages in the same millisecond would both match; the Map below keeps one.)
   const latestMessageAt = db
     .select({ conversationId: message.conversationId, maxAt: max(message.createdAt).as("max_at") })
     .from(message)
-    .where(inArray(message.conversationId, convIds))
+    .where(inArray(message.conversationId, myConversationIds))
     .groupBy(message.conversationId)
     .as("latest_message_at");
   const [lastMessages, unreadCounts] = await Promise.all([
@@ -79,7 +85,7 @@ chatRoutes.get("/conversations", async (c) => {
           )
           .where(
             and(
-              inArray(message.conversationId, convIds),
+              inArray(message.conversationId, myConversationIds),
               ne(message.senderId, authUser.id),
               or(
                 isNull(conversationMember.lastReadAt),
@@ -160,25 +166,23 @@ chatRoutes.post("/conversations", async (c) => {
       return c.json({ error: "You can't start a conversation with yourself." }, 400);
     }
 
-    const myDirectConvIdRows = await db
+    // The target's membership in any of MY direct conversations, as a subquery: a materialized id list
+    // would exceed D1's 100 bound parameters for a user with many direct chats.
+    const myDirectConvIds = db
       .select({ id: conversationMember.conversationId })
       .from(conversationMember)
       .innerJoin(conversation, eq(conversation.id, conversationMember.conversationId))
       .where(and(eq(conversationMember.userId, authUser.id), eq(conversation.type, "direct")));
-    const myDirectConvIds = myDirectConvIdRows.map((r) => r.id);
 
-    const existing =
-      myDirectConvIds.length > 0
-        ? await db
-            .select({ conversationId: conversationMember.conversationId })
-            .from(conversationMember)
-            .where(
-              and(
-                eq(conversationMember.userId, target.id),
-                inArray(conversationMember.conversationId, myDirectConvIds),
-              ),
-            )
-        : [];
+    const existing = await db
+      .select({ conversationId: conversationMember.conversationId })
+      .from(conversationMember)
+      .where(
+        and(
+          eq(conversationMember.userId, target.id),
+          inArray(conversationMember.conversationId, myDirectConvIds),
+        ),
+      );
 
     if (existing[0]) {
       return c.json({ conversationId: existing[0].conversationId });

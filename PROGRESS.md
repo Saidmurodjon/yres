@@ -2224,3 +2224,9 @@ shuning uchun T01 da yo spec'larni tuzatish, yo E2E'ni aniq izoh bilan CI'dan ch
   Tekshiruv: api 34 fayl / 173 test, type-check, E2E 7/7 yashil (forma qiymatlari yangi chegaralarga sig'adi).
 - **Log gigiyenasi (nazoratchi topilmasi, security.md "loglarda email yo'q"):** `lib/email.ts` dev logidan qabul qiluvchi email olib tashlandi (faqat mavzu).
   `console.*` grep'i: boshqa email/token/URL yozadigan joy yo'q (`[chat] webSocketMessage failed` xato obyektini yozadi — shaxsiy ma'lumot emas, tegilmadi).
+- **D02 dan qolgan BUG — IN ro'yxatlari (nazoratchi topilmasi, tasdiqlandi):** D1 ning 100-parametr chegarasi `inArray` elementlariga ham tegadi, lokal D1 buni qo'llaydi.
+  Tuzatildi: `measures/select` (≤500 id) — batch: avval binoning hamma bayrog'i `false`, keyin ≤90 lik bo'laklar bo'yicha `true` (7 bayonot, atomik; avvalgi
+  `notInArray` yo'q); `buildings` `collaboratorCounts` — `buildingIds` o'rniga subquery; `chat` ro'yxati (`convIds` ikki joyda) — subquery; **qo'shimcha topilma:**
+  `POST /conversations` (direct) dagi `myDirectConvIds` ham materiallashtirilgan edi (>100 direct chat bo'lsa yangi chat ochilmasdi) — subquery. Qolgan `inArray` lar
+  chegaralangan (envelope ≤15 kod, chat usernames/removeUserIds ≤50). Testlar `tests/integration/d1-parameter-limit.test.ts` (4) tuzatishdan OLDIN to'rttasi ham
+  `too many SQL variables` bilan yiqildi, keyin yashil. `database.md` ga bir jumla qo'shildi.

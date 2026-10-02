@@ -76,7 +76,14 @@ buildingRoutes.get("/", async (c) => {
       ? await db
           .select({ buildingId: buildingMember.buildingId, count: count() })
           .from(buildingMember)
-          .where(inArray(buildingMember.buildingId, buildingIds))
+          // A subquery, not `buildingIds`: every element of a bound IN list counts toward D1's
+          // 100-parameter limit and a page can hold up to 500 buildings (database.md).
+          .where(
+            inArray(
+              buildingMember.buildingId,
+              db.select({ id: building.id }).from(building).where(whereCondition),
+            ),
+          )
           .groupBy(buildingMember.buildingId)
       : [];
   const collaboratorCountByBuildingId = new Map(
