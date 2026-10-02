@@ -1,0 +1,2449 @@
+{
+  "meta": {
+    "workbook": "3-DMTT v7.20.xlsx",
+    "sha256": "187d19962269d25ff6b241b97374ba868b9b38c94a9b9d27f5ac78ddf6dc5f6a",
+    "version": "v7.20",
+    "lastDecision": "X98",
+    "extractedAt": "2026-10-02T15:36:44+00:00",
+    "extractor": "tools/golden/extract_inputs.py",
+    "lampTypeNote": "lampTypes[].name '@LAMP:<key>' is replaced by LAMP_TYPE_NAMES[<key>] when the test loads the fixture"
+  },
+  "modelGaps": [
+    "Floors F1/F3: the zone method and the unheated-space temperature factor n are not modelled (F08); layers are given, U comes out as a plain layer sum.",
+    "Surface resistances are one record per element category (first construction of that category); v7.20 sets Rint/Rext per construction block.",
+    "Envelope!I51 (-27.692 m2 link-corridor deduction) is a negative-length W1 element; the engine clamps each element to >= 0.",
+    "Parapet (Envelope row 56-58) is excluded: v7.20 has no heat-loss row for it (Envelope!AI105).",
+    "Window shading is an area-weighted average of gains!H (orientation-specific Fhor*Fov*Ffin); the engine has one shadingFactor per opening type.",
+    "Opening types are one per (code, width, height); after-scenario types are the three new codes with retrofitOfId = null (F07).",
+    "Mechanical ventilation: the exhaust-only 4070 m3/h line (Ventilation losses row 46) has no representation; fan power is the Equipment nameplate sum (rows 85-86).",
+    "Lighting operation hours (Lighting!J = 2500 h/y) have no input; the engine uses operation hours x heating-season days.",
+    "DHW: v7.20 uses working days (112/138) and DeltaT 55/45; the engine uses heating-season days with fixed DeltaT.",
+    "Heat pump COP is the single seasonal value IHS!D34 (an intermediate result; monthly SCOP is P2/D6).",
+    "Solar DHW production is a single annual value given as one monthly row.",
+    "Non-operation Delta-t and ground-contact elements follow v7.20 row-specific rules (D9) the engine does not have."
+  ],
+  "inputs": {
+    "building": {
+      "id": "golden-3-dmtt-v7.20",
+      "heatingSeasonDurationDays": 163,
+      "indoorTempNonOperationC": 14,
+      "indoorTempOperationC": 22,
+      "nonOperationHoursPerDay": 14,
+      "operationHoursPerDay": 10,
+      "occupantCount": 418,
+      "coolingEnthalpyInsideKjKg": 48.4,
+      "coolingEnthalpyOutsideKjKg": 59.5
+    },
+    "climateRegion": {
+      "monthlyNormals": [
+        {
+          "month": 1,
+          "avgOutdoorTempC": -0.1,
+          "heatingDaysInMonth": 28,
+          "isHeatingSeasonMonth": true,
+          "solarRadiationSouthKwhM2": 65,
+          "solarRadiationNorthKwhM2": 17.7,
+          "solarRadiationEastWestKwhM2": 28.5,
+          "solarRadiationSeSwKwhM2": 51.2,
+          "solarRadiationNeNwKwhM2": 18.7,
+          "solarRadiationHorizontalKwhM2": 33.5
+        },
+        {
+          "month": 2,
+          "avgOutdoorTempC": 2.5,
+          "heatingDaysInMonth": 25,
+          "isHeatingSeasonMonth": true,
+          "solarRadiationSouthKwhM2": 76.3,
+          "solarRadiationNorthKwhM2": 21.9,
+          "solarRadiationEastWestKwhM2": 38.9,
+          "solarRadiationSeSwKwhM2": 62.3,
+          "solarRadiationNeNwKwhM2": 24.4,
+          "solarRadiationHorizontalKwhM2": 49.8
+        },
+        {
+          "month": 3,
+          "avgOutdoorTempC": 8.6,
+          "heatingDaysInMonth": 28,
+          "isHeatingSeasonMonth": true,
+          "solarRadiationSouthKwhM2": 96,
+          "solarRadiationNorthKwhM2": 29.3,
+          "solarRadiationEastWestKwhM2": 61.3,
+          "solarRadiationSeSwKwhM2": 85,
+          "solarRadiationNeNwKwhM2": 37.5,
+          "solarRadiationHorizontalKwhM2": 91.5
+        },
+        {
+          "month": 4,
+          "avgOutdoorTempC": 15.3,
+          "heatingDaysInMonth": 12,
+          "isHeatingSeasonMonth": true,
+          "solarRadiationSouthKwhM2": 20.1,
+          "solarRadiationNorthKwhM2": 7.9,
+          "solarRadiationEastWestKwhM2": 16.7,
+          "solarRadiationSeSwKwhM2": 20.1,
+          "solarRadiationNeNwKwhM2": 11.6,
+          "solarRadiationHorizontalKwhM2": 28.3
+        },
+        {
+          "month": 5,
+          "avgOutdoorTempC": 20.3,
+          "heatingDaysInMonth": null,
+          "isHeatingSeasonMonth": false,
+          "solarRadiationSouthKwhM2": 31.5,
+          "solarRadiationNorthKwhM2": 26.5,
+          "solarRadiationEastWestKwhM2": 59,
+          "solarRadiationSeSwKwhM2": 52.5,
+          "solarRadiationNeNwKwhM2": 45,
+          "solarRadiationHorizontalKwhM2": null
+        },
+        {
+          "month": 6,
+          "avgOutdoorTempC": 24.7,
+          "heatingDaysInMonth": null,
+          "isHeatingSeasonMonth": false,
+          "solarRadiationSouthKwhM2": 65,
+          "solarRadiationNorthKwhM2": 54,
+          "solarRadiationEastWestKwhM2": 125,
+          "solarRadiationSeSwKwhM2": 111,
+          "solarRadiationNeNwKwhM2": 93,
+          "solarRadiationHorizontalKwhM2": null
+        },
+        {
+          "month": 7,
+          "avgOutdoorTempC": 25.7,
+          "heatingDaysInMonth": null,
+          "isHeatingSeasonMonth": false,
+          "solarRadiationSouthKwhM2": 68,
+          "solarRadiationNorthKwhM2": 53,
+          "solarRadiationEastWestKwhM2": 135,
+          "solarRadiationSeSwKwhM2": 120,
+          "solarRadiationNeNwKwhM2": 98,
+          "solarRadiationHorizontalKwhM2": null
+        },
+        {
+          "month": 8,
+          "avgOutdoorTempC": 23.6,
+          "heatingDaysInMonth": null,
+          "isHeatingSeasonMonth": false,
+          "solarRadiationSouthKwhM2": 61,
+          "solarRadiationNorthKwhM2": 44,
+          "solarRadiationEastWestKwhM2": 106,
+          "solarRadiationSeSwKwhM2": 99,
+          "solarRadiationNeNwKwhM2": 76,
+          "solarRadiationHorizontalKwhM2": null
+        },
+        {
+          "month": 9,
+          "avgOutdoorTempC": 18.4,
+          "heatingDaysInMonth": null,
+          "isHeatingSeasonMonth": false,
+          "solarRadiationSouthKwhM2": 31,
+          "solarRadiationNorthKwhM2": 17,
+          "solarRadiationEastWestKwhM2": 39.5,
+          "solarRadiationSeSwKwhM2": 41,
+          "solarRadiationNeNwKwhM2": 24.5,
+          "solarRadiationHorizontalKwhM2": null
+        },
+        {
+          "month": 10,
+          "avgOutdoorTempC": 12.4,
+          "heatingDaysInMonth": 15,
+          "isHeatingSeasonMonth": true,
+          "solarRadiationSouthKwhM2": 24.3,
+          "solarRadiationNorthKwhM2": 5.8,
+          "solarRadiationEastWestKwhM2": 12.7,
+          "solarRadiationSeSwKwhM2": 20.3,
+          "solarRadiationNeNwKwhM2": 7,
+          "solarRadiationHorizontalKwhM2": 19.9
+        },
+        {
+          "month": 11,
+          "avgOutdoorTempC": 6.6,
+          "heatingDaysInMonth": 27,
+          "isHeatingSeasonMonth": true,
+          "solarRadiationSouthKwhM2": 60.8,
+          "solarRadiationNorthKwhM2": 13.1,
+          "solarRadiationEastWestKwhM2": 24,
+          "solarRadiationSeSwKwhM2": 48,
+          "solarRadiationNeNwKwhM2": 14.3,
+          "solarRadiationHorizontalKwhM2": 37.5
+        },
+        {
+          "month": 12,
+          "avgOutdoorTempC": 1.2,
+          "heatingDaysInMonth": 28,
+          "isHeatingSeasonMonth": true,
+          "solarRadiationSouthKwhM2": 58.4,
+          "solarRadiationNorthKwhM2": 11.5,
+          "solarRadiationEastWestKwhM2": 20,
+          "solarRadiationSeSwKwhM2": 44.5,
+          "solarRadiationNeNwKwhM2": 11.7,
+          "solarRadiationHorizontalKwhM2": 26.7
+        }
+      ]
+    },
+    "blocks": [
+      {
+        "footprintLengthM": 669.24,
+        "footprintWidthM": 1,
+        "numberOfFloors": 2,
+        "floorToFloorHeightM": 3,
+        "perimeterM": 127.8,
+        "perimeterLossCoefficient": 0.4
+      },
+      {
+        "footprintLengthM": 669.24,
+        "footprintWidthM": 1,
+        "numberOfFloors": 2,
+        "floorToFloorHeightM": 3,
+        "perimeterM": 127.8,
+        "perimeterLossCoefficient": 0.4
+      },
+      {
+        "footprintLengthM": 56.974999999999994,
+        "footprintWidthM": 1,
+        "numberOfFloors": 1,
+        "floorToFloorHeightM": 3,
+        "perimeterM": 26.5,
+        "perimeterLossCoefficient": 0.4
+      }
+    ],
+    "envelopeElements": [
+      {
+        "id": "el-7",
+        "constructionTypeId": "ct-W1",
+        "orientation": "north",
+        "lengthM": 50.3,
+        "heightEnvContactM": 6,
+        "heightGroundContactM": 0,
+        "openings": [
+          {
+            "openingTypeId": "ot-Win3-1.2x1.8",
+            "count": 21,
+            "openingType": {
+              "category": "window",
+              "widthM": 1.2,
+              "heightM": 1.8
+            }
+          },
+          {
+            "openingTypeId": "ot-Win3-0.9x1.8",
+            "count": 1,
+            "openingType": {
+              "category": "window",
+              "widthM": 0.9,
+              "heightM": 1.8
+            }
+          },
+          {
+            "openingTypeId": "ot-Win3-0.9x0.9",
+            "count": 4,
+            "openingType": {
+              "category": "window",
+              "widthM": 0.9,
+              "heightM": 0.9
+            }
+          },
+          {
+            "openingTypeId": "ot-Win2-2.2x2.7",
+            "count": 2,
+            "openingType": {
+              "category": "window",
+              "widthM": 2.2,
+              "heightM": 2.7
+            }
+          },
+          {
+            "openingTypeId": "ot-D1-0.9x2.7",
+            "count": 2,
+            "openingType": {
+              "category": "door",
+              "widthM": 0.9,
+              "heightM": 2.7
+            }
+          }
+        ]
+      },
+      {
+        "id": "el-13",
+        "constructionTypeId": "ct-W1",
+        "orientation": "south",
+        "lengthM": 50.3,
+        "heightEnvContactM": 6,
+        "heightGroundContactM": 0,
+        "openings": [
+          {
+            "openingTypeId": "ot-Win3-1.2x1.8",
+            "count": 15,
+            "openingType": {
+              "category": "window",
+              "widthM": 1.2,
+              "heightM": 1.8
+            }
+          },
+          {
+            "openingTypeId": "ot-Win3-0.9x1.8",
+            "count": 12,
+            "openingType": {
+              "category": "window",
+              "widthM": 0.9,
+              "heightM": 1.8
+            }
+          },
+          {
+            "openingTypeId": "ot-Win3-0.9x0.9",
+            "count": 2,
+            "openingType": {
+              "category": "window",
+              "widthM": 0.9,
+              "heightM": 0.9
+            }
+          },
+          {
+            "openingTypeId": "ot-D1-0.9x2.7",
+            "count": 2,
+            "openingType": {
+              "category": "door",
+              "widthM": 0.9,
+              "heightM": 2.7
+            }
+          }
+        ]
+      },
+      {
+        "id": "el-18",
+        "constructionTypeId": "ct-W1",
+        "orientation": "west",
+        "lengthM": 12.8,
+        "heightEnvContactM": 6,
+        "heightGroundContactM": 0,
+        "openings": [
+          {
+            "openingTypeId": "ot-Win3-1.2x1.8",
+            "count": 3,
+            "openingType": {
+              "category": "window",
+              "widthM": 1.2,
+              "heightM": 1.8
+            }
+          },
+          {
+            "openingTypeId": "ot-Win3-0.9x1.8",
+            "count": 3,
+            "openingType": {
+              "category": "window",
+              "widthM": 0.9,
+              "heightM": 1.8
+            }
+          },
+          {
+            "openingTypeId": "ot-Win2-1.63333x2.7",
+            "count": 3,
+            "openingType": {
+              "category": "window",
+              "widthM": 1.633333333,
+              "heightM": 2.7
+            }
+          },
+          {
+            "openingTypeId": "ot-D1-0.9x2.7",
+            "count": 1,
+            "openingType": {
+              "category": "door",
+              "widthM": 0.9,
+              "heightM": 2.7
+            }
+          }
+        ]
+      },
+      {
+        "id": "el-23",
+        "constructionTypeId": "ct-W1",
+        "orientation": "east",
+        "lengthM": 12.8,
+        "heightEnvContactM": 6,
+        "heightGroundContactM": 0,
+        "openings": [
+          {
+            "openingTypeId": "ot-Win3-0.9x1.8",
+            "count": 4,
+            "openingType": {
+              "category": "window",
+              "widthM": 0.9,
+              "heightM": 1.8
+            }
+          },
+          {
+            "openingTypeId": "ot-Win2-1.63333x2.7",
+            "count": 2,
+            "openingType": {
+              "category": "window",
+              "widthM": 1.633333333,
+              "heightM": 2.7
+            }
+          }
+        ]
+      },
+      {
+        "id": "el-26",
+        "constructionTypeId": "ct-W1",
+        "orientation": "north",
+        "lengthM": 50.3,
+        "heightEnvContactM": 6,
+        "heightGroundContactM": 0,
+        "openings": [
+          {
+            "openingTypeId": "ot-Win3-1.2x1.8",
+            "count": 19,
+            "openingType": {
+              "category": "window",
+              "widthM": 1.2,
+              "heightM": 1.8
+            }
+          },
+          {
+            "openingTypeId": "ot-Win3-0.9x1.8",
+            "count": 1,
+            "openingType": {
+              "category": "window",
+              "widthM": 0.9,
+              "heightM": 1.8
+            }
+          },
+          {
+            "openingTypeId": "ot-Win3-0.9x0.9",
+            "count": 3,
+            "openingType": {
+              "category": "window",
+              "widthM": 0.9,
+              "heightM": 0.9
+            }
+          },
+          {
+            "openingTypeId": "ot-D1-0.9x2.7",
+            "count": 1,
+            "openingType": {
+              "category": "door",
+              "widthM": 0.9,
+              "heightM": 2.7
+            }
+          }
+        ]
+      },
+      {
+        "id": "el-32",
+        "constructionTypeId": "ct-W1",
+        "orientation": "south",
+        "lengthM": 50.3,
+        "heightEnvContactM": 6,
+        "heightGroundContactM": 0,
+        "openings": [
+          {
+            "openingTypeId": "ot-Win3-1.2x1.8",
+            "count": 22,
+            "openingType": {
+              "category": "window",
+              "widthM": 1.2,
+              "heightM": 1.8
+            }
+          },
+          {
+            "openingTypeId": "ot-Win3-0.9x0.9",
+            "count": 4,
+            "openingType": {
+              "category": "window",
+              "widthM": 0.9,
+              "heightM": 0.9
+            }
+          },
+          {
+            "openingTypeId": "ot-Win2-2.2x2.7",
+            "count": 2,
+            "openingType": {
+              "category": "window",
+              "widthM": 2.2,
+              "heightM": 2.7
+            }
+          },
+          {
+            "openingTypeId": "ot-D1-0.9x2.7",
+            "count": 2,
+            "openingType": {
+              "category": "door",
+              "widthM": 0.9,
+              "heightM": 2.7
+            }
+          }
+        ]
+      },
+      {
+        "id": "el-37",
+        "constructionTypeId": "ct-W1",
+        "orientation": "west",
+        "lengthM": 12.8,
+        "heightEnvContactM": 6,
+        "heightGroundContactM": 0,
+        "openings": [
+          {
+            "openingTypeId": "ot-Win3-0.9x1.8",
+            "count": 5,
+            "openingType": {
+              "category": "window",
+              "widthM": 0.9,
+              "heightM": 1.8
+            }
+          },
+          {
+            "openingTypeId": "ot-Win2-1.63333x2.7",
+            "count": 2,
+            "openingType": {
+              "category": "window",
+              "widthM": 1.633333333,
+              "heightM": 2.7
+            }
+          },
+          {
+            "openingTypeId": "ot-Win2-2x2.7",
+            "count": 1,
+            "openingType": {
+              "category": "window",
+              "widthM": 2,
+              "heightM": 2.7
+            }
+          }
+        ]
+      },
+      {
+        "id": "el-40",
+        "constructionTypeId": "ct-W1",
+        "orientation": "east",
+        "lengthM": 12.8,
+        "heightEnvContactM": 6,
+        "heightGroundContactM": 0,
+        "openings": [
+          {
+            "openingTypeId": "ot-Win3-0.9x1.8",
+            "count": 4,
+            "openingType": {
+              "category": "window",
+              "widthM": 0.9,
+              "heightM": 1.8
+            }
+          },
+          {
+            "openingTypeId": "ot-Win2-1.63333x2.7",
+            "count": 2,
+            "openingType": {
+              "category": "window",
+              "widthM": 1.633333333,
+              "heightM": 2.7
+            }
+          }
+        ]
+      },
+      {
+        "id": "el-43",
+        "constructionTypeId": "ct-W1",
+        "orientation": "west",
+        "lengthM": 4.65,
+        "heightEnvContactM": 3.22,
+        "heightGroundContactM": 0,
+        "openings": [
+          {
+            "openingTypeId": "ot-Win3-0.9x1.8",
+            "count": 1,
+            "openingType": {
+              "category": "window",
+              "widthM": 0.9,
+              "heightM": 1.8
+            }
+          },
+          {
+            "openingTypeId": "ot-D1-1.1x1.8",
+            "count": 1,
+            "openingType": {
+              "category": "door",
+              "widthM": 1.1,
+              "heightM": 1.8
+            }
+          }
+        ]
+      },
+      {
+        "id": "el-46",
+        "constructionTypeId": "ct-W1",
+        "orientation": "east",
+        "lengthM": 13.25,
+        "heightEnvContactM": 3.22,
+        "heightGroundContactM": 0,
+        "openings": [
+          {
+            "openingTypeId": "ot-D1-1.1x3",
+            "count": 1,
+            "openingType": {
+              "category": "door",
+              "widthM": 1.1,
+              "heightM": 3
+            }
+          }
+        ]
+      },
+      {
+        "id": "el-52",
+        "constructionTypeId": "ct-Socle1",
+        "orientation": "north",
+        "lengthM": 60,
+        "heightEnvContactM": 1,
+        "heightGroundContactM": 0,
+        "openings": []
+      },
+      {
+        "id": "el-53",
+        "constructionTypeId": "ct-Socle1",
+        "orientation": "north",
+        "lengthM": 60,
+        "heightEnvContactM": 1,
+        "heightGroundContactM": 0,
+        "openings": []
+      },
+      {
+        "id": "el-54",
+        "constructionTypeId": "ct-Socle1",
+        "orientation": "north",
+        "lengthM": 3.3,
+        "heightEnvContactM": 1,
+        "heightGroundContactM": 0,
+        "openings": []
+      },
+      {
+        "id": "el-60",
+        "constructionTypeId": "ct-Socle2",
+        "orientation": "north",
+        "lengthM": 90,
+        "heightEnvContactM": 0,
+        "heightGroundContactM": 1,
+        "openings": []
+      },
+      {
+        "id": "el-61",
+        "constructionTypeId": "ct-Socle2",
+        "orientation": "north",
+        "lengthM": 90,
+        "heightEnvContactM": 0,
+        "heightGroundContactM": 1,
+        "openings": []
+      },
+      {
+        "id": "el-62",
+        "constructionTypeId": "ct-Socle2",
+        "orientation": "north",
+        "lengthM": 23.2,
+        "heightEnvContactM": 0,
+        "heightGroundContactM": 1,
+        "openings": []
+      },
+      {
+        "id": "el-R1",
+        "constructionTypeId": "ct-R1",
+        "orientation": "north",
+        "lengthM": 1288.4,
+        "heightEnvContactM": 1,
+        "heightGroundContactM": 0,
+        "openings": []
+      },
+      {
+        "id": "el-F1",
+        "constructionTypeId": "ct-F1",
+        "orientation": "north",
+        "lengthM": 1090.3000000000002,
+        "heightEnvContactM": 1,
+        "heightGroundContactM": 0,
+        "openings": []
+      },
+      {
+        "id": "el-F3",
+        "constructionTypeId": "ct-F3",
+        "orientation": "north",
+        "lengthM": 198.1,
+        "heightEnvContactM": 1,
+        "heightGroundContactM": 0,
+        "openings": []
+      }
+    ],
+    "constructionTypes": [
+      {
+        "id": "ct-W1",
+        "scenario": "before",
+        "retrofitOfId": null,
+        "elementCategory": "external_wall",
+        "layers": [
+          {
+            "thicknessM": 0.002,
+            "material": {
+              "thermalConductivityWPerMk": 0.7
+            }
+          },
+          {
+            "thicknessM": 0.01,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          },
+          {
+            "thicknessM": 0.38,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          },
+          {
+            "thicknessM": 0.01,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          }
+        ]
+      },
+      {
+        "id": "ct-W1-after",
+        "scenario": "after",
+        "retrofitOfId": "ct-W1",
+        "elementCategory": "external_wall",
+        "layers": [
+          {
+            "thicknessM": 0.002,
+            "material": {
+              "thermalConductivityWPerMk": 0.7
+            }
+          },
+          {
+            "thicknessM": 0.01,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          },
+          {
+            "thicknessM": 0.38,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          },
+          {
+            "thicknessM": 0.01,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          },
+          {
+            "thicknessM": 0.1,
+            "material": {
+              "thermalConductivityWPerMk": 0.034
+            }
+          },
+          {
+            "thicknessM": 0.01,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          }
+        ]
+      },
+      {
+        "id": "ct-Socle1",
+        "scenario": "before",
+        "retrofitOfId": null,
+        "elementCategory": "socle_heated",
+        "layers": [
+          {
+            "thicknessM": 0.6,
+            "material": {
+              "thermalConductivityWPerMk": 1.74
+            }
+          },
+          {
+            "thicknessM": 0.02,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          },
+          {
+            "thicknessM": 0.03,
+            "material": {
+              "thermalConductivityWPerMk": 2.1
+            }
+          }
+        ]
+      },
+      {
+        "id": "ct-Socle1-after",
+        "scenario": "after",
+        "retrofitOfId": "ct-Socle1",
+        "elementCategory": "socle_heated",
+        "layers": [
+          {
+            "thicknessM": 0.6,
+            "material": {
+              "thermalConductivityWPerMk": 1.74
+            }
+          },
+          {
+            "thicknessM": 0.02,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          },
+          {
+            "thicknessM": 0.1,
+            "material": {
+              "thermalConductivityWPerMk": 0.035
+            }
+          },
+          {
+            "thicknessM": 0.01,
+            "material": {
+              "thermalConductivityWPerMk": 3.49
+            }
+          }
+        ]
+      },
+      {
+        "id": "ct-Socle2",
+        "scenario": "before",
+        "retrofitOfId": null,
+        "elementCategory": "socle_ground",
+        "layers": [
+          {
+            "thicknessM": 0.6,
+            "material": {
+              "thermalConductivityWPerMk": 1.92
+            }
+          },
+          {
+            "thicknessM": 0.03,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          },
+          {
+            "thicknessM": 0.02,
+            "material": {
+              "thermalConductivityWPerMk": 1.74
+            }
+          }
+        ]
+      },
+      {
+        "id": "ct-Socle2-after",
+        "scenario": "after",
+        "retrofitOfId": "ct-Socle2",
+        "elementCategory": "socle_ground",
+        "layers": [
+          {
+            "thicknessM": 0.6,
+            "material": {
+              "thermalConductivityWPerMk": 1.92
+            }
+          },
+          {
+            "thicknessM": 0.03,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          },
+          {
+            "thicknessM": 0.02,
+            "material": {
+              "thermalConductivityWPerMk": 1.74
+            }
+          },
+          {
+            "thicknessM": 0.1,
+            "material": {
+              "thermalConductivityWPerMk": 0.035
+            }
+          },
+          {
+            "thicknessM": 0.006,
+            "material": {
+              "thermalConductivityWPerMk": 0.27
+            }
+          }
+        ]
+      },
+      {
+        "id": "ct-R1",
+        "scenario": "before",
+        "retrofitOfId": null,
+        "elementCategory": "roof",
+        "layers": [
+          {
+            "thicknessM": 0.01,
+            "material": {
+              "thermalConductivityWPerMk": 0.7
+            }
+          },
+          {
+            "thicknessM": 0.22,
+            "material": {
+              "thermalConductivityWPerMk": 1.295
+            }
+          },
+          {
+            "thicknessM": 0.05,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          },
+          {
+            "thicknessM": 0.01,
+            "material": {
+              "thermalConductivityWPerMk": 0.27
+            }
+          }
+        ]
+      },
+      {
+        "id": "ct-R1-after",
+        "scenario": "after",
+        "retrofitOfId": "ct-R1",
+        "elementCategory": "roof",
+        "layers": [
+          {
+            "thicknessM": 0.01,
+            "material": {
+              "thermalConductivityWPerMk": 0.7
+            }
+          },
+          {
+            "thicknessM": 0.22,
+            "material": {
+              "thermalConductivityWPerMk": 1.295
+            }
+          },
+          {
+            "thicknessM": 0.2,
+            "material": {
+              "thermalConductivityWPerMk": 0.033
+            }
+          },
+          {
+            "thicknessM": 0.04,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          }
+        ]
+      },
+      {
+        "id": "ct-F1",
+        "scenario": "before",
+        "retrofitOfId": null,
+        "elementCategory": "floor",
+        "layers": [
+          {
+            "thicknessM": 0.12,
+            "material": {
+              "thermalConductivityWPerMk": 1.92
+            }
+          },
+          {
+            "thicknessM": 0.05,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          }
+        ]
+      },
+      {
+        "id": "ct-F1-after",
+        "scenario": "after",
+        "retrofitOfId": "ct-F1",
+        "elementCategory": "floor",
+        "layers": [
+          {
+            "thicknessM": 0.12,
+            "material": {
+              "thermalConductivityWPerMk": 1.74
+            }
+          },
+          {
+            "thicknessM": 0.06,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          },
+          {
+            "thicknessM": 0.1,
+            "material": {
+              "thermalConductivityWPerMk": 0.036
+            }
+          },
+          {
+            "thicknessM": 0.03,
+            "material": {
+              "thermalConductivityWPerMk": 1.92
+            }
+          }
+        ]
+      },
+      {
+        "id": "ct-F3",
+        "scenario": "before",
+        "retrofitOfId": null,
+        "elementCategory": "floor",
+        "layers": [
+          {
+            "thicknessM": 0.05,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          },
+          {
+            "thicknessM": 0.22,
+            "material": {
+              "thermalConductivityWPerMk": 1.295
+            }
+          }
+        ]
+      },
+      {
+        "id": "ct-F3-after",
+        "scenario": "after",
+        "retrofitOfId": "ct-F3",
+        "elementCategory": "floor",
+        "layers": [
+          {
+            "thicknessM": 0.22,
+            "material": {
+              "thermalConductivityWPerMk": 1.295
+            }
+          },
+          {
+            "thicknessM": 0.1,
+            "material": {
+              "thermalConductivityWPerMk": 0.036
+            }
+          },
+          {
+            "thicknessM": 0.06,
+            "material": {
+              "thermalConductivityWPerMk": 0.76
+            }
+          }
+        ]
+      }
+    ],
+    "openingTypes": [
+      {
+        "id": "ot-D1-0.9x2.7",
+        "category": "door",
+        "scenario": "before",
+        "uValueWm2k": 3.5,
+        "gValue": null,
+        "frameFactor": null,
+        "shadingFactor": 1,
+        "widthM": 0.9,
+        "heightM": 2.7
+      },
+      {
+        "id": "ot-D1-1.1x1.8",
+        "category": "door",
+        "scenario": "before",
+        "uValueWm2k": 3.5,
+        "gValue": null,
+        "frameFactor": null,
+        "shadingFactor": 1,
+        "widthM": 1.1,
+        "heightM": 1.8
+      },
+      {
+        "id": "ot-D1-1.1x3",
+        "category": "door",
+        "scenario": "before",
+        "uValueWm2k": 3.5,
+        "gValue": null,
+        "frameFactor": null,
+        "shadingFactor": 1,
+        "widthM": 1.1,
+        "heightM": 3
+      },
+      {
+        "id": "ot-Win2-1.63333x2.7",
+        "category": "window",
+        "scenario": "before",
+        "uValueWm2k": 3.5,
+        "gValue": 0.75,
+        "frameFactor": 0.6,
+        "shadingFactor": 0.76784150714544,
+        "widthM": 1.633333333,
+        "heightM": 2.7
+      },
+      {
+        "id": "ot-Win2-2x2.7",
+        "category": "window",
+        "scenario": "before",
+        "uValueWm2k": 3.5,
+        "gValue": 0.75,
+        "frameFactor": 0.6,
+        "shadingFactor": 0.76784150714544,
+        "widthM": 2,
+        "heightM": 2.7
+      },
+      {
+        "id": "ot-Win2-2.2x2.7",
+        "category": "window",
+        "scenario": "before",
+        "uValueWm2k": 3.5,
+        "gValue": 0.75,
+        "frameFactor": 0.6,
+        "shadingFactor": 0.76784150714544,
+        "widthM": 2.2,
+        "heightM": 2.7
+      },
+      {
+        "id": "ot-Win3-0.9x0.9",
+        "category": "window",
+        "scenario": "before",
+        "uValueWm2k": 2.94,
+        "gValue": 0.75,
+        "frameFactor": 0.6,
+        "shadingFactor": 0.76784150714544,
+        "widthM": 0.9,
+        "heightM": 0.9
+      },
+      {
+        "id": "ot-Win3-0.9x1.8",
+        "category": "window",
+        "scenario": "before",
+        "uValueWm2k": 2.94,
+        "gValue": 0.75,
+        "frameFactor": 0.6,
+        "shadingFactor": 0.76784150714544,
+        "widthM": 0.9,
+        "heightM": 1.8
+      },
+      {
+        "id": "ot-Win3-1.2x1.8",
+        "category": "window",
+        "scenario": "before",
+        "uValueWm2k": 2.94,
+        "gValue": 0.75,
+        "frameFactor": 0.6,
+        "shadingFactor": 0.76784150714544,
+        "widthM": 1.2,
+        "heightM": 1.8
+      },
+      {
+        "id": "ot-Win4",
+        "category": "window",
+        "scenario": "after",
+        "uValueWm2k": 1.38,
+        "gValue": 0.7,
+        "frameFactor": 0.9,
+        "shadingFactor": 0.76784150714544,
+        "widthM": null,
+        "heightM": null
+      },
+      {
+        "id": "ot-V4",
+        "category": "window",
+        "scenario": "after",
+        "uValueWm2k": 1.38,
+        "gValue": 0.7,
+        "frameFactor": 0.9,
+        "shadingFactor": 0.76784150714544,
+        "widthM": null,
+        "heightM": null
+      },
+      {
+        "id": "ot-D4",
+        "category": "door",
+        "scenario": "after",
+        "uValueWm2k": 1.38,
+        "gValue": null,
+        "frameFactor": null,
+        "shadingFactor": 1,
+        "widthM": null,
+        "heightM": null
+      }
+    ],
+    "surfaceResistances": [
+      {
+        "elementCategory": "external_wall",
+        "interiorResistanceM2kPerW": 0.115,
+        "exteriorResistanceM2kPerW": 0.04
+      },
+      {
+        "elementCategory": "socle_heated",
+        "interiorResistanceM2kPerW": 0.115,
+        "exteriorResistanceM2kPerW": 0.04
+      },
+      {
+        "elementCategory": "socle_ground",
+        "interiorResistanceM2kPerW": 2.1,
+        "exteriorResistanceM2kPerW": 0
+      },
+      {
+        "elementCategory": "roof",
+        "interiorResistanceM2kPerW": 0.115,
+        "exteriorResistanceM2kPerW": 0.083
+      },
+      {
+        "elementCategory": "floor",
+        "interiorResistanceM2kPerW": 0.115,
+        "exteriorResistanceM2kPerW": 0.083
+      }
+    ],
+    "ventilationSystems": [
+      {
+        "scenario": "before",
+        "systemType": "natural",
+        "airChangeRatePerHour": 0.4,
+        "freshAirPerPersonM3h": null,
+        "heatRecoveryEfficiency": null,
+        "fanElectricalPowerKw": null,
+        "coolingSeasonHours": null
+      },
+      {
+        "scenario": "after",
+        "systemType": "natural",
+        "airChangeRatePerHour": 0.15,
+        "freshAirPerPersonM3h": null,
+        "heatRecoveryEfficiency": null,
+        "fanElectricalPowerKw": null,
+        "coolingSeasonHours": null
+      },
+      {
+        "scenario": "after",
+        "systemType": "mechanical",
+        "airChangeRatePerHour": null,
+        "freshAirPerPersonM3h": 12.057416267942584,
+        "heatRecoveryEfficiency": 0.86,
+        "fanElectricalPowerKw": 4.5746,
+        "coolingSeasonHours": null
+      }
+    ],
+    "coolingWindows": [
+      {
+        "scenario": "before",
+        "orientation": "south",
+        "areaM2": 116.1,
+        "gValue": 0.75,
+        "shadingFactor": 0.8
+      },
+      {
+        "scenario": "before",
+        "orientation": "east",
+        "areaM2": 30.5999999964,
+        "gValue": 0.75,
+        "shadingFactor": 0.8
+      },
+      {
+        "scenario": "before",
+        "orientation": "west",
+        "areaM2": 48.5099999955,
+        "gValue": 0.75,
+        "shadingFactor": 0.8
+      },
+      {
+        "scenario": "before",
+        "orientation": "north",
+        "areaM2": 107.19000000000003,
+        "gValue": 0.75,
+        "shadingFactor": 0.8
+      },
+      {
+        "scenario": "after",
+        "orientation": "south",
+        "areaM2": 116.1,
+        "gValue": 0.693080357148029,
+        "shadingFactor": 0.7539534883720931
+      },
+      {
+        "scenario": "after",
+        "orientation": "east",
+        "areaM2": 30.5999999964,
+        "gValue": 0.693080357148029,
+        "shadingFactor": 0.775
+      },
+      {
+        "scenario": "after",
+        "orientation": "west",
+        "areaM2": 48.5099999955,
+        "gValue": 0.693080357148029,
+        "shadingFactor": 0.7746753246757584
+      },
+      {
+        "scenario": "after",
+        "orientation": "north",
+        "areaM2": 107.19000000000003,
+        "gValue": 0.693080357148029,
+        "shadingFactor": 0.8
+      }
+    ],
+    "coolingSystems": [
+      {
+        "scenario": "before",
+        "seer": 3.2
+      },
+      {
+        "scenario": "after",
+        "seer": 3.2
+      }
+    ],
+    "dhwSources": [
+      {
+        "scenario": "before",
+        "energyCarrier": "electricity",
+        "specificConsumptionLPersonDay": 3,
+        "personsServed": 360
+      },
+      {
+        "scenario": "before",
+        "energyCarrier": "electricity",
+        "specificConsumptionLPersonDay": 8,
+        "personsServed": 58
+      },
+      {
+        "scenario": "after",
+        "energyCarrier": "electricity",
+        "specificConsumptionLPersonDay": 3,
+        "personsServed": 360
+      },
+      {
+        "scenario": "after",
+        "energyCarrier": "electricity",
+        "specificConsumptionLPersonDay": 8,
+        "personsServed": 58
+      }
+    ],
+    "distributionSystems": [
+      {
+        "scenario": "before",
+        "systemType": "heating",
+        "pipeDiameterClass": "15 – 25",
+        "lengthM": 480,
+        "insulatedFraction": 0,
+        "meanFluidTempC": 60
+      },
+      {
+        "scenario": "after",
+        "systemType": "heating",
+        "pipeDiameterClass": "15 – 25",
+        "lengthM": 480,
+        "insulatedFraction": 1,
+        "meanFluidTempC": 60
+      }
+    ],
+    "pipeLossReferences": [
+      {
+        "diameterClass": "15 – 25",
+        "insulated": true,
+        "meanFluidTempC": 50,
+        "maxHeatFluxWPerM": 7
+      },
+      {
+        "diameterClass": "15 – 25",
+        "insulated": true,
+        "meanFluidTempC": 60,
+        "maxHeatFluxWPerM": 11
+      },
+      {
+        "diameterClass": "15 – 25",
+        "insulated": true,
+        "meanFluidTempC": 70,
+        "maxHeatFluxWPerM": 13
+      },
+      {
+        "diameterClass": "32 – 50",
+        "insulated": true,
+        "meanFluidTempC": 50,
+        "maxHeatFluxWPerM": 10
+      },
+      {
+        "diameterClass": "32 – 50",
+        "insulated": true,
+        "meanFluidTempC": 60,
+        "maxHeatFluxWPerM": 14
+      },
+      {
+        "diameterClass": "32 – 50",
+        "insulated": true,
+        "meanFluidTempC": 70,
+        "maxHeatFluxWPerM": 16
+      },
+      {
+        "diameterClass": "65 – 100",
+        "insulated": true,
+        "meanFluidTempC": 50,
+        "maxHeatFluxWPerM": 14
+      },
+      {
+        "diameterClass": "65 – 100",
+        "insulated": true,
+        "meanFluidTempC": 60,
+        "maxHeatFluxWPerM": 19
+      },
+      {
+        "diameterClass": "65 – 100",
+        "insulated": true,
+        "meanFluidTempC": 70,
+        "maxHeatFluxWPerM": 22
+      },
+      {
+        "diameterClass": "15 – 25",
+        "insulated": false,
+        "meanFluidTempC": null,
+        "maxHeatFluxWPerM": 47
+      },
+      {
+        "diameterClass": "32 – 50",
+        "insulated": false,
+        "meanFluidTempC": null,
+        "maxHeatFluxWPerM": 74
+      },
+      {
+        "diameterClass": "65 – 100",
+        "insulated": false,
+        "meanFluidTempC": null,
+        "maxHeatFluxWPerM": 140
+      }
+    ],
+    "generationSources": [
+      {
+        "id": "gen-heating-before",
+        "endUse": "heating",
+        "scenario": "before",
+        "sourceType": "gas_boiler",
+        "efficiencyOrSeer": 0.58,
+        "shareOfDemand": 1
+      },
+      {
+        "id": "gen-heating-after",
+        "endUse": "heating",
+        "scenario": "after",
+        "sourceType": "heat_pump",
+        "efficiencyOrSeer": 3.110922843610943,
+        "shareOfDemand": 1
+      },
+      {
+        "id": "gen-dhw-before",
+        "endUse": "dhw",
+        "scenario": "before",
+        "sourceType": "electric_boiler",
+        "efficiencyOrSeer": 1,
+        "shareOfDemand": 1
+      },
+      {
+        "id": "gen-dhw-after",
+        "endUse": "dhw",
+        "scenario": "after",
+        "sourceType": "electric_boiler",
+        "efficiencyOrSeer": 1,
+        "shareOfDemand": 0.30000000000000004
+      },
+      {
+        "id": "gen-dhw-solar-after",
+        "endUse": "dhw",
+        "scenario": "after",
+        "sourceType": "solar_dhw",
+        "efficiencyOrSeer": 1,
+        "shareOfDemand": 0.7
+      },
+      {
+        "id": "gen-cooling-before",
+        "endUse": "cooling",
+        "scenario": "before",
+        "sourceType": "split_ac",
+        "efficiencyOrSeer": 3.2,
+        "shareOfDemand": 1
+      },
+      {
+        "id": "gen-cooling-after",
+        "endUse": "cooling",
+        "scenario": "after",
+        "sourceType": "split_ac",
+        "efficiencyOrSeer": 3.2,
+        "shareOfDemand": 1
+      }
+    ],
+    "lightingZones": [
+      {
+        "scenario": "before",
+        "areaM2": 2518.855,
+        "technologyMix": {
+          "incandescentFraction": 0,
+          "fluorescentElectromagneticFraction": 0,
+          "fluorescentElectronicFraction": 0.02,
+          "ledFraction": 0.98
+        },
+        "utilizationFactor": 0.55
+      },
+      {
+        "scenario": "after",
+        "areaM2": 2518.855,
+        "technologyMix": {
+          "incandescentFraction": 0,
+          "fluorescentElectromagneticFraction": 0,
+          "fluorescentElectronicFraction": 0,
+          "ledFraction": 1
+        },
+        "utilizationFactor": 0.5308298755186722
+      }
+    ],
+    "lampTypes": [
+      {
+        "name": "@LAMP:incandescent",
+        "powerDensityWPerM2": 25
+      },
+      {
+        "name": "@LAMP:fluorescentElectromagnetic",
+        "powerDensityWPerM2": 17.8
+      },
+      {
+        "name": "@LAMP:fluorescentElectronic",
+        "powerDensityWPerM2": 14.81
+      },
+      {
+        "name": "@LAMP:led",
+        "powerDensityWPerM2": 7.4
+      }
+    ],
+    "equipmentItems": [
+      {
+        "scenario": "before",
+        "unitPowerKw": 0.2,
+        "quantity": 13,
+        "heatingSeasonHours": 120,
+        "coolingSeasonHours": 120,
+        "heatingUtilizationFactor": 0.36,
+        "coolingUtilizationFactor": 0.37
+      },
+      {
+        "scenario": "before",
+        "unitPowerKw": 2.5,
+        "quantity": 1,
+        "heatingSeasonHours": 125,
+        "coolingSeasonHours": 125,
+        "heatingUtilizationFactor": 0.48,
+        "coolingUtilizationFactor": 0.47
+      },
+      {
+        "scenario": "before",
+        "unitPowerKw": 1.5,
+        "quantity": 2,
+        "heatingSeasonHours": 125,
+        "coolingSeasonHours": 125,
+        "heatingUtilizationFactor": 0.48,
+        "coolingUtilizationFactor": 0.47
+      },
+      {
+        "scenario": "before",
+        "unitPowerKw": 15,
+        "quantity": 2,
+        "heatingSeasonHours": 500,
+        "coolingSeasonHours": 500,
+        "heatingUtilizationFactor": 0.52,
+        "coolingUtilizationFactor": 0.54
+      },
+      {
+        "scenario": "before",
+        "unitPowerKw": 1,
+        "quantity": 1,
+        "heatingSeasonHours": 140,
+        "coolingSeasonHours": 140,
+        "heatingUtilizationFactor": 0.45,
+        "coolingUtilizationFactor": 0.46
+      },
+      {
+        "scenario": "before",
+        "unitPowerKw": 0.8,
+        "quantity": 3,
+        "heatingSeasonHours": 467,
+        "coolingSeasonHours": 467,
+        "heatingUtilizationFactor": 0.63,
+        "coolingUtilizationFactor": 0.64
+      },
+      {
+        "scenario": "before",
+        "unitPowerKw": 1.2,
+        "quantity": 2,
+        "heatingSeasonHours": 467,
+        "coolingSeasonHours": 467,
+        "heatingUtilizationFactor": 0.63,
+        "coolingUtilizationFactor": 0.64
+      },
+      {
+        "scenario": "before",
+        "unitPowerKw": 2,
+        "quantity": 1,
+        "heatingSeasonHours": 417,
+        "coolingSeasonHours": 417,
+        "heatingUtilizationFactor": 0.45,
+        "coolingUtilizationFactor": 0.46
+      },
+      {
+        "scenario": "before",
+        "unitPowerKw": 0.2,
+        "quantity": 2,
+        "heatingSeasonHours": 1440,
+        "coolingSeasonHours": 1557,
+        "heatingUtilizationFactor": 0.9,
+        "coolingUtilizationFactor": 0.9
+      },
+      {
+        "scenario": "before",
+        "unitPowerKw": 1,
+        "quantity": 2,
+        "heatingSeasonHours": 143,
+        "coolingSeasonHours": 143,
+        "heatingUtilizationFactor": 0.08,
+        "coolingUtilizationFactor": 0.09
+      },
+      {
+        "scenario": "before",
+        "unitPowerKw": 0.2,
+        "quantity": 1,
+        "heatingSeasonHours": 217,
+        "coolingSeasonHours": 217,
+        "heatingUtilizationFactor": 0.11,
+        "coolingUtilizationFactor": 0.12
+      },
+      {
+        "scenario": "after",
+        "unitPowerKw": 0.2,
+        "quantity": 13,
+        "heatingSeasonHours": 120,
+        "coolingSeasonHours": 120,
+        "heatingUtilizationFactor": 0.36,
+        "coolingUtilizationFactor": 0.37
+      },
+      {
+        "scenario": "after",
+        "unitPowerKw": 2.5,
+        "quantity": 1,
+        "heatingSeasonHours": 125,
+        "coolingSeasonHours": 125,
+        "heatingUtilizationFactor": 0.48,
+        "coolingUtilizationFactor": 0.47
+      },
+      {
+        "scenario": "after",
+        "unitPowerKw": 1.5,
+        "quantity": 2,
+        "heatingSeasonHours": 125,
+        "coolingSeasonHours": 125,
+        "heatingUtilizationFactor": 0.48,
+        "coolingUtilizationFactor": 0.47
+      },
+      {
+        "scenario": "after",
+        "unitPowerKw": 10,
+        "quantity": 2,
+        "heatingSeasonHours": 500,
+        "coolingSeasonHours": 500,
+        "heatingUtilizationFactor": 0.52,
+        "coolingUtilizationFactor": 0.54
+      },
+      {
+        "scenario": "after",
+        "unitPowerKw": 1,
+        "quantity": 1,
+        "heatingSeasonHours": 140,
+        "coolingSeasonHours": 140,
+        "heatingUtilizationFactor": 0.45,
+        "coolingUtilizationFactor": 0.46
+      },
+      {
+        "scenario": "after",
+        "unitPowerKw": 0.8,
+        "quantity": 3,
+        "heatingSeasonHours": 467,
+        "coolingSeasonHours": 467,
+        "heatingUtilizationFactor": 0.63,
+        "coolingUtilizationFactor": 0.64
+      },
+      {
+        "scenario": "after",
+        "unitPowerKw": 1.2,
+        "quantity": 2,
+        "heatingSeasonHours": 467,
+        "coolingSeasonHours": 467,
+        "heatingUtilizationFactor": 0.63,
+        "coolingUtilizationFactor": 0.64
+      },
+      {
+        "scenario": "after",
+        "unitPowerKw": 2,
+        "quantity": 1,
+        "heatingSeasonHours": 417,
+        "coolingSeasonHours": 417,
+        "heatingUtilizationFactor": 0.45,
+        "coolingUtilizationFactor": 0.46
+      },
+      {
+        "scenario": "after",
+        "unitPowerKw": 2.105,
+        "quantity": 1,
+        "heatingSeasonHours": 1857,
+        "coolingSeasonHours": 643,
+        "heatingUtilizationFactor": 0.5,
+        "coolingUtilizationFactor": 0.5
+      },
+      {
+        "scenario": "after",
+        "unitPowerKw": 0.00049,
+        "quantity": 5040,
+        "heatingSeasonHours": 1857,
+        "coolingSeasonHours": 643,
+        "heatingUtilizationFactor": 0.8,
+        "coolingUtilizationFactor": 0.8
+      },
+      {
+        "scenario": "after",
+        "unitPowerKw": 0.2,
+        "quantity": 2,
+        "heatingSeasonHours": 1440,
+        "coolingSeasonHours": 1557,
+        "heatingUtilizationFactor": 0.9,
+        "coolingUtilizationFactor": 0.9
+      },
+      {
+        "scenario": "after",
+        "unitPowerKw": 1,
+        "quantity": 2,
+        "heatingSeasonHours": 143,
+        "coolingSeasonHours": 143,
+        "heatingUtilizationFactor": 0.08,
+        "coolingUtilizationFactor": 0.09
+      },
+      {
+        "scenario": "after",
+        "unitPowerKw": 0.2,
+        "quantity": 1,
+        "heatingSeasonHours": 217,
+        "coolingSeasonHours": 217,
+        "heatingUtilizationFactor": 0.11,
+        "coolingUtilizationFactor": 0.12
+      },
+      {
+        "scenario": "after",
+        "unitPowerKw": 0.072,
+        "quantity": 10,
+        "heatingSeasonHours": 1660,
+        "coolingSeasonHours": 0,
+        "heatingUtilizationFactor": 0.7,
+        "coolingUtilizationFactor": 0
+      },
+      {
+        "scenario": "after",
+        "unitPowerKw": 3,
+        "quantity": 2,
+        "heatingSeasonHours": 1660,
+        "coolingSeasonHours": 0,
+        "heatingUtilizationFactor": 0.7,
+        "coolingUtilizationFactor": 0
+      }
+    ],
+    "renewableSystems": [
+      {
+        "systemType": "pv",
+        "monthlyProduction": [
+          {
+            "productionKwh": 9898.04000000004
+          },
+          {
+            "productionKwh": 10079.280000000006
+          },
+          {
+            "productionKwh": 12644.880000000034
+          },
+          {
+            "productionKwh": 13676.699999999977
+          },
+          {
+            "productionKwh": 14226.539999999957
+          },
+          {
+            "productionKwh": 14160.67999999997
+          },
+          {
+            "productionKwh": 15312.319999999982
+          },
+          {
+            "productionKwh": 15695.919999999971
+          },
+          {
+            "productionKwh": 14842.159999999965
+          },
+          {
+            "productionKwh": 12253.739999999976
+          },
+          {
+            "productionKwh": 9358.04
+          },
+          {
+            "productionKwh": 8806.639999999998
+          }
+        ]
+      },
+      {
+        "systemType": "solar_dhw",
+        "monthlyProduction": [
+          {
+            "productionKwh": 15548.723848
+          }
+        ]
+      }
+    ],
+    "utilityBills": [
+      {
+        "energyCarrier": "gas",
+        "year": 2023,
+        "consumptionKwh": 69103.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2023,
+        "consumptionKwh": 51290.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2023,
+        "consumptionKwh": 16245.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2023,
+        "consumptionKwh": 6127.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2023,
+        "consumptionKwh": 5358.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2023,
+        "consumptionKwh": 5785.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2023,
+        "consumptionKwh": 5833.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2023,
+        "consumptionKwh": 5424.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2023,
+        "consumptionKwh": 1947.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2023,
+        "consumptionKwh": 10811.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2023,
+        "consumptionKwh": 30362.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2023,
+        "consumptionKwh": 47167.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2024,
+        "consumptionKwh": 54064.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2024,
+        "consumptionKwh": 50388.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2024,
+        "consumptionKwh": 30571.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2024,
+        "consumptionKwh": 4883.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2024,
+        "consumptionKwh": 5291.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2024,
+        "consumptionKwh": 4930.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2024,
+        "consumptionKwh": 4997.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2024,
+        "consumptionKwh": 1007.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2024,
+        "consumptionKwh": 902.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2024,
+        "consumptionKwh": 10089.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2024,
+        "consumptionKwh": 15285.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2024,
+        "consumptionKwh": 52022.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2025,
+        "consumptionKwh": 66272.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2025,
+        "consumptionKwh": 54853.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2025,
+        "consumptionKwh": 28395.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2025,
+        "consumptionKwh": 750.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2025,
+        "consumptionKwh": 627.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2025,
+        "consumptionKwh": 513.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2025,
+        "consumptionKwh": 446.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2025,
+        "consumptionKwh": 10013.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2025,
+        "consumptionKwh": 589.0
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2025,
+        "consumptionKwh": 617.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2025,
+        "consumptionKwh": 27863.5
+      },
+      {
+        "energyCarrier": "gas",
+        "year": 2025,
+        "consumptionKwh": 40270.5
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2023,
+        "consumptionKwh": 4211
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2023,
+        "consumptionKwh": 4389
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2023,
+        "consumptionKwh": 3633
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2023,
+        "consumptionKwh": 6111
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2023,
+        "consumptionKwh": 4095
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2023,
+        "consumptionKwh": 2604
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2023,
+        "consumptionKwh": 2900
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2023,
+        "consumptionKwh": 2770
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2023,
+        "consumptionKwh": 3780
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2023,
+        "consumptionKwh": 3507
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2023,
+        "consumptionKwh": 5607
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2023,
+        "consumptionKwh": 5586
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2024,
+        "consumptionKwh": 7119
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2024,
+        "consumptionKwh": 6447
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2024,
+        "consumptionKwh": 5439
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2024,
+        "consumptionKwh": 4641
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2024,
+        "consumptionKwh": 4630
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2024,
+        "consumptionKwh": 3620
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2024,
+        "consumptionKwh": 3499
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2024,
+        "consumptionKwh": 4157
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2024,
+        "consumptionKwh": 4296
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2024,
+        "consumptionKwh": 5124
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2024,
+        "consumptionKwh": 5565
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2024,
+        "consumptionKwh": 6111
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2025,
+        "consumptionKwh": 6699
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2025,
+        "consumptionKwh": 5964
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2025,
+        "consumptionKwh": 4893
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2025,
+        "consumptionKwh": 4473
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2025,
+        "consumptionKwh": 4059
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2025,
+        "consumptionKwh": 4000
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2025,
+        "consumptionKwh": 4138
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2025,
+        "consumptionKwh": 3964
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2025,
+        "consumptionKwh": 3663
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2025,
+        "consumptionKwh": 4486
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2025,
+        "consumptionKwh": 5751
+      },
+      {
+        "energyCarrier": "electricity",
+        "year": 2025,
+        "consumptionKwh": 6204
+      }
+    ],
+    "energyMeasures": [
+      {
+        "id": "measure-1",
+        "name": "External walls and socle - ventilated facade (basalt wool 100 mm, rho <= 50)",
+        "category": "envelope_wall_insulation",
+        "investmentCostUsd": 229201.98000000004,
+        "lifetimeYears": 30,
+        "maintenanceCostPercent": 0,
+        "proposedForImplementation": true
+      },
+      {
+        "id": "measure-2",
+        "name": "Foundation insulation (XPS 100 mm + waterproofing)",
+        "category": "envelope_wall_insulation",
+        "investmentCostUsd": 9806.45,
+        "lifetimeYears": 30,
+        "maintenanceCostPercent": 0,
+        "proposedForImplementation": true
+      },
+      {
+        "id": "measure-3",
+        "name": "Parapet insulation - RECLASSIFIED as a non-energy investment (see the non-EE list, item 4)",
+        "category": "other",
+        "investmentCostUsd": 0,
+        "lifetimeYears": 30,
+        "maintenanceCostPercent": 0,
+        "proposedForImplementation": false
+      },
+      {
+        "id": "measure-4",
+        "name": "Roof insulation (XPS 2 x 100 mm, flat PVC-membrane roof) incl. dismantling of the old pitched roof",
+        "category": "envelope_roof_insulation",
+        "investmentCostUsd": 81346.29000000001,
+        "lifetimeYears": 30,
+        "maintenanceCostPercent": 0,
+        "proposedForImplementation": true
+      },
+      {
+        "id": "measure-5",
+        "name": "Floor insulation (XPS 100 mm, R0 = 3.92) incl. dismantling of the old floor",
+        "category": "envelope_floor_insulation",
+        "investmentCostUsd": 25159.52,
+        "lifetimeYears": 30,
+        "maintenanceCostPercent": 0,
+        "proposedForImplementation": false
+      },
+      {
+        "id": "measure-6",
+        "name": "Windows - NOT replaced; repair and sealing of the frames + new fittings (client's BoQ): lower infiltration (0.20 -> 0.15 ach)",
+        "category": "window_replacement",
+        "investmentCostUsd": 15858.57,
+        "lifetimeYears": 25,
+        "maintenanceCostPercent": 0,
+        "proposedForImplementation": true
+      },
+      {
+        "id": "measure-7",
+        "name": "External glazed aluminium doors (thermally broken, 2 x 33.93 m2)",
+        "category": "window_replacement",
+        "investmentCostUsd": 12311.2,
+        "lifetimeYears": 25,
+        "maintenanceCostPercent": 0,
+        "proposedForImplementation": true
+      },
+      {
+        "id": "measure-8",
+        "name": "External doors, thermally broken aluminium (24.72 m2) + 24 door closers",
+        "category": "window_replacement",
+        "investmentCostUsd": 5933.229999999998,
+        "lifetimeYears": 25,
+        "maintenanceCostPercent": 0,
+        "proposedForImplementation": true
+      },
+      {
+        "id": "measure-9",
+        "name": "External solar shading - canopies above the windows (58 units, Block A)",
+        "category": "other",
+        "investmentCostUsd": 9963.67,
+        "lifetimeYears": 20,
+        "maintenanceCostPercent": 0.005,
+        "proposedForImplementation": true
+      },
+      {
+        "id": "measure-10",
+        "name": "Ventilation: 72 decentralised units with heat recovery (5 040 m3/h) + kitchen / WC exhaust",
+        "category": "mechanical_ventilation_heat_recovery",
+        "investmentCostUsd": 58253.96,
+        "lifetimeYears": 20,
+        "maintenanceCostPercent": 0.02,
+        "proposedForImplementation": true
+      },
+      {
+        "id": "measure-11",
+        "name": "Heat pump 2 x 65 kW = 130 kW (COP >= 3.0) - heating and DHW",
+        "category": "gas_boiler_replacement",
+        "investmentCostUsd": 40431.6,
+        "lifetimeYears": 20,
+        "maintenanceCostPercent": 0.02,
+        "proposedForImplementation": true
+      },
+      {
+        "id": "measure-12",
+        "name": "MTB modular thermal block 2 x 75 kW (solid fuel) - back-up source; ⚠ cost scaled from BoQ 2 x MTB-150",
+        "category": "other",
+        "investmentCostUsd": 10650.51,
+        "lifetimeYears": 20,
+        "maintenanceCostPercent": 0.02,
+        "proposedForImplementation": true
+      },
+      {
+        "id": "measure-13",
+        "name": "Heating system: radiators + underfloor heating + thermostatic valves + pre-insulated pipework, incl. dismantling of the old system",
+        "category": "heating_system",
+        "investmentCostUsd": 109935.68,
+        "lifetimeYears": 20,
+        "maintenanceCostPercent": 0.01,
+        "proposedForImplementation": true
+      },
+      {
+        "id": "measure-14",
+        "name": "Solar water heaters: 9 x 300 l thermosiphon units (Block A 5, Block B 4)",
+        "category": "solar_dhw",
+        "investmentCostUsd": 20705.280000000002,
+        "lifetimeYears": 20,
+        "maintenanceCostPercent": 0.01,
+        "proposedForImplementation": true
+      },
+      {
+        "id": "measure-15",
+        "name": "Solar photovoltaic plant 96.72 kWp (156 x 620 W, 2 x 50 kW inverters)",
+        "category": "pv",
+        "investmentCostUsd": 50331.60999999999,
+        "lifetimeYears": 25,
+        "maintenanceCostPercent": 0.01,
+        "proposedForImplementation": true
+      },
+      {
+        "id": "measure-16",
+        "name": "LED lighting: 382 luminaires (11.6 kW, 56 with motion sensors)",
+        "category": "lighting",
+        "investmentCostUsd": 5139.53,
+        "lifetimeYears": 15,
+        "maintenanceCostPercent": 0.005,
+        "proposedForImplementation": true
+      },
+      {
+        "id": "measure-17",
+        "name": "Replacement of the electric stoves with induction stoves (2 units)",
+        "category": "equipment_replacement",
+        "investmentCostUsd": 2926.31,
+        "lifetimeYears": 10,
+        "maintenanceCostPercent": 0.01,
+        "proposedForImplementation": true
+      },
+      {
+        "id": "measure-18",
+        "name": "BEMS - building energy management system, BACS class C -> B (EN ISO 52120-1); ⚠ estimated cost (not in the client's BoQ)",
+        "category": "ems",
+        "investmentCostUsd": 37782.825,
+        "lifetimeYears": 15,
+        "maintenanceCostPercent": 0.02,
+        "proposedForImplementation": false
+      },
+      {
+        "id": "measure-19",
+        "name": "Cooling: existing split systems kept (fan coils not in the BoQ) - saving from lower cooling demand only",
+        "category": "other",
+        "investmentCostUsd": 0,
+        "lifetimeYears": 20,
+        "maintenanceCostPercent": 0.02,
+        "proposedForImplementation": true
+      }
+    ],
+    "nonEeMeasures": [
+      {
+        "id": "non-ee-1",
+        "description": "Electrical network: cabling, distribution boards, sockets/switches, earthing, dismantling",
+        "unit": "lump sum",
+        "quantity": 1,
+        "unitCostUsd": 39700.21
+      },
+      {
+        "id": "non-ee-2",
+        "description": "Floors: rebuilding of floor layers and finishes (excl. insulation and dismantling)",
+        "unit": "lump sum",
+        "quantity": 1,
+        "unitCostUsd": 85333.36
+      },
+      {
+        "id": "non-ee-3",
+        "description": "External heating network",
+        "unit": "lump sum",
+        "quantity": 1,
+        "unitCostUsd": 3628.1799999999994
+      },
+      {
+        "id": "non-ee-4",
+        "description": "Parapet insulation (basalt wool + moisture-resistant gypsum board)",
+        "unit": "m2",
+        "quantity": 280.8,
+        "unitCostUsd": 46.17638888888889
+      },
+      {
+        "id": "non-ee-5",
+        "description": "Parapet masonry (brick/concrete)",
+        "unit": "lump sum",
+        "quantity": 1,
+        "unitCostUsd": 10374.88
+      },
+      {
+        "id": "non-ee-6",
+        "description": "Dismantling of the old brick parapet",
+        "unit": "lump sum",
+        "quantity": 1,
+        "unitCostUsd": 12012.54
+      },
+      {
+        "id": "non-ee-7",
+        "description": "Windows: repair of frames, new fittings - MOVED to EE measure 6 (X81)",
+        "unit": "lump sum",
+        "quantity": 1,
+        "unitCostUsd": 0
+      },
+      {
+        "id": "non-ee-8",
+        "description": "Foundations: strengthening (reinforced-concrete jacketing), FM-2, porch dismantling",
+        "unit": "lump sum",
+        "quantity": 1,
+        "unitCostUsd": 22162.04
+      },
+      {
+        "id": "non-ee-9",
+        "description": "Radiator and riser screens",
+        "unit": "lump sum",
+        "quantity": 1,
+        "unitCostUsd": 23220.85
+      },
+      {
+        "id": "non-ee-10",
+        "description": "Electric water heaters 30 l (16 units)",
+        "unit": "lump sum",
+        "quantity": 1,
+        "unitCostUsd": 2124.82
+      },
+      {
+        "id": "non-ee-11",
+        "description": "Porches, canopies, bridges, walls, external stairs, fire escape",
+        "unit": "lump sum",
+        "quantity": 1,
+        "unitCostUsd": 25690.780000000002
+      },
+      {
+        "id": "non-ee-12",
+        "description": "Removal of construction waste",
+        "unit": "lump sum",
+        "quantity": 1,
+        "unitCostUsd": 9133.4
+      },
+      {
+        "id": "non-ee-13",
+        "description": "Internal aluminium glazed partitions (vitraj), 2 x 13.23 m2",
+        "unit": "lump sum",
+        "quantity": 1,
+        "unitCostUsd": 3027.76
+      }
+    ],
+    "tariffs": [
+      {
+        "energyCarrier": "gas",
+        "unitCostUsd": 0.017340241859092415,
+        "emissionFactorKgCo2PerKwh": 0.198
+      },
+      {
+        "energyCarrier": "electricity",
+        "unitCostUsd": 0.09060276371375786,
+        "emissionFactorKgCo2PerKwh": 0.585
+      },
+      {
+        "energyCarrier": "district_heat",
+        "unitCostUsd": 0.07557661723845746,
+        "emissionFactorKgCo2PerKwh": 0.05
+      },
+      {
+        "energyCarrier": "coal",
+        "unitCostUsd": 0.015452103274732551,
+        "emissionFactorKgCo2PerKwh": 0.38
+      }
+    ]
+  }
+}
