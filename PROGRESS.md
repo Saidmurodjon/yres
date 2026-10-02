@@ -2341,3 +2341,7 @@ T06b — qamrab olinganlar:
 - Tekshiruv: type-check, biome, build.
 
 **Faza 0 holati:** D01–D03, T01–T06 ✅; D04 §C (production cutover) loyiha egasini kutadi. **Navbatda:** T07 (iste'mol: bo'sh tashuvchini o'chirish + ko'p yilni atomik saqlash).
+- **T06c nazoratchi tekshiruvi:** `delete-building-dialog.tsx` (Radix birinchi fokusni oladi — fokus "Bekor"da EMAS edi) va `deactivate-user-dialog.tsx` `ConfirmDialog` ga o'tkazildi: fokus Bekor'da, xato dialog ichida, `pending` da ikki marta bosish bloklangan;
+  bino o'chirilgach navigatsiya `useRunWithoutBlocking` bilan (saqlanmagan narsa endi ahamiyatsiz). Chat guruhidan a'zoni chiqarish (`removeUserIds`) uchun UI **yo'q** (faqat API/tur) — tasdiq kerak emas.
+  Brauzerda: `confirm-delete.spec.ts` bino o'chirishni ham qamraydi (fokus Cancel'da, Cancel qoldiradi, tasdiq o'chiradi va `/buildings` ga o'tadi ogohlantirishsiz); Playwright 23/23. (Oldingi commit xabaridagi "22/22" o'sha paytda `measures.spec` yiqilganini o'tkazib yuborgan edi — alohida commit bilan tuzatildi.)
+  Admin deaktivatsiya dialogi brauzerda sinalmadi (admin akkaunt kerak).

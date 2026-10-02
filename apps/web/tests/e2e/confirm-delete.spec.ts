@@ -45,3 +45,22 @@ test("deleting a measure asks first: Cancel keeps it, Delete removes it", async 
   await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
   await expect(row).toHaveCount(0);
 });
+
+test("deleting a building: focus starts on Cancel, Cancel keeps it, confirming deletes it and leaves without a warning", async ({
+  page,
+}) => {
+  await registerAndCreateBuilding(page);
+  const buildingUrl = page.url();
+
+  await page.getByRole("button", { name: "Delete", exact: true }).first().click();
+  const dialog = page.getByRole("dialog").filter({ hasText: "permanently deletes the building" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Cancel" })).toBeFocused();
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page).toHaveURL(buildingUrl);
+
+  await page.getByRole("button", { name: "Delete", exact: true }).first().click();
+  await page.getByRole("dialog").getByRole("button", { name: "Delete building" }).click();
+  await expect(page).toHaveURL(/\/buildings$/);
+});

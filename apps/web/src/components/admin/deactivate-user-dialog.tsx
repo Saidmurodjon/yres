@@ -1,17 +1,9 @@
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@yres/ui";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUpdateUserStatus } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import type { AdminUser } from "../../lib/api-types";
+import { ConfirmDialog } from "../confirm-dialog";
 
 interface DeactivateUserDialogProps {
   user: AdminUser;
@@ -36,28 +28,20 @@ export function DeactivateUserDialog({ user, open, onOpenChange }: DeactivateUse
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{t("deactivate.title", { name: user.name })}</DialogTitle>
-          <DialogDescription>{t("deactivate.description")}</DialogDescription>
-        </DialogHeader>
-
-        {error && <p className="text-sm text-destructive">{error}</p>}
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {t("deactivate.cancel")}
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleDeactivate}
-            disabled={updateStatus.isPending}
-          >
-            {updateStatus.isPending ? t("deactivate.deactivating") : t("deactivate.confirm")}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <ConfirmDialog
+      open={open}
+      title={t("deactivate.title", { name: user.name })}
+      description={t("deactivate.description")}
+      confirmLabel={updateStatus.isPending ? t("deactivate.deactivating") : t("deactivate.confirm")}
+      cancelLabel={t("deactivate.cancel")}
+      destructive
+      pending={updateStatus.isPending}
+      error={error}
+      onConfirm={handleDeactivate}
+      onCancel={() => {
+        setError(null);
+        onOpenChange(false);
+      }}
+    />
   );
 }
