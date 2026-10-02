@@ -1,0 +1,4925 @@
+{
+  "meta": {
+    "workbook": "3-DMTT v7.20.xlsx",
+    "sha256": "187d19962269d25ff6b241b97374ba868b9b38c94a9b9d27f5ac78ddf6dc5f6a",
+    "version": "v7.20",
+    "lastDecision": "X98",
+    "extractedAt": "2026-10-02T15:27:43+00:00",
+    "extractor": "tools/golden/extract_expected.py"
+  },
+  "entries": [
+    {
+      "id": "geometry.heatedFloorAreaM2",
+      "excel": "Envelope!L95",
+      "value": 2518.855,
+      "class": "G0"
+    },
+    {
+      "id": "geometry.heatedVolumeM3",
+      "excel": "Envelope!M95",
+      "value": 7556.5650000000005,
+      "class": "G0"
+    },
+    {
+      "id": "envelope.before.W1.areaM2",
+      "excel": "Losses env. before!E7",
+      "value": 1244.9180000080999,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.W1.uValueWPerM2K",
+      "excel": "Losses env. before!F7",
+      "value": 1.4616187702621022,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.W1.annualLossKwh",
+      "excel": "Losses env. before!G7",
+      "value": 84870.30190709213,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.Socle_1_heated_space.areaM2",
+      "excel": "Losses env. before!E9",
+      "value": 123.3,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.Socle_1_heated_space.uValueWPerM2K",
+      "excel": "Losses env. before!F9",
+      "value": 1.8503815182531478,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.Socle_1_heated_space.annualLossKwh",
+      "excel": "Losses env. before!G9",
+      "value": 6169.45934610578,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.Socle_2.areaM2",
+      "excel": "Losses env. before!E11",
+      "value": 203.2,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.Socle_2.uValueWPerM2K",
+      "excel": "Losses env. before!F11",
+      "value": 0.4059318105774337,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.Socle_2.annualLossKwh",
+      "excel": "Losses env. before!G11",
+      "value": 2230.4861846523154,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.R2.areaM2",
+      "excel": "Losses env. before!E14",
+      "value": 0,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.R2.uValueWPerM2K",
+      "excel": "Losses env. before!F14",
+      "value": 0,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.R1.areaM2",
+      "excel": "Losses env. before!E18",
+      "value": 1288.4,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.R1.uValueWPerM2K",
+      "excel": "Losses env. before!F18",
+      "value": 2.0618709964317823,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.R1.annualLossKwh",
+      "excel": "Losses env. before!G18",
+      "value": 123906.21619669866,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.F1.areaM2",
+      "excel": "Losses env. before!E20",
+      "value": 1090.3000000000002,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.F1.uValueWPerM2K",
+      "excel": "Losses env. before!F20",
+      "value": 0.2879600086512513,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.F1.annualLossKwh",
+      "excel": "Losses env. before!G20",
+      "value": 8489.868005371134,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.F3.areaM2",
+      "excel": "Losses env. before!E21",
+      "value": 198.1,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.F3.uValueWPerM2K",
+      "excel": "Losses env. before!F21",
+      "value": 0.7726875898930391,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.F3.annualLossKwh",
+      "excel": "Losses env. before!G21",
+      "value": 7139.524721644045,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.F2.areaM2",
+      "excel": "Losses env. before!E22",
+      "value": 0,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.Win1.areaM2",
+      "excel": "Losses env. before!E24",
+      "value": 0,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.Win1.uValueWPerM2K",
+      "excel": "Losses env. before!F24",
+      "value": 2.56,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.Win1.annualLossKwh",
+      "excel": "Losses env. before!G24",
+      "value": 0,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.Win2.areaM2",
+      "excel": "Losses env. before!E25",
+      "value": 68.84999999189999,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.Win2.uValueWPerM2K",
+      "excel": "Losses env. before!F25",
+      "value": 3.5,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.Win2.annualLossKwh",
+      "excel": "Losses env. before!G25",
+      "value": 6516.204974233387,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.Win3.areaM2",
+      "excel": "Losses env. before!E26",
+      "value": 233.55000000000004,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.Win3.uValueWPerM2K",
+      "excel": "Losses env. before!F26",
+      "value": 2.94,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.Win3.annualLossKwh",
+      "excel": "Losses env. before!G26",
+      "value": 18567.351117000002,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.D1.areaM2",
+      "excel": "Losses env. before!E28",
+      "value": 24.720000000000002,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.D1.uValueWPerM2K",
+      "excel": "Losses env. before!F28",
+      "value": 3.5,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.D1.annualLossKwh",
+      "excel": "Losses env. before!G28",
+      "value": 2339.5873200000005,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.D2.areaM2",
+      "excel": "Losses env. before!E29",
+      "value": 0,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.D2.uValueWPerM2K",
+      "excel": "Losses env. before!F29",
+      "value": 4,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.D2.annualLossKwh",
+      "excel": "Losses env. before!G29",
+      "value": 0,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.D3.areaM2",
+      "excel": "Losses env. before!E30",
+      "value": 0,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.D3.uValueWPerM2K",
+      "excel": "Losses env. before!F30",
+      "value": 5.88,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.D3.annualLossKwh",
+      "excel": "Losses env. before!G30",
+      "value": 0,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.total.walls",
+      "excel": "Losses env. before!G13",
+      "value": 93270.24743785022,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.total.roof",
+      "excel": "Losses env. before!G19",
+      "value": 123906.21619669866,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.total.floor",
+      "excel": "Losses env. before!G23",
+      "value": 15629.39272701518,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.total.windowsDoors",
+      "excel": "Losses env. before!G31",
+      "value": 27423.143411233388,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.before.total.building",
+      "excel": "Losses env. before!G32",
+      "value": 260228.99977279746,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.W1.areaM2",
+      "excel": "Losses env. after!E7",
+      "value": 1244.9180000080999,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.W1.uValueWPerM2K",
+      "excel": "Losses env. after!F7",
+      "value": 0.27483798112600916,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.W1.annualLossKwh",
+      "excel": "Losses env. after!G7",
+      "value": 15958.73213198901,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.Socle_1_heated_space.areaM2",
+      "excel": "Losses env. after!E9",
+      "value": 123.3,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.Socle_1_heated_space.uValueWPerM2K",
+      "excel": "Losses env. after!F9",
+      "value": 0.29532050813166594,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.Socle_1_heated_space.annualLossKwh",
+      "excel": "Losses env. after!G9",
+      "value": 984.644437385887,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.Socle_2.areaM2",
+      "excel": "Losses env. after!E11",
+      "value": 203.2,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.Socle_2.uValueWPerM2K",
+      "excel": "Losses env. after!F11",
+      "value": 0.1871666205777468,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.Socle_2.annualLossKwh",
+      "excel": "Losses env. after!G11",
+      "value": 1028.4302696871073,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.R2.areaM2",
+      "excel": "Losses env. after!E14",
+      "value": 0,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.R1.areaM2",
+      "excel": "Losses env. after!E18",
+      "value": 1288.4,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.R1.uValueWPerM2K",
+      "excel": "Losses env. after!F18",
+      "value": 0.1539549283624898,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.R1.annualLossKwh",
+      "excel": "Losses env. after!G18",
+      "value": 9251.77795858338,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.F1.areaM2",
+      "excel": "Losses env. after!E20",
+      "value": 1090.3000000000002,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.F1.uValueWPerM2K",
+      "excel": "Losses env. after!F20",
+      "value": 0.1496110143818264,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.F1.annualLossKwh",
+      "excel": "Losses env. after!G20",
+      "value": 4410.951958921844,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.F3.areaM2",
+      "excel": "Losses env. after!E21",
+      "value": 198.1,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.F3.uValueWPerM2K",
+      "excel": "Losses env. after!F21",
+      "value": 0.12089671574568145,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.F3.annualLossKwh",
+      "excel": "Losses env. after!G21",
+      "value": 1117.0686602477315,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.F2.areaM2",
+      "excel": "Losses env. after!E22",
+      "value": 0,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.Win4.areaM2",
+      "excel": "Losses env. after!E24",
+      "value": 68.84999999189999,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.Win4.uValueWPerM2K",
+      "excel": "Losses env. after!F24",
+      "value": 1.38,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.Win4.annualLossKwh",
+      "excel": "Losses env. after!G24",
+      "value": 2569.246532697736,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.Win3.areaM2",
+      "excel": "Losses env. after!E25",
+      "value": 233.55000000000004,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.Win3.uValueWPerM2K",
+      "excel": "Losses env. after!F25",
+      "value": 2.94,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.Win3.annualLossKwh",
+      "excel": "Losses env. after!G25",
+      "value": 18567.351117000002,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.D4.areaM2",
+      "excel": "Losses env. after!E26",
+      "value": 24.720000000000002,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.D4.uValueWPerM2K",
+      "excel": "Losses env. after!F26",
+      "value": 1.38,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.D4.annualLossKwh",
+      "excel": "Losses env. after!G26",
+      "value": 922.4658575999999,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.total.walls",
+      "excel": "Losses env. after!G13",
+      "value": 17971.806839062003,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.total.roof",
+      "excel": "Losses env. after!G19",
+      "value": 9251.77795858338,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.total.floor",
+      "excel": "Losses env. after!G23",
+      "value": 5528.020619169576,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.total.windowsDoors",
+      "excel": "Losses env. after!G27",
+      "value": 22059.06350729774,
+      "class": "G1"
+    },
+    {
+      "id": "envelope.after.total.building",
+      "excel": "Losses env. after!G28",
+      "value": 54810.668924112695,
+      "class": "G1"
+    },
+    {
+      "id": "generation.heating.boiler.before.usefulNeedKwh",
+      "excel": "Overall gener. & distrib. eff.!D7",
+      "value": 251383.25348616703,
+      "class": "G1"
+    },
+    {
+      "id": "generation.heating.boiler.before.distributionLossKwh",
+      "excel": "Overall gener. & distrib. eff.!F7",
+      "value": 36772.8,
+      "class": "G1"
+    },
+    {
+      "id": "generation.heating.boiler.before.finalEnergyKwh",
+      "excel": "Overall gener. & distrib. eff.!H7",
+      "value": 496820.78187270183,
+      "class": "G1"
+    },
+    {
+      "id": "generation.heating.boiler.after.usefulNeedKwh",
+      "excel": "Overall gener. & distrib. eff.!J7",
+      "value": 27816.493397348724,
+      "class": "G1"
+    },
+    {
+      "id": "generation.heating.boiler.after.distributionLossKwh",
+      "excel": "Overall gener. & distrib. eff.!L7",
+      "value": 8606.4,
+      "class": "G1"
+    },
+    {
+      "id": "generation.heating.boiler.after.efficiency",
+      "excel": "Overall gener. & distrib. eff.!M7",
+      "value": 3.110922843610943,
+      "class": "G1"
+    },
+    {
+      "id": "generation.heating.boiler.after.finalEnergyKwh",
+      "excel": "Overall gener. & distrib. eff.!N7",
+      "value": 11708.067100459348,
+      "class": "G1"
+    },
+    {
+      "id": "generation.heating.total.before.usefulNeedKwh",
+      "excel": "Overall gener. & distrib. eff.!D8",
+      "value": 251383.25348616703,
+      "class": "G1"
+    },
+    {
+      "id": "generation.heating.total.before.finalEnergyKwh",
+      "excel": "Overall gener. & distrib. eff.!H8",
+      "value": 496820.78187270183,
+      "class": "G1"
+    },
+    {
+      "id": "generation.heating.total.after.usefulNeedKwh",
+      "excel": "Overall gener. & distrib. eff.!J8",
+      "value": 27816.493397348724,
+      "class": "G1"
+    },
+    {
+      "id": "generation.heating.total.after.finalEnergyKwh",
+      "excel": "Overall gener. & distrib. eff.!N8",
+      "value": 11708.067100459348,
+      "class": "G1"
+    },
+    {
+      "id": "generation.dhw.electricHeaters.before.usefulNeedKwh",
+      "excel": "Overall gener. & distrib. eff.!D11",
+      "value": 22212.46264,
+      "class": "G1"
+    },
+    {
+      "id": "generation.dhw.electricHeaters.before.distributionLossKwh",
+      "excel": "Overall gener. & distrib. eff.!F11",
+      "value": 3709.481260880001,
+      "class": "G1"
+    },
+    {
+      "id": "generation.dhw.electricHeaters.before.finalEnergyKwh",
+      "excel": "Overall gener. & distrib. eff.!H11",
+      "value": 25921.943900880004,
+      "class": "G1"
+    },
+    {
+      "id": "generation.dhw.electricHeaters.after.usefulNeedKwh",
+      "excel": "Overall gener. & distrib. eff.!J11",
+      "value": 6663.738792000002,
+      "class": "G1"
+    },
+    {
+      "id": "generation.dhw.electricHeaters.after.distributionLossKwh",
+      "excel": "Overall gener. & distrib. eff.!L11",
+      "value": 1112.8443782640006,
+      "class": "G1"
+    },
+    {
+      "id": "generation.dhw.electricHeaters.after.finalEnergyKwh",
+      "excel": "Overall gener. & distrib. eff.!N11",
+      "value": 7776.583170264003,
+      "class": "G1"
+    },
+    {
+      "id": "generation.dhw.solar.after.usefulNeedKwh",
+      "excel": "Overall gener. & distrib. eff.!J12",
+      "value": 15548.723848,
+      "class": "G1"
+    },
+    {
+      "id": "generation.dhw.solar.after.finalEnergyKwh",
+      "excel": "Overall gener. & distrib. eff.!N12",
+      "value": 0,
+      "class": "G1"
+    },
+    {
+      "id": "generation.dhw.total.before.usefulNeedKwh",
+      "excel": "Overall gener. & distrib. eff.!D13",
+      "value": 22212.46264,
+      "class": "G1"
+    },
+    {
+      "id": "generation.dhw.total.before.finalEnergyKwh",
+      "excel": "Overall gener. & distrib. eff.!H13",
+      "value": 25921.943900880004,
+      "class": "G1"
+    },
+    {
+      "id": "generation.dhw.total.after.usefulNeedKwh",
+      "excel": "Overall gener. & distrib. eff.!J13",
+      "value": 22212.46264,
+      "class": "G1"
+    },
+    {
+      "id": "generation.dhw.total.after.finalEnergyKwh",
+      "excel": "Overall gener. & distrib. eff.!N13",
+      "value": 7776.583170264003,
+      "class": "G1"
+    },
+    {
+      "id": "generation.cooling.split.before.usefulNeedKwh",
+      "excel": "Overall gener. & distrib. eff.!D15",
+      "value": 63437.51699774254,
+      "class": "G1"
+    },
+    {
+      "id": "generation.cooling.split.before.distributionLossKwh",
+      "excel": "Overall gener. & distrib. eff.!F15",
+      "value": 2537.5006799097036,
+      "class": "G1"
+    },
+    {
+      "id": "generation.cooling.split.before.finalEnergyKwh",
+      "excel": "Overall gener. & distrib. eff.!H15",
+      "value": 20617.193024266326,
+      "class": "G1"
+    },
+    {
+      "id": "generation.cooling.split.after.usefulNeedKwh",
+      "excel": "Overall gener. & distrib. eff.!J15",
+      "value": 55166.68280776673,
+      "class": "G1"
+    },
+    {
+      "id": "generation.cooling.split.after.distributionLossKwh",
+      "excel": "Overall gener. & distrib. eff.!L15",
+      "value": 2206.667312310671,
+      "class": "G1"
+    },
+    {
+      "id": "generation.cooling.split.after.finalEnergyKwh",
+      "excel": "Overall gener. & distrib. eff.!N15",
+      "value": 17929.171912524187,
+      "class": "G1"
+    },
+    {
+      "id": "generation.heatPump.copAfter",
+      "excel": "Overall gener. & distrib. eff.!M7",
+      "value": 3.110922843610943,
+      "class": "G1"
+    },
+    {
+      "id": "generation.finalEnergy.totalBefore",
+      "excel": "Overall gener. & distrib. eff.!H21",
+      "value": 522742.7257735818,
+      "class": "G1"
+    },
+    {
+      "id": "generation.finalEnergy.totalAfter",
+      "excel": "Overall gener. & distrib. eff.!N21",
+      "value": 19484.650270723352,
+      "class": "G1"
+    },
+    {
+      "id": "lighting.before.annualKwh",
+      "excel": "Lighting!L11",
+      "value": 26142.629302625,
+      "class": "G1"
+    },
+    {
+      "id": "lighting.after.annualKwh",
+      "excel": "Lighting!L16",
+      "value": 15351.6,
+      "class": "G1"
+    },
+    {
+      "id": "lighting.savingsKwh",
+      "excel": "Lighting!L17",
+      "value": 10791.029302624998,
+      "class": "G1"
+    },
+    {
+      "id": "equipment.before.annualKwh",
+      "excel": "Equipment!K49",
+      "value": 21651.579,
+      "class": "G1"
+    },
+    {
+      "id": "equipment.after.annualKwh",
+      "excel": "Equipment!K100",
+      "value": 24160.219,
+      "class": "G1"
+    },
+    {
+      "id": "equipment.savingsKwh",
+      "excel": "Equipment!K102",
+      "value": -2508.6399999999994,
+      "class": "G1"
+    },
+    {
+      "id": "pv.annualProductionKwh",
+      "excel": "PV!C25",
+      "value": 150954.93999999986,
+      "class": "G1"
+    },
+    {
+      "id": "pv.electricityDemandKwh",
+      "excel": "PV!C34",
+      "value": 77855.28422125784,
+      "class": "G1"
+    },
+    {
+      "id": "pv.selfConsumedKwh",
+      "excel": "PV!C35",
+      "value": 77855.28422125784,
+      "class": "G1"
+    },
+    {
+      "id": "pv.exportedKwh",
+      "excel": "PV!C36",
+      "value": 73099.65577874202,
+      "class": "G1"
+    },
+    {
+      "id": "pv.productionValueUsd",
+      "excel": "PV!C38",
+      "value": 13676.934760244481,
+      "class": "G1"
+    },
+    {
+      "id": "solarDhw.annualKwh",
+      "excel": "Solar DHW!I13",
+      "value": 15548.723848,
+      "class": "G1"
+    },
+    {
+      "id": "ems.thermalSavingsKwh",
+      "excel": "EMS!D9",
+      "value": 0,
+      "class": "G1"
+    },
+    {
+      "id": "ems.electricalSavingsKwh",
+      "excel": "EMS!D10",
+      "value": 6640.806961989703,
+      "class": "G1"
+    },
+    {
+      "id": "balance.thermal.walls.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D4",
+      "value": 93270.24743785022,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.walls.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G4",
+      "value": 17971.806839062003,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.walls.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H4",
+      "value": 75298.44059878822,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.roof.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D5",
+      "value": 123906.21619669866,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.roof.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G5",
+      "value": 9251.77795858338,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.roof.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H5",
+      "value": 114654.43823811528,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.floor.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D6",
+      "value": 15629.39272701518,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.floor.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G6",
+      "value": 5528.020619169576,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.floor.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H6",
+      "value": 10101.372107845604,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.windowsDoors.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D7",
+      "value": 27423.143411233388,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.windowsDoors.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G7",
+      "value": 22059.06350729774,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.windowsDoors.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H7",
+      "value": 5364.07990393565,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.ventilation.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D8",
+      "value": 65703.8178903569,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.ventilation.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G8",
+      "value": 41640.45161394028,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.ventilation.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H8",
+      "value": 24063.36627641663,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.dhwNeedsDistribution.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D9",
+      "value": 0,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.dhwNeedsDistribution.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G9",
+      "value": 0,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.dhwNeedsDistribution.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H9",
+      "value": 0,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.heatDistribution.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D10",
+      "value": 36772.8,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.heatDistribution.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G10",
+      "value": 8606.4,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.heatDistribution.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H10",
+      "value": 28166.4,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.generation.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D11",
+      "value": 208664.72838653479,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.generation.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G11",
+      "value": -36422.8933973487,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.generation.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H11",
+      "value": 245087.6217838835,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.gainsHeatingSeason.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D12",
+      "value": -74549.5641769873,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.gainsHeatingSeason.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G12",
+      "value": -68634.62714070427,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.gainsHeatingSeason.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H12",
+      "value": -5914.937036283038,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.solarDhw.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G13",
+      "value": 0,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.solarDhw.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H13",
+      "value": 0,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.ems.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G14",
+      "value": 0,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.ems.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H14",
+      "value": 0,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.total.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D15",
+      "value": 496820.78187270183,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.total.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G15",
+      "value": 0,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.total.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H15",
+      "value": 496820.7818727019,
+      "class": "G2"
+    },
+    {
+      "id": "balance.thermal.total.baselineActualKwh",
+      "excel": "Breakdown Baseline & Balance!F15",
+      "value": 240365.83333333334,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.lighting.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D16",
+      "value": 26142.629302625,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.lighting.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G16",
+      "value": 15351.6,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.equipment.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D17",
+      "value": 21651.579,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.equipment.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G17",
+      "value": 24160.219,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.cooling.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D18",
+      "value": 20617.193024266326,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.cooling.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G18",
+      "value": 17929.171912524187,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.dhw.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D19",
+      "value": 25921.943900880004,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.dhw.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G19",
+      "value": 7776.583170264003,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.heatingElectric.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D20",
+      "value": 0,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.heatingElectric.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G20",
+      "value": 11708.067100459348,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.ventilation.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D21",
+      "value": 0,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.ventilation.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G21",
+      "value": 7570.450000000001,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.pv.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G22",
+      "value": -150954.93999999986,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.gainsCooling.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G23",
+      "value": 0,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.ems.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G24",
+      "value": -6640.806961989703,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.total.theoreticalBeforeKwh",
+      "excel": "Breakdown Baseline & Balance!D25",
+      "value": 94333.34522777132,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.total.afterKwh",
+      "excel": "Breakdown Baseline & Balance!G25",
+      "value": -73099.65577874202,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.total.theoreticalSavingsKwh",
+      "excel": "Breakdown Baseline & Balance!H25",
+      "value": 167433.00100651334,
+      "class": "G2"
+    },
+    {
+      "id": "balance.electrical.total.baselineActualKwh",
+      "excel": "Breakdown Baseline & Balance!F25",
+      "value": 56045,
+      "class": "G2"
+    },
+    {
+      "id": "compare.specificBeforeKwhPerM2",
+      "excel": "Breakdown Baseline & Balance!G75",
+      "value": 234.69160674214004,
+      "class": "G2"
+    },
+    {
+      "id": "compare.specificAfterKwhPerM2",
+      "excel": "Breakdown Baseline & Balance!H75",
+      "value": 30.9089980253956,
+      "class": "G2"
+    },
+    {
+      "id": "compare.specificAfterWithPvKwhPerM2",
+      "excel": "Breakdown Baseline & Balance!H76",
+      "value": -29.020986034822176,
+      "class": "G2"
+    },
+    {
+      "id": "class.beforeWithoutPv",
+      "excel": "Breakdown Baseline & Balance!G78",
+      "kind": "text",
+      "text": "F",
+      "class": "G2-text"
+    },
+    {
+      "id": "class.afterWithoutPv",
+      "excel": "Breakdown Baseline & Balance!H78",
+      "kind": "text",
+      "text": "A",
+      "class": "G2-text"
+    },
+    {
+      "id": "class.zebLevel",
+      "excel": "Breakdown Baseline & Balance!H84",
+      "kind": "text",
+      "text": "ZEB (zero-energy building)",
+      "class": "G2-text"
+    },
+    {
+      "id": "calibration.heatRatio",
+      "excel": "Measures_summary!D55",
+      "value": 0.483807928539755,
+      "class": "G2"
+    },
+    {
+      "id": "calibration.electricityRatio",
+      "excel": "Measures_summary!D56",
+      "value": 0.5941165328620255,
+      "class": "G2"
+    },
+    {
+      "id": "measures.1.name",
+      "excel": "Measures_summary!C5",
+      "kind": "text",
+      "text": "External walls and socle - ventilated facade (basalt wool 100 mm, rho <= 50)",
+      "class": "G3"
+    },
+    {
+      "id": "measures.1.investmentUsd",
+      "excel": "Measures_summary!D5",
+      "value": 229201.98000000004,
+      "class": "G3"
+    },
+    {
+      "id": "measures.1.standardizedSavingsKwh",
+      "excel": "Measures_summary!E5",
+      "value": 124459.54382979666,
+      "class": "G3"
+    },
+    {
+      "id": "measures.1.standardizedSavingsUsd",
+      "excel": "Measures_summary!F5",
+      "value": 2158.1585916809872,
+      "class": "G3"
+    },
+    {
+      "id": "measures.1.actualSavingsKwh",
+      "excel": "Measures_summary!I5",
+      "value": 60214.51408729677,
+      "class": "G3"
+    },
+    {
+      "id": "measures.1.actualSavingsUsd",
+      "excel": "Measures_summary!J5",
+      "value": 1044.1342377014532,
+      "class": "G3"
+    },
+    {
+      "id": "measures.1.lifetimeYears",
+      "excel": "Measures_summary!M5",
+      "value": 30,
+      "class": "G3"
+    },
+    {
+      "id": "measures.1.proposedForImplementation",
+      "excel": "Measures_summary!Q5",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.1.maintenancePercent",
+      "excel": "Measures_summary!R5",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.1.carrier",
+      "excel": "Measures_summary!S5",
+      "kind": "text",
+      "text": "T",
+      "class": "G3"
+    },
+    {
+      "id": "measures.1.standardizedGasUsd",
+      "excel": "Measures_summary!T5",
+      "value": 2158.1585916809872,
+      "class": "G3"
+    },
+    {
+      "id": "measures.1.standardizedElectricityUsd",
+      "excel": "Measures_summary!U5",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.1.actualGasUsd",
+      "excel": "Measures_summary!V5",
+      "value": 1044.1342377014532,
+      "class": "G3"
+    },
+    {
+      "id": "measures.1.actualElectricityUsd",
+      "excel": "Measures_summary!W5",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.1.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G5",
+      "value": 106.20256587421358,
+      "class": "G4"
+    },
+    {
+      "id": "measures.1.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H5",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.1.simplePaybackActualYears",
+      "excel": "Measures_summary!K5",
+      "value": 219.51390130119955,
+      "class": "G4"
+    },
+    {
+      "id": "measures.1.discountedPaybackActualYears",
+      "excel": "Measures_summary!L5",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.1.npvStandardizedUsd",
+      "excel": "Measures_summary!N5",
+      "value": -192678.70268792368,
+      "class": "G4"
+    },
+    {
+      "id": "measures.1.irrStandardized",
+      "excel": "Measures_summary!O5",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "measures.1.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P5",
+      "value": 24.642989678299738,
+      "class": "G5"
+    },
+    {
+      "id": "measures.2.name",
+      "excel": "Measures_summary!C6",
+      "kind": "text",
+      "text": "Foundation insulation (XPS 100 mm + waterproofing)",
+      "class": "G3"
+    },
+    {
+      "id": "measures.2.investmentUsd",
+      "excel": "Measures_summary!D6",
+      "value": 9806.45,
+      "class": "G3"
+    },
+    {
+      "id": "measures.2.standardizedSavingsKwh",
+      "excel": "Measures_summary!E6",
+      "value": 2019.0908297735268,
+      "class": "G3"
+    },
+    {
+      "id": "measures.2.standardizedSavingsUsd",
+      "excel": "Measures_summary!F6",
+      "value": 35.01152332374855,
+      "class": "G3"
+    },
+    {
+      "id": "measures.2.actualSavingsKwh",
+      "excel": "Measures_summary!I6",
+      "value": 976.8521518863452,
+      "class": "G3"
+    },
+    {
+      "id": "measures.2.actualSavingsUsd",
+      "excel": "Measures_summary!J6",
+      "value": 16.938852574284102,
+      "class": "G3"
+    },
+    {
+      "id": "measures.2.lifetimeYears",
+      "excel": "Measures_summary!M6",
+      "value": 30,
+      "class": "G3"
+    },
+    {
+      "id": "measures.2.proposedForImplementation",
+      "excel": "Measures_summary!Q6",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.2.maintenancePercent",
+      "excel": "Measures_summary!R6",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.2.carrier",
+      "excel": "Measures_summary!S6",
+      "kind": "text",
+      "text": "T",
+      "class": "G3"
+    },
+    {
+      "id": "measures.2.standardizedGasUsd",
+      "excel": "Measures_summary!T6",
+      "value": 35.01152332374855,
+      "class": "G3"
+    },
+    {
+      "id": "measures.2.standardizedElectricityUsd",
+      "excel": "Measures_summary!U6",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.2.actualGasUsd",
+      "excel": "Measures_summary!V6",
+      "value": 16.938852574284102,
+      "class": "G3"
+    },
+    {
+      "id": "measures.2.actualElectricityUsd",
+      "excel": "Measures_summary!W6",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.2.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G6",
+      "value": 280.0920688117624,
+      "class": "G4"
+    },
+    {
+      "id": "measures.2.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H6",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.2.simplePaybackActualYears",
+      "excel": "Measures_summary!K6",
+      "value": 578.9323661088926,
+      "class": "G4"
+    },
+    {
+      "id": "measures.2.discountedPaybackActualYears",
+      "excel": "Measures_summary!L6",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.2.npvStandardizedUsd",
+      "excel": "Measures_summary!N6",
+      "value": -9213.93767009032,
+      "class": "G4"
+    },
+    {
+      "id": "measures.2.irrStandardized",
+      "excel": "Measures_summary!O6",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "measures.2.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P6",
+      "value": 0.3997799842951583,
+      "class": "G5"
+    },
+    {
+      "id": "measures.3.name",
+      "excel": "Measures_summary!C7",
+      "kind": "text",
+      "text": "Parapet insulation - RECLASSIFIED as a non-energy investment (see the non-EE list, item 4)",
+      "class": "G3"
+    },
+    {
+      "id": "measures.3.investmentUsd",
+      "excel": "Measures_summary!D7",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.3.standardizedSavingsKwh",
+      "excel": "Measures_summary!E7",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.3.standardizedSavingsUsd",
+      "excel": "Measures_summary!F7",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.3.actualSavingsKwh",
+      "excel": "Measures_summary!I7",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.3.actualSavingsUsd",
+      "excel": "Measures_summary!J7",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.3.lifetimeYears",
+      "excel": "Measures_summary!M7",
+      "value": 30,
+      "class": "G3"
+    },
+    {
+      "id": "measures.3.proposedForImplementation",
+      "excel": "Measures_summary!Q7",
+      "kind": "text",
+      "text": "No",
+      "class": "G3"
+    },
+    {
+      "id": "measures.3.maintenancePercent",
+      "excel": "Measures_summary!R7",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.3.carrier",
+      "excel": "Measures_summary!S7",
+      "kind": "text",
+      "text": "T",
+      "class": "G3"
+    },
+    {
+      "id": "measures.3.standardizedGasUsd",
+      "excel": "Measures_summary!T7",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.3.standardizedElectricityUsd",
+      "excel": "Measures_summary!U7",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.3.actualGasUsd",
+      "excel": "Measures_summary!V7",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.3.actualElectricityUsd",
+      "excel": "Measures_summary!W7",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.3.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G7",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.3.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H7",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.3.simplePaybackActualYears",
+      "excel": "Measures_summary!K7",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.3.discountedPaybackActualYears",
+      "excel": "Measures_summary!L7",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.3.npvStandardizedUsd",
+      "excel": "Measures_summary!N7",
+      "value": 0,
+      "class": "G4"
+    },
+    {
+      "id": "measures.3.irrStandardized",
+      "excel": "Measures_summary!O7",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.3.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P7",
+      "value": 0,
+      "class": "G5"
+    },
+    {
+      "id": "measures.4.name",
+      "excel": "Measures_summary!C8",
+      "kind": "text",
+      "text": "Roof insulation (XPS 2 x 100 mm, flat PVC-membrane roof) incl. dismantling of the old pitched roof",
+      "class": "G3"
+    },
+    {
+      "id": "measures.4.investmentUsd",
+      "excel": "Measures_summary!D8",
+      "value": 81346.29000000001,
+      "class": "G3"
+    },
+    {
+      "id": "measures.4.standardizedSavingsKwh",
+      "excel": "Measures_summary!E8",
+      "value": 192584.82235089218,
+      "class": "G3"
+    },
+    {
+      "id": "measures.4.standardizedSavingsUsd",
+      "excel": "Measures_summary!F8",
+      "value": 3339.467397954817,
+      "class": "G3"
+    },
+    {
+      "id": "measures.4.actualSavingsKwh",
+      "excel": "Measures_summary!I8",
+      "value": 93174.06396978186,
+      "class": "G3"
+    },
+    {
+      "id": "measures.4.actualSavingsUsd",
+      "excel": "Measures_summary!J8",
+      "value": 1615.6608042305656,
+      "class": "G3"
+    },
+    {
+      "id": "measures.4.lifetimeYears",
+      "excel": "Measures_summary!M8",
+      "value": 30,
+      "class": "G3"
+    },
+    {
+      "id": "measures.4.proposedForImplementation",
+      "excel": "Measures_summary!Q8",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.4.maintenancePercent",
+      "excel": "Measures_summary!R8",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.4.carrier",
+      "excel": "Measures_summary!S8",
+      "kind": "text",
+      "text": "T",
+      "class": "G3"
+    },
+    {
+      "id": "measures.4.standardizedGasUsd",
+      "excel": "Measures_summary!T8",
+      "value": 3339.467397954817,
+      "class": "G3"
+    },
+    {
+      "id": "measures.4.standardizedElectricityUsd",
+      "excel": "Measures_summary!U8",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.4.actualGasUsd",
+      "excel": "Measures_summary!V8",
+      "value": 1615.6608042305656,
+      "class": "G3"
+    },
+    {
+      "id": "measures.4.actualElectricityUsd",
+      "excel": "Measures_summary!W8",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.4.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G8",
+      "value": 24.359060983742122,
+      "class": "G4"
+    },
+    {
+      "id": "measures.4.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H8",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.4.simplePaybackActualYears",
+      "excel": "Measures_summary!K8",
+      "value": 50.348618835709125,
+      "class": "G4"
+    },
+    {
+      "id": "measures.4.discountedPaybackActualYears",
+      "excel": "Measures_summary!L8",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.4.npvStandardizedUsd",
+      "excel": "Measures_summary!N8",
+      "value": -24831.30805182868,
+      "class": "G4"
+    },
+    {
+      "id": "measures.4.irrStandardized",
+      "excel": "Measures_summary!O8",
+      "value": 0.025236562476543822,
+      "class": "G4"
+    },
+    {
+      "id": "measures.4.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P8",
+      "value": 38.13179482547665,
+      "class": "G5"
+    },
+    {
+      "id": "measures.5.name",
+      "excel": "Measures_summary!C9",
+      "kind": "text",
+      "text": "Floor insulation (XPS 100 mm, R0 = 3.92) incl. dismantling of the old floor",
+      "class": "G3"
+    },
+    {
+      "id": "measures.5.investmentUsd",
+      "excel": "Measures_summary!D9",
+      "value": 25159.52,
+      "class": "G3"
+    },
+    {
+      "id": "measures.5.standardizedSavingsKwh",
+      "excel": "Measures_summary!E9",
+      "value": 16967.25380006259,
+      "class": "G3"
+    },
+    {
+      "id": "measures.5.standardizedSavingsUsd",
+      "excel": "Measures_summary!F9",
+      "value": 294.21628457769015,
+      "class": "G3"
+    },
+    {
+      "id": "measures.5.actualSavingsKwh",
+      "excel": "Measures_summary!I9",
+      "value": 8208.891914016569,
+      "class": "G3"
+    },
+    {
+      "id": "measures.5.actualSavingsUsd",
+      "excel": "Measures_summary!J9",
+      "value": 142.34417118419535,
+      "class": "G3"
+    },
+    {
+      "id": "measures.5.lifetimeYears",
+      "excel": "Measures_summary!M9",
+      "value": 30,
+      "class": "G3"
+    },
+    {
+      "id": "measures.5.proposedForImplementation",
+      "excel": "Measures_summary!Q9",
+      "kind": "text",
+      "text": "No",
+      "class": "G3"
+    },
+    {
+      "id": "measures.5.maintenancePercent",
+      "excel": "Measures_summary!R9",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.5.carrier",
+      "excel": "Measures_summary!S9",
+      "kind": "text",
+      "text": "T",
+      "class": "G3"
+    },
+    {
+      "id": "measures.5.standardizedGasUsd",
+      "excel": "Measures_summary!T9",
+      "value": 294.21628457769015,
+      "class": "G3"
+    },
+    {
+      "id": "measures.5.standardizedElectricityUsd",
+      "excel": "Measures_summary!U9",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.5.actualGasUsd",
+      "excel": "Measures_summary!V9",
+      "value": 142.34417118419535,
+      "class": "G3"
+    },
+    {
+      "id": "measures.5.actualElectricityUsd",
+      "excel": "Measures_summary!W9",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.5.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G9",
+      "value": 85.51368948225716,
+      "class": "G4"
+    },
+    {
+      "id": "measures.5.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H9",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.5.simplePaybackActualYears",
+      "excel": "Measures_summary!K9",
+      "value": 176.75131893840057,
+      "class": "G4"
+    },
+    {
+      "id": "measures.5.discountedPaybackActualYears",
+      "excel": "Measures_summary!L9",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.5.npvStandardizedUsd",
+      "excel": "Measures_summary!N9",
+      "value": -20180.39428014736,
+      "class": "G4"
+    },
+    {
+      "id": "measures.5.irrStandardized",
+      "excel": "Measures_summary!O9",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "measures.5.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P9",
+      "value": 3.359516252412393,
+      "class": "G5"
+    },
+    {
+      "id": "measures.6.name",
+      "excel": "Measures_summary!C10",
+      "kind": "text",
+      "text": "Windows - NOT replaced; repair and sealing of the frames + new fittings (client's BoQ): lower infiltration (0.20 -> 0.15 ach)",
+      "class": "G3"
+    },
+    {
+      "id": "measures.6.investmentUsd",
+      "excel": "Measures_summary!D10",
+      "value": 15858.57,
+      "class": "G3"
+    },
+    {
+      "id": "measures.6.standardizedSavingsKwh",
+      "excel": "Measures_summary!E10",
+      "value": 13795.320846968378,
+      "class": "G3"
+    },
+    {
+      "id": "measures.6.standardizedSavingsUsd",
+      "excel": "Measures_summary!F10",
+      "value": 239.21420001021127,
+      "class": "G3"
+    },
+    {
+      "id": "measures.6.actualSavingsKwh",
+      "excel": "Measures_summary!I10",
+      "value": 6674.2856025130695,
+      "class": "G3"
+    },
+    {
+      "id": "measures.6.actualSavingsUsd",
+      "excel": "Measures_summary!J10",
+      "value": 115.73372658423496,
+      "class": "G3"
+    },
+    {
+      "id": "measures.6.lifetimeYears",
+      "excel": "Measures_summary!M10",
+      "value": 25,
+      "class": "G3"
+    },
+    {
+      "id": "measures.6.proposedForImplementation",
+      "excel": "Measures_summary!Q10",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.6.maintenancePercent",
+      "excel": "Measures_summary!R10",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.6.carrier",
+      "excel": "Measures_summary!S10",
+      "kind": "text",
+      "text": "T",
+      "class": "G3"
+    },
+    {
+      "id": "measures.6.standardizedGasUsd",
+      "excel": "Measures_summary!T10",
+      "value": 239.21420001021127,
+      "class": "G3"
+    },
+    {
+      "id": "measures.6.standardizedElectricityUsd",
+      "excel": "Measures_summary!U10",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.6.actualGasUsd",
+      "excel": "Measures_summary!V10",
+      "value": 115.73372658423496,
+      "class": "G3"
+    },
+    {
+      "id": "measures.6.actualElectricityUsd",
+      "excel": "Measures_summary!W10",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.6.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G10",
+      "value": 66.29443402324381,
+      "class": "G4"
+    },
+    {
+      "id": "measures.6.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H10",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.6.simplePaybackActualYears",
+      "excel": "Measures_summary!K10",
+      "value": 137.02634891357786,
+      "class": "G4"
+    },
+    {
+      "id": "measures.6.discountedPaybackActualYears",
+      "excel": "Measures_summary!L10",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.6.npvStandardizedUsd",
+      "excel": "Measures_summary!N10",
+      "value": -11810.263912747025,
+      "class": "G4"
+    },
+    {
+      "id": "measures.6.irrStandardized",
+      "excel": "Measures_summary!O10",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "measures.6.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P10",
+      "value": 2.731473527699739,
+      "class": "G5"
+    },
+    {
+      "id": "measures.7.name",
+      "excel": "Measures_summary!C11",
+      "kind": "text",
+      "text": "External glazed aluminium doors (thermally broken, 2 x 33.93 m2)",
+      "class": "G3"
+    },
+    {
+      "id": "measures.7.investmentUsd",
+      "excel": "Measures_summary!D11",
+      "value": 12311.2,
+      "class": "G3"
+    },
+    {
+      "id": "measures.7.standardizedSavingsKwh",
+      "excel": "Measures_summary!E11",
+      "value": 6629.697916367313,
+      "class": "G3"
+    },
+    {
+      "id": "measures.7.standardizedSavingsUsd",
+      "excel": "Measures_summary!F11",
+      "value": 114.96056532253024,
+      "class": "G3"
+    },
+    {
+      "id": "measures.7.actualSavingsKwh",
+      "excel": "Measures_summary!I11",
+      "value": 3207.5004157619996,
+      "class": "G3"
+    },
+    {
+      "id": "measures.7.actualSavingsUsd",
+      "excel": "Measures_summary!J11",
+      "value": 55.61883297245255,
+      "class": "G3"
+    },
+    {
+      "id": "measures.7.lifetimeYears",
+      "excel": "Measures_summary!M11",
+      "value": 25,
+      "class": "G3"
+    },
+    {
+      "id": "measures.7.proposedForImplementation",
+      "excel": "Measures_summary!Q11",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.7.maintenancePercent",
+      "excel": "Measures_summary!R11",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.7.carrier",
+      "excel": "Measures_summary!S11",
+      "kind": "text",
+      "text": "T",
+      "class": "G3"
+    },
+    {
+      "id": "measures.7.standardizedGasUsd",
+      "excel": "Measures_summary!T11",
+      "value": 114.96056532253024,
+      "class": "G3"
+    },
+    {
+      "id": "measures.7.standardizedElectricityUsd",
+      "excel": "Measures_summary!U11",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.7.actualGasUsd",
+      "excel": "Measures_summary!V11",
+      "value": 55.61883297245255,
+      "class": "G3"
+    },
+    {
+      "id": "measures.7.actualElectricityUsd",
+      "excel": "Measures_summary!W11",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.7.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G11",
+      "value": 107.09063551888451,
+      "class": "G4"
+    },
+    {
+      "id": "measures.7.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H11",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.7.simplePaybackActualYears",
+      "excel": "Measures_summary!K11",
+      "value": 221.34948437515067,
+      "class": "G4"
+    },
+    {
+      "id": "measures.7.discountedPaybackActualYears",
+      "excel": "Measures_summary!L11",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.7.npvStandardizedUsd",
+      "excel": "Measures_summary!N11",
+      "value": -10365.681897941779,
+      "class": "G4"
+    },
+    {
+      "id": "measures.7.irrStandardized",
+      "excel": "Measures_summary!O11",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "measures.7.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P11",
+      "value": 1.3126801874407281,
+      "class": "G5"
+    },
+    {
+      "id": "measures.8.name",
+      "excel": "Measures_summary!C12",
+      "kind": "text",
+      "text": "External doors, thermally broken aluminium (24.72 m2) + 24 door closers",
+      "class": "G3"
+    },
+    {
+      "id": "measures.8.investmentUsd",
+      "excel": "Measures_summary!D12",
+      "value": 5933.229999999998,
+      "class": "G3"
+    },
+    {
+      "id": "measures.8.standardizedSavingsKwh",
+      "excel": "Measures_summary!E12",
+      "value": 2380.3359841958,
+      "class": "G3"
+    },
+    {
+      "id": "measures.8.standardizedSavingsUsd",
+      "excel": "Measures_summary!F12",
+      "value": 41.27560167185595,
+      "class": "G3"
+    },
+    {
+      "id": "measures.8.actualSavingsKwh",
+      "excel": "Measures_summary!I12",
+      "value": 1151.6254217424091,
+      "class": "G3"
+    },
+    {
+      "id": "measures.8.actualSavingsUsd",
+      "excel": "Measures_summary!J12",
+      "value": 19.969463344092677,
+      "class": "G3"
+    },
+    {
+      "id": "measures.8.lifetimeYears",
+      "excel": "Measures_summary!M12",
+      "value": 25,
+      "class": "G3"
+    },
+    {
+      "id": "measures.8.proposedForImplementation",
+      "excel": "Measures_summary!Q12",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.8.maintenancePercent",
+      "excel": "Measures_summary!R12",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.8.carrier",
+      "excel": "Measures_summary!S12",
+      "kind": "text",
+      "text": "T",
+      "class": "G3"
+    },
+    {
+      "id": "measures.8.standardizedGasUsd",
+      "excel": "Measures_summary!T12",
+      "value": 41.27560167185595,
+      "class": "G3"
+    },
+    {
+      "id": "measures.8.standardizedElectricityUsd",
+      "excel": "Measures_summary!U12",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.8.actualGasUsd",
+      "excel": "Measures_summary!V12",
+      "value": 19.969463344092677,
+      "class": "G3"
+    },
+    {
+      "id": "measures.8.actualElectricityUsd",
+      "excel": "Measures_summary!W12",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.8.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G12",
+      "value": 143.74666291165443,
+      "class": "G4"
+    },
+    {
+      "id": "measures.8.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H12",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.8.simplePaybackActualYears",
+      "excel": "Measures_summary!K12",
+      "value": 297.11514514761126,
+      "class": "G4"
+    },
+    {
+      "id": "measures.8.discountedPaybackActualYears",
+      "excel": "Measures_summary!L12",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.8.npvStandardizedUsd",
+      "excel": "Measures_summary!N12",
+      "value": -5234.708467849855,
+      "class": "G4"
+    },
+    {
+      "id": "measures.8.irrStandardized",
+      "excel": "Measures_summary!O12",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "measures.8.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P12",
+      "value": 0.4713065248707684,
+      "class": "G5"
+    },
+    {
+      "id": "measures.9.name",
+      "excel": "Measures_summary!C13",
+      "kind": "text",
+      "text": "External solar shading - canopies above the windows (58 units, Block A)",
+      "class": "G3"
+    },
+    {
+      "id": "measures.9.investmentUsd",
+      "excel": "Measures_summary!D13",
+      "value": 9963.67,
+      "class": "G3"
+    },
+    {
+      "id": "measures.9.standardizedSavingsKwh",
+      "excel": "Measures_summary!E13",
+      "value": 497.5515048464513,
+      "class": "G3"
+    },
+    {
+      "id": "measures.9.standardizedSavingsUsd",
+      "excel": "Measures_summary!F13",
+      "value": 45.07954142902768,
+      "class": "G3"
+    },
+    {
+      "id": "measures.9.actualSavingsKwh",
+      "excel": "Measures_summary!I13",
+      "value": 295.6035749796569,
+      "class": "G3"
+    },
+    {
+      "id": "measures.9.actualSavingsUsd",
+      "excel": "Measures_summary!J13",
+      "value": 26.78250085682396,
+      "class": "G3"
+    },
+    {
+      "id": "measures.9.lifetimeYears",
+      "excel": "Measures_summary!M13",
+      "value": 20,
+      "class": "G3"
+    },
+    {
+      "id": "measures.9.proposedForImplementation",
+      "excel": "Measures_summary!Q13",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.9.maintenancePercent",
+      "excel": "Measures_summary!R13",
+      "value": 0.005,
+      "class": "G3"
+    },
+    {
+      "id": "measures.9.carrier",
+      "excel": "Measures_summary!S13",
+      "kind": "text",
+      "text": "E",
+      "class": "G3"
+    },
+    {
+      "id": "measures.9.standardizedGasUsd",
+      "excel": "Measures_summary!T13",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.9.standardizedElectricityUsd",
+      "excel": "Measures_summary!U13",
+      "value": 45.07954142902768,
+      "class": "G3"
+    },
+    {
+      "id": "measures.9.actualGasUsd",
+      "excel": "Measures_summary!V13",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.9.actualElectricityUsd",
+      "excel": "Measures_summary!W13",
+      "value": 26.78250085682396,
+      "class": "G3"
+    },
+    {
+      "id": "measures.9.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G13",
+      "value": 221.02420930094422,
+      "class": "G4"
+    },
+    {
+      "id": "measures.9.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H13",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.9.simplePaybackActualYears",
+      "excel": "Measures_summary!K13",
+      "value": 372.02164403035346,
+      "class": "G4"
+    },
+    {
+      "id": "measures.9.discountedPaybackActualYears",
+      "excel": "Measures_summary!L13",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.9.npvStandardizedUsd",
+      "excel": "Measures_summary!N13",
+      "value": -9916.261586968463,
+      "class": "G4"
+    },
+    {
+      "id": "measures.9.irrStandardized",
+      "excel": "Measures_summary!O13",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "measures.9.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P13",
+      "value": 0.29106763033517397,
+      "class": "G5"
+    },
+    {
+      "id": "measures.10.name",
+      "excel": "Measures_summary!C14",
+      "kind": "text",
+      "text": "Ventilation: 72 decentralised units with heat recovery (5 040 m3/h) + kitchen / WC exhaust",
+      "class": "G3"
+    },
+    {
+      "id": "measures.10.investmentUsd",
+      "excel": "Measures_summary!D14",
+      "value": 58253.96,
+      "class": "G3"
+    },
+    {
+      "id": "measures.10.standardizedSavingsKwh",
+      "excel": "Measures_summary!E14",
+      "value": 19053.415629561387,
+      "class": "G3"
+    },
+    {
+      "id": "measures.10.standardizedSavingsUsd",
+      "excel": "Measures_summary!F14",
+      "value": -224.23942331624602,
+      "class": "G3"
+    },
+    {
+      "id": "measures.10.actualSavingsKwh",
+      "excel": "Measures_summary!I14",
+      "value": 8383.107773753556,
+      "class": "G3"
+    },
+    {
+      "id": "measures.10.actualSavingsUsd",
+      "excel": "Measures_summary!J14",
+      "value": -184.14988991701654,
+      "class": "G3"
+    },
+    {
+      "id": "measures.10.lifetimeYears",
+      "excel": "Measures_summary!M14",
+      "value": 20,
+      "class": "G3"
+    },
+    {
+      "id": "measures.10.proposedForImplementation",
+      "excel": "Measures_summary!Q14",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.10.maintenancePercent",
+      "excel": "Measures_summary!R14",
+      "value": 0.02,
+      "class": "G3"
+    },
+    {
+      "id": "measures.10.carrier",
+      "excel": "Measures_summary!S14",
+      "kind": "text",
+      "text": "M",
+      "class": "G3"
+    },
+    {
+      "id": "measures.10.standardizedGasUsd",
+      "excel": "Measures_summary!T14",
+      "value": 461.6642692405722,
+      "class": "G3"
+    },
+    {
+      "id": "measures.10.standardizedElectricityUsd",
+      "excel": "Measures_summary!U14",
+      "value": -685.9036925568182,
+      "class": "G3"
+    },
+    {
+      "id": "measures.10.actualGasUsd",
+      "excel": "Measures_summary!V14",
+      "value": 223.35683378210098,
+      "class": "G3"
+    },
+    {
+      "id": "measures.10.actualElectricityUsd",
+      "excel": "Measures_summary!W14",
+      "value": -407.5067236991175,
+      "class": "G3"
+    },
+    {
+      "id": "measures.10.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G14",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.10.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H14",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.10.simplePaybackActualYears",
+      "excel": "Measures_summary!K14",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.10.discountedPaybackActualYears",
+      "excel": "Measures_summary!L14",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.10.npvStandardizedUsd",
+      "excel": "Measures_summary!N14",
+      "value": -76785.29712642515,
+      "class": "G4"
+    },
+    {
+      "id": "measures.10.irrStandardized",
+      "excel": "Measures_summary!O14",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "measures.10.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P14",
+      "value": 0.842812144653155,
+      "class": "G5"
+    },
+    {
+      "id": "measures.11.name",
+      "excel": "Measures_summary!C15",
+      "kind": "text",
+      "text": "Heat pump 2 x 65 kW = 130 kW (COP >= 3.0) - heating and DHW",
+      "class": "G3"
+    },
+    {
+      "id": "measures.11.investmentUsd",
+      "excel": "Measures_summary!D15",
+      "value": 40431.6,
+      "class": "G3"
+    },
+    {
+      "id": "measures.11.standardizedSavingsKwh",
+      "excel": "Measures_summary!E15",
+      "value": 43281.38496393501,
+      "class": "G3"
+    },
+    {
+      "id": "measures.11.standardizedSavingsUsd",
+      "excel": "Measures_summary!F15",
+      "value": -679.3334972073885,
+      "class": "G3"
+    },
+    {
+      "id": "measures.11.actualSavingsKwh",
+      "excel": "Measures_summary!I15",
+      "value": 18787.016482514875,
+      "class": "G3"
+    },
+    {
+      "id": "measures.11.actualSavingsUsd",
+      "excel": "Measures_summary!J15",
+      "value": -523.7220633047386,
+      "class": "G3"
+    },
+    {
+      "id": "measures.11.lifetimeYears",
+      "excel": "Measures_summary!M15",
+      "value": 20,
+      "class": "G3"
+    },
+    {
+      "id": "measures.11.proposedForImplementation",
+      "excel": "Measures_summary!Q15",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.11.maintenancePercent",
+      "excel": "Measures_summary!R15",
+      "value": 0.02,
+      "class": "G3"
+    },
+    {
+      "id": "measures.11.carrier",
+      "excel": "Measures_summary!S15",
+      "kind": "text",
+      "text": "M",
+      "class": "G3"
+    },
+    {
+      "id": "measures.11.standardizedGasUsd",
+      "excel": "Measures_summary!T15",
+      "value": 1088.9341046861502,
+      "class": "G3"
+    },
+    {
+      "id": "measures.11.standardizedElectricityUsd",
+      "excel": "Measures_summary!U15",
+      "value": -1768.2676018935388,
+      "class": "G3"
+    },
+    {
+      "id": "measures.11.actualGasUsd",
+      "excel": "Measures_summary!V15",
+      "value": 526.834953504499,
+      "class": "G3"
+    },
+    {
+      "id": "measures.11.actualElectricityUsd",
+      "excel": "Measures_summary!W15",
+      "value": -1050.5570168092377,
+      "class": "G3"
+    },
+    {
+      "id": "measures.11.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G15",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.11.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H15",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.11.simplePaybackActualYears",
+      "excel": "Measures_summary!K15",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.11.discountedPaybackActualYears",
+      "excel": "Measures_summary!L15",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.11.npvStandardizedUsd",
+      "excel": "Measures_summary!N15",
+      "value": -60673.69145172975,
+      "class": "G4"
+    },
+    {
+      "id": "measures.11.irrStandardized",
+      "excel": "Measures_summary!O15",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "measures.11.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P15",
+      "value": 5.584802974981364,
+      "class": "G5"
+    },
+    {
+      "id": "measures.12.name",
+      "excel": "Measures_summary!C16",
+      "kind": "text",
+      "text": "MTB modular thermal block 2 x 75 kW (solid fuel) - back-up source; ⚠ cost scaled from BoQ 2 x MTB-150",
+      "class": "G3"
+    },
+    {
+      "id": "measures.12.investmentUsd",
+      "excel": "Measures_summary!D16",
+      "value": 10650.51,
+      "class": "G3"
+    },
+    {
+      "id": "measures.12.standardizedSavingsKwh",
+      "excel": "Measures_summary!E16",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.12.standardizedSavingsUsd",
+      "excel": "Measures_summary!F16",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.12.actualSavingsKwh",
+      "excel": "Measures_summary!I16",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.12.actualSavingsUsd",
+      "excel": "Measures_summary!J16",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.12.lifetimeYears",
+      "excel": "Measures_summary!M16",
+      "value": 20,
+      "class": "G3"
+    },
+    {
+      "id": "measures.12.proposedForImplementation",
+      "excel": "Measures_summary!Q16",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.12.maintenancePercent",
+      "excel": "Measures_summary!R16",
+      "value": 0.02,
+      "class": "G3"
+    },
+    {
+      "id": "measures.12.carrier",
+      "excel": "Measures_summary!S16",
+      "kind": "text",
+      "text": "T",
+      "class": "G3"
+    },
+    {
+      "id": "measures.12.standardizedGasUsd",
+      "excel": "Measures_summary!T16",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.12.standardizedElectricityUsd",
+      "excel": "Measures_summary!U16",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.12.actualGasUsd",
+      "excel": "Measures_summary!V16",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.12.actualElectricityUsd",
+      "excel": "Measures_summary!W16",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.12.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G16",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.12.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H16",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.12.simplePaybackActualYears",
+      "excel": "Measures_summary!K16",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.12.discountedPaybackActualYears",
+      "excel": "Measures_summary!L16",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.12.npvStandardizedUsd",
+      "excel": "Measures_summary!N16",
+      "value": -13488.625816477292,
+      "class": "G4"
+    },
+    {
+      "id": "measures.12.irrStandardized",
+      "excel": "Measures_summary!O16",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "measures.12.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P16",
+      "value": 0,
+      "class": "G5"
+    },
+    {
+      "id": "measures.13.name",
+      "excel": "Measures_summary!C17",
+      "kind": "text",
+      "text": "Heating system: radiators + underfloor heating + thermostatic valves + pre-insulated pipework, incl. dismantling of the old system",
+      "class": "G3"
+    },
+    {
+      "id": "measures.13.investmentUsd",
+      "excel": "Measures_summary!D17",
+      "value": 109935.68,
+      "class": "G3"
+    },
+    {
+      "id": "measures.13.standardizedSavingsKwh",
+      "excel": "Measures_summary!E17",
+      "value": 48562.75862068966,
+      "class": "G3"
+    },
+    {
+      "id": "measures.13.standardizedSavingsUsd",
+      "excel": "Measures_summary!F17",
+      "value": 842.0899798274838,
+      "class": "G3"
+    },
+    {
+      "id": "measures.13.actualSavingsKwh",
+      "excel": "Measures_summary!I17",
+      "value": 23495.047652451995,
+      "class": "G3"
+    },
+    {
+      "id": "measures.13.actualSavingsUsd",
+      "excel": "Measures_summary!J17",
+      "value": 407.40980878441906,
+      "class": "G3"
+    },
+    {
+      "id": "measures.13.lifetimeYears",
+      "excel": "Measures_summary!M17",
+      "value": 20,
+      "class": "G3"
+    },
+    {
+      "id": "measures.13.proposedForImplementation",
+      "excel": "Measures_summary!Q17",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.13.maintenancePercent",
+      "excel": "Measures_summary!R17",
+      "value": 0.01,
+      "class": "G3"
+    },
+    {
+      "id": "measures.13.carrier",
+      "excel": "Measures_summary!S17",
+      "kind": "text",
+      "text": "T",
+      "class": "G3"
+    },
+    {
+      "id": "measures.13.standardizedGasUsd",
+      "excel": "Measures_summary!T17",
+      "value": 842.0899798274838,
+      "class": "G3"
+    },
+    {
+      "id": "measures.13.standardizedElectricityUsd",
+      "excel": "Measures_summary!U17",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.13.actualGasUsd",
+      "excel": "Measures_summary!V17",
+      "value": 407.40980878441906,
+      "class": "G3"
+    },
+    {
+      "id": "measures.13.actualElectricityUsd",
+      "excel": "Measures_summary!W17",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.13.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G17",
+      "value": 130.55098936401328,
+      "class": "G4"
+    },
+    {
+      "id": "measures.13.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H17",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.13.simplePaybackActualYears",
+      "excel": "Measures_summary!K17",
+      "value": 269.8405331182698,
+      "class": "G4"
+    },
+    {
+      "id": "measures.13.discountedPaybackActualYears",
+      "excel": "Measures_summary!L17",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.13.npvStandardizedUsd",
+      "excel": "Measures_summary!N17",
+      "value": -110332.3593300698,
+      "class": "G4"
+    },
+    {
+      "id": "measures.13.irrStandardized",
+      "excel": "Measures_summary!O17",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "measures.13.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P17",
+      "value": 9.615426206896553,
+      "class": "G5"
+    },
+    {
+      "id": "measures.14.name",
+      "excel": "Measures_summary!C18",
+      "kind": "text",
+      "text": "Solar water heaters: 9 x 300 l thermosiphon units (Block A 5, Block B 4)",
+      "class": "G3"
+    },
+    {
+      "id": "measures.14.investmentUsd",
+      "excel": "Measures_summary!D18",
+      "value": 20705.280000000002,
+      "class": "G3"
+    },
+    {
+      "id": "measures.14.standardizedSavingsKwh",
+      "excel": "Measures_summary!E18",
+      "value": 18145.360730616,
+      "class": "G3"
+    },
+    {
+      "id": "measures.14.standardizedSavingsUsd",
+      "excel": "Measures_summary!F18",
+      "value": 1644.0198307769022,
+      "class": "G3"
+    },
+    {
+      "id": "measures.14.actualSavingsKwh",
+      "excel": "Measures_summary!I18",
+      "value": 10780.458804804328,
+      "class": "G3"
+    },
+    {
+      "id": "measures.14.actualSavingsUsd",
+      "excel": "Measures_summary!J18",
+      "value": 976.739361817587,
+      "class": "G3"
+    },
+    {
+      "id": "measures.14.lifetimeYears",
+      "excel": "Measures_summary!M18",
+      "value": 20,
+      "class": "G3"
+    },
+    {
+      "id": "measures.14.proposedForImplementation",
+      "excel": "Measures_summary!Q18",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.14.maintenancePercent",
+      "excel": "Measures_summary!R18",
+      "value": 0.01,
+      "class": "G3"
+    },
+    {
+      "id": "measures.14.carrier",
+      "excel": "Measures_summary!S18",
+      "kind": "text",
+      "text": "E",
+      "class": "G3"
+    },
+    {
+      "id": "measures.14.standardizedGasUsd",
+      "excel": "Measures_summary!T18",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.14.standardizedElectricityUsd",
+      "excel": "Measures_summary!U18",
+      "value": 1644.0198307769022,
+      "class": "G3"
+    },
+    {
+      "id": "measures.14.actualGasUsd",
+      "excel": "Measures_summary!V18",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.14.actualElectricityUsd",
+      "excel": "Measures_summary!W18",
+      "value": 976.739361817587,
+      "class": "G3"
+    },
+    {
+      "id": "measures.14.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G18",
+      "value": 12.594300635787016,
+      "class": "G4"
+    },
+    {
+      "id": "measures.14.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H18",
+      "value": 18.50981974575858,
+      "class": "G4"
+    },
+    {
+      "id": "measures.14.simplePaybackActualYears",
+      "excel": "Measures_summary!K18",
+      "value": 21.198367557820262,
+      "class": "G4"
+    },
+    {
+      "id": "measures.14.discountedPaybackActualYears",
+      "excel": "Measures_summary!L18",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.14.npvStandardizedUsd",
+      "excel": "Measures_summary!N18",
+      "value": 2472.246528034979,
+      "class": "G4"
+    },
+    {
+      "id": "measures.14.irrStandardized",
+      "excel": "Measures_summary!O18",
+      "value": 0.0731530766166657,
+      "class": "G4"
+    },
+    {
+      "id": "measures.14.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P18",
+      "value": 10.61503602741036,
+      "class": "G5"
+    },
+    {
+      "id": "measures.15.name",
+      "excel": "Measures_summary!C19",
+      "kind": "text",
+      "text": "Solar photovoltaic plant 96.72 kWp (156 x 620 W, 2 x 50 kW inverters)",
+      "class": "G3"
+    },
+    {
+      "id": "measures.15.investmentUsd",
+      "excel": "Measures_summary!D19",
+      "value": 50331.60999999999,
+      "class": "G3"
+    },
+    {
+      "id": "measures.15.standardizedSavingsKwh",
+      "excel": "Measures_summary!E19",
+      "value": 150954.93999999986,
+      "class": "G3"
+    },
+    {
+      "id": "measures.15.standardizedSavingsUsd",
+      "excel": "Measures_summary!F19",
+      "value": 13676.934760244481,
+      "class": "G3"
+    },
+    {
+      "id": "measures.15.actualSavingsKwh",
+      "excel": "Measures_summary!I19",
+      "value": 89684.825571195,
+      "class": "G3"
+    },
+    {
+      "id": "measures.15.actualSavingsUsd",
+      "excel": "Measures_summary!J19",
+      "value": 8125.693059936569,
+      "class": "G3"
+    },
+    {
+      "id": "measures.15.lifetimeYears",
+      "excel": "Measures_summary!M19",
+      "value": 25,
+      "class": "G3"
+    },
+    {
+      "id": "measures.15.proposedForImplementation",
+      "excel": "Measures_summary!Q19",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.15.maintenancePercent",
+      "excel": "Measures_summary!R19",
+      "value": 0.01,
+      "class": "G3"
+    },
+    {
+      "id": "measures.15.carrier",
+      "excel": "Measures_summary!S19",
+      "kind": "text",
+      "text": "E",
+      "class": "G3"
+    },
+    {
+      "id": "measures.15.standardizedGasUsd",
+      "excel": "Measures_summary!T19",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.15.standardizedElectricityUsd",
+      "excel": "Measures_summary!U19",
+      "value": 13676.934760244481,
+      "class": "G3"
+    },
+    {
+      "id": "measures.15.actualGasUsd",
+      "excel": "Measures_summary!V19",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.15.actualElectricityUsd",
+      "excel": "Measures_summary!W19",
+      "value": 8125.693059936569,
+      "class": "G3"
+    },
+    {
+      "id": "measures.15.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G19",
+      "value": 3.6800358327585014,
+      "class": "G4"
+    },
+    {
+      "id": "measures.15.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H19",
+      "value": 5.175226360564025,
+      "class": "G4"
+    },
+    {
+      "id": "measures.15.simplePaybackActualYears",
+      "excel": "Measures_summary!K19",
+      "value": 6.194131334859072,
+      "class": "G4"
+    },
+    {
+      "id": "measures.15.discountedPaybackActualYears",
+      "excel": "Measures_summary!L19",
+      "value": 8.422031663834463,
+      "class": "G4"
+    },
+    {
+      "id": "measures.15.npvStandardizedUsd",
+      "excel": "Measures_summary!N19",
+      "value": 158731.351864674,
+      "class": "G4"
+    },
+    {
+      "id": "measures.15.irrStandardized",
+      "excel": "Measures_summary!O19",
+      "value": 0.29977011522007446,
+      "class": "G4"
+    },
+    {
+      "id": "measures.15.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P19",
+      "value": 88.3086398999999,
+      "class": "G5"
+    },
+    {
+      "id": "measures.16.name",
+      "excel": "Measures_summary!C20",
+      "kind": "text",
+      "text": "LED lighting: 382 luminaires (11.6 kW, 56 with motion sensors)",
+      "class": "G3"
+    },
+    {
+      "id": "measures.16.investmentUsd",
+      "excel": "Measures_summary!D20",
+      "value": 5139.53,
+      "class": "G3"
+    },
+    {
+      "id": "measures.16.standardizedSavingsKwh",
+      "excel": "Measures_summary!E20",
+      "value": 10791.029302624998,
+      "class": "G3"
+    },
+    {
+      "id": "measures.16.standardizedSavingsUsd",
+      "excel": "Measures_summary!F20",
+      "value": 977.69707813397,
+      "class": "G3"
+    },
+    {
+      "id": "measures.16.actualSavingsKwh",
+      "excel": "Measures_summary!I20",
+      "value": 6411.1289152880845,
+      "class": "G3"
+    },
+    {
+      "id": "measures.16.actualSavingsUsd",
+      "excel": "Measures_summary!J20",
+      "value": 580.865998250287,
+      "class": "G3"
+    },
+    {
+      "id": "measures.16.lifetimeYears",
+      "excel": "Measures_summary!M20",
+      "value": 15,
+      "class": "G3"
+    },
+    {
+      "id": "measures.16.proposedForImplementation",
+      "excel": "Measures_summary!Q20",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.16.maintenancePercent",
+      "excel": "Measures_summary!R20",
+      "value": 0.005,
+      "class": "G3"
+    },
+    {
+      "id": "measures.16.carrier",
+      "excel": "Measures_summary!S20",
+      "kind": "text",
+      "text": "E",
+      "class": "G3"
+    },
+    {
+      "id": "measures.16.standardizedGasUsd",
+      "excel": "Measures_summary!T20",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.16.standardizedElectricityUsd",
+      "excel": "Measures_summary!U20",
+      "value": 977.69707813397,
+      "class": "G3"
+    },
+    {
+      "id": "measures.16.actualGasUsd",
+      "excel": "Measures_summary!V20",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.16.actualElectricityUsd",
+      "excel": "Measures_summary!W20",
+      "value": 580.865998250287,
+      "class": "G3"
+    },
+    {
+      "id": "measures.16.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G20",
+      "value": 5.256771360930415,
+      "class": "G4"
+    },
+    {
+      "id": "measures.16.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H20",
+      "value": 7.000976620629338,
+      "class": "G4"
+    },
+    {
+      "id": "measures.16.simplePaybackActualYears",
+      "excel": "Measures_summary!K20",
+      "value": 8.848047597004376,
+      "class": "G4"
+    },
+    {
+      "id": "measures.16.discountedPaybackActualYears",
+      "excel": "Measures_summary!L20",
+      "value": 11.732912650117507,
+      "class": "G4"
+    },
+    {
+      "id": "measures.16.npvStandardizedUsd",
+      "excel": "Measures_summary!N20",
+      "value": 9942.352370436925,
+      "class": "G4"
+    },
+    {
+      "id": "measures.16.irrStandardized",
+      "excel": "Measures_summary!O20",
+      "value": 0.21816107935683382,
+      "class": "G4"
+    },
+    {
+      "id": "measures.16.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P20",
+      "value": 6.312752142035623,
+      "class": "G5"
+    },
+    {
+      "id": "measures.17.name",
+      "excel": "Measures_summary!C21",
+      "kind": "text",
+      "text": "Replacement of the electric stoves with induction stoves (2 units)",
+      "class": "G3"
+    },
+    {
+      "id": "measures.17.investmentUsd",
+      "excel": "Measures_summary!D21",
+      "value": 2926.31,
+      "class": "G3"
+    },
+    {
+      "id": "measures.17.standardizedSavingsKwh",
+      "excel": "Measures_summary!E21",
+      "value": 5300.000000000001,
+      "class": "G3"
+    },
+    {
+      "id": "measures.17.standardizedSavingsUsd",
+      "excel": "Measures_summary!F21",
+      "value": 480.19464768291675,
+      "class": "G3"
+    },
+    {
+      "id": "measures.17.actualSavingsKwh",
+      "excel": "Measures_summary!I21",
+      "value": 3148.8176241687356,
+      "class": "G3"
+    },
+    {
+      "id": "measures.17.actualSavingsUsd",
+      "excel": "Measures_summary!J21",
+      "value": 285.29157918027636,
+      "class": "G3"
+    },
+    {
+      "id": "measures.17.lifetimeYears",
+      "excel": "Measures_summary!M21",
+      "value": 10,
+      "class": "G3"
+    },
+    {
+      "id": "measures.17.proposedForImplementation",
+      "excel": "Measures_summary!Q21",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.17.maintenancePercent",
+      "excel": "Measures_summary!R21",
+      "value": 0.01,
+      "class": "G3"
+    },
+    {
+      "id": "measures.17.carrier",
+      "excel": "Measures_summary!S21",
+      "kind": "text",
+      "text": "E",
+      "class": "G3"
+    },
+    {
+      "id": "measures.17.standardizedGasUsd",
+      "excel": "Measures_summary!T21",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.17.standardizedElectricityUsd",
+      "excel": "Measures_summary!U21",
+      "value": 480.19464768291675,
+      "class": "G3"
+    },
+    {
+      "id": "measures.17.actualGasUsd",
+      "excel": "Measures_summary!V21",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.17.actualElectricityUsd",
+      "excel": "Measures_summary!W21",
+      "value": 285.29157918027636,
+      "class": "G3"
+    },
+    {
+      "id": "measures.17.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G21",
+      "value": 6.094007948902229,
+      "class": "G4"
+    },
+    {
+      "id": "measures.17.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H21",
+      "value": 8.285590571306917,
+      "class": "G4"
+    },
+    {
+      "id": "measures.17.simplePaybackActualYears",
+      "excel": "Measures_summary!K21",
+      "value": 10.25726033838124,
+      "class": "G4"
+    },
+    {
+      "id": "measures.17.discountedPaybackActualYears",
+      "excel": "Measures_summary!L21",
+      "value": 14.482689836260969,
+      "class": "G4"
+    },
+    {
+      "id": "measures.17.npvStandardizedUsd",
+      "excel": "Measures_summary!N21",
+      "value": 4259.404961946486,
+      "class": "G4"
+    },
+    {
+      "id": "measures.17.irrStandardized",
+      "excel": "Measures_summary!O21",
+      "value": 0.1837789629799622,
+      "class": "G4"
+    },
+    {
+      "id": "measures.17.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P21",
+      "value": 3.1005000000000003,
+      "class": "G5"
+    },
+    {
+      "id": "measures.18.name",
+      "excel": "Measures_summary!C22",
+      "kind": "text",
+      "text": "BEMS - building energy management system, BACS class C -> B (EN ISO 52120-1); ⚠ estimated cost (not in the client's BoQ)",
+      "class": "G3"
+    },
+    {
+      "id": "measures.18.investmentUsd",
+      "excel": "Measures_summary!D22",
+      "value": 37782.825,
+      "class": "G3"
+    },
+    {
+      "id": "measures.18.standardizedSavingsKwh",
+      "excel": "Measures_summary!E22",
+      "value": 6640.806961989703,
+      "class": "G3"
+    },
+    {
+      "id": "measures.18.standardizedSavingsUsd",
+      "excel": "Measures_summary!F22",
+      "value": 601.6754640458313,
+      "class": "G3"
+    },
+    {
+      "id": "measures.18.actualSavingsKwh",
+      "excel": "Measures_summary!I22",
+      "value": 3945.413207663323,
+      "class": "G3"
+    },
+    {
+      "id": "measures.18.actualSavingsUsd",
+      "excel": "Measures_summary!J22",
+      "value": 357.46534060705955,
+      "class": "G3"
+    },
+    {
+      "id": "measures.18.lifetimeYears",
+      "excel": "Measures_summary!M22",
+      "value": 15,
+      "class": "G3"
+    },
+    {
+      "id": "measures.18.proposedForImplementation",
+      "excel": "Measures_summary!Q22",
+      "kind": "text",
+      "text": "No",
+      "class": "G3"
+    },
+    {
+      "id": "measures.18.maintenancePercent",
+      "excel": "Measures_summary!R22",
+      "value": 0.02,
+      "class": "G3"
+    },
+    {
+      "id": "measures.18.carrier",
+      "excel": "Measures_summary!S22",
+      "kind": "text",
+      "text": "E",
+      "class": "G3"
+    },
+    {
+      "id": "measures.18.standardizedGasUsd",
+      "excel": "Measures_summary!T22",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.18.standardizedElectricityUsd",
+      "excel": "Measures_summary!U22",
+      "value": 601.6754640458313,
+      "class": "G3"
+    },
+    {
+      "id": "measures.18.actualGasUsd",
+      "excel": "Measures_summary!V22",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.18.actualElectricityUsd",
+      "excel": "Measures_summary!W22",
+      "value": 357.46534060705955,
+      "class": "G3"
+    },
+    {
+      "id": "measures.18.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G22",
+      "value": 62.796020874672024,
+      "class": "G4"
+    },
+    {
+      "id": "measures.18.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H22",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.18.simplePaybackActualYears",
+      "excel": "Measures_summary!K22",
+      "value": 105.69647098047588,
+      "class": "G4"
+    },
+    {
+      "id": "measures.18.discountedPaybackActualYears",
+      "excel": "Measures_summary!L22",
+      "kind": "none",
+      "text": "> 20",
+      "class": "G4"
+    },
+    {
+      "id": "measures.18.npvStandardizedUsd",
+      "excel": "Measures_summary!N22",
+      "value": -38358.969398227804,
+      "class": "G4"
+    },
+    {
+      "id": "measures.18.irrStandardized",
+      "excel": "Measures_summary!O22",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "measures.18.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P22",
+      "value": 3.8848720727639763,
+      "class": "G5"
+    },
+    {
+      "id": "measures.19.name",
+      "excel": "Measures_summary!C23",
+      "kind": "text",
+      "text": "Cooling: existing split systems kept (fan coils not in the BoQ) - saving from lower cooling demand only",
+      "class": "G3"
+    },
+    {
+      "id": "measures.19.investmentUsd",
+      "excel": "Measures_summary!D23",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.19.standardizedSavingsKwh",
+      "excel": "Measures_summary!E23",
+      "value": 2190.4696068956873,
+      "class": "G3"
+    },
+    {
+      "id": "measures.19.standardizedSavingsUsd",
+      "excel": "Measures_summary!F23",
+      "value": 198.46260021573804,
+      "class": "G3"
+    },
+    {
+      "id": "measures.19.actualSavingsKwh",
+      "excel": "Measures_summary!I23",
+      "value": 1301.3942081885098,
+      "class": "G3"
+    },
+    {
+      "id": "measures.19.actualSavingsUsd",
+      "excel": "Measures_summary!J23",
+      "value": 117.90991194295655,
+      "class": "G3"
+    },
+    {
+      "id": "measures.19.lifetimeYears",
+      "excel": "Measures_summary!M23",
+      "value": 20,
+      "class": "G3"
+    },
+    {
+      "id": "measures.19.proposedForImplementation",
+      "excel": "Measures_summary!Q23",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "measures.19.maintenancePercent",
+      "excel": "Measures_summary!R23",
+      "value": 0.02,
+      "class": "G3"
+    },
+    {
+      "id": "measures.19.carrier",
+      "excel": "Measures_summary!S23",
+      "kind": "text",
+      "text": "E",
+      "class": "G3"
+    },
+    {
+      "id": "measures.19.standardizedGasUsd",
+      "excel": "Measures_summary!T23",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.19.standardizedElectricityUsd",
+      "excel": "Measures_summary!U23",
+      "value": 198.46260021573804,
+      "class": "G3"
+    },
+    {
+      "id": "measures.19.actualGasUsd",
+      "excel": "Measures_summary!V23",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "measures.19.actualElectricityUsd",
+      "excel": "Measures_summary!W23",
+      "value": 117.90991194295655,
+      "class": "G3"
+    },
+    {
+      "id": "measures.19.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G23",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.19.discountedPaybackStandardizedYears",
+      "excel": "Measures_summary!H23",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.19.simplePaybackActualYears",
+      "excel": "Measures_summary!K23",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.19.discountedPaybackActualYears",
+      "excel": "Measures_summary!L23",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.19.npvStandardizedUsd",
+      "excel": "Measures_summary!N23",
+      "value": 3130.9713310368584,
+      "class": "G4"
+    },
+    {
+      "id": "measures.19.irrStandardized",
+      "excel": "Measures_summary!O23",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "measures.19.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P23",
+      "value": 1.281424720033977,
+      "class": "G5"
+    },
+    {
+      "id": "nonEe.1.description",
+      "excel": "Measures_summary!C25",
+      "kind": "text",
+      "text": "Electrical network: cabling, distribution boards, sockets/switches, earthing, dismantling",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.1.costUsd",
+      "excel": "Measures_summary!D25",
+      "value": 39700.21,
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.1.proposedForImplementation",
+      "excel": "Measures_summary!Q25",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.2.description",
+      "excel": "Measures_summary!C26",
+      "kind": "text",
+      "text": "Floors: rebuilding of floor layers and finishes (excl. insulation and dismantling)",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.2.costUsd",
+      "excel": "Measures_summary!D26",
+      "value": 85333.36,
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.2.proposedForImplementation",
+      "excel": "Measures_summary!Q26",
+      "kind": "text",
+      "text": "No",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.3.description",
+      "excel": "Measures_summary!C27",
+      "kind": "text",
+      "text": "External heating network",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.3.costUsd",
+      "excel": "Measures_summary!D27",
+      "value": 3628.1799999999994,
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.3.proposedForImplementation",
+      "excel": "Measures_summary!Q27",
+      "kind": "text",
+      "text": "Yes",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.4.description",
+      "excel": "Measures_summary!C28",
+      "kind": "text",
+      "text": "Parapet insulation (basalt wool + moisture-resistant gypsum board)",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.4.costUsd",
+      "excel": "Measures_summary!D28",
+      "value": 12966.33,
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.4.proposedForImplementation",
+      "excel": "Measures_summary!Q28",
+      "kind": "text",
+      "text": "No",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.5.description",
+      "excel": "Measures_summary!C29",
+      "kind": "text",
+      "text": "Parapet masonry (brick/concrete)",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.5.costUsd",
+      "excel": "Measures_summary!D29",
+      "value": 10374.88,
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.5.proposedForImplementation",
+      "excel": "Measures_summary!Q29",
+      "kind": "text",
+      "text": "No",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.6.description",
+      "excel": "Measures_summary!C30",
+      "kind": "text",
+      "text": "Dismantling of the old brick parapet",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.6.costUsd",
+      "excel": "Measures_summary!D30",
+      "value": 12012.54,
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.6.proposedForImplementation",
+      "excel": "Measures_summary!Q30",
+      "kind": "text",
+      "text": "No",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.7.description",
+      "excel": "Measures_summary!C31",
+      "kind": "text",
+      "text": "Windows: repair of frames, new fittings - MOVED to EE measure 6 (X81)",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.7.costUsd",
+      "excel": "Measures_summary!D31",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.7.proposedForImplementation",
+      "excel": "Measures_summary!Q31",
+      "kind": "text",
+      "text": "No",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.8.description",
+      "excel": "Measures_summary!C32",
+      "kind": "text",
+      "text": "Foundations: strengthening (reinforced-concrete jacketing), FM-2, porch dismantling",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.8.costUsd",
+      "excel": "Measures_summary!D32",
+      "value": 22162.04,
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.8.proposedForImplementation",
+      "excel": "Measures_summary!Q32",
+      "kind": "text",
+      "text": "No",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.9.description",
+      "excel": "Measures_summary!C33",
+      "kind": "text",
+      "text": "Radiator and riser screens",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.9.costUsd",
+      "excel": "Measures_summary!D33",
+      "value": 23220.85,
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.9.proposedForImplementation",
+      "excel": "Measures_summary!Q33",
+      "kind": "text",
+      "text": "No",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.10.description",
+      "excel": "Measures_summary!C34",
+      "kind": "text",
+      "text": "Electric water heaters 30 l (16 units)",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.10.costUsd",
+      "excel": "Measures_summary!D34",
+      "value": 2124.82,
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.10.proposedForImplementation",
+      "excel": "Measures_summary!Q34",
+      "kind": "text",
+      "text": "No",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.11.description",
+      "excel": "Measures_summary!C35",
+      "kind": "text",
+      "text": "Porches, canopies, bridges, walls, external stairs, fire escape",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.11.costUsd",
+      "excel": "Measures_summary!D35",
+      "value": 25690.780000000002,
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.11.proposedForImplementation",
+      "excel": "Measures_summary!Q35",
+      "kind": "text",
+      "text": "No",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.12.description",
+      "excel": "Measures_summary!C36",
+      "kind": "text",
+      "text": "Removal of construction waste",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.12.costUsd",
+      "excel": "Measures_summary!D36",
+      "value": 9133.4,
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.12.proposedForImplementation",
+      "excel": "Measures_summary!Q36",
+      "kind": "text",
+      "text": "No",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.13.description",
+      "excel": "Measures_summary!C37",
+      "kind": "text",
+      "text": "Internal aluminium glazed partitions (vitraj), 2 x 13.23 m2",
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.13.costUsd",
+      "excel": "Measures_summary!D37",
+      "value": 3027.76,
+      "class": "G3"
+    },
+    {
+      "id": "nonEe.13.proposedForImplementation",
+      "excel": "Measures_summary!Q37",
+      "kind": "text",
+      "text": "No",
+      "class": "G3"
+    },
+    {
+      "id": "totals.all.investmentUsd",
+      "excel": "Measures_summary!D38",
+      "value": 975113.3650000002,
+      "class": "G3"
+    },
+    {
+      "id": "totals.all.standardizedSavingsKwh",
+      "excel": "Measures_summary!E38",
+      "value": 664253.7828792153,
+      "class": "G3"
+    },
+    {
+      "id": "totals.all.standardizedSavingsUsd",
+      "excel": "Measures_summary!F38",
+      "value": 23784.88514637456,
+      "class": "G3"
+    },
+    {
+      "id": "totals.all.actualSavingsKwh",
+      "excel": "Measures_summary!I38",
+      "value": 339840.54737800715,
+      "class": "G3"
+    },
+    {
+      "id": "totals.all.actualSavingsUsd",
+      "excel": "Measures_summary!J38",
+      "value": 13180.6856967455,
+      "class": "G3"
+    },
+    {
+      "id": "totals.all.standardizedGasUsd",
+      "excel": "Measures_summary!T38",
+      "value": 8614.992518296045,
+      "class": "G3"
+    },
+    {
+      "id": "totals.all.standardizedElectricityUsd",
+      "excel": "Measures_summary!U38",
+      "value": 15169.892628078509,
+      "class": "G3"
+    },
+    {
+      "id": "totals.all.simplePaybackStandardizedYears",
+      "excel": "Measures_summary!G38",
+      "value": 40.99718619615168,
+      "class": "G4"
+    },
+    {
+      "id": "totals.all.simplePaybackActualYears",
+      "excel": "Measures_summary!K38",
+      "value": 73.98047320411939,
+      "class": "G4"
+    },
+    {
+      "id": "totals.all.npvStandardizedUsd",
+      "excel": "Measures_summary!N38",
+      "value": -654709.0246222981,
+      "class": "G4"
+    },
+    {
+      "id": "totals.all.co2ReductionTonnesPerYear",
+      "excel": "Measures_summary!P38",
+      "value": 200.8868747996053,
+      "class": "G5"
+    },
+    {
+      "id": "totals.proposed.investmentUsd",
+      "excel": "Measures_summary!D39",
+      "value": 706124.2600000002,
+      "class": "G3"
+    },
+    {
+      "id": "totals.proposed.standardizedSavingsKwh",
+      "excel": "Measures_summary!E39",
+      "value": 640645.722117163,
+      "class": "G3"
+    },
+    {
+      "id": "totals.proposed.standardizedSavingsUsd",
+      "excel": "Measures_summary!F39",
+      "value": 22888.993397751037,
+      "class": "G3"
+    },
+    {
+      "id": "totals.proposed.actualSavingsKwh",
+      "excel": "Measures_summary!I39",
+      "value": 327686.24225632724,
+      "class": "G3"
+    },
+    {
+      "id": "totals.proposed.standardizedGasUsd",
+      "excel": "Measures_summary!T39",
+      "value": 8320.776233718356,
+      "class": "G3"
+    },
+    {
+      "id": "totals.proposed.standardizedElectricityUsd",
+      "excel": "Measures_summary!U39",
+      "value": 14568.217164032678,
+      "class": "G3"
+    },
+    {
+      "id": "totals.proposed.npvStandardizedUsd",
+      "excel": "Measures_summary!N39",
+      "value": -382339.97512024996,
+      "class": "G4"
+    },
+    {
+      "id": "composition.gasSavedByHeatPumpKwh",
+      "excel": "Measures_summary!D61",
+      "value": 62798.092064394354,
+      "class": "G3"
+    },
+    {
+      "id": "composition.heatPumpElectricityKwh",
+      "excel": "Measures_summary!D62",
+      "value": 11708.067100459348,
+      "class": "G3"
+    },
+    {
+      "id": "composition.dhwElectricitySavedByHeatPumpKwh",
+      "excel": "Measures_summary!D63",
+      "value": 0,
+      "class": "G3"
+    },
+    {
+      "id": "composition.dhwElectricitySavedBySolarKwh",
+      "excel": "Measures_summary!D64",
+      "value": 18145.360730616,
+      "class": "G3"
+    },
+    {
+      "id": "composition.circulationPumpsKwh",
+      "excel": "Measures_summary!D65",
+      "value": 7808.64,
+      "class": "G3"
+    },
+    {
+      "id": "balanceCheck.gasSavingsKwh",
+      "excel": "Measures_summary!D67",
+      "value": 496820.78187270183,
+      "class": "G3"
+    },
+    {
+      "id": "balanceCheck.gasBreakdownKwh",
+      "excel": "Measures_summary!E67",
+      "value": 496820.78187270183,
+      "class": "G3"
+    },
+    {
+      "id": "balanceCheck.electricitySavingsKwh",
+      "excel": "Measures_summary!D68",
+      "value": 167433.0010065133,
+      "class": "G3"
+    },
+    {
+      "id": "balanceCheck.electricityBreakdownKwh",
+      "excel": "Measures_summary!E68",
+      "value": 167433.00100651334,
+      "class": "G3"
+    },
+    {
+      "id": "balanceCheck.gainsUtilisationCorrection",
+      "excel": "Measures_summary!D71",
+      "value": 0.974224798272001,
+      "class": "G3"
+    },
+    {
+      "id": "financialParameters.baseYear",
+      "excel": "Financial parameters!D5",
+      "value": 2027,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.calculationPeriodYears",
+      "excel": "Financial parameters!D6",
+      "value": 20,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.inflation",
+      "excel": "Financial parameters!D7",
+      "value": 0.02,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.realDiscountRate",
+      "excel": "Financial parameters!D8",
+      "value": 0.04,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.nominalDiscountRate",
+      "excel": "Financial parameters!D9",
+      "value": 0.060799999999999965,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.realEscalationGas",
+      "excel": "Financial parameters!D10",
+      "value": 0.028,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.realEscalationElectricity",
+      "excel": "Financial parameters!D11",
+      "value": 0.02,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.realEscalationCoalHeat",
+      "excel": "Financial parameters!D12",
+      "value": 0.02,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.nominalEscalationGas",
+      "excel": "Financial parameters!D13",
+      "value": 0.04855999999999994,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.nominalEscalationElectricity",
+      "excel": "Financial parameters!D14",
+      "value": 0.04039999999999999,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.maintenanceEscalation",
+      "excel": "Financial parameters!D15",
+      "value": 0.02,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.exchangeRateUzsPerUsd",
+      "excel": "Financial parameters!D16",
+      "value": 12140.91,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.gasTariffUzsPerM3",
+      "excel": "Financial parameters!D17",
+      "value": 2000,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.electricityTariffUzsPerKwh",
+      "excel": "Financial parameters!D18",
+      "value": 1100,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.pvExportTariffUzsPerKwh",
+      "excel": "Financial parameters!D19",
+      "value": 1100,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.thermalTariffUzsPerGcal",
+      "excel": "Financial parameters!D20",
+      "value": 1067132.64,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.coalPriceUzsPerTonne",
+      "excel": "Financial parameters!D21",
+      "value": 1200000,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.gasNetCalorificValueKwhPerM3",
+      "excel": "Financial parameters!D22",
+      "value": 9.5,
+      "class": "G4"
+    },
+    {
+      "id": "financialParameters.irrInitialGuess",
+      "excel": "Financial parameters!D23",
+      "value": 0.05,
+      "class": "G4"
+    },
+    {
+      "id": "financial.1.npvActualUsd",
+      "excel": "Financial indicators!D16",
+      "value": -211531.72886016133,
+      "class": "G4"
+    },
+    {
+      "id": "financial.1.irrActual",
+      "excel": "Financial indicators!D22",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "financial.1.cashflow.years",
+      "excel": "Financial indicators!D3:X3",
+      "values": [
+        2027,
+        2028,
+        2029,
+        2030,
+        2031,
+        2032,
+        2033,
+        2034,
+        2035,
+        2036,
+        2037,
+        2038,
+        2039,
+        2040,
+        2041,
+        2042,
+        2043,
+        2044,
+        2045,
+        2046,
+        2047
+      ],
+      "class": "G4"
+    },
+    {
+      "id": "financial.1.cashflow.maintenanceUsd",
+      "excel": "Financial indicators!D6:X6",
+      "values": [
+        null,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "class": "G4"
+    },
+    {
+      "id": "financial.1.cashflow.grossStandardSavingsUsd",
+      "excel": "Financial indicators!D8:X8",
+      "values": [
+        0,
+        2158.1585916809872,
+        2262.958772893016,
+        2372.8480509047004,
+        2488.073552256633,
+        2608.8944039542143,
+        2735.582316210231,
+        2868.4221934853995,
+        3007.7127752010506,
+        3153.767307564813,
+        3306.9142480201604,
+        3467.4980039040192,
+        3635.8797069735983,
+        3812.4380255442356,
+        3997.5700160646634,
+        4191.6920160447635,
+        4395.240580343897,
+        4608.673462925396,
+        4832.470646285053,
+        5067.135420868654,
+        5313.195516906036
+      ],
+      "class": "G4"
+    },
+    {
+      "id": "financial.1.cashflow.grossActualSavingsUsd",
+      "excel": "Financial indicators!D9:X9",
+      "values": [
+        0,
+        1044.1342377014532,
+        1094.8373962842356,
+        1148.0027002477982,
+        1203.7497113718312,
+        1262.2037973560473,
+        1323.4964137556567,
+        1387.7653996076313,
+        1455.1552874125778,
+        1525.8176281693325,
+        1599.9113321932352,
+        1677.6030264845385,
+        1759.0674294506277,
+        1844.48774382475,
+        1934.0560686648796,
+        2027.973831359246,
+        2126.4522406100514,
+        2229.712761414075,
+        2337.9876131083424,
+        2451.520291600883,
+        2570.5661169610216
+      ],
+      "class": "G4"
+    },
+    {
+      "id": "financial.1.cashflow.netStandardSavingsUsd",
+      "excel": "Financial indicators!D10:X10",
+      "values": [
+        -229201.98000000004,
+        2158.1585916809872,
+        2262.958772893016,
+        2372.8480509047004,
+        2488.073552256633,
+        2608.8944039542143,
+        2735.582316210231,
+        2868.4221934853995,
+        3007.7127752010506,
+        3153.767307564813,
+        3306.9142480201604,
+        3467.4980039040192,
+        3635.8797069735983,
+        3812.4380255442356,
+        3997.5700160646634,
+        4191.6920160447635,
+        4395.240580343897,
+        4608.673462925396,
+        4832.470646285053,
+        5067.135420868654,
+        5313.195516906036
+      ],
+      "class": "G4"
+    },
+    {
+      "id": "financial.1.cashflow.discountedStandardNetUsd",
+      "excel": "Financial indicators!D13:X13",
+      "values": [
+        -229201.98000000004,
+        2034.463227451911,
+        2010.9886517505429,
+        1987.7849365380364,
+        1964.8489565010593,
+        1942.177622387585,
+        1919.7678805908051,
+        1897.6167127378342,
+        1875.721135283167,
+        1854.0781991068225,
+        1832.6849891171285,
+        1811.5386238580847,
+        1790.6362551212608,
+        1769.9750675621688,
+        1749.5522783210668,
+        1729.3651366481313,
+        1709.4109235329606,
+        1689.6869513383494,
+        1670.1905634382915,
+        1650.9191338601572,
+        1631.8700669310012
+      ],
+      "class": "G4"
+    },
+    {
+      "id": "financial.1.cashflow.accumulatedDiscountedStandardUsd",
+      "excel": "Financial indicators!D17:X17",
+      "values": [
+        -229201.98000000004,
+        -227167.51677254812,
+        -225156.52812079756,
+        -223168.74318425954,
+        -221203.8942277585,
+        -219261.7166053709,
+        -217341.9487247801,
+        -215444.33201204226,
+        -213568.61087675908,
+        -211714.53267765226,
+        -209881.84768853514,
+        -208070.30906467704,
+        -206279.67280955578,
+        -204509.69774199362,
+        -202760.14546367255,
+        -201030.78032702443,
+        -199321.36940349147,
+        -197631.68245215312,
+        -195961.49188871484,
+        -194310.5727548547,
+        -192678.70268792368
+      ],
+      "class": "G4"
+    },
+    {
+      "id": "financial.2.npvActualUsd",
+      "excel": "Financial indicators!D40",
+      "value": -9519.787837032134,
+      "class": "G4"
+    },
+    {
+      "id": "financial.2.irrActual",
+      "excel": "Financial indicators!D46",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "financial.3.npvActualUsd",
+      "excel": "Financial indicators!D64",
+      "value": 0,
+      "class": "G4"
+    },
+    {
+      "id": "financial.3.irrActual",
+      "excel": "Financial indicators!D70",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "financial.4.npvActualUsd",
+      "excel": "Financial indicators!D88",
+      "value": -54003.89365219358,
+      "class": "G4"
+    },
+    {
+      "id": "financial.4.irrActual",
+      "excel": "Financial indicators!D94",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "financial.5.npvActualUsd",
+      "excel": "Financial indicators!D112",
+      "value": -22750.57949953908,
+      "class": "G4"
+    },
+    {
+      "id": "financial.5.irrActual",
+      "excel": "Financial indicators!D118",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "financial.6.npvActualUsd",
+      "excel": "Financial indicators!D136",
+      "value": -13899.967417831258,
+      "class": "G4"
+    },
+    {
+      "id": "financial.6.irrActual",
+      "excel": "Financial indicators!D142",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "financial.7.npvActualUsd",
+      "excel": "Financial indicators!D160",
+      "value": -11369.942917106617,
+      "class": "G4"
+    },
+    {
+      "id": "financial.7.irrActual",
+      "excel": "Financial indicators!D166",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "financial.8.npvActualUsd",
+      "excel": "Financial indicators!D184",
+      "value": -5595.279744490022,
+      "class": "G4"
+    },
+    {
+      "id": "financial.8.irrActual",
+      "excel": "Financial indicators!D190",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "financial.9.npvActualUsd",
+      "excel": "Financial indicators!D208",
+      "value": -10204.918036153922,
+      "class": "G4"
+    },
+    {
+      "id": "financial.9.irrActual",
+      "excel": "Financial indicators!D214",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "financial.10.npvActualUsd",
+      "excel": "Financial indicators!D232",
+      "value": -76426.23157716212,
+      "class": "G4"
+    },
+    {
+      "id": "financial.10.irrActual",
+      "excel": "Financial indicators!D238",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "financial.11.npvActualUsd",
+      "excel": "Financial indicators!D256",
+      "value": -58863.59932729618,
+      "class": "G4"
+    },
+    {
+      "id": "financial.11.irrActual",
+      "excel": "Financial indicators!D262",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "financial.12.npvActualUsd",
+      "excel": "Financial indicators!D280",
+      "value": -13488.625816477292,
+      "class": "G4"
+    },
+    {
+      "id": "financial.12.irrActual",
+      "excel": "Financial indicators!D286",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "financial.13.npvActualUsd",
+      "excel": "Financial indicators!D304",
+      "value": -117688.60483040668,
+      "class": "G4"
+    },
+    {
+      "id": "financial.13.irrActual",
+      "excel": "Financial indicators!D310",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "financial.14.npvActualUsd",
+      "excel": "Financial indicators!D328",
+      "value": -8054.8553833647,
+      "class": "G4"
+    },
+    {
+      "id": "financial.14.irrActual",
+      "excel": "Financial indicators!D334",
+      "value": 0.01330336737573301,
+      "class": "G4"
+    },
+    {
+      "id": "financial.15.npvActualUsd",
+      "excel": "Financial indicators!D352",
+      "value": 71154.2537291731,
+      "class": "G4"
+    },
+    {
+      "id": "financial.15.irrActual",
+      "excel": "Financial indicators!D358",
+      "value": 0.18072603236123896,
+      "class": "G4"
+    },
+    {
+      "id": "financial.15.cashflow.years",
+      "excel": "Financial indicators!D339:X339",
+      "values": [
+        2027,
+        2028,
+        2029,
+        2030,
+        2031,
+        2032,
+        2033,
+        2034,
+        2035,
+        2036,
+        2037,
+        2038,
+        2039,
+        2040,
+        2041,
+        2042,
+        2043,
+        2044,
+        2045,
+        2046,
+        2047
+      ],
+      "class": "G4"
+    },
+    {
+      "id": "financial.15.cashflow.maintenanceUsd",
+      "excel": "Financial indicators!D342:X342",
+      "values": [
+        null,
+        503.31609999999995,
+        513.3824219999999,
+        523.6500704399999,
+        534.1230718487999,
+        544.8055332857759,
+        555.7016439514915,
+        566.8156768305213,
+        578.1519903671316,
+        589.7150301744744,
+        601.5093307779638,
+        613.539517393523,
+        625.8103077413934,
+        638.3265138962214,
+        651.0930441741458,
+        664.1149050576288,
+        677.3972031587812,
+        690.945147221957,
+        704.7640501663961,
+        718.859331169724,
+        733.2365177931184
+      ],
+      "class": "G4"
+    },
+    {
+      "id": "financial.15.cashflow.grossStandardSavingsUsd",
+      "excel": "Financial indicators!D344:X344",
+      "values": [
+        0,
+        13676.934760244481,
+        14229.482924558359,
+        14804.354034710515,
+        15402.449937712821,
+        16024.708915196417,
+        16672.107155370355,
+        17345.660284447316,
+        18046.424959938988,
+        18775.50052832052,
+        19534.03074966467,
+        20323.205591951122,
+        21144.263097865947,
+        21998.49132701973,
+        22887.23037663133,
+        23811.874483847238,
+        24773.874212994662,
+        25774.738731199646,
+        26816.03817594011,
+        27899.40611824809,
+        29026.54212542532
+      ],
+      "class": "G4"
+    },
+    {
+      "id": "financial.15.cashflow.grossActualSavingsUsd",
+      "excel": "Financial indicators!D345:X345",
+      "values": [
+        0,
+        8125.693059936569,
+        8453.971059558005,
+        8795.51149036415,
+        9150.850154574862,
+        9520.544500819686,
+        9905.174498652801,
+        10305.343548398374,
+        10721.679427753668,
+        11154.835276634916,
+        11605.490621810966,
+        12074.35244293213,
+        12562.156281626587,
+        13069.6673954043,
+        13597.681958178635,
+        14147.028309289051,
+        14718.568252984329,
+        15313.198410404895,
+        15931.851626185253,
+        16575.498431883134,
+        17245.14856853122
+      ],
+      "class": "G4"
+    },
+    {
+      "id": "financial.15.cashflow.netStandardSavingsUsd",
+      "excel": "Financial indicators!D346:X346",
+      "values": [
+        -50331.60999999999,
+        13173.618660244481,
+        13716.100502558358,
+        14280.703964270515,
+        14868.32686586402,
+        15479.90338191064,
+        16116.405511418863,
+        16778.844607616797,
+        17468.272969571855,
+        18185.785498146048,
+        18932.521418886707,
+        19709.6660745576,
+        20518.452790124553,
+        21360.16481312351,
+        22236.137332457183,
+        23147.75957878961,
+        24096.477009835882,
+        25083.79358397769,
+        26111.274125773714,
+        27180.54678707837,
+        28293.305607632203
+      ],
+      "class": "G4"
+    },
+    {
+      "id": "financial.15.cashflow.discountedStandardNetUsd",
+      "excel": "Financial indicators!D349:X349",
+      "values": [
+        -50331.60999999999,
+        12418.569626927301,
+        12188.87537294909,
+        11963.24737798225,
+        11741.620942360429,
+        11523.932091502304,
+        11310.117581934546,
+        11100.114906430977,
+        10893.862298314494,
+        10691.298734966247,
+        10492.363940584604,
+        10296.998388234622,
+        10105.14330122688,
+        9916.740653862904,
+        9731.733171582631,
+        9550.064330547917,
+        9371.678356694509,
+        9196.520224283422,
+        9024.535653981335,
+        8855.671110498244,
+        8689.87379980931
+      ],
+      "class": "G4"
+    },
+    {
+      "id": "financial.15.cashflow.accumulatedDiscountedStandardUsd",
+      "excel": "Financial indicators!D353:X353",
+      "values": [
+        -50331.60999999999,
+        -37913.04037307269,
+        -25724.165000123598,
+        -13760.917622141347,
+        -2019.2966797809186,
+        9504.635411721385,
+        20814.75299365593,
+        31914.86790008691,
+        42808.730198401405,
+        53500.02893336765,
+        63992.39287395225,
+        74289.39126218688,
+        84394.53456341376,
+        94311.27521727666,
+        104043.00838885929,
+        113593.07271940721,
+        122964.75107610172,
+        132161.27130038515,
+        141185.80695436648,
+        150041.47806486473,
+        158731.35186467404
+      ],
+      "class": "G4"
+    },
+    {
+      "id": "financial.16.npvActualUsd",
+      "excel": "Financial indicators!D376",
+      "value": 3681.8945661474017,
+      "class": "G4"
+    },
+    {
+      "id": "financial.16.irrActual",
+      "excel": "Financial indicators!D382",
+      "value": 0.12713658870274358,
+      "class": "G4"
+    },
+    {
+      "id": "financial.17.npvActualUsd",
+      "excel": "Financial indicators!D400",
+      "value": 1184.5892578817125,
+      "class": "G4"
+    },
+    {
+      "id": "financial.17.irrActual",
+      "excel": "Financial indicators!D406",
+      "value": 0.10018890323337781,
+      "class": "G4"
+    },
+    {
+      "id": "financial.18.npvActualUsd",
+      "excel": "Financial indicators!D424",
+      "value": -42211.65949905584,
+      "class": "G4"
+    },
+    {
+      "id": "financial.18.irrActual",
+      "excel": "Financial indicators!D430",
+      "kind": "none",
+      "text": "n/a (<0)",
+      "class": "G4"
+    },
+    {
+      "id": "financial.19.npvActualUsd",
+      "excel": "Financial indicators!D448",
+      "value": 1860.1618316860192,
+      "class": "G4"
+    },
+    {
+      "id": "financial.19.irrActual",
+      "excel": "Financial indicators!D454",
+      "kind": "none",
+      "text": "—",
+      "class": "G4"
+    },
+    {
+      "id": "co2.emissionFactorGas",
+      "excel": "Measures_summary!D43",
+      "value": 0.198,
+      "class": "G5"
+    },
+    {
+      "id": "co2.emissionFactorElectricity",
+      "excel": "Measures_summary!E43",
+      "value": 0.585,
+      "class": "G5"
+    },
+    {
+      "id": "co2.emissionFactorDistrictHeating",
+      "excel": "Measures_summary!F43",
+      "value": 0.05,
+      "class": "G5"
+    },
+    {
+      "id": "checks.A1",
+      "excel": "Checks!E8",
+      "value": 2518.855,
+      "class": "G6"
+    },
+    {
+      "id": "checks.A2",
+      "excel": "Checks!E9",
+      "value": 7556.5650000000005,
+      "class": "G6"
+    },
+    {
+      "id": "checks.A3",
+      "excel": "Checks!E10",
+      "value": 1,
+      "class": "G6"
+    },
+    {
+      "id": "checks.A4",
+      "excel": "Checks!E11",
+      "value": 1,
+      "class": "G6"
+    },
+    {
+      "id": "checks.A5",
+      "excel": "Checks!E12",
+      "value": 496820.78187270183,
+      "class": "G6"
+    },
+    {
+      "id": "checks.A6",
+      "excel": "Checks!E13",
+      "value": 240365.83333333334,
+      "class": "G6"
+    },
+    {
+      "id": "checks.A7",
+      "excel": "Checks!E14",
+      "value": 56045,
+      "class": "G6"
+    },
+    {
+      "id": "checks.A8",
+      "excel": "Checks!E15",
+      "kind": "text",
+      "text": "OK",
+      "class": "G6"
+    },
+    {
+      "id": "checks.A9",
+      "excel": "Checks!E16",
+      "kind": "text",
+      "text": "OK",
+      "class": "G6"
+    },
+    {
+      "id": "checks.A10",
+      "excel": "Checks!E17",
+      "value": 664253.7828792153,
+      "class": "G6"
+    },
+    {
+      "id": "checks.A11",
+      "excel": "Checks!E18",
+      "value": 975113.3650000002,
+      "class": "G6"
+    },
+    {
+      "id": "checks.A12",
+      "excel": "Checks!E19",
+      "value": 2406975.840000001,
+      "class": "G6"
+    },
+    {
+      "id": "checks.A13",
+      "excel": "Checks!E20",
+      "value": 0,
+      "class": "G6"
+    }
+  ],
+  "skipped": []
+}

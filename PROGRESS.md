@@ -2402,3 +2402,12 @@ T06b — qamrab olinganlar:
 - Tekshiruv: type-check, biome, api 198 test (integratsiya `audit`/`report` o'zgarishsiz yashil).
 **Navbatda:** F02.
 - F01 tuzatish: `AuditInputs` `Strip<>` o'rniga dvigatel o'qiydigan ustunlar bilan `Pick` (nom/manzil kabi keraksiz maydonlar yo'q); test fixture'idagi `as unknown as` cast olib tashlandi (noto'g'ri `wall_insulation` toifasi → `envelope_wall_insulation`), devor chora-tadbiri `standardizedAnnualSavingsKwh > 0` tekshiriladi (after konstruksiya `retrofitOfId` bilan). Eslatma: `apps/api/tsconfig` testlarni qamramaydi — fixture tipi vaqtincha tsconfig bilan tekshirildi.
+
+## Faza 1 · F02 — golden ekstraktor: `expected.json` (2026-10-02)
+
+- `tools/golden/{common,extract_expected}.py`, `requirements.txt` (openpyxl 3.1.5), `README.md`; `.gitignore` ga `tools/golden/.venv/`; `biome.json` `files.ignore` ga `apps/api/tests/golden/fixtures/**` (generatsiya qilingan JSON formatlanmaydi).
+- `apps/api/tests/golden/fixtures/3-dmtt/v7.20/expected.json` — 741 yozuv, `skipped[]` bo'sh. Sinflar: G0 2 · G1 124 · G2 59(+3 matn) · G3 328 · G4 189 · G5 23 · G6 13.
+- Tekshiruv: `Measures_summary` E38 = 664253,7829 · F38 = 23784,8851 · D38 = 975113,365 · G38 = 40,9972 · N38 = −654709,0246 (spec bilan mos); D39 = 706124,26; ikki marta ishga tushirishda faqat `extractedAt` farq qiladi; noto'g'ri sha256 → exit 1; noto'g'ri yorliq → exit 1 (ikkalasi qo'lda sinaldi).
+- Format qarori: spec'dagi `{ "kind": "none", "excel": "> 20" }` da `excel` kalit katak manziliga band, shuning uchun matn `"text"` maydonida: `kind: "none"` (placeholder `> 20`, `n/a`, `—`), `kind: "text"` (Yes/No, tashuvchi, sinf, Checks), gorizontal oraliq — `values[]`.
+- Spec'dan farqlar: (1) "before ⊆ after" tekshiruvi o'rniga element yo'qotishlari yig'indisi bo'lim jami bilan solishtiriladi (before'da Win1/Win2/D1, after'da Win4/D4 — kodlar almashgan, ⊆ noto'g'ri bo'lardi); (2) elektr balansida `H16:H24` (qator bo'yicha tejash) yozilmaydi — spec ro'yxatida faqat `H4:H14`, `H25`.
+**Navbatda:** F03 (inputs.json + golden.test.ts + divergences.json; F03b ga `apps/api/tsconfig.test.json` va type-check skriptida ikkinchi `tsc -p` — yres-01 so'rovi).
