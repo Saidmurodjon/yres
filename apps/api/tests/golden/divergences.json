@@ -21,7 +21,7 @@
       "x": ["X98"],
       "title": "Mechanical ventilation fan electricity: Excel = power x hours x utilisation per line (Equipment!K85+K86 = 7570.45), engine = nameplate kW x 24 h x heating days (17896)",
       "status": "open",
-      "closesIn": "Faza 2+",
+      "closesIn": "F06",
       "expectedIds": ["ventilation.mechanicalElectricalKwh"],
       "note": "The workbook uses 1857 h/y and utilisation 0.5/0.8 per line; the ventilation system model has no hours/utilisation input."
     },

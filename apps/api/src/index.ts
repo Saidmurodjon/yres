@@ -17,6 +17,7 @@ import { chatRoutes } from "./routes/chat";
 import { climateRoutes } from "./routes/climate";
 import { consumptionRoutes } from "./routes/consumption";
 import { envelopeRoutes } from "./routes/envelope";
+import { financialRoutes } from "./routes/financial";
 import { measuresRoutes } from "./routes/measures";
 import { membersRoutes } from "./routes/members";
 import { notificationsRoutes } from "./routes/notifications";
@@ -130,6 +131,7 @@ app.on(["GET", "POST"], "/api/auth/*", (c) => createAuth(c.env, c.get("db")).han
 app.route("/api/buildings", buildingRoutes);
 app.route("/api/buildings", envelopeRoutes);
 app.route("/api/buildings", measuresRoutes);
+app.route("/api/buildings", financialRoutes);
 app.route("/api/buildings", consumptionRoutes);
 app.route("/api/buildings", auditRoutes);
 app.route("/api/buildings", systemsRoutes);
