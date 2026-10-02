@@ -1,0 +1,87 @@
+/**
+ * Locale-aware number parsing for form input (forms-and-numbers.md, U1).
+ *
+ * `<input type="number">` turns an uz/ru user's `12,5` into "" or 12 depending on the browser, and
+ * `parseFloat`/`Number` accept or silently truncate whatever is typed ("12abc" → 12). Everything the user
+ * types goes through `parseLocaleNumber` instead; callers must treat `invalid` as an error to show and
+ * must never fall back to 0 or a default (a default is only for `empty`, and only if the business rule says so).
+ */
+
+export type NumberLocale = "uz" | "ru" | "en";
+
+export type ParseResult = { ok: true; value: number } | { ok: false; reason: "empty" | "invalid" };
+
+// Thousands separators other than `,`/`.`: space, no-break space, narrow no-break space, thin space, apostrophe.
+const GROUPING_SEPARATORS = /[    ']/g;
+const UNICODE_MINUS = /−/g;
+const STRICT_NUMBER = /^-?(\d+(\.\d*)?|\.\d+)$/;
+// A thousands-grouped integer part: 1–3 digits (no leading zero), then groups of exactly 3.
+const GROUPED_WITH_COMMA = /^-?[1-9]\d{0,2}(,\d{3})+$/;
+const GROUPED_WITH_DOT = /^-?[1-9]\d{0,2}(\.\d{3})+$/;
+
+const count = (text: string, char: string) => text.split(char).length - 1;
+
+export function parseLocaleNumber(
+  raw: string,
+  locale: NumberLocale,
+  opts?: { integer?: boolean },
+): ParseResult {
+  const trimmed = raw.trim();
+  if (trimmed === "") return { ok: false, reason: "empty" };
+
+  let text = trimmed.replace(UNICODE_MINUS, "-").replace(GROUPING_SEPARATORS, "");
+  if (text === "") return { ok: false, reason: "empty" };
+
+  const commas = count(text, ",");
+  const dots = count(text, ".");
+
+  if (commas > 0 && dots > 0) {
+    // The last separator is the decimal one, the other kind is a thousands separator.
+    const decimal = text.lastIndexOf(",") > text.lastIndexOf(".") ? "," : ".";
+    const thousands = decimal === "," ? "." : ",";
+    text = text.replaceAll(thousands, "");
+    if (decimal === ",") text = text.replace(",", ".");
+  } else if (commas > 0) {
+    if (commas > 1) {
+      if (!GROUPED_WITH_COMMA.test(text)) return { ok: false, reason: "invalid" };
+      text = text.replaceAll(",", "");
+    } else if (locale === "en" && GROUPED_WITH_COMMA.test(text)) {
+      // en: "1,234" is one thousand two hundred thirty-four (uz/ru read it as 1.234).
+      text = text.replace(",", "");
+    } else {
+      text = text.replace(",", ".");
+    }
+  } else if (dots > 1) {
+    if (!GROUPED_WITH_DOT.test(text)) return { ok: false, reason: "invalid" };
+    text = text.replaceAll(".", "");
+  }
+  // A single "." is always a decimal point, in every locale: phone keypads often emit it.
+
+  if (!STRICT_NUMBER.test(text)) return { ok: false, reason: "invalid" };
+  const value = Number(text);
+  if (!Number.isFinite(value)) return { ok: false, reason: "invalid" };
+  if (opts?.integer && !Number.isInteger(value)) return { ok: false, reason: "invalid" };
+  return { ok: true, value };
+}
+
+/**
+ * Text for an input's initial/loaded value: no grouping, the locale's decimal separator, no trailing zeros.
+ * Use this instead of `String(value)` when loading a server value into form state — otherwise an uz user
+ * sees `12.5` and edits it into a mix of both separators.
+ */
+export function formatNumberForInput(
+  value: number | null | undefined,
+  locale: NumberLocale,
+): string {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "";
+  const plain = String(value).includes("e")
+    ? value.toLocaleString("en-US", { useGrouping: false, maximumFractionDigits: 20 })
+    : String(value);
+  return locale === "en" ? plain : plain.replace(".", ",");
+}
+
+/** "ru-RU" → "ru"; anything unknown → "uz" (the app's default language). */
+export function toNumberLocale(language: string | undefined): NumberLocale {
+  const base = language?.toLowerCase().split("-")[0];
+  return base === "ru" || base === "en" || base === "uz" ? base : "uz";
+}

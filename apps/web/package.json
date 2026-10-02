@@ -10,7 +10,8 @@
     "type-check": "vite build && tsc --noEmit",
     "lint": "biome lint .",
     "preview": "vite preview",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test": "vitest run"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.11",
@@ -38,6 +39,7 @@
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.7",
+    "vitest": "^2.1.8",
     "wrangler": "^3.99.0"
   }
 }

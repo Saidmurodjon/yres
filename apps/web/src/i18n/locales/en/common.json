@@ -23,6 +23,12 @@
   "auditorNote": "Auditor note (optional)",
   "auditorNotePlaceholder": "Add context for the report reader — e.g. why this chart looks the way it does.",
   "addNote": "Add note",
+  "number": {
+    "invalid": "Enter a number, for example 12.5",
+    "min": "Must be at least {{min}}",
+    "max": "Must be at most {{max}}",
+    "integer": "Enter a whole number, for example 12"
+  },
   "pagination": {
     "pageOf": "Page {{page}} of {{pageCount}}",
     "previous": "Previous",

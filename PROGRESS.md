@@ -2256,3 +2256,16 @@ shuning uchun T01 da yo spec'larni tuzatish, yo E2E'ni aniq izoh bilan CI'dan ch
   Cloudflare hujjati (WebFetch, workers/platform/limits): "Subrequests per invocation 50 (Free)", ta'rif R2/KV/D1 ni o'z ichiga oladi, DO chaqiruvi aniq tilga olinmagan → ehtiyotan sanaladi (**tasdiqlanmagan** — haqiqiy Free'da sinab ko'rilmagan, Miniflare chegarani qo'llamaydi).
   Testlar (`conversation-room.test.ts`, 7): A/B suhbat edit/delete o'zgarmaydi va broadcast yo'q; begona `replyToId` rad; 50 a'zoli guruh — 1 xabar, 49 notification, `prepare` sanagich ≤10, push ≤30; tuzatishdan OLDIN uchta yangi test yiqildi.
   Ochiq qoldi: a'zolikdan chiqarilgan foydalanuvchining ochiq socket'ini yopish (DO RPC).
+
+## Faza 0 · T05a — `parseLocaleNumber` + `NumberInput` (hali iste'molchisiz) (2026-10-02)
+
+- `apps/web/src/lib/number.ts`: `parseLocaleNumber` (spec algoritmi aynan: bo'shliq/NBSP/narrow NBSP/thin/`'` olib tashlanadi, `−`→`-`, ikkala ajratgich bo'lsa oxirgisi o'nlik,
+  bitta `,` — en'da aniq 3 raqam bo'lsa minglik aks holda o'nlik, bitta `.` har doim o'nlik, qat'iy regex, `isFinite`, `integer`), `formatNumberForInput`, `toNumberLocale`.
+  **Spec'ga bitta aniqlik:** minglik guruhi yetakchi nol bilan boshlanmaydi (`0,123` en'da 0.123, 123 emas; `1,234`/`1,234,567` spec jadvalidagidek). Qo'shimcha: `-`, `+5`, `1,234,56` — invalid.
+- `src/lib/number.test.ts` — 39 test (spec jadvali to'liq + round-trip + locale xaritasi). `apps/web` ga `vitest ^2.1.8`, `test` skripti, `vitest.config.ts` (turbo `test` avtomatik oladi); `bun.lock` yangilandi.
+- `src/components/number-input.tsx`: matn `<Input>` (`inputMode` decimal/numeric), lokal `i18n.language` dan, qiymatni o'zgartirmaydi, blur'da inline xato (`⚠` + matn, `role="alert"`, `aria-invalid`/`aria-describedby`),
+  `integer`/`min`/`max`/`unit`/`error`. Bo'sh maydon xato bermaydi (majburiylik — formaning ishi). `common.json` (uz/ru/en): `number.invalid/min/max/integer`. **Ruscha matnni loyiha egasi ko'rib chiqsin** (`i18n-and-appearance.md`).
+- **Joylashuv qarori (spec bilan bir xil):** `apps/web` da, `packages/ui` da emas — i18n'ga bog'lanmaslik va `@source` tuzog'idan qochish; 03 §6.2 taklifidan ataylab chetlanish.
+- Tekshiruv: type-check, biome, `bun run build` (apps/web), `bun run test` yashil. Brauzerda tekshirilmadi (komponent hali hech qayerda ishlatilmaydi — T05b da).
+
+**Navbatda:** T05b — barcha `type="number"` iste'molchilarini o'tkazish.

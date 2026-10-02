@@ -23,6 +23,12 @@
   "auditorNote": "Auditor izohi (ixtiyoriy)",
   "auditorNotePlaceholder": "Hisobot o'quvchisi uchun tushuntirish qo'shing — masalan, bu grafik nega shunday ko'rinishda ekanligi.",
   "addNote": "Izoh qo'shish",
+  "number": {
+    "invalid": "Raqam kiriting, masalan 12,5",
+    "min": "Kamida {{min}} bo'lishi kerak",
+    "max": "Ko'pi bilan {{max}} bo'lishi kerak",
+    "integer": "Butun son kiriting, masalan 12"
+  },
   "pagination": {
     "pageOf": "{{page}}-sahifa, jami {{pageCount}}",
     "previous": "Oldingi",
