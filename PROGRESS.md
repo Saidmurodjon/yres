@@ -2296,3 +2296,15 @@ uz `12,5`/`12.5` → 12.5; ru `1 234,5` → 1234.5; en `1,234` → 1234; uz `1,2
 Ma'lum cheklov: tahrirlash dialoglaridagi `useEffect([open/building])` qayta-sinxronlash (U2) — T06 da `useSyncedRows` bilan.
 
 **Navbatda:** T06 (dirty-himoya, blocker, o'chirishga tasdiq).
+
+## Faza 0 · T06a — saqlanmagan tahrir infratuzilmasi (hali ulanmagan) (2026-10-02)
+
+- `components/confirm-dialog.tsx` (`ConfirmDialog`: `destructive`, `pending`+spinner, fokus dastlab **Bekor**da — `onOpenAutoFocus` + `data-confirm-cancel`, chunki `@yres/ui` `Button` `ref` tipini qabul qilmaydi va `packages/ui` ga tegilmadi; Esc/overlay/× = bekor, `pending` paytida yopilmaydi).
+- `components/unsaved-changes.tsx`: `UnsavedChangesProvider` (React state `Map<key, dirty>`; **Zustand emas** — sabab faylda yozilgan: holat bitta sahifa nusxasiga tegishli, global store eskirgan bayroqni boshqa binoga olib o'tardi),
+  `useRegisterDirty(key, dirty)` (unmount'da o'zini o'chiradi — osilib qolgan bayroq chiqishni bloklamaydi), `useConfirmDiscard()`; ichida `useBlocker({ shouldBlockFn, enableBeforeUnload, withResolver: true })` (TanStack Router 1.170.17), `ref` orqali eskirgan closure yo'q;
+  bitta `ConfirmDialog` ham blocker (`proceed`/`reset`), ham tab/scenario almashtirish (`pendingAction`) uchun. Provider tashqarisida hook'lar no-op (qulab tushmaydi).
+- `hooks/use-synced-rows.ts` (`useSyncedRows(serverRows, resetKey)`): server o'zgarsa **faqat toza bo'lsa** qayta sinxronlanadi; `resetKey` o'zgarsa doim; `setRows` → dirty; `markClean()`. "Server o'zgardimi" — `JSON.stringify` imzosi (chaqiruvchi massivni har render'da yangidan yasaydi — havola solishtirish doim qayta sinxronlardi; qatorlar kichik) — faylda asoslangan.
+- i18n (uz/ru/en `common.json`): `unsaved.title/description/discard/stay`, `confirmDelete.title/description/confirm`. **Ruscha matnni loyiha egasi ko'rib chiqsin.**
+- Tekshiruv: type-check, biome, `bun run build` yashil. `useSyncedRows` ni unit sinash uchun web'da DOM/React testing kutubxonasi yo'q — xatti-harakat T06b da **haqiqiy brauzerda E2E** bilan tekshiriladi (U2 regressiya).
+
+**Navbatda:** T06b — tizimlar kartalari, bino tab'lari, qobiq dialogi, boshqa formalar.

@@ -29,6 +29,17 @@
     "max": "Must be at most {{max}}",
     "integer": "Enter a whole number, for example 12"
   },
+  "unsaved": {
+    "title": "Discard unsaved changes?",
+    "description": "You have changes that are not saved. If you continue, they will be lost.",
+    "discard": "Discard changes",
+    "stay": "Keep editing"
+  },
+  "confirmDelete": {
+    "title": "Delete this item?",
+    "description": "This cannot be undone.",
+    "confirm": "Delete"
+  },
   "pagination": {
     "pageOf": "Page {{page}} of {{pageCount}}",
     "previous": "Previous",

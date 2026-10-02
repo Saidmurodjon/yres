@@ -29,6 +29,17 @@
     "max": "Ko'pi bilan {{max}} bo'lishi kerak",
     "integer": "Butun son kiriting, masalan 12"
   },
+  "unsaved": {
+    "title": "Saqlanmagan o'zgarishlar bekor qilinsinmi?",
+    "description": "Saqlanmagan o'zgarishlaringiz bor. Davom etsangiz, ular yo'qoladi.",
+    "discard": "O'zgarishlarni bekor qilish",
+    "stay": "Tahrirlashni davom ettirish"
+  },
+  "confirmDelete": {
+    "title": "Bu element o'chirilsinmi?",
+    "description": "Buni qaytarib bo'lmaydi.",
+    "confirm": "O'chirish"
+  },
   "pagination": {
     "pageOf": "{{page}}-sahifa, jami {{pageCount}}",
     "previous": "Oldingi",
