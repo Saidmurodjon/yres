@@ -14,7 +14,6 @@
       "noMaterialsTitle": "Qurilish materiallari mavjud emas",
       "noMaterialsDescription": "Ushbu muhitda materiallar ma'lumotnomasi bo'sh, shuning uchun devor/tom/pol konstruksiyasini hali kiritib bo'lmaydi — administrator avval uni to'ldirishi kerak. Baribir davom etib, cheklangan auditni ishga tushirishingiz mumkin (bu tuzatilmaguncha qobiq yo'qotishlari nolga teng bo'lib ko'rinadi).",
       "skipSetup": "Qobiqni sozlashni o'tkazib yuborish",
-      "replaceWarning": "Bu binoda allaqachon qobiq ma'lumotlari mavjud. Bu yerda saqlash uning \"Oldingi\" stsenariysidagi konstruksiya turlari, ochilma turlari va elementlarini almashtiradi.",
       "footprintTitle": "Bino gabaritlari",
       "footprintDescription": "Isitiladigan maydon va hajmni hisoblash uchun ishlatiladi.",
       "footprintLength": "Asos uzunligi (m)",
@@ -37,7 +36,15 @@
       "height": "Balandligi (m)",
       "uValue": "U-qiymati (Vt/m²K)",
       "saveAndContinue": "Saqlash va davom etish",
-      "fixNumbers": "Ba'zi raqamlar bo'sh yoki noto'g'ri (quyida belgilangan). Hech narsa saqlanmadi."
+      "fixNumbers": "Ba'zi raqamlar bo'sh yoki noto'g'ri (quyida belgilangan). Hech narsa saqlanmadi.",
+      "existingTitle": "Qobiq allaqachon kiritilgan",
+      "existingSummary": "Qobiqda {{count}} ta element bor.",
+      "editEnvelope": "Qobiqni tahrirlash",
+      "continueWithExisting": "Mavjud qobiq bilan davom etish",
+      "replaceWithQuick": "Tezkor qobiq bilan almashtirish…",
+      "confirmReplaceTitle": "Mavjud qobiq almashtirilsinmi?",
+      "confirmReplaceDescription": "Mavjud qobiq ({{count}} element) o'chiriladi va tezkor qobiq bilan almashtiriladi. Buni qaytarib bo'lmaydi.",
+      "confirmReplace": "Almashtirish"
     },
     "consumption": {
       "title": "Tarixiy kommunal to'lov hisoblari (ixtiyoriy)",

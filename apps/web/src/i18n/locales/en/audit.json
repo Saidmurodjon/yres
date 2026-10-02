@@ -14,7 +14,6 @@
       "noMaterialsTitle": "No construction materials available",
       "noMaterialsDescription": "The materials reference table is empty in this environment, so wall/roof/floor construction can't be entered yet — an admin needs to seed it first. You can still continue and run a limited audit (envelope losses will read as zero until this is fixed).",
       "skipSetup": "Skip envelope setup",
-      "replaceWarning": "This building already has envelope data. Saving here will replace its \"before\" construction types, opening types, and elements.",
       "footprintTitle": "Building footprint",
       "footprintDescription": "Used to derive heated floor area and volume.",
       "footprintLength": "Footprint length (m)",
@@ -37,7 +36,17 @@
       "height": "Height (m)",
       "uValue": "U-value (W/m²K)",
       "saveAndContinue": "Save and continue",
-      "fixNumbers": "Some numbers are empty or not valid (marked below). Nothing was saved."
+      "fixNumbers": "Some numbers are empty or not valid (marked below). Nothing was saved.",
+      "existingTitle": "Envelope already entered",
+      "existingSummary_one": "The envelope has {{count}} element.",
+      "existingSummary_other": "The envelope has {{count}} elements.",
+      "editEnvelope": "Edit envelope",
+      "continueWithExisting": "Continue with the existing envelope",
+      "replaceWithQuick": "Replace with quick envelope…",
+      "confirmReplaceTitle": "Replace the existing envelope?",
+      "confirmReplaceDescription_one": "The existing envelope ({{count}} element) will be deleted and replaced with the quick envelope. This cannot be undone.",
+      "confirmReplaceDescription_other": "The existing envelope ({{count}} elements) will be deleted and replaced with the quick envelope. This cannot be undone.",
+      "confirmReplace": "Replace"
     },
     "consumption": {
       "title": "Historical utility bills (optional)",

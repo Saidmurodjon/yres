@@ -16,8 +16,9 @@ import {
   Skeleton,
 } from "@yres/ui";
 import { ArrowLeft, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ConfirmDialog } from "../../../../components/confirm-dialog";
 import { NumberInput } from "../../../../components/number-input";
 import {
   UnsavedChangesProvider,
@@ -62,7 +63,17 @@ function AuditWizard() {
 
   const [step, setStep] = useState<WizardStep>("envelope");
 
-  const hasEnvelope = (envelopeData?.envelopeElements.length ?? 0) > 0;
+  const envelopeCount = envelopeData?.envelopeElements.length ?? 0;
+  const hasEnvelope = envelopeCount > 0;
+
+  // A building that already has an envelope starts at consumption — the quick envelope form would replace it.
+  // Decided once, when the envelope has loaded; later saves must not yank the user between steps.
+  const initialStepSet = useRef(false);
+  useEffect(() => {
+    if (envelopeLoading || initialStepSet.current) return;
+    initialStepSet.current = true;
+    if (hasEnvelope) setStep("consumption");
+  }, [envelopeLoading, hasEnvelope]);
 
   const STEPS: { id: WizardStep; label: string }[] = STEP_IDS.map((id) => ({
     id,
@@ -113,7 +124,7 @@ function AuditWizard() {
       ) : step === "envelope" ? (
         <EnvelopeStep
           buildingId={buildingId}
-          hasEnvelope={hasEnvelope}
+          envelopeCount={envelopeCount}
           onDone={() => setStep("consumption")}
         />
       ) : step === "consumption" ? (
@@ -299,11 +310,11 @@ function buildQuickEnvelopePayload(
 
 function EnvelopeStep({
   buildingId,
-  hasEnvelope,
+  envelopeCount,
   onDone,
 }: {
   buildingId: string;
-  hasEnvelope: boolean;
+  envelopeCount: number;
   onDone: () => void;
 }) {
   const { t, i18n } = useTranslation("audit");
@@ -320,6 +331,10 @@ function EnvelopeStep({
     JSON.stringify(values) !== JSON.stringify(DEFAULT_QUICK_ENVELOPE),
   );
   const [error, setError] = useState<string | null>(null);
+  const hasEnvelope = envelopeCount > 0;
+  // With an envelope in place the quick form is opt-in, and saving it asks for confirmation first.
+  const [showQuickForm, setShowQuickForm] = useState(false);
+  const [confirmingReplace, setConfirmingReplace] = useState(false);
   const materials = materialsData?.materials ?? [];
 
   function set<K extends keyof QuickEnvelopeValues>(key: K, value: string) {
@@ -335,10 +350,20 @@ function EnvelopeStep({
       setError(t("wizard.envelope.fixNumbers"));
       return;
     }
+    if (hasEnvelope) {
+      setConfirmingReplace(true);
+      return;
+    }
+    await save(payload);
+  }
+
+  async function save(payload: ReplaceEnvelopePayload) {
     try {
       await replaceEnvelope.mutateAsync(payload);
+      setConfirmingReplace(false);
       onDone();
     } catch (err) {
+      setConfirmingReplace(false);
       setError(err instanceof ApiError ? err.message : t("wizard.envelope.saveFailed"));
     }
   }
@@ -361,13 +386,48 @@ function EnvelopeStep({
     );
   }
 
+  if (hasEnvelope && !showQuickForm) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("wizard.envelope.existingTitle")}</CardTitle>
+          <CardDescription>
+            {t("wizard.envelope.existingSummary", { count: envelopeCount })}{" "}
+            <Link
+              to="/buildings/$buildingId"
+              params={{ buildingId }}
+              search={{ tab: "envelope" }}
+              className="underline underline-offset-2"
+            >
+              {t("wizard.envelope.editEnvelope")}
+            </Link>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2 sm:flex-row">
+          <Button onClick={onDone}>
+            {t("wizard.envelope.continueWithExisting")}
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" onClick={() => setShowQuickForm(true)}>
+            {t("wizard.envelope.replaceWithQuick")}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {hasEnvelope && (
-        <div className="rounded-md border border-warning/50 bg-warning/10 p-3 text-sm text-warning-foreground">
-          {t("wizard.envelope.replaceWarning")}
-        </div>
-      )}
+      <ConfirmDialog
+        open={confirmingReplace}
+        destructive
+        pending={replaceEnvelope.isPending}
+        title={t("wizard.envelope.confirmReplaceTitle")}
+        description={t("wizard.envelope.confirmReplaceDescription", { count: envelopeCount })}
+        confirmLabel={t("wizard.envelope.confirmReplace")}
+        onConfirm={() => save(buildQuickEnvelopePayload(values, locale).payload)}
+        onCancel={() => setConfirmingReplace(false)}
+      />
 
       <Card>
         <CardHeader>

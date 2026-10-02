@@ -24,7 +24,11 @@ import { useBuilding } from "../../../../hooks";
 import { ApiError } from "../../../../lib/api";
 import type { BuildingRole } from "../../../../lib/api-types";
 
+const TAB_IDS = ["overview", "envelope", "systems", "consumption", "measures", "sharing"];
+
 export const Route = createFileRoute("/_authenticated/buildings/$buildingId/")({
+  validateSearch: (search: Record<string, unknown>): { tab?: string } =>
+    typeof search.tab === "string" && TAB_IDS.includes(search.tab) ? { tab: search.tab } : {},
   component: BuildingDetailPage,
 });
 
@@ -82,7 +86,8 @@ function BuildingDetailBody({
 }) {
   const { t } = useTranslation("buildings");
   const isReadOnly = role === "viewer";
-  const [tab, setTab] = useState("overview");
+  const { tab: initialTab } = Route.useSearch();
+  const [tab, setTab] = useState(initialTab ?? "overview");
   const confirmDiscard = useConfirmDiscard();
 
   return (
