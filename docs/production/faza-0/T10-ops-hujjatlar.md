@@ -1,38 +1,40 @@
-# T10 — Backup/tiklash runbook, ADR-011 va ADR-015 (faqat hujjat) + loyiha egasi ro'yxati
+# T10 — Backup/tiklash runbook (D1 Time Travel), ADR-011 va ADR-015 (faqat hujjat) + loyiha egasi ro'yxati
 
 **Manba:** 02 M-1, ADR-011, ADR-015, P-1 · 06 §5.4. **Commit:** bitta (faqat markdown).
 **Fayllar:** yangi `docs/runbooks/backup-va-tiklash.md`, yangi `docs/adr/ADR-011-backup-dr.md`,
 yangi `docs/adr/ADR-015-workers-paid.md`, `docs/deployment.md` (havola), `.claude/rules/deployment.md` (bir band).
 
-Bu topshiriqda **hech qanday tashqi tizimga ulanilmaydi** — Neon/Cloudflare sozlamalarini faqat loyiha egasi o'zgartiradi.
+Bu topshiriqda **hech qanday tashqi tizimga ulanilmaydi** — Cloudflare sozlamalarini faqat loyiha egasi o'zgartiradi.
+
+> K20/ADR-016: baza endi D1. Backup = **D1 Time Travel** (Workers Paid: 30 kun, Free: 7 kun — rasmiy limitlar sahifasi,
+> 2026-10-02 holati). Neon PITR, `neonctl` va Neon reja bo'limlari **kerak emas**.
 
 ## Bajarish
 
 1. `docs/runbooks/backup-va-tiklash.md` (o'zbekcha, qadam-baqadam, buyruqlar nusxalanadigan):
-   - **Maqsadlar:** RPO ≤ 24 soat (PITR bilan — daqiqalar), RTO ≤ 4 soat (ADR-011).
-   - **Neon PITR:** reja talabi (tarix oynasi ≥ 7 kun — Launch yoki undan yuqori), tekshirish joyi (Neon konsol →
-     Project → Settings → Storage/History retention). Aniq reja nomlari va narxlarni hujjatga **yozmang** — ular
-     o'zgaradi; "Neon konsolida tekshiring" deb yozing.
-   - **Tiklash mashqi (choraklik):** (1) konsolda yoki `neonctl` bilan o'tmishdagi vaqt nuqtasidan yangi branch;
-     (2) shu branch ulanish satri bilan **faqat o'qiydigan** tekshiruv so'rovlari (`select count(*)` asosiy
-     jadvallar bo'yicha, eng so'nggi `building.updated_at`); (3) natijani shu faylning "Mashqlar jurnali" jadvaliga
-     yozish (sana, kim, tiklash nuqtasi, sarflangan vaqt, muammo); (4) sinov branch'ini o'chirish.
-     Production ulanish satrini **almashtirish** — faqat haqiqiy falokatda, alohida bo'lim, `wrangler secret put
-     DATABASE_URL --env production` bilan.
-   - **Logik dump (keyingi bosqich, hozir emas):** kunlik `pg_dump` → R2 `yres-backups` — Faza 4 (staging bilan birga);
-     shu yerda "rejalashtirilgan" deb belgilang.
+   - **Maqsadlar:** RPO ≤ 24 soat (Time Travel bilan — daqiqalar), RTO ≤ 4 soat (ADR-011).
+   - **D1 Time Travel:** retention reja bo'yicha (Paid 30 kun). Holatni ko'rish:
+     `npx wrangler d1 time-travel info yres-production --env production`.
+   - **Tiklash mashqi (choraklik) — production'ga tegmasdan:** (1) `wrangler d1 export yres-production --remote --env production
+     --output=backup-<sana>.sql` (logik nusxa); (2) yangi sinov bazasi `wrangler d1 create yres-restore-drill` va unga
+     `wrangler d1 execute yres-restore-drill --remote --file=backup-<sana>.sql`; (3) faqat o'qiydigan tekshiruvlar (`select count(*)`
+     asosiy jadvallar, eng so'nggi `building.updated_at`); (4) "Mashqlar jurnali"ga yozish; (5) sinov bazasini o'chirish.
+     Time Travel **restore** (`wrangler d1 time-travel restore … --timestamp=…`) bazani joyida orqaga qaytaradi — faqat haqiqiy
+     falokatda, alohida bo'lim, loyiha egasi qarori bilan; buyruq oldin `info` bilan bookmark'ni ko'rsatadi.
+   - **Kunlik eksport (keyingi bosqich, hozir emas):** `wrangler d1 export` → R2 `yres-backups` cron orqali — Faza 4; Time Travel
+     30 kundan uzoq saqlash kerak bo'lsa (WB: ≥ 5–10 yil hisobotlar — ular R2'da snapshot sifatida, Faza 2). "Rejalashtirilgan" deb belgilang.
    - **Mashqlar jurnali** — bo'sh jadval: `| Sana | Bajaruvchi | Tiklash nuqtasi | Vaqt | Natija | Izoh |`.
 2. `docs/adr/ADR-011-backup-dr.md` va `ADR-015-workers-paid.md` — qisqa ADR shakli: Kontekst · Variantlar ·
    Qaror · Oqibatlar · Holat. Matnni 02 §6 jadvalidan oling. Holat: **"Taklif — loyiha egasi tasdig'i kutilmoqda"**
    (ular K-reyestrida hali tasdiqlanmagan — "Qabul qilindi" deb yozmang). ADR-015 da: PDF generatsiyasi Free rejaning
-   CPU limitidan oshishi (02 P-1), Queues/Workflows faqat Paid'da.
+   CPU limitidan oshishi (02 P-1), Queues/Workflows faqat Paid'da, **D1 Free'da 50 so'rov/chaqiruv va 500 MB/baza** (ADR-016).
+   ADR-011 da: RPO/RTO va Time Travel + eksport. ADR-016 — allaqachon yozilgan (`docs/adr/ADR-016-cloudflare-d1.md`), unga havola qiling.
 3. `docs/deployment.md` va `.claude/rules/deployment.md` — "Backup va tiklash: `docs/runbooks/backup-va-tiklash.md`" havolasi.
 
 ## Loyiha egasi uchun ro'yxat (PROGRESS.md ga ham ko'chiring)
 
 Sonnet bularni **bajarmaydi**, faqat ro'yxatni qoldiradi:
 
-- [ ] Neon: joriy reja va tarix oynasini tekshirish; kerak bo'lsa rejani ko'tarish (≥ 7 kun PITR).
 - [ ] Birinchi tiklash mashqini runbook bo'yicha bajarish va jurnalga yozish (Faza 0 chiqish mezoni).
 - [ ] Cloudflare: Workers rejasini tekshirish, Paid'ga o'tish (ADR-015) va ADR holatini yangilash.
 - [ ] GitHub → Actions: T01 push'idan keyingi CI natijasini ko'rish; yiqilgan integratsiya testlari bo'lsa — ro'yxatini Claude'ga berish.

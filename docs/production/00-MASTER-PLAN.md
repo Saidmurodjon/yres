@@ -69,13 +69,14 @@ Maqsad: production'dagi mavjud xavflar va jimgina ma'lumot yo'qolishini yopish.
 
 | Ish | Hujjat |
 |---|---|
-| CI migratsiya sikli (`ON_ERROR_STOP=1`), Actions tarixini tekshirish, `test-db.ts` Neon-himoyasi | 06 §7-0 |
+| **Neon → Cloudflare D1 (K20, ADR-016)** — sxema, wiring, lokal D1 test harness, production cutover (`faza-0/D01–D04`) | ADR-016 |
+| CI: D1 migratsiyalari, branch trigger, artefaktlar; Actions tarixini tekshirish | 06 §7-0 |
 | S-1 akkaunt egallash, V-1 chat XSS (`Content-Disposition: attachment` + MIME allowlist), S-4, A-2, V-3, V-5 | 02 §2.1–2.3 |
-| Neon PITR yoqish + tiklash repetitsiyasi; Workers Paid rejasi (ADR-015) | 02 M-1, ADR-011 |
+| D1 Time Travel tiklash repetitsiyasi; Workers Paid rejasi (ADR-015 — D1 so'rov limitlari sababli endi majburiy) | 02 M-1, ADR-011 |
 | `parseLocaleNumber` + `NumberInput`; dirty-himoya (tizimlar, qobiq dialogi, `useBlocker`); o'chirishga tasdiq; iste'mol ko'p yilli saqlash; "Auditni ishga tushirish" qobiqni almashtirmasin | 03 §8 P0 (U1–U7) |
 | `xlsx@0.18.5` zaifligini yopish | 02 |
 
-**Chiqish mezoni:** CI 3/3 yashil (to'liq sxema bilan); `12,5` uchala tilda to'g'ri saqlanadi; tiklash mashqi bajarilgan.
+**Chiqish mezoni:** production D1'da ishlaydi, Neon o'chirilgan; CI yashil (to'liq sxema, integratsiya testlari lokal D1'da); `12,5` uchala tilda to'g'ri saqlanadi; tiklash mashqi bajarilgan.
 
 ### Faza 1 — Hisob to'g'riligi: dvigatelni v7.20 ga yetkazish (3–4 hafta)
 Maqsad: YRES raqamlari auditorning Excel'i bilan mos kelsin.
@@ -215,6 +216,7 @@ Agentlarning ~45 savoli takrorlanishlardan tozalandi. **Qalin** — keyingi faza
 | K17 | Sanity oraliqlari (CAPEX 200–300 USD/m², qoplanish 8–20 y) manbasi | Bino turi profiliga ko'chiriladi, versiyalanadi | Faza 2 | 01 Q6 |
 | K18 | 3-MTM loyihasini YRES'ga import qilish kerakmi yoki u faqat regressiya etaloni bo'ladimi? | Avval etalon, keyin import (UAT uchun) | Faza 1/3 | 01 Q7 |
 | K19 | Excel'dagi eskirgan izohlar v7.21 da tuzatiladimi (`Checks` D-bo'limi, C2, `Breakdown!72`)? | Ha, golden'dan oldin | Faza 1 | 01 Q12 |
+| **K20** | Baza: Neon Postgres'da qolamizmi yoki Cloudflare D1'ga o'tamizmi? | ✅ **Qaror (2026-10-02): D1** — to'liq Cloudflare; production'da faqat test ma'lumot, ko'chirilmaydi, bo'sh bazadan. `docs/adr/ADR-016-cloudflare-d1.md` | Faza 0 | loyiha egasi |
 
 ---
 

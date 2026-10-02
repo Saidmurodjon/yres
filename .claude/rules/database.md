@@ -1,4 +1,48 @@
-# Baza (Neon + Drizzle)
+# Baza (Cloudflare D1 + Drizzle)
+
+> **O'tish davri (2026-10-02, K20 / `docs/adr/ADR-016-cloudflare-d1.md`):** baza Neon Postgres'dan Cloudflare D1'ga
+> ko'chirilmoqda (`docs/production/faza-0/D01`–`D04`). Quyidagi **"D1"** bo'limi — maqsadli qoidalar, D01 dan boshlab
+> yangi kodga amal qiladi. Pastdagi **"Neon (eski)"** bo'limi faqat D02 tugaguncha hali Neon'da ishlayotgan kod uchun;
+> D04 da o'chiriladi va bu fayl to'liq qayta yoziladi.
+
+## D1
+
+- **Drayver: `drizzle-orm/d1`, `createDb(env.DB)`** — `DB` — Worker binding (`wrangler.toml` `[[d1_databases]]`), ulanish
+  satri va sir yo'q. Durable Object'lar ham xuddi shu `env.DB` ni oladi.
+- **Interaktiv tranzaksiya yo'q — atomiklik faqat `db.batch([...])`.** D1 hujjati: batch — SQL tranzaksiya, bitta bayonot
+  yiqilsa butun ketma-ketlik orqaga qaytadi. "Shu stsenariy qatorlarini almashtirish" andozasi o'zgarmaydi: bitta
+  `delete().where(...)` + insert(lar), hammasi bitta `db.batch()` da.
+- **Bitta bayonotda ≤ 100 bog'langan parametr.** `insert(table).values(rows)` massiv bilan — **faqat `insertChunked()`**
+  (`packages/db/src/batch.ts`) orqali; u qatorlarni `100 / ustunlar_soni` bo'laklarga bo'lib, bir nechta insert bayonotini
+  qaytaradi, ular **o'sha bitta** batch'ga qo'shiladi. Xom `values(rows)` 10 ta 10-ustunli qatordan oshganda
+  `too many SQL variables` bilan yiqiladi — bu D1'ga xos, Postgres'da yo'q edi.
+- **Bir Worker chaqiruvida ≤ 1 000 so'rov (Paid; Free'da 50).** Batch ichidagi har bayonot hisobga kiradi. Sikl ichida
+  so'rov yubormang; ko'p qatorli o'qishni `inArray` bilan bitta so'rovga yig'ing.
+- **Bayonot ≤ 100 KB, qator/satr ≤ 2 MB, baza ≤ 10 GB (oshirilmaydi).** Katta fayl/matn — R2'da, bazada faqat kalit.
+- **Tiplar (D01 xaritasi):** id — `text` + `crypto.randomUUID()`; pul/fizik kattalik — `real`; vaqt — `integer`
+  `timestamp_ms`; boolean — `integer` `boolean` rejimi; sana — `text` `YYYY-MM-DD`; JSON — `text` `json` rejimi;
+  enum — `text({ enum })`. **Enum DB darajasida tekshirilmaydi** — yagona himoya zod sxemasi; yangi enum qiymati
+  qo'shilganda zod va `enums.ts` bir commit'da.
+- **Katta-kichik harfga sezgirsiz qidiruv:** SQLite `LIKE`/`lower()` faqat ASCII. Kirill/o'zbek matni bo'yicha qidiruv —
+  ilova yozadigan normallashtirilgan ustun (`toLocaleLowerCase()`), masalan `building.searchText`. Yangi qidiriladigan
+  matn maydoni qo'shilsa, normallashtirilgan ustunni ham yozing. `ilike` — yo'q (Postgres operatori).
+- **Foreign key'lar har doim majburiy**, `PRAGMA foreign_keys = OFF` D1'da ishlamaydi. Jadvalni qayta yaratadigan migratsiya
+  (drizzle-kit SQLite'da ustun tipini o'zgartirishda shunday qiladi) boshida `PRAGMA defer_foreign_keys = on;` bo'lishi va
+  tugashigacha buzilish qolmasligi kerak. drizzle-kit hosil qilgan `PRAGMA foreign_keys=OFF` qatorini olib tashlang.
+- **Migratsiyalar:** `packages/db/src/schemas/` → `bun run db:generate` → `packages/db/drizzle/NNNN_*.sql`; qo'llash faqat
+  `wrangler d1 migrations apply` bilan (`db:migrate:local`, `db:migrate:prod` — `migrations_dir` `wrangler.toml` da). Wrangler
+  qo'llanganlarni `d1_migrations` jadvalida kuzatadi. Qo'llangan migratsiya fayli **hech qachon tahrirlanmaydi**.
+  `drizzle-kit migrate`/`push`/`studio` ishlatilmaydi.
+- **Ma'lumotnoma seed'i — versiyalangan migratsiya.** `src/reference-data.ts` — manba (har qiymat Excel'dan ko'chirilgan,
+  o'ylab topilmagan); o'zgarish = yangi `generate --custom` migratsiyasi (`INSERT OR IGNORE` / `UPDATE`) va
+  `build:reference-migration` skripti. "Seed allaqachon bor — erta chiqish" muammosi endi yo'q.
+- **Lokal baza bor:** `wrangler dev` va testlar Miniflare'ning lokal D1'ida ishlaydi (D03). Production D1'ga lokal
+  skriptdan yozish — faqat `wrangler d1 ... --remote` bilan va faqat loyiha egasi buyrug'i bilan.
+- **Mavjud jadvalga unique constraint qo'shishdan oldin dublikatlarni tekshiring** (`group by ... having count(*) > 1`) —
+  quyidagi Neon bo'limidagi qoida D1'da ham amal qiladi.
+- **Backup — D1 Time Travel** (Paid: 30 kun) + logik eksport (`wrangler d1 export`); runbook `docs/runbooks/backup-va-tiklash.md` (T10).
+
+## Neon (eski — D02 tugaguncha amal qiladi, D04 da o'chiriladi)
 
 - **Ilova Neon'ning HTTP drayveridan foydalanadi** (`@neondatabase/serverless` orqali
   `drizzle-orm/neon-http`, `packages/db/src/index.ts`ga qarang), **TCP ulanish pool'idan emas.**

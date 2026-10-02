@@ -33,7 +33,9 @@
    (T04c chegaralari — `year` diapazoni, `.finite().nonnegative()` — `replaceUtilityBillsSchema` orqali avtomatik keladi.)
 2. Route `PUT /:id/consumption/bulk` — mavjud `PUT /:id/consumption` bilan bir xil authz (`findAccessibleBuilding` +
    `canWrite`, 404/403 matnlari bir xil). Har guruh uchun bitta `delete(...).where(building+carrier+year)` va (qatorlar
-   bo'lsa) bitta `insert`; **hammasi bitta `db.batch()`** (`database.md` andozasi). `withDerivedFields` — mavjud
+   bo'lsa) `insertChunked(...)` (D02 — D1'da 100 parametr/so'rov limiti; 60 guruh × 12 oy bitta insert'ga sig'maydi);
+   **hammasi bitta `db.batch()`** (`database.md` andozasi). Batch hajmi: 60 guruh → ≤ 60 delete + bo'laklangan insert'lar —
+   1 000 so'rov/chaqiruv limitidan ancha past. `withDerivedFields` — mavjud
    yordamchi, qayta ishlating. Javob: `{ groups: [{ energyCarrier, year, count }] }`.
    Izohda: nega bitta batch (yarim saqlangan import bo'lmasin) va mavjud bitta-guruhli PUT nega qoladi (orqaga moslik).
 3. Integratsiya testlari: (a) 2 yil × 2 tashuvchi saqlanadi; (b) `bills: []` guruhi eski qatorlarni o'chiradi;
@@ -71,4 +73,4 @@
 - [ ] Gaz qatorining barcha oylarini tozalash → saqlash → sahifani yangilash → gaz qatorlari **yo'q**.
 - [ ] `12abc` katak → saqlash bloklanadi, xato aniq katakni ko'rsatadi; boshqa kataklar saqlanmaydi (atomik).
 - [ ] Toza holatda tugma disabled (yoki `count = 0`).
-- [ ] Integratsiya testlari yozildi (CI'da tasdiqlanadi); type-check/lint/build yashil.
+- [ ] Integratsiya testlari lokal D1'da yashil; type-check/lint/build yashil.

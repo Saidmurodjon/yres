@@ -1986,3 +1986,24 @@ Tekshiruv: faqat markdown — type-check/build talab qilinmaydi. (Rekognostsiya 
 --frozen-lockfile` bajarildi; tracked fayllar o'zgarmadi.)
 
 **Navbatda:** Faza 0, T01 dan — `docs/production/faza-0/README.md` §8 dagi prompt bilan Sonnet sessiyasi.
+
+## K20: Neon → Cloudflare D1 qarori va Faza 0 rejasiga kiritilishi (2026-10-02)
+
+Loyiha egasi bazani Cloudflare D1'ga ko'chirishga qaror qildi (to'liq Cloudflare). Production'da faqat test ma'lumot —
+**ko'chirilmaydi**, D1 bo'sh bazadan boshlanadi (tasdiqlandi). Kodga tegilmadi — faqat hujjat/qoida.
+
+- `docs/adr/ADR-016-cloudflare-d1.md` (qabul qilindi), master reja K20 qatori va Faza 0 jadvali.
+- Yangi spec'lar: `faza-0/D01` (sxema → `sqlite-core`, baseline, ma'lumotnoma seed'i versiyalangan migratsiya sifatida),
+  `D02` (`env.DB` binding, Better Auth `sqlite`, `insertChunked`, `ilike` → `searchText`), `D03` (test harness — Miniflare
+  lokal D1, CI'dan Postgres), `D04` (production cutover — loyiha egasi qadamlari bilan, Neon hujjatlarini tozalash).
+- T01 qisqardi (faqat branch trigger + artefaktlar), T02/T07 testlari lokal D1'da, T10 — D1 Time Travel runbook.
+- `database.md`: D1 qoidalari yuqorida (D01 dan amal qiladi), Neon bo'limi "o'tish davri" deb belgilandi. `data-integrity.md`,
+  `CLAUDE.md` moslashtirildi.
+
+Rasmiy hujjatda tasdiqlangan D1 faktlari (developers.cloudflare.com, 2026-10-02): `batch()` atomik (biri yiqilsa hammasi
+orqaga); **≤ 100 parametr/bayonot**; ≤ 1 000 so'rov/chaqiruv (Free: 50); baza ≤ 10 GB (Free: 500 MB); Time Travel 30 kun
+(Free: 7); FK doim majburiy, `PRAGMA foreign_keys=OFF` ishlamaydi — `defer_foreign_keys`.
+Koddagi hajm: 39 jadval, 17 enum, 85 `numeric`, 35 `defaultRandom`, 2 ta `ilike`; DB faqat `createDb` orqali ulanadi
+(`middleware/db.ts`, `conversation-room.ts`) — ko'chirish yuzasi tor.
+
+**Navbatda:** Sonnet sessiyasi — `faza-0/README.md`, D01 dan. Loyiha egasi: Workers Paid (D1 Free limitlari audit run'ga yetmaydi).

@@ -49,7 +49,7 @@ tekshiring; farq qilsa, to'xtang (README §5).
    ```
    - `providerId === "credential"` → `{ revoked: false }` (oddiy ro'yxatdan o'tish ham shu hook'dan o'tadi).
    - user'ni o'qing; topilmasa yoki `emailVerified === true` → `{ revoked: false }`.
-   - `db.batch([...])` (`database.md`: tranzaksiya yo'q, atomiklik faqat batch):
+   - `db.batch([...])` (`database.md`: D1'da interaktiv tranzaksiya yo'q, atomiklik faqat batch):
      `delete(account).where(and(eq(account.userId, id), eq(account.providerId, "credential")))` va
      `delete(session).where(eq(session.userId, id))`.
    - `console.warn` bilan **email'siz** log: `[auth] revoked unverified credential on social link userId=…`.
@@ -78,7 +78,7 @@ tekshiring; farq qilsa, to'xtang (README §5).
 ## Qabul mezonlari
 
 - [ ] Type-check, lint yashil; servis unit testlari yashil.
-- [ ] Integratsiya testi yozildi (lokal ECONNREFUSED — kutilgan; CI'da tasdiqlanadi).
+- [ ] Integratsiya testi **lokal D1'da yashil** (D03 dan keyin integratsiya testlari lokal ishlaydi).
 - [ ] Oddiy email/parol ro'yxatdan o'tish oqimi o'zgarmagan (hook `credential` uchun no-op).
 - [ ] PROGRESS.md da loyiha egasi uchun qo'lda tekshirish: (1) yangi email bilan parol akkaunt oching,
       tasdiqlamang; (2) o'sha Gmail bilan "Google bilan kirish"; (3) eski parol bilan kirish **ishlamasligi**,
@@ -89,4 +89,4 @@ tekshiring; farq qilsa, to'xtang (README §5).
 
 - `requireEmailVerification: true` yoki "tasdiqlashni qayta yuborish" oqimini qurmang — bu (a) yo'l, rad etilgan.
 - Hook ichida email yubormang, bildirishnoma qo'shmang — ko'lamdan tashqari.
-- Mavjud production user'larini retroaktiv "tozalash" skripti yozmang (production bazaga tegish yo'q).
+- Retroaktiv "tozalash" skripti yozmang — D1 cutover'da (D04) baza bo'sh boshlanadi, eski akkauntlar yo'q.

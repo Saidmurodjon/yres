@@ -4,12 +4,14 @@ Manba: `docs/production/02-arxitektura-va-texnologiyalar.md` §2.5–2.6, §5.2;
 
 ## Hozir amal qiladi
 
-- **Atomiklik faqat `db.batch()`** (`database.md`): bitta foydalanuvchi amalining barcha yozuvlari bitta batch'da.
+- **Atomiklik faqat `db.batch()`** (`database.md`): bitta foydalanuvchi amalining barcha yozuvlari bitta batch'da
+  (ko'p qatorli insert'lar `insertChunked()` bilan bo'laklanadi, lekin batch bitta qoladi).
   Frontend'dan ketma-ket bir nechta mutatsiya bilan "bitta amal"ni yasamang — backend'da bitta endpoint qiling.
 - **Migratsiya expand→contract:** `DROP COLUMN`, ustun nomini o'zgartirish, enum qiymatini olib tashlash,
   default'siz `NOT NULL` — bitta relizda taqiqlangan; kamida ikki deploy'ga bo'linadi (06 §5.5).
-- **CI barcha migratsiyalarni `ON_ERROR_STOP=1` bilan qo'llaydi**; yangi migratsiya psql'da toza o'tishi shart.
-- **Test yordamchilari faqat lokal bazaga** — `test-db.ts` dagi host himoyasini olib tashlamang/chetlab o'tmang.
+- **Har yangi migratsiya lokal D1'ga toza qo'llanadi** (`db:migrate:local`) va testlar uni o'zi qo'llaydi (D03); D1 FK'larni
+  doim tekshiradi — jadvalni qayta yaratuvchi migratsiyada `PRAGMA defer_foreign_keys = on` (`database.md`).
+- **Test harness tarmoqqa chiqmaydi** — faqat Miniflare lokal D1. Testdan `--remote` bazaga ulanish taqiqlangan.
 - **Natija keshlanmaydi** (`calculation-engine.md`) — draft ko'rinish har safar qayta hisoblanadi. Snapshot kelguncha
   hisobot ham shunday; buni "tuzatish" uchun vaqtinchalik kesh qo'shmang.
 
