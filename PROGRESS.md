@@ -1934,3 +1934,25 @@ false`ga o'zgartirildi (`role`/`isActive` bilan bir xil naqsh) — haqiqiy kafol
 hook + bazaning NOT NULL cheklovi orqali ta'minlanadi. Tekshirildi: `bun run --cwd apps/api
 type-check`, `bunx biome check`. Haqiqiy signup oqimini qayta sinash — foydalanuvchi
 tomonidan.
+
+## Production rejasi repo'ga olindi + qoidalar rejaga moslashtirildi (2026-10-02)
+
+Kodga tegilmadi — faqat hujjat/qoida o'zgarishlari, Faza 0 dan oldingi tayyorgarlik.
+
+- `docs/production/` (00-MASTER-PLAN + 01–06 mutaxassis hisobotlari, 2026-09-27) faqat diskda,
+  commit qilinmagan holda turgan edi — commit qilindi.
+- **K1 qarori: haqiqat manbai — Excel v7.20** (loyiha egasi tasdiqladi). `calculation-engine.md`dagi
+  "v5 ga sodiqlik" qoidasi "v7.20 ga sodiqlik + har dvigatel o'zgarishi golden test bilan"ga
+  almashtirildi; master rejadagi K1 qatori va `CLAUDE.md` yangilandi. Dvigatel kodi hali v5 da
+  (X33 `(Q+Qd)·(2−η)` va boshqalar) — tuzatish Faza 1 da.
+- `auth.md`: `requireLocalEmailVerified: false` qoidasi S-1 (akkauntni oldindan egallash) tuzatishini
+  to'smasligi aniqlashtirildi; ruxsat etilgan ikki yo'l (a/b) yozildi — tanlov loyiha egasida.
+- Kodda qayta tasdiqlangan topilmalar (o'qib + grep): X33 formulasi; `ci.yml`dagi
+  `psql -f packages/db/drizzle/*.sql` faqat birinchi migratsiyani qo'llaydi; `DEFAULT_DISCOUNT_RATE
+  = 0.04` qattiq kodda; `xlsx@^0.18.5`; `NumberInput`/`parseLocaleNumber` yo'q (`parseFloat`).
+
+Tekshiruv: faqat markdown o'zgardi — type-check/build/lint talab qilinmaydi.
+
+**Navbatda:** K2–K4 qarorlari (Faza 1 ni bloklaydi); S-1 uchun (a)/(b) tanlovi; branch strategiyasi
+(repo'da faqat `claude/yres-platform-development-svx6nn` bor, `main` yo'q); keyin Faza 0
+(master reja §6dagi tayyor prompt).
