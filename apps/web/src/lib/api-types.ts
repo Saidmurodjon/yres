@@ -383,6 +383,12 @@ export interface ReplaceUtilityBillsInput {
   bills: MonthlyBillInput[];
 }
 
+/** One edited year with ALL its carriers: the server replaces the whole year (unlisted carriers are cleared). */
+export interface BulkReplaceYearInput {
+  year: number;
+  carriers: { energyCarrier: EnergyCarrier; bills: MonthlyBillInput[] }[];
+}
+
 export interface ClimateMonthlyNormal {
   id: string;
   climateRegionId: string;

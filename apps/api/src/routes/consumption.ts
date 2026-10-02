@@ -1,10 +1,14 @@
 import { chunkRowsForInsert, type energyCarrierEnum, insertChunked, utilityBill } from "@yres/db";
-import { and, eq, getTableColumns } from "drizzle-orm";
+import { and, eq, getTableColumns, inArray } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
-import { createUtilityBillsSchema, replaceUtilityBillsSchema } from "../schemas/consumption";
+import {
+  bulkReplaceUtilityBillsSchema,
+  createUtilityBillsSchema,
+  replaceUtilityBillsSchema,
+} from "../schemas/consumption";
 import { paginationQuerySchema, toLimitOffset } from "../schemas/pagination";
 import { computeConsumptionKwh } from "../services/consumption.service";
 
@@ -154,4 +158,69 @@ consumptionRoutes.put("/:id/consumption", async (c) => {
   await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 
   return c.json({ energyCarrier, year, count: rows.length });
+});
+
+// PUT /:id/consumption/bulk - replace WHOLE YEARS (all carriers) in one atomic batch. The consumption tab
+// saves every edited year at once, so a failure halfway must not leave an import half saved (the
+// single-group PUT above stays for backward compatibility).
+//
+// Contract: for each year in the request, ALL existing bills of that year are deleted - including those of
+// carriers the request does not list - and replaced by the listed rows. A carrier sent with `bills: []`
+// therefore clears that carrier (emptied grid rows reach the server), and the client must send every
+// carrier of an edited year. One delete per request (year IN (...), ≤ 5 values) instead of one per
+// carrier-year keeps the batch inside the Workers Free query budget (see schemas/consumption.ts).
+consumptionRoutes.put("/:id/consumption/bulk", async (c) => {
+  const buildingId = c.req.param("id");
+  const body = await c.req.json().catch(() => null);
+  const parsed = bulkReplaceUtilityBillsSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid body", details: parsed.error.flatten() }, 400);
+  }
+
+  const db = c.get("db");
+  const user = c.get("user");
+
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
+    return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
+  }
+
+  const { years } = parsed.data;
+  const rows = years.flatMap((entry) =>
+    entry.carriers.flatMap((group) =>
+      group.bills.map((bill) => ({
+        ...withDerivedFields(bill, group.energyCarrier),
+        buildingId,
+        energyCarrier: group.energyCarrier,
+        year: entry.year,
+      })),
+    ),
+  );
+
+  const statements: BatchItem<"sqlite">[] = [
+    db.delete(utilityBill).where(
+      and(
+        eq(utilityBill.buildingId, buildingId),
+        inArray(
+          utilityBill.year,
+          years.map((entry) => entry.year),
+        ),
+      ),
+    ),
+  ];
+  if (rows.length > 0) statements.push(...insertChunked(db, utilityBill, rows));
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+
+  return c.json({
+    groups: years.flatMap((entry) =>
+      entry.carriers.map((group) => ({
+        energyCarrier: group.energyCarrier,
+        year: entry.year,
+        count: group.bills.length,
+      })),
+    ),
+  });
 });

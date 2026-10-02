@@ -42,3 +42,51 @@ export const replaceUtilityBillsSchema = z.object({
   bills: z.array(monthlyBillInputSchema).max(12),
 });
 export type ReplaceUtilityBillsInput = z.infer<typeof replaceUtilityBillsSchema>;
+
+// Several years × carriers replaced in ONE request (atomic). Query budget (database.md, ≤ 40): per year the
+// whole year is replaced by one delete; worst case 5 years × 4 carriers × 12 months = 240 rows, 9 columns →
+// 11 rows per statement → 22 inserts + 1 delete = 23 (+ ≤ 5 for auth/access).
+export const bulkReplaceUtilityBillsSchema = z
+  .object({
+    years: z
+      .array(
+        z.object({
+          year: yearSchema,
+          carriers: z
+            .array(
+              z.object({
+                energyCarrier: z.enum(energyCarrierEnum.enumValues),
+                bills: z.array(monthlyBillInputSchema).max(12),
+              }),
+            )
+            .max(energyCarrierEnum.enumValues.length),
+        }),
+      )
+      .min(1)
+      .max(5),
+  })
+  .superRefine((value, ctx) => {
+    const years = new Set<number>();
+    for (const [i, entry] of value.years.entries()) {
+      if (years.has(entry.year)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["years", i, "year"],
+          message: "Duplicate year",
+        });
+      }
+      years.add(entry.year);
+      const carriers = new Set<string>();
+      for (const [j, c] of entry.carriers.entries()) {
+        if (carriers.has(c.energyCarrier)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["years", i, "carriers", j, "energyCarrier"],
+            message: "Duplicate carrier within a year",
+          });
+        }
+        carriers.add(c.energyCarrier);
+      }
+    }
+  });
+export type BulkReplaceUtilityBillsInput = z.infer<typeof bulkReplaceUtilityBillsSchema>;

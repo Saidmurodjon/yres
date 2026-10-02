@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ListParams } from "../lib/api";
 import { api } from "../lib/api";
-import type { CreateUtilityBillInput, ReplaceUtilityBillsInput } from "../lib/api-types";
+import type {
+  BulkReplaceYearInput,
+  CreateUtilityBillInput,
+  ReplaceUtilityBillsInput,
+} from "../lib/api-types";
 
 export function useConsumption(buildingId: string | undefined, params?: ListParams) {
   return useQuery({
@@ -25,6 +29,17 @@ export function useReplaceConsumption(buildingId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (payload: ReplaceUtilityBillsInput) => api.consumption.replace(buildingId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["buildings", buildingId, "consumption"] });
+    },
+  });
+}
+
+/** Saves every edited year in one atomic request. */
+export function useBulkReplaceConsumption(buildingId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (years: BulkReplaceYearInput[]) => api.consumption.bulkReplace(buildingId, years),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["buildings", buildingId, "consumption"] });
     },

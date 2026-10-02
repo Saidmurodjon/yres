@@ -13,6 +13,7 @@ import type {
   BuildingMember,
   BuildingRole,
   BuildingWithRole,
+  BulkReplaceYearInput,
   ChatAttachmentUploadResult,
   ChatMessage,
   ChatUserSearchResult,
@@ -285,6 +286,11 @@ export const api = {
       request<{ energyCarrier: string; year: number; count: number }>(
         `/api/buildings/${buildingId}/consumption`,
         { method: "PUT", body: JSON.stringify(payload) },
+      ),
+    bulkReplace: (buildingId: string, years: BulkReplaceYearInput[]) =>
+      request<{ groups: { energyCarrier: string; year: number; count: number }[] }>(
+        `/api/buildings/${buildingId}/consumption/bulk`,
+        { method: "PUT", body: JSON.stringify({ years }) },
       ),
   },
 

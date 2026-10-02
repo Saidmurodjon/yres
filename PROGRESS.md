@@ -2345,3 +2345,11 @@ T06b — qamrab olinganlar:
   bino o'chirilgach navigatsiya `useRunWithoutBlocking` bilan (saqlanmagan narsa endi ahamiyatsiz). Chat guruhidan a'zoni chiqarish (`removeUserIds`) uchun UI **yo'q** (faqat API/tur) — tasdiq kerak emas.
   Brauzerda: `confirm-delete.spec.ts` bino o'chirishni ham qamraydi (fokus Cancel'da, Cancel qoldiradi, tasdiq o'chiradi va `/buildings` ga o'tadi ogohlantirishsiz); Playwright 23/23. (Oldingi commit xabaridagi "22/22" o'sha paytda `measures.spec` yiqilganini o'tkazib yuborgan edi — alohida commit bilan tuzatildi.)
   Admin deaktivatsiya dialogi brauzerda sinalmadi (admin akkaunt kerak).
+
+## Faza 0 · T07a — iste'mol: bir so'rovda ko'p yilni atomik almashtirish (2026-10-02)
+
+- `PUT /:id/consumption/bulk` (`routes/consumption.ts`, sxema `bulkReplaceUtilityBillsSchema`): ≤5 yil × ≤4 tashuvchi × ≤12 oy; takroriy yil/tashuvchi → 400. **Yil to'liq almashtiriladi:** yuborilgan har yilning BARCHA eski qatorlari (yuborilmagan tashuvchilar ham) bitta `delete(year IN …)` bilan o'chadi, keyin `insertChunked` — hammasi bitta `db.batch()`.
+  Eng yomon holat: 1 delete + 22 insert = 23 (+auth/access ≤5) ≤ 40. Authz oldingi PUT bilan bir xil (404/403). Bitta-guruhli `PUT /:id/consumption` orqaga moslik uchun qoldi.
+- Testlar `consumption-bulk.test.ts` (5): 2×2 saqlanadi; bo'sh guruh va yuborilmagan tashuvchi eski qatorlarni o'chiradi; takroriy → 400 va hech narsa yozilmaydi; 5×4×12 = 240 qator lokal D1'da o'tadi; viewer 403 / begona 404. api 38+ fayl yashil.
+- Web: `api.consumption.bulkReplace`, `useBulkReplaceConsumption` (invalidatsiya), `BulkReplaceYearInput` turi.
+**Navbatda:** T07b — consumption-tab "O'zgarishlarni saqlash".
