@@ -36,6 +36,10 @@ auditRoutes.post("/:id/audit/run", async (c) => {
   if (!access) {
     return c.json({ error: "Not found" }, 404);
   }
+  // A viewer may read results but must not write an audit_run row (A-2, security.md).
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
+  }
 
   const [run] = await db
     .insert(auditRun)
@@ -178,11 +182,18 @@ auditRoutes.get("/:id/audit/report", async (c) => {
     verifyUrl,
   );
 
-  const r2Key = `reports/${buildingId}/latest.pdf`;
-  await c.env.REPORTS_BUCKET.put(r2Key, pdfBytes, {
-    httpMetadata: { contentType: "application/pdf" },
-  });
-  await db.update(auditRun).set({ reportR2Key: r2Key }).where(eq(auditRun.id, latestCompleted.id));
+  // A GET must not write for a viewer (A-2): the cached copy and `reportR2Key` are only refreshed when the
+  // caller could write anyway. The side effect itself goes away with snapshots + POST /reports (Faza 2).
+  if (canWrite(access.role)) {
+    const r2Key = `reports/${buildingId}/latest.pdf`;
+    await c.env.REPORTS_BUCKET.put(r2Key, pdfBytes, {
+      httpMetadata: { contentType: "application/pdf" },
+    });
+    await db
+      .update(auditRun)
+      .set({ reportR2Key: r2Key })
+      .where(eq(auditRun.id, latestCompleted.id));
+  }
 
   const fileName = `${access.building.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-audit-report.pdf`;
   return new Response(pdfBytes, {

@@ -2205,3 +2205,8 @@ shuning uchun T01 da yo spec'larni tuzatish, yo E2E'ni aniq izoh bilan CI'dan ch
 
 - **T04a (S-4):** `lib/html.ts` `escapeHtml` (`&` birinchi); welcome email'dagi `user.name` va reset/verify email'lardagi `href` `url` escape qilinadi
   (`auth/index.ts`). Boshqa email shabloni yo'q (grep). Unit test `tests/services/html.test.ts` (5).
+- **T04b (A-2):** `POST /:id/audit/run` — viewer `403 "You only have view access to this building."` (avval `audit_run` qatori yozilardi);
+  `GET /:id/audit/report` — viewer PDF'ni yuklab oladi, lekin R2 `put` va `reportR2Key` yangilanishi faqat `canWrite` da (GET'dagi yon ta'sir to'liq Faza 2 da ketadi).
+  Audit route'larida boshqa yozuv yo'q (grep: `annotations` PUT allaqachon `canWrite`). Test `tests/integration/audit-access.test.ts` (viewer 403 + qator yozilmaydi,
+  editor 201; viewer PDF 200 va `reportR2Key` null, owner'dan keyin to'ladi). **UI eslatma:** natija sahifasidagi "Auditni ishga tushirish" tugmasi viewer'ga
+  yashirilmagan — endi u 403 xabarini ko'radi (`results.tsx` mavjud xato ko'rsatkichi orqali); tugmani yashirish alohida UX ishi.
