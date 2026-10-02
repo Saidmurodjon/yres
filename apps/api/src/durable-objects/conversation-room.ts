@@ -2,16 +2,21 @@ import { DurableObject } from "cloudflare:workers";
 import {
   conversationMember,
   createDb,
+  insertChunked,
   message as messageTable,
   notification,
   user,
 } from "@yres/db";
 import { and, eq } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 import type { Env } from "../index";
 import { type IncomingWsMessage, makeIncomingWsMessageSchema } from "../schemas/chat";
 
 /** A legitimate frame is a few KB at most (4000-character body); anything bigger is not parsed at all. */
 const MAX_FRAME_CHARS = 64 * 1024;
+
+/** Live bell pushes per message; see the query-budget note on storeAndAnnounceMessage(). */
+const MAX_LIVE_PUSHES = 30;
 
 /**
  * One instance per chat conversation, routed via
@@ -102,22 +107,34 @@ export class ConversationRoom extends DurableObject<Env> {
     switch (incoming.type) {
       case "message": {
         if (!incoming.body?.trim() && !incoming.attachmentUrl) return;
-        const [row] = await db
-          .insert(messageTable)
-          .values({
-            conversationId,
-            senderId: userId,
-            body: incoming.body ?? "",
-            replyToId: incoming.replyToId ?? null,
-            attachmentUrl: incoming.attachmentUrl ?? null,
-            attachmentName: incoming.attachmentName ?? null,
-            attachmentMimeType: incoming.attachmentMimeType ?? null,
-            attachmentSizeBytes: incoming.attachmentSizeBytes ?? null,
-          })
-          .returning();
-        if (!row) return;
-        this.broadcast({ type: "message", message: row });
-        await this.notifyOfflineMembers(db, conversationId, userId, row.body);
+        if (incoming.replyToId) {
+          // A reply may only quote a message of THIS conversation (scope by the parent, security.md).
+          const [parent] = await db
+            .select({ id: messageTable.id })
+            .from(messageTable)
+            .where(
+              and(
+                eq(messageTable.id, incoming.replyToId),
+                eq(messageTable.conversationId, conversationId),
+              ),
+            )
+            .limit(1);
+          if (!parent) {
+            console.warn(
+              "[chat] reply to a message outside the conversation dropped userId=",
+              userId,
+            );
+            return;
+          }
+        }
+        await this.storeAndAnnounceMessage(db, conversationId, userId, {
+          body: incoming.body ?? "",
+          replyToId: incoming.replyToId ?? null,
+          attachmentUrl: incoming.attachmentUrl ?? null,
+          attachmentName: incoming.attachmentName ?? null,
+          attachmentMimeType: incoming.attachmentMimeType ?? null,
+          attachmentSizeBytes: incoming.attachmentSizeBytes ?? null,
+        });
         break;
       }
 
@@ -126,7 +143,13 @@ export class ConversationRoom extends DurableObject<Env> {
         const [row] = await db
           .update(messageTable)
           .set({ body: incoming.body, editedAt: new Date() })
-          .where(and(eq(messageTable.id, incoming.messageId), eq(messageTable.senderId, userId)))
+          .where(
+            and(
+              eq(messageTable.id, incoming.messageId),
+              eq(messageTable.conversationId, conversationId),
+              eq(messageTable.senderId, userId),
+            ),
+          )
           .returning();
         if (row) this.broadcast({ type: "message_edited", message: row });
         break;
@@ -137,7 +160,13 @@ export class ConversationRoom extends DurableObject<Env> {
         const [row] = await db
           .update(messageTable)
           .set({ deletedAt: new Date() })
-          .where(and(eq(messageTable.id, incoming.messageId), eq(messageTable.senderId, userId)))
+          .where(
+            and(
+              eq(messageTable.id, incoming.messageId),
+              eq(messageTable.conversationId, conversationId),
+              eq(messageTable.senderId, userId),
+            ),
+          )
           .returning();
         if (row) this.broadcast({ type: "message_deleted", messageId: row.id });
         break;
@@ -191,17 +220,21 @@ export class ConversationRoom extends DurableObject<Env> {
   }
 
   /**
-   * Members currently connected to *this* room already saw the message via
-   * `broadcast()` above — this only notifies the rest, same durable
-   * `notification` row + live bell push as every other notification source
-   * (lib/notify.ts), just issued directly from the DO instead of a route
-   * handler since only the DO knows who's actually connected right now.
+   * Inserts the message and a `notification` row for every member who is not connected right now, in ONE
+   * atomic db.batch(), then broadcasts it and pushes live bell updates.
+   *
+   * Query budget (Workers Free: 50 subrequests per invocation, and D1 queries count — database.md):
+   * 1 members select + 1 sender-name select + (1 reply check) + batch of 1 + ceil(offline / 12) statements
+   * (notification has 8 columns → 12 rows per statement). With the 50-member group cap that is at most
+   * 3 + 1 + 5 = 9 D1 queries. The live pushes (Durable Object calls) are best counted as subrequests too, so
+   * they are capped at MAX_LIVE_PUSHES: 9 + 30 stays under 50. Members beyond the cap still get their
+   * notification row (the bell shows it on the next fetch); they only miss the instant push.
    */
-  private async notifyOfflineMembers(
+  private async storeAndAnnounceMessage(
     db: ReturnType<typeof createDb>,
     conversationId: string,
     senderId: string,
-    messageBody: string,
+    fields: Omit<typeof messageTable.$inferInsert, "conversationId" | "senderId">,
   ): Promise<void> {
     const connectedUserIds = new Set(
       this.ctx
@@ -220,26 +253,51 @@ export class ConversationRoom extends DurableObject<Env> {
       .where(eq(user.id, senderId))
       .limit(1);
 
-    for (const member of members) {
-      if (member.userId === senderId || connectedUserIds.has(member.userId)) continue;
-
-      const [notificationRow] = await db
-        .insert(notification)
-        .values({
+    const now = new Date();
+    const notifications: (typeof notification.$inferInsert & { id: string; createdAt: Date })[] =
+      members
+        .filter((member) => member.userId !== senderId && !connectedUserIds.has(member.userId))
+        .map((member) => ({
+          id: crypto.randomUUID(),
           userId: member.userId,
           type: "chat_message",
           title: `New message from ${sender?.name ?? "someone"}`,
-          body: messageBody.slice(0, 200),
+          body: (fields.body ?? "").slice(0, 200),
           linkUrl: `/chat/${conversationId}`,
-        })
-        .returning();
+          isRead: false,
+          createdAt: now,
+        }));
 
+    const statements: BatchItem<"sqlite">[] = [
+      db
+        .insert(messageTable)
+        .values({ ...fields, conversationId, senderId })
+        .returning(),
+      ...(notifications.length > 0 ? insertChunked(db, notification, notifications) : []),
+    ];
+    const [insertedRows] = (await db.batch(
+      statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]],
+    )) as unknown as [(typeof messageTable.$inferSelect)[]];
+    const row = insertedRows[0];
+    if (!row) return;
+
+    this.broadcast({ type: "message", message: row });
+
+    // Live pushes are fire-and-forget (realtime.md): the rows above are the source of truth.
+    for (const notificationRow of notifications.slice(0, MAX_LIVE_PUSHES)) {
       try {
-        const channelId = this.env.USER_CHANNEL.idFromName(member.userId);
+        const channelId = this.env.USER_CHANNEL.idFromName(notificationRow.userId);
         await this.env.USER_CHANNEL.get(channelId).pushNotification(notificationRow);
       } catch (err) {
         console.error("[chat] failed to push offline-member notification", err);
       }
+    }
+    if (notifications.length > MAX_LIVE_PUSHES) {
+      console.warn(
+        "[chat] live pushes capped:",
+        notifications.length - MAX_LIVE_PUSHES,
+        "members get the notification row only",
+      );
     }
   }
 }

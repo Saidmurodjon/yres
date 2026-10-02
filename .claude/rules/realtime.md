@@ -45,10 +45,13 @@ izohlardan oldindan bilib bo'lmaydigan nozik jihatlarni qamrab oladi.
   translatsiya qiladi. DO'ning o'zi hech qanday qayta tiklab bo'lmaydigan holatni saqlamaydi —
   DO `createDb(this.env.DB)` bilan Worker bilan bir xil D1 binding'ini oladi, ulanish satri yo'q
   (`database.md`dagi so'rov byudjeti — DO xabari uchun ≤ 40 D1 so'rovi — bu yerda ham amal qiladi).
-- **Ulanmagan a'zolar** (`notifyOfflineMembers()`) hozirda ulangan socket'lardagi
-  `deserializeAttachment()`dan yig'ilgan `userId` to'plamiga qarab aniqlanadi — bu shunchaki
-  `conversationMember`ning barcha a'zolaridan xabar yuboruvchini va hozir ulangan a'zolarni
-  ayirib tashlaydi, alohida "online" holat jadvali kerak emas.
+- **Ulanmagan a'zolar** (`storeAndAnnounceMessage()`): xabar INSERT'i va barcha oflayn a'zolarning `notification` qatorlari **bitta atomik `db.batch()`** da
+  (`insertChunked`), keyin broadcast va jonli push'lar. Byudjet (Workers Free: 50 subrequest/chaqiruv, D1 so'rovlari ham, DO chaqiruvlari ham
+  hisobga olinadi): ≤9 D1 so'rovi (50 a'zoli guruhda) + jonli push'lar `MAX_LIVE_PUSHES = 30` bilan cheklangan; undan ortiq a'zolar notification
+  qatorini oladi, faqat bir zumlik push'ni yo'qotadi. Har a'zo uchun alohida INSERT/RPC yozmang. Cloudflare hujjati (workers/platform/limits):
+  "Subrequests per invocation: 50 (Free)", ta'rif — "Fetch API yoki R2, KV, D1 kabi Cloudflare xizmatlariga so'rov"; DO chaqiruvi aniq tilga olinmagan,
+  shuning uchun ehtiyot sifatida sanaladi (tasdiqlanmagan).
+
 - **`wrangler.toml`dagi `new_sqlite_classes` migratsiya bloki** (`new_classes` emas) SQLite-
   asoslangan saqlash backend'idan foydalanadi — bu Workers Free rejasida ham ishlashi kerak,
   lekin haqiqiy akkauntga nisbatan tasdiqlanmagan (`wrangler.toml`ning shu qatoridagi izohga

@@ -2248,3 +2248,11 @@ shuning uchun T01 da yo spec'larni tuzatish, yo E2E'ni aniq izoh bilan CI'dan ch
   saqlanmaydi va broadcast bo'lmaydi).
   **OCHIQ QOLDI:** (1) a'zolikdan chiqarilgan foydalanuvchining ochiq socket'ini yopish (DO RPC, `realtime.md`) — bu commit'da emas; (2) `notifyOfflineMembers` har a'zo uchun alohida INSERT + DO push qiladi —
   50 a'zoli guruhda bitta xabar ~100+ D1 so'rovi, `database.md` ning DO xabari ≤ 40 byudjetidan oshadi (Free'da 50/chaqiruv) — keyingi ishda bitta batch'ga yig'ish kerak (T04 ko'lamida emas).
+- **T04e keyingi tuzatishlar (nazoratchi topilmalari):** (1) `edit`/`delete` freymlari endi `conversationId` bilan scope qilingan (avval `id AND senderId` — A suhbat socket'idan B dagi o'z xabarini
+  tahrirlash/o'chirish mumkin edi va matn A a'zolariga broadcast bo'lardi); `replyToId` insert'dan oldin shu suhbat xabari ekani tekshiriladi (aks holda dropped + `console.warn`). HTTP `PATCH/DELETE /messages/:id`
+  faqat `senderId` bilan scope qilingan, broadcast yo'q, suhbat bo'yicha ma'lumot sizmaydi — tegilmadi (eslatma: chiqarilgan a'zo o'z xabarini baribir tahrirlay oladi). Reply preview server tomonda join qilinmaydi (mijoz yuklangan xabarlardan oladi).
+  (2) **`notifyOfflineMembers` production bug'i tuzatildi:** har oflayn a'zo uchun alohida INSERT + DO push (50 a'zoda ~100+ so'rov, Free 50/chaqiruvdan oshib handler yarim yo'lda yiqilardi) →
+  `storeAndAnnounceMessage`: xabar + barcha notification qatorlari bitta atomik batch (`insertChunked`), jonli push ≤ 30 (`MAX_LIVE_PUSHES`). Eng yomon hisob: 2 select + 1 reply-check + (1 + ceil(49/12)=5) batch = ≤9 D1 so'rovi; 9 + 30 < 50.
+  Cloudflare hujjati (WebFetch, workers/platform/limits): "Subrequests per invocation 50 (Free)", ta'rif R2/KV/D1 ni o'z ichiga oladi, DO chaqiruvi aniq tilga olinmagan → ehtiyotan sanaladi (**tasdiqlanmagan** — haqiqiy Free'da sinab ko'rilmagan, Miniflare chegarani qo'llamaydi).
+  Testlar (`conversation-room.test.ts`, 7): A/B suhbat edit/delete o'zgarmaydi va broadcast yo'q; begona `replyToId` rad; 50 a'zoli guruh — 1 xabar, 49 notification, `prepare` sanagich ≤10, push ≤30; tuzatishdan OLDIN uchta yangi test yiqildi.
+  Ochiq qoldi: a'zolikdan chiqarilgan foydalanuvchining ochiq socket'ini yopish (DO RPC).
