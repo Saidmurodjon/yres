@@ -46,5 +46,7 @@ test("adds, proposes, and deletes an energy measure via the Measures tab", async
   await expect(page.getByText("Measure selection saved.")).toBeVisible();
 
   await row.getByRole("button", { name: /Delete/ }).click();
+  // Deleting a server object now asks first (U7).
+  await page.getByRole("dialog").getByRole("button", { name: "Delete" }).click();
   await expect(page.getByText("No measures added yet")).toBeVisible();
 });
