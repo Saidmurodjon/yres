@@ -2,10 +2,12 @@
 # theme-bootstrap <script> in index.html — if that script changes, recompute and replace it here:
 #   sha256 of the exact text between <script> and </script> in dist/index.html, base64.
 # style-src keeps 'unsafe-inline' on purpose: Radix and recharts set inline style attributes.
+# img-src allows *.googleusercontent.com because a user who signed in with Google has user.image set to
+# an https://lh3.googleusercontent.com/... URL that the app shell renders as the avatar (app-shell.tsx).
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-vSGhtd+BGY0jcAYofx0UeO2ast1Wt3E0jlI1b1Oisqc='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://yres-api.saidmurod.com; font-src 'self' data:; connect-src 'self' https://yres-api.saidmurod.com wss://yres-api.saidmurod.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-vSGhtd+BGY0jcAYofx0UeO2ast1Wt3E0jlI1b1Oisqc='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://yres-api.saidmurod.com https://*.googleusercontent.com; font-src 'self' data:; connect-src 'self' https://yres-api.saidmurod.com wss://yres-api.saidmurod.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'
