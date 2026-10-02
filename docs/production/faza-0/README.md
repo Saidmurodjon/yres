@@ -43,7 +43,7 @@ o'qish → kodni topish (spec'dagi fayl:qator) → amalga oshirish → spec'dagi
 |---|---|
 | Har doim | `bun run type-check` (ildizdan) · `bunx biome lint <tegilgan fayllar>` |
 | `apps/web` yoki `packages/ui` | `bun run build` (haqiqiy Vite build) |
-| `apps/api` | `bun run --cwd apps/api test`. **D03 gacha:** servis unit testlari yashil bo'lishi shart, integratsiya testlari lokal Postgres yo'qligi sababli `ECONNREFUSED` (kutilgan). **D03 dan keyin:** servis + integratsiya testlari lokal D1'da **to'liq yashil** bo'lishi shart |
+| `apps/api` | `bun run --cwd apps/api test`. servis + integratsiya testlari lokal D1'da (Miniflare) **to'liq yashil** bo'lishi shart |
 | `packages/db` | `bun run --cwd packages/db type-check`; sxema o'zgarsa — `generate` va SQL'ni lokal D1'ga qo'llash (`db:migrate:local`) |
 | `apps/web/src/lib` (T05 dan keyin) | `bun run --cwd apps/web test` |
 | UI o'zgarishi | Imkon bo'lsa Preview MCP + mock API (`testing-and-verification.md`). Vosita yo'q bo'lsa — PROGRESS.md da **"brauzerda tekshirilmadi"** deb ochiq yozing va loyiha egasi uchun qo'lda tekshirish ro'yxatini qoldiring |
@@ -55,9 +55,9 @@ D03 dan oldin yozilgan integratsiya testining lokal yiqilishini "o'tdi" deb da'v
 
 | # | Topshiriq | Fayl | Commit(lar) | Holat |
 |---|---|---|---|---|
-| D01 | `packages/db` → SQLite/D1: sxema, baseline, ma'lumotnoma seed migratsiyasi | `D01-d1-sxema.md` | 2 (a, b) | ✅ lokal, push D02 bilan |
-| D02 | `apps/api` → D1 binding, Better Auth `sqlite`, 100-parametr bo'laklash, `ilike` | `D02-d1-wiring.md` | 1 | ✅ lokal, push kutilmoqda |
-| D03 | Test harness: lokal D1 (Miniflare), CI'dan Postgres olib tashlanadi | `D03-d1-test-harness.md` | 1 | ⬜ |
+| D01 | `packages/db` → SQLite/D1: sxema, baseline, ma'lumotnoma seed migratsiyasi | `D01-d1-sxema.md` | 2 (a, b) | ✅ |
+| D02 | `apps/api` → D1 binding, Better Auth `sqlite`, 100-parametr bo'laklash, `ilike` | `D02-d1-wiring.md` | 1 | ✅ |
+| D03 | Test harness: lokal D1 (Miniflare), CI'dan Postgres olib tashlanadi | `D03-d1-test-harness.md` | 1 | ✅ |
 | D04 | Production cutover (loyiha egasi bilan) + Neon'ga oid hujjatlarni yangilash | `D04-d1-cutover.md` | 1 | ⬜ |
 | T01 | CI: branch trigger, artefaktlar | `T01-ci-migratsiyalar.md` | 1 | ⬜ |
 | T02 | S-1 akkauntni oldindan egallash — yo'l (b) | `T02-s1-akkaunt-egallash.md` | 1 | ⬜ |

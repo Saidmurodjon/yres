@@ -2072,3 +2072,28 @@ WebSocket/DO oqimi; brauzer UI (o'zgarmadi).
 `apps/api/tests/*` hali Postgres'ga tayanadi (`pg`, `test-db.ts`) — D03 da almashtiriladi; `pg` devDependency shu uchun qoldi.
 
 **Navbatda:** D01+D02 push, so'ng D03 (test harness — lokal D1).
+
+## Faza 0 · D03 — test harness lokal D1'da (2026-10-02)
+
+- `tests/helpers/test-db.ts`: Postgres/`pg`/shim o'rniga `getPlatformProxy({ persist: false })` → xotiradagi Miniflare D1,
+  `packages/db/drizzle/*.sql` nom tartibida `d1.batch()` bilan qo'llanadi, `testDb = createDb(d1)` (haqiqiy `@yres/db` drayveri,
+  haqiqiy atomik `batch()`). `resetTestDb()` — jadvallar `sqlite_master` dan, bitta batch: `PRAGMA defer_foreign_keys = on` + `DELETE`.
+  `getPlatformProxy` Vitest (Node) va `bun run` ostida ham ishladi — zaxira (`new Miniflare`) kerak bo'lmadi.
+- `setup.ts` (`vi.mock("@yres/db")`) o'chirildi: `testEnv.DB = d1`, `dbMiddleware` o'z ishini qiladi.
+- Test muhitiga Workers'ga xos ikki narsa qo'shildi: no-op `caches` (kesh eskirgan ma'lumotnomani qaytarmasin) va
+  `testExecutionCtx` (`authRequest`/sign-up shuni uzatadi). Ular yo'qligi `audit`/`report` testlarini 500 bilan yiqitgan edi.
+- Yangi testlar: `batch-atomicity.test.ts` (FK buzadigan ikkinchi bayonot → birinchi ham qaytadi), `envelope.test.ts` ga eng yomon
+  holat PUT (15 tur×8 qatlam, 14 opening type, 100 element, 160 opening, 22 blok — hammasi qaytib o'qiladi) va openings jami
+  chegarasi → 400.
+- `ci.yml`: `services.postgres`, `TEST_DATABASE_URL`, psql qadami olib tashlandi; `pg`/`@types/pg` olib tashlandi.
+- Hujjatlar: `testing-and-verification.md`, `realtime.md`, README §3/§4 yangilandi (D01/D02 ham ✅ — push qilingan).
+
+Tekshiruv: `bun run --cwd apps/api test` **lokal 27 fayl / 118 test to'liq yashil** (integratsiya birinchi marta shu mashinada);
+type-check va biome yashil; `grep "\bpg\b|node-postgres|TEST_DATABASE_URL|postgres:16" apps .github` — bo'sh.
+**Playwright E2E (`apps/web`) — YIQILADI, D03 sababli emas:** 7/7 spec yiqiladi; e2e server D1 ustida to'g'ri ko'tariladi
+(`/health` 200, `bun run` ostida ham), lekin spetsifikatsiyalar eskirgan UI'ga yozilgan (masalan `getByLabel("Password")` endi 3 ta
+elementga mos — "Show password" tugmasi; `/invalid or expired/` matni o'zgargan, sarlavha "Invalid reset link"). E2E CI'da hech qachon
+ishlamagan (`ci.yml` faqat `main` da, `main` yo'q). Specs'ni yangilash D03 ko'lamidan tashqari — loyiha egasi/T01 bilan hal qilinsin.
+(Chromium shu mashinada `playwright install chromium` bilan o'rnatildi.)
+
+**Navbatda:** D04 — §B (hujjatlar) bajarish mumkin; §C (production cutover) loyiha egasi qadamlarini kutadi.

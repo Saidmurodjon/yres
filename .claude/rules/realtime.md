@@ -60,9 +60,9 @@ izohlardan oldindan bilib bo'lmaydigan nozik jihatlarni qamrab oladi.
   `apps/api/vitest.config.ts`dagi `resolve.alias` — `cloudflare:workers`ni arzimas shim klassiga
   (`tests/helpers/cloudflare-workers-shim.ts`) yo'naltiradi. Bu haqiqiy DO'ni hech qachon ishga
   tushirmaydi (bu sandbox'da imkonsiz — `social-features.md`ga qarang), faqat modul grafigi
-  yuklanishini ta'minlaydi, shundan keyin integratsiya testlari hujjatlashtirilgan
-  `ECONNREFUSED` bilan (lokal Postgres yo'qligi sababli) muvaffaqiyatsiz bo'ladi
-  (`testing-and-verification.md`ga qarang) — bu haqiqiy regressiya emas. Yangi DO klassi
+  yuklanishini ta'minlaydi (integratsiya testlari lokal D1'da to'liq ishlaydi —
+  `testing-and-verification.md`ga qarang; DO'ga tayanadigan `notifyUser()` push'i test muhitida
+  yutilgan xato sifatida logga tushadi, bu kutilgan). Yangi DO klassi
   qo'shsangiz va u `src/index.ts`dan eksportlansa, shim'ga qo'shimcha narsa qo'shish shart emas
   (shim faqat `cloudflare:workers`ning o'zini, `DurableObject` bazaviy klassini taqlid qiladi).
 - **Yangilanish**: avvalgi versiyada bu yerda "Cloudflare runtime yo'qligi sababli WebSocket/DO

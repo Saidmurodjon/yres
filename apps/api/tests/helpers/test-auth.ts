@@ -1,4 +1,5 @@
 import app from "../../src/index";
+import { testExecutionCtx } from "./test-db";
 import { testEnv } from "./test-env";
 
 let userCounter = 0;
@@ -29,6 +30,7 @@ export async function signUpTestUser(): Promise<{ cookie: string; userId: string
       body: JSON.stringify({ email, password, name: `Test User ${userCounter}` }),
     },
     testEnv,
+    testExecutionCtx,
   );
 
   if (!response.ok) {
@@ -57,5 +59,10 @@ export async function signUpTestUser(): Promise<{ cookie: string; userId: string
 }
 
 export function authRequest(path: string, init: RequestInit, cookie: string): Promise<Response> {
-  return app.request(path, { ...init, headers: { ...init.headers, Cookie: cookie } }, testEnv);
+  return app.request(
+    path,
+    { ...init, headers: { ...init.headers, Cookie: cookie } },
+    testEnv,
+    testExecutionCtx,
+  );
 }

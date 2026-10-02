@@ -1,92 +1,75 @@
-import type { Database } from "@yres/db";
-import * as schema from "@yres/db/schemas";
+import { readFileSync, readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { type Database, createDb } from "@yres/db";
 import { sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { getPlatformProxy } from "wrangler";
 
-const TEST_DATABASE_URL =
-  process.env.TEST_DATABASE_URL ?? "postgresql://yres:yres_dev_password@localhost:5432/yres_test";
+const MIGRATIONS_DIR = fileURLToPath(new URL("../../../../packages/db/drizzle", import.meta.url));
 
 /**
- * A local Postgres-backed Drizzle client standing in for `@yres/db`'s
- * `createDb`, which only speaks Neon's HTTP/websocket protocol and can't
- * reach a plain local Postgres instance (see packages/db/src/seed.ts's
- * `seedReferenceDataWithDb` doc comment for the same constraint). Route code
- * never imports this directly — `vitest.setup.ts` mocks `@yres/db`'s
- * `createDb` export to return this instead, so every route under test runs
- * completely unmodified.
+ * The real thing, locally: Miniflare's D1 (the same engine `wrangler dev` uses), reached through
+ * `getPlatformProxy` from `wrangler.toml`'s `DB` binding. `persist: false` keeps it in memory, so
+ * every test process starts from an empty database and nothing touches the network or disk.
+ * Routes run through the production `createDb` (drizzle-orm/d1) and the real atomic `db.batch()`.
  *
- * `.batch()` doesn't exist on the node-postgres driver (neon-http's atomic
- * multi-statement batch is Neon-specific); it's shimmed here as a plain
- * sequential await. That's a real behavior difference (no atomicity), but
- * the statements passed to it are already built against this exact `db`
- * instance, so each executes correctly on its own — atomicity just isn't
- * exercised by these tests, which only matters for concurrent-write safety,
- * not single-threaded test correctness.
+ * Top-level await: a test file imports `testDb`/`testD1` synchronously, so the database must exist
+ * by the time the module finishes loading.
  */
-const pool = new Pool({ connectionString: TEST_DATABASE_URL });
-const baseDb = drizzle(pool, { schema });
+const proxy = await getPlatformProxy<{ DB: D1Database }>({
+  configPath: fileURLToPath(new URL("../../wrangler.toml", import.meta.url)),
+  persist: false,
+});
 
-export const testDb = Object.assign(baseDb, {
-  batch: async (queries: readonly PromiseLike<unknown>[]) => {
-    const results: unknown[] = [];
-    for (const query of queries) {
-      results.push(await query);
-    }
-    return results;
-  },
-}) as unknown as Database;
+// Routes use the Workers Cache API (`caches.default`, src/lib/http-cache.ts); Node has no such global.
+// A no-op cache on purpose: a real one would keep serving a reference-data response cached before
+// `resetTestDb()` wiped and re-seeded the tables.
+(globalThis as { caches?: unknown }).caches = {
+  default: { match: async () => undefined, put: async () => undefined },
+};
 
-const TABLES_IN_FK_ORDER = [
-  "building_member",
-  "renewable_production_monthly",
-  "envelope_opening",
-  "envelope_element",
-  "opening_type",
-  "construction_layer",
-  "construction_type",
-  "building_block",
-  "ventilation_system",
-  "dhw_source",
-  "distribution_system",
-  "equipment_item",
-  "lighting_zone",
-  "cooling_window",
-  "cooling_system",
-  "generation_source",
-  "renewable_system",
-  "shading_element",
-  "energy_measure",
-  "non_ee_measure",
-  "utility_bill",
-  "audit_run",
-  "building",
-  "climate_monthly_normal",
-  "climate_region",
-  "material",
-  "surface_resistance",
-  "pipe_loss_reference",
-  "lamp_type",
-  "energy_tariff",
-  "message",
-  "conversation_member",
-  "conversation",
-  "notification",
-  "session",
-  "account",
-  "verification",
-  "user",
-];
+/** `c.executionCtx` (used by `waitUntil` in routes) throws under a bare `app.request()` without one. */
+export const testExecutionCtx: ExecutionContext = proxy.ctx;
 
-/** Truncates every application table between tests, keeping the schema itself. */
-export async function resetTestDb() {
-  for (const table of TABLES_IN_FK_ORDER) {
-    await pool.query(`TRUNCATE TABLE "${table}" CASCADE`);
+export const testD1: D1Database = proxy.env.DB;
+export const testDb: Database = createDb(testD1);
+
+/** Applies `packages/db/drizzle/*.sql` in name order, exactly as `wrangler d1 migrations apply` would. */
+async function applyMigrations() {
+  const files = readdirSync(MIGRATIONS_DIR)
+    .filter((name) => name.endsWith(".sql"))
+    .sort();
+  for (const file of files) {
+    const statements = readFileSync(`${MIGRATIONS_DIR}/${file}`, "utf8")
+      .split("--> statement-breakpoint")
+      // A chunk that is only `--` comment lines (the reference migration's header) is not a statement.
+      .map((chunk) => chunk.trim())
+      .filter((chunk) => chunk.split("\n").some((line) => line.trim() && !line.startsWith("--")));
+    await testD1.batch(statements.map((statement) => testD1.prepare(statement)));
   }
 }
 
+await applyMigrations();
+
+/**
+ * Empties every application table between tests, keeping the schema. The table list comes from
+ * sqlite_master, so a new table is covered without editing this file. Reference data is wiped too —
+ * tests that need it call `seedReferenceDataWithDb(testDb)` themselves (once, so it never doubles
+ * up with the rows `0001_reference_data.sql` put there). One batch, with FK checks deferred to its end.
+ */
+export async function resetTestDb() {
+  const { results } = await testD1
+    .prepare(
+      "select name from sqlite_master where type = 'table' and name not like 'sqlite_%' and name not like '_cf_%' and name <> 'd1_migrations'",
+    )
+    .all<{ name: string }>();
+  await testD1.batch([
+    testD1.prepare("PRAGMA defer_foreign_keys = on"),
+    ...results.map(({ name }) => testD1.prepare(`DELETE FROM "${name}"`)),
+  ]);
+}
+
 export async function closeTestDb() {
-  await pool.end();
+  await proxy.dispose();
 }
 
 export { sql };

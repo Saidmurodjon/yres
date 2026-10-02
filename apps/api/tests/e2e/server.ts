@@ -13,15 +13,14 @@ import { measuresRoutes } from "../../src/routes/measures";
 import { membersRoutes } from "../../src/routes/members";
 import { referenceRoutes } from "../../src/routes/reference";
 import { systemsRoutes } from "../../src/routes/systems";
-import { resetTestDb, testDb } from "../helpers/test-db";
+import { resetTestDb, testDb, testExecutionCtx } from "../helpers/test-db";
 import { testEnv } from "../helpers/test-env";
 
 /**
  * Standalone backend for Playwright E2E tests — the real Hono app (every
  * route file imported unmodified) served over a real HTTP port, with the
- * request-scoped `db` set directly to the local-Postgres test client
- * instead of going through `dbMiddleware`'s `createDb` (which only speaks
- * Neon's protocol; see tests/helpers/test-db.ts). This works with zero
+ * request-scoped `db` set directly to the Miniflare-D1 test client
+ * (tests/helpers/test-db.ts) instead of going through `dbMiddleware`. This works with zero
  * module-mocking tricks specifically because every route reads `c.get("db")`
  * rather than constructing its own client — see src/middleware/db.ts.
  *
@@ -56,7 +55,7 @@ await seedReferenceDataWithDb(testDb);
 
 Bun.serve({
   port,
-  fetch: (request) => app.fetch(request, testEnv),
+  fetch: (request) => app.fetch(request, testEnv, testExecutionCtx),
 });
 
 console.log(`E2E test API server listening on http://localhost:${port}`);

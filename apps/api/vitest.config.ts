@@ -13,10 +13,11 @@ export default defineConfig({
     },
   },
   test: {
-    setupFiles: ["./tests/setup.ts"],
-    // Integration tests share one real Postgres connection pool and
-    // truncate tables between tests — running test files in parallel
-    // workers would race on that shared state.
+    // Each test file boots its own in-memory Miniflare D1 (tests/helpers/test-db.ts), so files
+    // don't share state; run them one at a time anyway — several Miniflare instances at once are
+    // slow to start and make timing-sensitive tests flaky.
     fileParallelism: false,
+    // Booting Miniflare + applying the migrations happens at import time.
+    hookTimeout: 30_000,
   },
 });

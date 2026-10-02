@@ -7,13 +7,15 @@
 - **`apps/api/tests/services/*.test.ts`** — alohida hisoblash funksiyalarining (issiqlik
   yo'qotish, ventilyatsiya, moliya, generatsiya va h.k.) sof unit testlari. Baza kerak emas.
   Bular doim o'tishi kerak; bu yerdagi muvaffaqiyatsizlik haqiqiy regressiya.
-- **`apps/api/tests/integration/*.test.ts`** — `tests/helpers/test-db.ts`ning har testlar orasida
-  har bir jadvalni `TRUNCATE` qiladigan `resetTestDb()`i orqali haqiqiy Postgres'ga qarshi to'liq
-  HTTP-route testlari. Ularga `127.0.0.1:5432`da tinglayotgan lokal Postgres kerak. **Bu sandbox'da
-  lokal Postgres yo'q**, shuning uchun bu yerda har bir integratsiya testi `ECONNREFUSED` bilan
-  muvaffaqiyatsiz bo'ladi — bu kutilgan holat, haqiqiy regressiya belgisi emas. Buni
-  `DATABASE_URL`ni haqiqiy Neon bazasiga yo'naltirib "tuzatishga" urinmang; bu production
-  ma'lumotlarini `TRUNCATE` qilib yuboradi (database.md'ga qarang).
+- **`apps/api/tests/integration/*.test.ts`** — `app.request()` orqali to'liq HTTP-route testlari, **Miniflare'ning
+  lokal D1'ida** (prodakshn bilan bir xil `drizzle-orm/d1` drayveri va haqiqiy atomik `db.batch()`). Baza
+  `tests/helpers/test-db.ts` da `getPlatformProxy({ persist: false })` bilan xotirada ochiladi, `packages/db/drizzle/*.sql`
+  migratsiyalari o'zi qo'llanadi — tashqi servis, tarmoq, `--remote` kerak emas. `resetTestDb()` har testdan oldin barcha
+  jadvallarni (ma'lumotnoma ham) tozalaydi, shuning uchun ma'lumotnoma kerak bo'lgan test `seedReferenceDataWithDb(testDb)`ni
+  o'zi chaqiradi (bir marta — migratsiya seed'i tozalangan). **`bun run test` lokal ham to'liq yashil bo'lishi shart.**
+  Test muhitida Workers'ga xos ikki narsa qo'lda beriladi: `caches` (no-op, eskirgan kesh bo'lmasin) va
+  `testExecutionCtx` (`app.request(..., testEnv, testExecutionCtx)` — `authRequest` buni o'zi qiladi; yalang'och
+  `app.request`da `c.executionCtx` yiqiladi).
 - `apps/api/src/services/`da hisoblash logikasini o'zgartirganda, baribir `bun run test`ni ishga
   tushiring — servis darajasidagi unit testlar integratsiya to'plami bu yerda ishlay olmasa ham
   haqiqiy buzilishni tutib qoladi. Agar unit test bera olmaydigan end-to-end ishonch kerak bo'lsa

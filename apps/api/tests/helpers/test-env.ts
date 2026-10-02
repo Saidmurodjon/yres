@@ -1,4 +1,5 @@
 import type { Env } from "../../src/index";
+import { testD1 } from "./test-db";
 
 /**
  * Trivial in-memory stand-in for the R2Bucket binding — just enough of the
@@ -23,12 +24,11 @@ const fakeDurableObjectNamespace = {} as unknown as Env["CONVERSATION_ROOM"];
 
 /**
  * Fake Worker bindings for `app.request(path, init, env)` in tests.
- * `DATABASE_URL` is never actually used to connect (see test-db.ts —
- * `createDb` is mocked to ignore its argument) but Better Auth's config
- * shape expects non-empty strings for its social-provider fields.
+ * `DB` is the in-memory Miniflare D1 from test-db.ts, so `dbMiddleware` builds the real client.
+ * Better Auth's config shape expects non-empty strings for its social-provider fields.
  */
 export const testEnv: Env = {
-  DATABASE_URL: "postgresql://yres:yres_dev_password@localhost:5432/yres_test",
+  DB: testD1,
   GOOGLE_CLIENT_ID: "test-google-client-id",
   GOOGLE_CLIENT_SECRET: "test-google-client-secret",
   BETTER_AUTH_SECRET: "test-better-auth-secret-at-least-32-characters-long",
