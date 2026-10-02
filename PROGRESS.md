@@ -1959,3 +1959,30 @@ parametr, sukutda o'chiq; S-1 — (b) yo'l. Master reja va `auth.md`ga yozildi.
 **Navbatda:** branch strategiyasi
 (repo'da faqat `claude/yres-platform-development-svx6nn` bor, `main` yo'q); keyin Faza 0
 (master reja §6dagi tayyor prompt).
+
+## Faza 0 ijro paketi va yangi qoidalar tayyorlandi (2026-10-02)
+
+Kodga tegilmadi — faqat hujjat/qoida. Maqsad: Faza 0 kodini boshqa model (Sonnet) yozadi, shuning uchun har
+topshiriq oldindan kodga qarshi tekshirilib, aniq spec qilib yozildi.
+
+- `docs/production/faza-0/README.md` — ijro protokoli (sessiya boshida nima o'qiladi, topshiriq sikli,
+  tekshiruvlar, holat jadvali, qachon to'xtab so'rash, ko'lamdan tashqari ro'yxat, tayyor prompt).
+- `T01`–`T10` spec'lari: CI migratsiyalari; S-1 (b) yo'l; V-1 chat XSS; S-4/A-2/V-3/V-5/V-2; `parseLocaleNumber` +
+  `NumberInput`; dirty-himoya + o'chirishga tasdiq; iste'molni ko'p yil atomik saqlash; audit tugmasi; `xlsx`;
+  backup runbook + ADR-011/015.
+- Yangi qoidalar: `.claude/rules/security.md`, `forms-and-numbers.md`, `data-integrity.md`,
+  `future-platform.md` (hozir amal qilmaydi). `CLAUDE.md` jadvaliga qo'shildi (`hisobot.md` ham — avval yo'q edi)
+  va "Joriy faza" bo'limi.
+
+Kodda tasdiqlangan yangi topilmalar (rejada yo'q edi):
+- `ci.yml` faqat `push: main` da ishlaydi, `main` esa yo'q — branch'ga push'da CI umuman ishga tushmaydi (T01).
+- Better Auth 1.6.23 manbasi (`oauth2/link-account.mjs`): `linkAccount` → `account.create.after` hook → keyin
+  `emailVerified = true` → `createSession`. S-1 (b) yo'lini shu hook'da xavfsiz qilish mumkinligi tasdiqlandi (T02).
+- Bino sahifasining Radix `Tabs` nofaol tab'ni unmount qiladi — tab almashtirish ham saqlanmagan tahrirni
+  yo'qotadi (T06b).
+- `apps/web` da unit test runner yo'q — T05a da `vitest` qo'shiladi.
+
+Tekshiruv: faqat markdown — type-check/build talab qilinmaydi. (Rekognostsiya uchun `bun install
+--frozen-lockfile` bajarildi; tracked fayllar o'zgarmadi.)
+
+**Navbatda:** Faza 0, T01 dan — `docs/production/faza-0/README.md` §8 dagi prompt bilan Sonnet sessiyasi.

@@ -31,6 +31,11 @@ bir marta haqiqiy production bug'iga sabab bo'lgan va kodni sovuq holda o'qishda
 | `ui-guidelines.md` | Platforma bo'ylab dizayn/responsive/state-boshqaruv/unumdorlik qoidalari — Zustand vs TanStack Query chegarasi (to'liq qoidalar: `docs/ui-guidelines.md`) |
 | `dashboard.md` | Dashboard sahifasi — `pageSize: 100` cheklovi, client-side filtr/grafik, `building.status`/`deadline`ning `audit_run`dan mustaqilligi, `collaboratorCount` qayerdan kelishi |
 | `i18n-and-appearance.md` | uz/ru/en ko'p tillilik (`react-i18next`) va kun/tun rejimi — rus ko'plik shakllari, localStorage-asoslangan sozlamalar (to'liq dizayn: `docs/i18n-and-appearance.md`) |
+| `hisobot.md` | PDF hisobotning maqsadli tuzilmasi, `AuditResult` maydonlari ↔ bo'limlar, standardized/actual juftligi, `pdf-lib` grafiklari |
+| `security.md` | Authz/IDOR, GET'da yon ta'sir yo'q, zod chegaralari, fayl berish (MIME allowlist, `nosniff`), `escapeHtml`, xavfsizlik sarlavhalari, S-1 juftligi |
+| `forms-and-numbers.md` | **`NumberInput` + `parseLocaleNumber` majburiy** (`12,5` muammosi), noto'g'ri qiymat hech qachon jimgina `0` emas, dirty-himoya (`useRegisterDirty`/`useSyncedRows`), o'chirishga tasdiq |
+| `data-integrity.md` | `db.batch()` atomikligi, expand→contract migratsiyalar, test-DB himoyasi; Faza 2 dan: immutable snapshot, `audit_event`, soft-delete |
+| `future-platform.md` | **Hozir amal qilmaydi** — tenancy, kuzatuv, asinxron ishlar, AI qoidalari; faqat hozirgi kod ularga zid yozilmasligi uchun |
 
 ## Til
 
@@ -54,6 +59,12 @@ Vite build'ni ham ishga tushiradi — yuqoridagi kabi ba'zi buglar faqat qurilad
 ko'rinadi) va `bunx biome lint`. UI o'zgarishlari uchun lokal bazasiz ilovani brauzer preview'ida
 qanday boshqarish haqida `testing-and-verification.md`ga qarang. Tekshirish imkoni bo'lgan holatda
 tuzatish ishlayotganini faqat diff'ni o'qib da'vo qilmang.
+
+## Joriy faza
+
+Production rejasi: `docs/production/00-MASTER-PLAN.md`. **Joriy ijro paketi — Faza 0:**
+`docs/production/faza-0/README.md` (topshiriqlar T01–T10, har biri kodga qarshi tekshirilgan spec).
+Kod yozuvchi sessiya avval shu README'ni o'qiydi va unga qat'iy amal qiladi.
 
 ## Ko'p bosqichli yoki uzoq davom etadigan topshiriqlarda ishlash tartibi
 
