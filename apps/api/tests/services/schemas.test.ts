@@ -31,6 +31,16 @@ describe("building schema bounds (V-3)", () => {
     expect(createBuildingSchema.safeParse(validBuilding).success).toBe(true);
   });
 
+  it("accepts an empty floor area as null (what the building form sends)", () => {
+    expect(
+      createBuildingSchema.safeParse({ ...validBuilding, netCooledFloorAreaM2: null }).success,
+    ).toBe(true);
+    expect(updateBuildingSchema.safeParse({ netCooledFloorAreaM2: null }).success).toBe(true);
+    expect(
+      createBuildingSchema.safeParse({ ...validBuilding, netCooledFloorAreaM2: -1 }).success,
+    ).toBe(false);
+  });
+
   it.each([
     ["indoor temperature above 60 °C", { indoorTempOperationC: 61 }],
     ["design temperature below -60 °C", { outdoorDesignTempC: -61 }],

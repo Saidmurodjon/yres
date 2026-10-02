@@ -17,7 +17,8 @@ export const createBuildingSchema = z.object({
   latitude: z.number().finite().min(-90).max(90).nullable().optional(),
   longitude: z.number().finite().min(-180).max(180).nullable().optional(),
 
-  netCooledFloorAreaM2: z.number().finite().nonnegative().optional(),
+  // The form sends null when the field is left empty (the column is nullable); `optional()` alone rejected that.
+  netCooledFloorAreaM2: z.number().finite().nonnegative().nullable().optional(),
   heatingSeasonDurationDays: z.number().finite().int().min(0).max(366),
   indoorTempNonOperationC: z.number().finite().min(-60).max(60),
   indoorTempOperationC: z.number().finite().min(-60).max(60),
