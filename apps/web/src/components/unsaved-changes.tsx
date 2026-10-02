@@ -33,6 +33,11 @@ interface UnsavedChangesContextValue {
    * flags itself, because an editor that stayed mounted with unsaved text would then look clean.
    */
   confirmDiscard: (action: () => void) => void;
+  /**
+   * Runs a navigation that follows a successful save (create → go to the new page) without the blocker
+   * asking: the edits were just saved, but the dirty flag is still true until the next render.
+   */
+  runWithoutBlocking: (action: () => void | Promise<void>) => Promise<void>;
 }
 
 const NOOP_CONTEXT: UnsavedChangesContextValue = {
@@ -40,6 +45,9 @@ const NOOP_CONTEXT: UnsavedChangesContextValue = {
   unregister: () => {},
   isDirtyRef: { current: false },
   confirmDiscard: (action) => action(),
+  runWithoutBlocking: async (action) => {
+    await action();
+  },
 };
 
 const UnsavedChangesContext = createContext<UnsavedChangesContextValue>(NOOP_CONTEXT);
@@ -81,17 +89,27 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
     setPendingAction(() => action);
   }, []);
 
+  const bypassRef = useRef(false);
+  const runWithoutBlocking = useCallback(async (action: () => void | Promise<void>) => {
+    bypassRef.current = true;
+    try {
+      await action();
+    } finally {
+      bypassRef.current = false;
+    }
+  }, []);
+
   const blocker = useBlocker({
-    shouldBlockFn: () => isDirtyRef.current,
-    enableBeforeUnload: () => isDirtyRef.current,
+    shouldBlockFn: () => !bypassRef.current && isDirtyRef.current,
+    enableBeforeUnload: () => !bypassRef.current && isDirtyRef.current,
     withResolver: true,
   });
 
   const blocked = blocker.status === "blocked";
 
   const value = useMemo(
-    () => ({ register, unregister, isDirtyRef, confirmDiscard }),
-    [register, unregister, confirmDiscard],
+    () => ({ register, unregister, isDirtyRef, confirmDiscard, runWithoutBlocking }),
+    [register, unregister, confirmDiscard, runWithoutBlocking],
   );
 
   return (
@@ -130,4 +148,9 @@ export function useRegisterDirty(key: string, dirty: boolean) {
 /** `(action) => void`: runs `action` immediately when clean, otherwise after "discard unsaved changes?" is confirmed. */
 export function useConfirmDiscard() {
   return useContext(UnsavedChangesContext).confirmDiscard;
+}
+
+/** For the navigation right after a successful save: `await runWithoutBlocking(() => navigate(...))`. */
+export function useRunWithoutBlocking() {
+  return useContext(UnsavedChangesContext).runWithoutBlocking;
 }

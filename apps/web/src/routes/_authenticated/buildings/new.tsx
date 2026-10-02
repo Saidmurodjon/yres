@@ -8,6 +8,11 @@ import {
   DEFAULT_BUILDING_FORM_VALUES,
   parseBuildingFormValues,
 } from "../../../components/buildings/building-form-fields";
+import {
+  UnsavedChangesProvider,
+  useRegisterDirty,
+  useRunWithoutBlocking,
+} from "../../../components/unsaved-changes";
 import { useCreateBuilding } from "../../../hooks";
 import { useClimateRegions } from "../../../hooks";
 import { ApiError } from "../../../lib/api";
@@ -18,12 +23,26 @@ export const Route = createFileRoute("/_authenticated/buildings/new")({
 });
 
 function NewBuildingPage() {
+  return (
+    <UnsavedChangesProvider>
+      <NewBuildingForm />
+    </UnsavedChangesProvider>
+  );
+}
+
+function NewBuildingForm() {
   const { t, i18n } = useTranslation("buildings");
   const navigate = useNavigate();
   const { data: climateData, isLoading: climateLoading } = useClimateRegions({ pageSize: 100 });
   const createBuilding = useCreateBuilding();
 
   const [values, setValues] = useState(DEFAULT_BUILDING_FORM_VALUES);
+  const runWithoutBlocking = useRunWithoutBlocking();
+  // Anything typed beyond the prefilled defaults is unsaved: leaving the page / closing the tab asks first.
+  useRegisterDirty(
+    "building.new",
+    JSON.stringify(values) !== JSON.stringify(DEFAULT_BUILDING_FORM_VALUES),
+  );
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [apiError, setApiError] = useState<{ message: string; details?: unknown } | null>(null);
 
@@ -39,7 +58,10 @@ function NewBuildingPage() {
 
     try {
       const { building } = await createBuilding.mutateAsync(data);
-      navigate({ to: "/buildings/$buildingId", params: { buildingId: building.id } });
+      // The building is saved; the dirty flag only clears on the next render, so skip the blocker once.
+      await runWithoutBlocking(() =>
+        navigate({ to: "/buildings/$buildingId", params: { buildingId: building.id } }),
+      );
     } catch (err) {
       if (err instanceof ApiError) {
         setApiError({ message: err.message, details: err.details });

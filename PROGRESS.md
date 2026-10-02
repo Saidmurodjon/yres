@@ -2308,3 +2308,25 @@ Ma'lum cheklov: tahrirlash dialoglaridagi `useEffect([open/building])` qayta-sin
 - Tekshiruv: type-check, biome, `bun run build` yashil. `useSyncedRows` ni unit sinash uchun web'da DOM/React testing kutubxonasi yo'q — xatti-harakat T06b da **haqiqiy brauzerda E2E** bilan tekshiriladi (U2 regressiya).
 
 **Navbatda:** T06b — tizimlar kartalari, bino tab'lari, qobiq dialogi, boshqa formalar.
+
+## Faza 0 · T06a tuzatish + T06b — saqlanmagan tahrirlar ulandi (2026-10-02)
+
+**Nazoratchi topilmalari (T06a, alohida commit 0f3e95d):** (1) `useSyncedRows` poygasi — refetch `markClean()` dan OLDIN kelsa server qatorlari abadiy yo'qolardi → mantiq sof reducer'ga
+(`missedSync`), ikkala tartib uchun unit test (6); (2) `clearAll()` olib tashlandi (mount bo'lib turgan muharrir "toza" ko'rinardi) — `confirmDiscard` action'i muharrirni unmount yoki reset qilishi shart, kontrakt context izohida.
+**Qo'shimcha haqiqiy bug (E2E topdi, alohida commit):** bino formasi bo'sh "Net cooled floor area" ni `null` yuboradi, API faqat `number|yo'q` qabul qilardi → maydonni to'ldirmasdan bino yaratib bo'lmasdi (400). Sxema `.nullable()` qilindi + test.
+
+T06b — qamrab olinganlar:
+- `$buildingId/index.tsx`: sahifa `UnsavedChangesProvider` ichida, `Tabs` controlled, `onValueChange → confirmDiscard` (Radix nofaol tab'ni unmount qiladi — action editorlarni haqiqatan unmount qiladi).
+- `systems-tab.tsx`: 9 bo'lim `useSyncedRows<Row>(serverRows, scenario)` + `useRegisterDirty("systems.<bo'lim>")` + saqlangach `markClean()`; scenario tab `confirmDiscard` (reset key o'zgaradi → qatorlar reset). `useEffect(setRows)` andozasi **0 ta** qoldi (grep).
+- `consumption-tab.tsx`: yil bo'yicha `dirtyYears` (bir yilni saqlash boshqa yilning iflosligini tozalamaydi), yuklash/paste/import/tahrir iflos qiladi; to'liq ko'p-yilli atomik saqlash — T07.
+- `envelope-editor-dialog.tsx`: boshlang'ich holat (serialize) bilan solishtirish; Esc/tashqariga/×/"Bekor" → iflos bo'lsa `ConfirmDialog`; muvaffaqiyatli saqlashdan keyin yopish tasdiqsiz; dialog yopiq → dirty `false`.
+- Boshqa formalar: `buildings/new.tsx` (provider + dirty + `useRunWithoutBlocking` — saqlangach navigatsiya bloklanmaydi), `edit-building-dialog.tsx` (confirm-close; **U2 xatosi ham tuzatildi** — `useEffect([open, building])` refetch'da yozilgan matnni o'chirardi, endi faqat ochilganda),
+  `measures-tab.tsx` (belgilangan tanlov `selectionTouched` — refetch tanlovni qaytarmaydi; ikkala "qo'shish" formasi), `sharing-tab.tsx` (yuborilmagan taklif emaili), `profile.tsx` (`useEffect([data])` yozilgan ismni o'chirardi — `touched` bilan; provider),
+  `audit.tsx` tezkor audit (qobiq qiymatlari, iste'mol qatorlari; bosqich tugmalari `confirmDiscard`). `financial.tsx` — saqlash tugmali forma emas (grafik) — tegilmadi.
+  Qo'shilmadi: chat yozish maydoni (qoralama), admin foydalanuvchi tahriri dialogi — ro'yxatda yo'q va saqlash tugmali sahifa formasi emas; kerak bo'lsa alohida.
+- **Haqiqiy brauzerda** (`tests/e2e/unsaved-changes.spec.ts`, 9 test, hammasi yashil): U2 regressiya (generation kartasini saqlash ventilyatsiyadagi saqlanmagan qatorni saqlab qoladi); tab almashtirish — dialog, fokus "Keep editing"da, Keep → qator joyida, Discard → o'tadi va qator yo'q;
+  toza sahifada hech qachon dialog yo'q (tab/scenario); scenario almashtirish; route'dan chiqish (router blocker); qobiq dialogi (toza — Esc darhol yopadi; iflos — dialog); bino yaratgandan keyin ogohlantirish yo'q; `beforeunload` iflosda chiqadi, toza sahifada chiqmaydi.
+- Tekshiruv: type-check, biome lint, build, web 68 + api 192 test, **Playwright 21/21**.
+- **Qo'lda (loyiha egasi):** 375 px da `ConfirmDialog` joylashuvi; uz/ru matnlar (ruscha ko'rib chiqilsin); iste'mol tab'ida ko'p yilli tahrir + yil saqlash; o'lchovlar tanlovi + yangi forma; profil formasi.
+
+**Navbatda:** T06c — server obyektlarini o'chirishga `ConfirmDialog`.

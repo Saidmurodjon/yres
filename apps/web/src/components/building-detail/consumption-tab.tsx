@@ -43,6 +43,7 @@ import {
 } from "../../lib/number";
 import { AuditorNote } from "../auditor-note";
 import { NumberInput } from "../number-input";
+import { useRegisterDirty } from "../unsaved-changes";
 import { MonthlyComparisonChart } from "./consumption-comparison-chart";
 import {
   type ParsedBillRow,
@@ -186,6 +187,11 @@ export function ConsumptionTab({
   const [newYearValue, setNewYearValue] = useState(String(currentYear + 1));
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  // Years whose grid has edits that are not saved yet; the whole tab counts as dirty while any year is.
+  const [dirtyYears, setDirtyYears] = useState<ReadonlySet<number>>(new Set());
+  useRegisterDirty("consumption", dirtyYears.size > 0);
+  const markDirty = (...changed: number[]) =>
+    setDirtyYears((prev) => new Set([...prev, ...changed]));
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importErrorDetails, setImportErrorDetails] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
@@ -215,6 +221,7 @@ export function ConsumptionTab({
       return { ...prev, [year]: { ...yearGrid, [carrier]: { ...row, months } } };
     });
     setSaved(false);
+    markDirty(year);
   }
 
   function updateTariff(year: number, carrier: EnergyCarrier, value: string) {
@@ -224,6 +231,7 @@ export function ConsumptionTab({
       return { ...prev, [year]: { ...yearGrid, [carrier]: { ...row, tariffLocal: value } } };
     });
     setSaved(false);
+    markDirty(year);
   }
 
   function handleMonthPaste(
@@ -247,6 +255,7 @@ export function ConsumptionTab({
       return { ...prev, [year]: { ...yearGrid, [carrier]: { ...row, months } } };
     });
     setSaved(false);
+    markDirty(year);
   }
 
   function addYear() {
@@ -284,6 +293,11 @@ export function ConsumptionTab({
         });
       }
       setSaved(true);
+      setDirtyYears((prev) => {
+        const next = new Set(prev);
+        next.delete(year);
+        return next;
+      });
     } catch (err) {
       setSaveError(err instanceof ApiError ? err.message : t("saveFailed"));
     }
@@ -315,6 +329,7 @@ export function ConsumptionTab({
       );
       setImportErrorDetails(errors);
       setSaved(false);
+      if (importedYears.length > 0) markDirty(...importedYears);
     } catch {
       setImportMessage(t("excel.errors.parseFailed"));
     } finally {

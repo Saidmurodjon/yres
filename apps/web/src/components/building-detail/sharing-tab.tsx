@@ -29,6 +29,7 @@ import { useInviteMember, useMembers, useRemoveMember, useUpdateMemberRole } fro
 import { ApiError } from "../../lib/api";
 import type { BuildingRole } from "../../lib/api-types";
 import { formatDate } from "../../lib/labels";
+import { useRegisterDirty } from "../unsaved-changes";
 
 export function SharingTab({ buildingId, role }: { buildingId: string; role: BuildingRole }) {
   const { t } = useTranslation("buildings");
@@ -43,6 +44,8 @@ export function SharingTab({ buildingId, role }: { buildingId: string; role: Bui
   const [actionError, setActionError] = useState<string | null>(null);
 
   const isOwner = role === "owner";
+  // A typed-but-unsent invitation is an unsaved edit.
+  useRegisterDirty("sharing.invite", email.trim() !== "");
 
   async function handleInvite(event: FormEvent) {
     event.preventDefault();

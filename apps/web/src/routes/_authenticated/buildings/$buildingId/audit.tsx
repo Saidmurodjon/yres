@@ -20,6 +20,11 @@ import { type FormEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NumberInput } from "../../../../components/number-input";
 import {
+  UnsavedChangesProvider,
+  useConfirmDiscard,
+  useRegisterDirty,
+} from "../../../../components/unsaved-changes";
+import {
   useBuilding,
   useCreateConsumption,
   useEnvelope,
@@ -40,6 +45,15 @@ type WizardStep = "envelope" | "consumption" | "run";
 const STEP_IDS: WizardStep[] = ["envelope", "consumption", "run"];
 
 function AuditWizardPage() {
+  return (
+    <UnsavedChangesProvider>
+      <AuditWizard />
+    </UnsavedChangesProvider>
+  );
+}
+
+function AuditWizard() {
+  const confirmDiscard = useConfirmDiscard();
   const { t } = useTranslation("audit");
   const { buildingId } = Route.useParams();
   const navigate = useNavigate();
@@ -77,7 +91,7 @@ function AuditWizardPage() {
           <li key={s.id} className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setStep(s.id)}
+              onClick={() => confirmDiscard(() => setStep(s.id))}
               className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-medium ${
                 step === s.id
                   ? "border-primary bg-primary text-primary-foreground"
@@ -106,12 +120,12 @@ function AuditWizardPage() {
         <ConsumptionStep
           buildingId={buildingId}
           onDone={() => setStep("run")}
-          onBack={() => setStep("envelope")}
+          onBack={() => confirmDiscard(() => setStep("envelope"))}
         />
       ) : (
         <RunStep
           buildingId={buildingId}
-          onBack={() => setStep("consumption")}
+          onBack={() => confirmDiscard(() => setStep("consumption"))}
           onComplete={() =>
             navigate({ to: "/buildings/$buildingId/results", params: { buildingId } })
           }
@@ -300,6 +314,11 @@ function EnvelopeStep({
   const { data: materialsData, isLoading: materialsLoading } = useMaterials();
   const replaceEnvelope = useReplaceEnvelope(buildingId);
   const [values, setValues] = useState(DEFAULT_QUICK_ENVELOPE);
+  // Anything changed from the prefilled defaults is unsaved: leaving the step or the page asks first.
+  useRegisterDirty(
+    "audit.envelope",
+    JSON.stringify(values) !== JSON.stringify(DEFAULT_QUICK_ENVELOPE),
+  );
   const [error, setError] = useState<string | null>(null);
   const materials = materialsData?.materials ?? [];
 
@@ -589,6 +608,8 @@ function ConsumptionStep({
     { carrier: string; year: number; month: number; value: number }[]
   >([]);
   const [error, setError] = useState<string | null>(null);
+  // Bills added to the list but not saved yet.
+  useRegisterDirty("audit.consumption", added.length > 0 || consumption.trim() !== "");
 
   function addRow() {
     const amount = parseLocaleNumber(consumption, locale);

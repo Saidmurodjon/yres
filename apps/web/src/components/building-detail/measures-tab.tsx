@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@yres/ui";
 import { Plus, Trash2, Wrench } from "lucide-react";
-import { type FormEvent, useEffect, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   useCreateMeasure,
@@ -38,6 +38,7 @@ import type { MeasureCategory } from "../../lib/api-types";
 import { MEASURE_CATEGORY_LABELS, formatNumber } from "../../lib/labels";
 import { parseLocaleNumber, toNumberLocale } from "../../lib/number";
 import { NumberInput } from "../number-input";
+import { useRegisterDirty } from "../unsaved-changes";
 
 const MEASURE_CATEGORIES = Object.keys(MEASURE_CATEGORY_LABELS) as MeasureCategory[];
 
@@ -101,13 +102,28 @@ export function MeasuresTab({
   const measures = data?.measures ?? [];
   const nonEeMeasures = nonEeData?.nonEeMeasures ?? [];
 
+  // Unsaved edits: ticked/unticked boxes since the last save, and the two "add" forms once typed into.
+  const [selectionTouched, setSelectionTouched] = useState(false);
+  const selectionTouchedRef = useRef(false);
+  selectionTouchedRef.current = selectionTouched;
+  useRegisterDirty("measures.selection", selectionTouched);
+  useRegisterDirty(
+    "measures.newForms",
+    JSON.stringify(form) !== JSON.stringify(emptyForm()) ||
+      JSON.stringify(nonEeForm) !== JSON.stringify(emptyNonEeForm()),
+  );
+
+  // Follows the server's selection only while the user has not touched the boxes, so a refetch
+  // (another save, another tab) never resets ticks that are still unsaved.
   // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-syncs local checkbox state only when the server data object changes (e.g. after a fresh fetch or a save), not on every render.
   useEffect(() => {
+    if (selectionTouchedRef.current) return;
     setSelected(new Set(measures.filter((m) => m.proposedForImplementation).map((m) => m.id)));
   }, [data]);
 
   function toggle(id: string) {
     setSaved(false);
+    setSelectionTouched(true);
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -126,6 +142,7 @@ export function MeasuresTab({
     try {
       await selectMeasures.mutateAsync([...selected]);
       setSaved(true);
+      setSelectionTouched(false);
     } catch (err) {
       setSaveError(err instanceof ApiError ? err.message : t("ee.failedToSaveSelection"));
     }

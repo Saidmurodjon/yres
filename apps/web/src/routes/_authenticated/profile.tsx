@@ -12,6 +12,7 @@ import {
 } from "@yres/ui";
 import { type FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { UnsavedChangesProvider, useRegisterDirty } from "../../components/unsaved-changes";
 import { useMyProfile, useUpdateMyProfile } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import { authClient } from "../../lib/auth-client";
@@ -23,14 +24,16 @@ export const Route = createFileRoute("/_authenticated/profile")({
 function ProfilePage() {
   const { t } = useTranslation("profile");
   return (
-    <div className="max-w-2xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
-        <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
+    <UnsavedChangesProvider>
+      <div className="max-w-2xl space-y-8">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+          <p className="mt-1 text-muted-foreground">{t("subtitle")}</p>
+        </div>
+        <ProfileDetailsCard />
+        <PasswordCard />
       </div>
-      <ProfileDetailsCard />
-      <PasswordCard />
-    </div>
+    </UnsavedChangesProvider>
   );
 }
 
@@ -43,8 +46,13 @@ function ProfileDetailsCard() {
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
+  // Typing is never overwritten by a refetch (window focus, another save): the form follows the server only
+  // until the user has edited it.
+  const [touched, setTouched] = useState(false);
+  useRegisterDirty("profile.details", touched);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `touched` is read on purpose without re-running the sync when it flips.
   useEffect(() => {
-    if (data?.user) {
+    if (data?.user && !touched) {
       setName(data.user.name);
       setUsername(data.user.username);
     }
@@ -67,6 +75,7 @@ function ProfileDetailsCard() {
     try {
       await updateProfile.mutateAsync({ name: name.trim(), username: username.trim() });
       setSaved(true);
+      setTouched(false);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("details.updateFailed"));
     }
@@ -92,14 +101,24 @@ function ProfileDetailsCard() {
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="profile-name">{t("details.nameLabel")}</Label>
-            <Input id="profile-name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input
+              id="profile-name"
+              value={name}
+              onChange={(e) => {
+                setTouched(true);
+                setName(e.target.value);
+              }}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="profile-username">{t("details.usernameLabel")}</Label>
             <Input
               id="profile-username"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => {
+                setTouched(true);
+                setUsername(e.target.value);
+              }}
             />
             <p className="text-xs text-muted-foreground">{t("details.usernameHint")}</p>
           </div>

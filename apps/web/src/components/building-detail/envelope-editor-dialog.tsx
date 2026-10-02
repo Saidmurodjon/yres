@@ -1,11 +1,13 @@
 import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@yres/ui";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMaterials, useReplaceEnvelope, useSurfaceResistance } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import type { EnvelopeData } from "../../lib/api-types";
 import { toNumberLocale } from "../../lib/number";
+import { ConfirmDialog } from "../confirm-dialog";
+import { useRegisterDirty } from "../unsaved-changes";
 import { BuildingBlocksStep } from "./envelope-editor/building-blocks-step";
 import { ConstructionTypesStep } from "./envelope-editor/construction-types-step";
 import { EnvelopeElementsStep } from "./envelope-editor/envelope-elements-step";
@@ -36,7 +38,17 @@ export function EnvelopeEditorDialog({
   const materials = materialsData?.materials ?? [];
   const surfaceResistances = surfaceResistanceData?.surfaceResistances ?? [];
 
-  const [state, setState] = useState<EditorState>(() => toEditorState(envelope, locale));
+  // What the editor looked like when it was opened (rowIds differ per call, so compare the serialized state):
+  // anything different is an unsaved edit.
+  const baselineRef = useRef("");
+  const [state, setState] = useState<EditorState>(() => {
+    const initial = toEditorState(envelope, locale);
+    baselineRef.current = JSON.stringify(initial);
+    return initial;
+  });
+  const [confirmClose, setConfirmClose] = useState(false);
+  const dirty = open && JSON.stringify(state) !== baselineRef.current;
+  useRegisterDirty("envelope.editor", dirty);
   const [step, setStep] = useState<EditorStep>("blocks");
   const [errors, setErrors] = useState<string[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -44,7 +56,10 @@ export function EnvelopeEditorDialog({
   // biome-ignore lint/correctness/useExhaustiveDependencies: only re-sync from server data when the dialog transitions to open, not on every envelope refetch while it's open (that would clobber in-progress edits).
   useEffect(() => {
     if (open) {
-      setState(toEditorState(envelope, locale));
+      const initial = toEditorState(envelope, locale);
+      baselineRef.current = JSON.stringify(initial);
+      setState(initial);
+      setConfirmClose(false);
       setStep("blocks");
       setErrors([]);
       setApiError(null);
@@ -65,6 +80,12 @@ export function EnvelopeEditorDialog({
     }
   }
 
+  // Esc, a click outside, the × and "Cancel" all come through here: unsaved edits are never dropped silently.
+  function requestClose() {
+    if (dirty) setConfirmClose(true);
+    else onOpenChange(false);
+  }
+
   const steps: { id: EditorStep; label: string }[] = STEP_IDS.map((id) => ({
     id,
     label: t(`editor.steps.${id}`),
@@ -73,114 +94,129 @@ export function EnvelopeEditorDialog({
   const blockNames = state.buildingBlocks.map((b) => b.name).filter(Boolean);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[85vh] max-w-6xl flex-col overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>{t("editor.title")}</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : requestClose())}>
+        <DialogContent className="flex h-[85vh] max-w-6xl flex-col overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>{t("editor.title")}</DialogTitle>
+          </DialogHeader>
 
-        <p className="text-sm text-muted-foreground">{t("editor.description")}</p>
+          <p className="text-sm text-muted-foreground">{t("editor.description")}</p>
 
-        <ol className="flex flex-wrap items-center gap-2 text-sm">
-          {steps.map((s, i) => (
-            <li key={s.id} className="flex items-center gap-2">
-              <button
+          <ol className="flex flex-wrap items-center gap-2 text-sm">
+            {steps.map((s, i) => (
+              <li key={s.id} className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setStep(s.id)}
+                  className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-medium ${
+                    step === s.id
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-border text-muted-foreground"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+                <span className={step === s.id ? "font-medium" : "text-muted-foreground"}>
+                  {s.label}
+                </span>
+                {i < steps.length - 1 && <ArrowRight className="h-3 w-3 text-muted-foreground" />}
+              </li>
+            ))}
+          </ol>
+
+          <div className="flex-1 overflow-y-auto pr-1">
+            {step === "blocks" && (
+              <BuildingBlocksStep
+                rows={state.buildingBlocks}
+                onChange={(buildingBlocks) => setState((s) => ({ ...s, buildingBlocks }))}
+              />
+            )}
+            {step === "constructionTypes" && (
+              <ConstructionTypesStep
+                rows={state.constructionTypes}
+                materials={materials}
+                materialsLoading={materialsLoading}
+                surfaceResistances={surfaceResistances}
+                onChange={(constructionTypes) => setState((s) => ({ ...s, constructionTypes }))}
+              />
+            )}
+            {step === "openingTypes" && (
+              <OpeningTypesStep
+                rows={state.openingTypes}
+                onChange={(openingTypes) => setState((s) => ({ ...s, openingTypes }))}
+              />
+            )}
+            {step === "elements" && (
+              <EnvelopeElementsStep
+                rows={state.envelopeElements}
+                constructionTypes={state.constructionTypes}
+                openingTypes={state.openingTypes}
+                blockNames={blockNames}
+                onChange={(envelopeElements) => setState((s) => ({ ...s, envelopeElements }))}
+              />
+            )}
+          </div>
+
+          {errors.length > 0 && (
+            <div className="max-h-32 overflow-y-auto rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+              <p className="font-medium">{t("editor.pleaseFix")}</p>
+              <ul className="mt-1 list-inside list-disc">
+                {errors.map((msg) => (
+                  <li key={msg}>{msg}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {apiError && <p className="text-sm text-destructive">{apiError}</p>}
+
+          <DialogFooter className="flex items-center justify-between sm:justify-between">
+            <div className="flex gap-2">
+              <Button
                 type="button"
-                onClick={() => setStep(s.id)}
-                className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs font-medium ${
-                  step === s.id
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border text-muted-foreground"
-                }`}
+                variant="ghost"
+                size="sm"
+                disabled={stepIndex === 0}
+                onClick={() => setStep(STEP_IDS[stepIndex - 1] ?? "blocks")}
               >
-                {i + 1}
-              </button>
-              <span className={step === s.id ? "font-medium" : "text-muted-foreground"}>
-                {s.label}
-              </span>
-              {i < steps.length - 1 && <ArrowRight className="h-3 w-3 text-muted-foreground" />}
-            </li>
-          ))}
-        </ol>
-
-        <div className="flex-1 overflow-y-auto pr-1">
-          {step === "blocks" && (
-            <BuildingBlocksStep
-              rows={state.buildingBlocks}
-              onChange={(buildingBlocks) => setState((s) => ({ ...s, buildingBlocks }))}
-            />
-          )}
-          {step === "constructionTypes" && (
-            <ConstructionTypesStep
-              rows={state.constructionTypes}
-              materials={materials}
-              materialsLoading={materialsLoading}
-              surfaceResistances={surfaceResistances}
-              onChange={(constructionTypes) => setState((s) => ({ ...s, constructionTypes }))}
-            />
-          )}
-          {step === "openingTypes" && (
-            <OpeningTypesStep
-              rows={state.openingTypes}
-              onChange={(openingTypes) => setState((s) => ({ ...s, openingTypes }))}
-            />
-          )}
-          {step === "elements" && (
-            <EnvelopeElementsStep
-              rows={state.envelopeElements}
-              constructionTypes={state.constructionTypes}
-              openingTypes={state.openingTypes}
-              blockNames={blockNames}
-              onChange={(envelopeElements) => setState((s) => ({ ...s, envelopeElements }))}
-            />
-          )}
-        </div>
-
-        {errors.length > 0 && (
-          <div className="max-h-32 overflow-y-auto rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-            <p className="font-medium">{t("editor.pleaseFix")}</p>
-            <ul className="mt-1 list-inside list-disc">
-              {errors.map((msg) => (
-                <li key={msg}>{msg}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {apiError && <p className="text-sm text-destructive">{apiError}</p>}
-
-        <DialogFooter className="flex items-center justify-between sm:justify-between">
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={stepIndex === 0}
-              onClick={() => setStep(STEP_IDS[stepIndex - 1] ?? "blocks")}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              {t("editor.previousStep")}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={stepIndex === STEP_IDS.length - 1}
-              onClick={() => setStep(STEP_IDS[stepIndex + 1] ?? "elements")}
-            >
-              {t("editor.nextStep")}
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {t("common:cancel")}
-            </Button>
-            <Button onClick={handleSubmit} disabled={replaceEnvelope.isPending}>
-              {replaceEnvelope.isPending ? t("common:saving") : t("editor.saveEnvelope")}
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+                <ArrowLeft className="h-4 w-4" />
+                {t("editor.previousStep")}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={stepIndex === STEP_IDS.length - 1}
+                onClick={() => setStep(STEP_IDS[stepIndex + 1] ?? "elements")}
+              >
+                {t("editor.nextStep")}
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={requestClose}>
+                {t("common:cancel")}
+              </Button>
+              <Button onClick={handleSubmit} disabled={replaceEnvelope.isPending}>
+                {replaceEnvelope.isPending ? t("common:saving") : t("editor.saveEnvelope")}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <ConfirmDialog
+        open={confirmClose}
+        title={t("common:unsaved.title")}
+        description={t("common:unsaved.description")}
+        confirmLabel={t("common:unsaved.discard")}
+        cancelLabel={t("common:unsaved.stay")}
+        destructive
+        onConfirm={() => {
+          setConfirmClose(false);
+          onOpenChange(false);
+        }}
+        onCancel={() => setConfirmClose(false)}
+      />
+    </>
   );
 }

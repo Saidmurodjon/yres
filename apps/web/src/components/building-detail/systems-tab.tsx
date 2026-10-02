@@ -38,6 +38,7 @@ import {
   useReplaceVentilation,
   useSystems,
 } from "../../hooks";
+import { useSyncedRows } from "../../hooks/use-synced-rows";
 import { ApiError } from "../../lib/api";
 import type {
   CoolingSystem,
@@ -76,6 +77,7 @@ import {
   toNumberLocale,
 } from "../../lib/number";
 import { NumberInput } from "../number-input";
+import { useConfirmDiscard, useRegisterDirty } from "../unsaved-changes";
 
 // Local editable rows always carry an `id` — real DB ids for rows loaded
 // from the server, transient `local-*` ones for rows newly added client
@@ -284,6 +286,7 @@ export function SystemsTab({
 }: { buildingId: string; readOnly?: boolean }) {
   const { data, isLoading, isError, error } = useSystems(buildingId);
   const [scenario, setScenario] = useState<Scenario>("before");
+  const confirmDiscard = useConfirmDiscard();
   const { t } = useTranslation("systems");
 
   if (isLoading) {
@@ -313,7 +316,10 @@ export function SystemsTab({
         <p className="text-sm text-muted-foreground">{t("description")}</p>
       </div>
 
-      <Tabs value={scenario} onValueChange={(v) => setScenario(v as Scenario)}>
+      <Tabs
+        value={scenario}
+        onValueChange={(v) => confirmDiscard(() => setScenario(v as Scenario))}
+      >
         <TabsList>
           <TabsTrigger value="before">{t("scenarioBefore")}</TabsTrigger>
           <TabsTrigger value="after">{t("scenarioAfter")}</TabsTrigger>
@@ -387,27 +393,26 @@ function VentilationSection({
   systems,
   readOnly,
 }: { buildingId: string; scenario: Scenario; systems: VentilationSystem[]; readOnly: boolean }) {
-  const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceVentilation(buildingId);
   const { t, i18n } = useTranslation("systems");
   const locale = toNumberLocale(i18n.language);
   const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
-  useEffect(() => {
-    setRows(
-      toRows(systems, scenario, (s) => ({
-        id: s.id,
-        systemType: s.systemType,
-        airChangeRatePerHour: formatNumberForInput(s.airChangeRatePerHour, locale),
-        freshAirPerPersonM3h: formatNumberForInput(s.freshAirPerPersonM3h, locale),
-        heatRecoveryEfficiency: formatNumberForInput(s.heatRecoveryEfficiency, locale),
-        fanElectricalPowerKw: formatNumberForInput(s.fanElectricalPowerKw, locale),
-        coolingSeasonHours: formatNumberForInput(s.coolingSeasonHours, locale),
-      })),
-    );
-    setError(null);
-  }, [systems, scenario, locale]);
+  // Rows follow the server only while they are clean, so saving another card never wipes what is typed here.
+  const { rows, setRows, dirty, markClean } = useSyncedRows<Row>(
+    toRows(systems, scenario, (s) => ({
+      id: s.id,
+      systemType: s.systemType,
+      airChangeRatePerHour: formatNumberForInput(s.airChangeRatePerHour, locale),
+      freshAirPerPersonM3h: formatNumberForInput(s.freshAirPerPersonM3h, locale),
+      heatRecoveryEfficiency: formatNumberForInput(s.heatRecoveryEfficiency, locale),
+      fanElectricalPowerKw: formatNumberForInput(s.fanElectricalPowerKw, locale),
+      coolingSeasonHours: formatNumberForInput(s.coolingSeasonHours, locale),
+    })),
+    scenario,
+  );
+  useRegisterDirty("systems.ventilation", dirty);
 
   async function handleSave() {
     setError(null);
@@ -431,6 +436,7 @@ function VentilationSection({
     setInvalidCells(NO_INVALID_CELLS);
     try {
       await replace.mutateAsync(payload);
+      markClean();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("ventilation.saveError"));
     }
@@ -490,28 +496,24 @@ function DhwSection({
   sources,
   readOnly,
 }: { buildingId: string; scenario: Scenario; sources: DhwSource[]; readOnly: boolean }) {
-  const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceDhw(buildingId);
   const { t, i18n } = useTranslation("systems");
   const locale = toNumberLocale(i18n.language);
   const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
-  useEffect(() => {
-    setRows(
-      toRows(sources, scenario, (s) => ({
-        id: s.id,
-        sourceName: s.sourceName,
-        energyCarrier: s.energyCarrier,
-        specificConsumptionLPersonDay: formatNumberForInput(
-          s.specificConsumptionLPersonDay,
-          locale,
-        ),
-        personsServed: formatNumberForInput(s.personsServed, locale),
-      })),
-    );
-    setError(null);
-  }, [sources, scenario, locale]);
+  // Rows follow the server only while they are clean, so saving another card never wipes what is typed here.
+  const { rows, setRows, dirty, markClean } = useSyncedRows<Row>(
+    toRows(sources, scenario, (s) => ({
+      id: s.id,
+      sourceName: s.sourceName,
+      energyCarrier: s.energyCarrier,
+      specificConsumptionLPersonDay: formatNumberForInput(s.specificConsumptionLPersonDay, locale),
+      personsServed: formatNumberForInput(s.personsServed, locale),
+    })),
+    scenario,
+  );
+  useRegisterDirty("systems.dhw", dirty);
 
   async function handleSave() {
     setError(null);
@@ -533,6 +535,7 @@ function DhwSection({
     setInvalidCells(NO_INVALID_CELLS);
     try {
       await replace.mutateAsync(payload);
+      markClean();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("dhw.saveError"));
     }
@@ -582,26 +585,25 @@ function DistributionSection({
   systems,
   readOnly,
 }: { buildingId: string; scenario: Scenario; systems: DistributionSystem[]; readOnly: boolean }) {
-  const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceDistribution(buildingId);
   const { t, i18n } = useTranslation("systems");
   const locale = toNumberLocale(i18n.language);
   const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
-  useEffect(() => {
-    setRows(
-      toRows(systems, scenario, (s) => ({
-        id: s.id,
-        systemType: s.systemType,
-        pipeDiameterClass: s.pipeDiameterClass,
-        lengthM: formatNumberForInput(s.lengthM, locale),
-        insulatedFraction: formatNumberForInput(s.insulatedFraction, locale),
-        meanFluidTempC: formatNumberForInput(s.meanFluidTempC, locale),
-      })),
-    );
-    setError(null);
-  }, [systems, scenario, locale]);
+  // Rows follow the server only while they are clean, so saving another card never wipes what is typed here.
+  const { rows, setRows, dirty, markClean } = useSyncedRows<Row>(
+    toRows(systems, scenario, (s) => ({
+      id: s.id,
+      systemType: s.systemType,
+      pipeDiameterClass: s.pipeDiameterClass,
+      lengthM: formatNumberForInput(s.lengthM, locale),
+      insulatedFraction: formatNumberForInput(s.insulatedFraction, locale),
+      meanFluidTempC: formatNumberForInput(s.meanFluidTempC, locale),
+    })),
+    scenario,
+  );
+  useRegisterDirty("systems.distribution", dirty);
 
   async function handleSave() {
     setError(null);
@@ -624,6 +626,7 @@ function DistributionSection({
     setInvalidCells(NO_INVALID_CELLS);
     try {
       await replace.mutateAsync(payload);
+      markClean();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("distribution.saveError"));
     }
@@ -677,25 +680,24 @@ function GenerationSection({
   sources,
   readOnly,
 }: { buildingId: string; scenario: Scenario; sources: GenerationSource[]; readOnly: boolean }) {
-  const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceGeneration(buildingId);
   const { t, i18n } = useTranslation("systems");
   const locale = toNumberLocale(i18n.language);
   const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
-  useEffect(() => {
-    setRows(
-      toRows(sources, scenario, (s) => ({
-        id: s.id,
-        endUse: s.endUse,
-        sourceType: s.sourceType,
-        efficiencyOrSeer: formatNumberForInput(s.efficiencyOrSeer, locale),
-        shareOfDemand: formatNumberForInput(s.shareOfDemand, locale),
-      })),
-    );
-    setError(null);
-  }, [sources, scenario, locale]);
+  // Rows follow the server only while they are clean, so saving another card never wipes what is typed here.
+  const { rows, setRows, dirty, markClean } = useSyncedRows<Row>(
+    toRows(sources, scenario, (s) => ({
+      id: s.id,
+      endUse: s.endUse,
+      sourceType: s.sourceType,
+      efficiencyOrSeer: formatNumberForInput(s.efficiencyOrSeer, locale),
+      shareOfDemand: formatNumberForInput(s.shareOfDemand, locale),
+    })),
+    scenario,
+  );
+  useRegisterDirty("systems.generation", dirty);
 
   async function handleSave() {
     setError(null);
@@ -717,6 +719,7 @@ function GenerationSection({
     setInvalidCells(NO_INVALID_CELLS);
     try {
       await replace.mutateAsync(payload);
+      markClean();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("generation.saveError"));
     }
@@ -769,25 +772,24 @@ function CoolingWindowsSection({
   windows,
   readOnly,
 }: { buildingId: string; scenario: Scenario; windows: CoolingWindow[]; readOnly: boolean }) {
-  const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceCoolingWindows(buildingId);
   const { t, i18n } = useTranslation("systems");
   const locale = toNumberLocale(i18n.language);
   const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
-  useEffect(() => {
-    setRows(
-      toRows(windows, scenario, (w) => ({
-        id: w.id,
-        orientation: w.orientation,
-        areaM2: formatNumberForInput(w.areaM2, locale),
-        gValue: formatNumberForInput(w.gValue, locale),
-        shadingFactor: formatNumberForInput(w.shadingFactor, locale),
-      })),
-    );
-    setError(null);
-  }, [windows, scenario, locale]);
+  // Rows follow the server only while they are clean, so saving another card never wipes what is typed here.
+  const { rows, setRows, dirty, markClean } = useSyncedRows<Row>(
+    toRows(windows, scenario, (w) => ({
+      id: w.id,
+      orientation: w.orientation,
+      areaM2: formatNumberForInput(w.areaM2, locale),
+      gValue: formatNumberForInput(w.gValue, locale),
+      shadingFactor: formatNumberForInput(w.shadingFactor, locale),
+    })),
+    scenario,
+  );
+  useRegisterDirty("systems.coolingWindows", dirty);
 
   async function handleSave() {
     setError(null);
@@ -809,6 +811,7 @@ function CoolingWindowsSection({
     setInvalidCells(NO_INVALID_CELLS);
     try {
       await replace.mutateAsync(payload);
+      markClean();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("coolingWindows.saveError"));
     }
@@ -853,23 +856,22 @@ function CoolingSystemsSection({
   systems,
   readOnly,
 }: { buildingId: string; scenario: Scenario; systems: CoolingSystem[]; readOnly: boolean }) {
-  const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceCoolingSystems(buildingId);
   const { t, i18n } = useTranslation("systems");
   const locale = toNumberLocale(i18n.language);
   const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
-  useEffect(() => {
-    setRows(
-      toRows(systems, scenario, (s) => ({
-        id: s.id,
-        description: s.description ?? "",
-        seer: formatNumberForInput(s.seer, locale),
-      })),
-    );
-    setError(null);
-  }, [systems, scenario, locale]);
+  // Rows follow the server only while they are clean, so saving another card never wipes what is typed here.
+  const { rows, setRows, dirty, markClean } = useSyncedRows<Row>(
+    toRows(systems, scenario, (s) => ({
+      id: s.id,
+      description: s.description ?? "",
+      seer: formatNumberForInput(s.seer, locale),
+    })),
+    scenario,
+  );
+  useRegisterDirty("systems.coolingSystems", dirty);
 
   async function handleSave() {
     setError(null);
@@ -889,6 +891,7 @@ function CoolingSystemsSection({
     setInvalidCells(NO_INVALID_CELLS);
     try {
       await replace.mutateAsync(payload);
+      markClean();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("coolingSystems.saveError"));
     }
@@ -920,34 +923,33 @@ function LightingSection({
   zones,
   readOnly,
 }: { buildingId: string; scenario: Scenario; zones: LightingZone[]; readOnly: boolean }) {
-  const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceLighting(buildingId);
   const { t, i18n } = useTranslation("systems");
   const locale = toNumberLocale(i18n.language);
   const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
-  useEffect(() => {
-    setRows(
-      toRows(zones, scenario, (z) => ({
-        id: z.id,
-        name: z.name,
-        areaM2: formatNumberForInput(z.areaM2, locale),
-        incandescentFraction: formatNumberForInput(z.technologyMix.incandescentFraction, locale),
-        fluorescentElectromagneticFraction: formatNumberForInput(
-          z.technologyMix.fluorescentElectromagneticFraction,
-          locale,
-        ),
-        fluorescentElectronicFraction: formatNumberForInput(
-          z.technologyMix.fluorescentElectronicFraction,
-          locale,
-        ),
-        ledFraction: formatNumberForInput(z.technologyMix.ledFraction, locale),
-        utilizationFactor: formatNumberForInput(z.utilizationFactor, locale),
-      })),
-    );
-    setError(null);
-  }, [zones, scenario, locale]);
+  // Rows follow the server only while they are clean, so saving another card never wipes what is typed here.
+  const { rows, setRows, dirty, markClean } = useSyncedRows<Row>(
+    toRows(zones, scenario, (z) => ({
+      id: z.id,
+      name: z.name,
+      areaM2: formatNumberForInput(z.areaM2, locale),
+      incandescentFraction: formatNumberForInput(z.technologyMix.incandescentFraction, locale),
+      fluorescentElectromagneticFraction: formatNumberForInput(
+        z.technologyMix.fluorescentElectromagneticFraction,
+        locale,
+      ),
+      fluorescentElectronicFraction: formatNumberForInput(
+        z.technologyMix.fluorescentElectronicFraction,
+        locale,
+      ),
+      ledFraction: formatNumberForInput(z.technologyMix.ledFraction, locale),
+      utilizationFactor: formatNumberForInput(z.utilizationFactor, locale),
+    })),
+    scenario,
+  );
+  useRegisterDirty("systems.lighting", dirty);
 
   async function handleSave() {
     setError(null);
@@ -974,6 +976,7 @@ function LightingSection({
     setInvalidCells(NO_INVALID_CELLS);
     try {
       await replace.mutateAsync(payload);
+      markClean();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("lighting.saveError"));
     }
@@ -1031,29 +1034,28 @@ function EquipmentSection({
   items,
   readOnly,
 }: { buildingId: string; scenario: Scenario; items: EquipmentItem[]; readOnly: boolean }) {
-  const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceEquipment(buildingId);
   const { t, i18n } = useTranslation("systems");
   const locale = toNumberLocale(i18n.language);
   const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
-  useEffect(() => {
-    setRows(
-      toRows(items, scenario, (i) => ({
-        id: i.id,
-        name: i.name,
-        category: i.category ?? "",
-        unitPowerKw: formatNumberForInput(i.unitPowerKw, locale),
-        quantity: formatNumberForInput(i.quantity, locale),
-        heatingSeasonHours: formatNumberForInput(i.heatingSeasonHours, locale),
-        coolingSeasonHours: formatNumberForInput(i.coolingSeasonHours, locale),
-        heatingUtilizationFactor: formatNumberForInput(i.heatingUtilizationFactor, locale),
-        coolingUtilizationFactor: formatNumberForInput(i.coolingUtilizationFactor, locale),
-      })),
-    );
-    setError(null);
-  }, [items, scenario, locale]);
+  // Rows follow the server only while they are clean, so saving another card never wipes what is typed here.
+  const { rows, setRows, dirty, markClean } = useSyncedRows<Row>(
+    toRows(items, scenario, (i) => ({
+      id: i.id,
+      name: i.name,
+      category: i.category ?? "",
+      unitPowerKw: formatNumberForInput(i.unitPowerKw, locale),
+      quantity: formatNumberForInput(i.quantity, locale),
+      heatingSeasonHours: formatNumberForInput(i.heatingSeasonHours, locale),
+      coolingSeasonHours: formatNumberForInput(i.coolingSeasonHours, locale),
+      heatingUtilizationFactor: formatNumberForInput(i.heatingUtilizationFactor, locale),
+      coolingUtilizationFactor: formatNumberForInput(i.coolingUtilizationFactor, locale),
+    })),
+    scenario,
+  );
+  useRegisterDirty("systems.equipment", dirty);
 
   async function handleSave() {
     setError(null);
@@ -1079,6 +1081,7 @@ function EquipmentSection({
     setInvalidCells(NO_INVALID_CELLS);
     try {
       await replace.mutateAsync(payload);
+      markClean();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("equipment.saveError"));
     }
@@ -1141,30 +1144,29 @@ function RenewablesSection({
   systems,
   readOnly,
 }: { buildingId: string; systems: RenewableSystem[]; readOnly: boolean }) {
-  const [rows, setRows] = useState<Row[]>([]);
   const [error, setError] = useState<string | null>(null);
   const replace = useReplaceRenewables(buildingId);
   const { t, i18n } = useTranslation("systems");
   const locale = toNumberLocale(i18n.language);
   const [invalidCells, setInvalidCells] = useState<ReadonlySet<string>>(NO_INVALID_CELLS);
 
-  useEffect(() => {
-    setRows(
-      systems.map((s) => ({
-        id: s.id,
-        systemType: s.systemType,
-        capacityKw: formatNumberForInput(s.capacityKw, locale),
-        collectorCount: formatNumberForInput(s.collectorCount, locale),
-        availableAreaM2: formatNumberForInput(s.availableAreaM2, locale),
-        unitCostUsd: formatNumberForInput(s.unitCostUsd, locale),
-        annualProductionKwh: formatNumberForInput(
-          s.monthlyProduction.reduce((sum, m) => sum + m.productionKwh, 0),
-          locale,
-        ),
-      })),
-    );
-    setError(null);
-  }, [systems, locale]);
+  // Rows follow the server only while they are clean, so saving another card never wipes what is typed here.
+  const { rows, setRows, dirty, markClean } = useSyncedRows<Row>(
+    systems.map((s) => ({
+      id: s.id,
+      systemType: s.systemType,
+      capacityKw: formatNumberForInput(s.capacityKw, locale),
+      collectorCount: formatNumberForInput(s.collectorCount, locale),
+      availableAreaM2: formatNumberForInput(s.availableAreaM2, locale),
+      unitCostUsd: formatNumberForInput(s.unitCostUsd, locale),
+      annualProductionKwh: formatNumberForInput(
+        s.monthlyProduction.reduce((sum, m) => sum + m.productionKwh, 0),
+        locale,
+      ),
+    })),
+    "all",
+  );
+  useRegisterDirty("systems.renewables", dirty);
 
   async function handleSave() {
     setError(null);
@@ -1197,6 +1199,7 @@ function RenewablesSection({
     setInvalidCells(NO_INVALID_CELLS);
     try {
       await replace.mutateAsync(payload);
+      markClean();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("renewables.saveError"));
     }

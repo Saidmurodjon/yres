@@ -11,6 +11,7 @@ import {
   TabsTrigger,
 } from "@yres/ui";
 import { ArrowLeft, BarChart3, ClipboardCheck, Eye, LineChart } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConsumptionTab } from "../../../../components/building-detail/consumption-tab";
 import { EnvelopeTab } from "../../../../components/building-detail/envelope-tab";
@@ -18,8 +19,10 @@ import { MeasuresTab } from "../../../../components/building-detail/measures-tab
 import { OverviewTab } from "../../../../components/building-detail/overview-tab";
 import { SharingTab } from "../../../../components/building-detail/sharing-tab";
 import { SystemsTab } from "../../../../components/building-detail/systems-tab";
+import { UnsavedChangesProvider, useConfirmDiscard } from "../../../../components/unsaved-changes";
 import { useBuilding } from "../../../../hooks";
 import { ApiError } from "../../../../lib/api";
+import type { BuildingRole } from "../../../../lib/api-types";
 
 export const Route = createFileRoute("/_authenticated/buildings/$buildingId/")({
   component: BuildingDetailPage,
@@ -59,8 +62,28 @@ function BuildingDetailPage() {
     );
   }
 
-  const { building, role } = data;
+  return (
+    <UnsavedChangesProvider>
+      <BuildingDetailBody building={data.building} role={data.role} />
+    </UnsavedChangesProvider>
+  );
+}
+
+/**
+ * Inside the provider so the tab switch can ask before discarding unsaved edits: Radix unmounts an inactive
+ * tab's content, so changing tabs would otherwise lose whatever was typed in the one being left.
+ */
+function BuildingDetailBody({
+  building,
+  role,
+}: {
+  building: NonNullable<ReturnType<typeof useBuilding>["data"]>["building"];
+  role: BuildingRole;
+}) {
+  const { t } = useTranslation("buildings");
   const isReadOnly = role === "viewer";
+  const [tab, setTab] = useState("overview");
+  const confirmDiscard = useConfirmDiscard();
 
   return (
     <div className="space-y-6">
@@ -88,7 +111,7 @@ function BuildingDetailPage() {
         )}
       </div>
 
-      <Tabs defaultValue="overview">
+      <Tabs value={tab} onValueChange={(next) => confirmDiscard(() => setTab(next))}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <TabsList>
             <TabsTrigger value="overview">{t("detail.tabOverview")}</TabsTrigger>
