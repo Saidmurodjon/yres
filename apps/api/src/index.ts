@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/cloudflare";
-import { Hono } from "hono";
+import { type Context, Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { createAuth } from "./auth";
@@ -63,6 +64,18 @@ const app = new Hono<AppEnv>();
 
 app.use("*", cors({ origin: (origin, c) => c.env.WEB_URL ?? origin, credentials: true }));
 app.use("*", logger());
+
+// V-3: cap request bodies so a huge JSON payload cannot be parsed in full before validation. 1 MB covers
+// every JSON endpoint (the largest legitimate PUT is a few hundred KB); chat uploads carry a file of up
+// to 10 MB plus multipart overhead and get their own limit. After CORS so a 413 still carries CORS headers.
+const payloadTooLarge = (c: Context) =>
+  c.json({ error: "Payload too large", code: "PAYLOAD_TOO_LARGE" }, 413);
+const jsonBodyLimit = bodyLimit({ maxSize: 1024 * 1024, onError: payloadTooLarge });
+const uploadBodyLimit = bodyLimit({ maxSize: 11 * 1024 * 1024, onError: payloadTooLarge });
+const CHAT_UPLOAD_PATH = /^\/api\/chat\/conversations\/[^/]+\/attachments$/;
+app.use("/api/*", (c, next) =>
+  (CHAT_UPLOAD_PATH.test(c.req.path) ? uploadBodyLimit : jsonBodyLimit)(c, next),
+);
 // Constructs the Drizzle client once per request; every route and the auth
 // handler below read it via c.get("db") instead of each building their own
 // (see middleware/db.ts's doc comment for why — it's what lets a

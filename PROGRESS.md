@@ -2210,3 +2210,15 @@ shuning uchun T01 da yo spec'larni tuzatish, yo E2E'ni aniq izoh bilan CI'dan ch
   Audit route'larida boshqa yozuv yo'q (grep: `annotations` PUT allaqachon `canWrite`). Test `tests/integration/audit-access.test.ts` (viewer 403 + qator yozilmaydi,
   editor 201; viewer PDF 200 va `reportR2Key` null, owner'dan keyin to'ladi). **UI eslatma:** natija sahifasidagi "Auditni ishga tushirish" tugmasi viewer'ga
   yashirilmagan — endi u 403 xabarini ko'radi (`results.tsx` mavjud xato ko'rsatkichi orqali); tugmani yashirish alohida UX ishi.
+- **T04c (V-3):** barcha `z.number()` → `.finite()` (JSON `1e999` Infinity'ga aylanadi); `building`: harorat ±60, soat 0–24, kun 0–366, `yearBuilt` 1800–2100,
+  `name`/`location`/`search`/`region` ≤300 (lat/lon allaqachon ±90/±180); `consumption`: `year` 1990–2100, summalar `finite().nonnegative()`;
+  satr maydonlari (`code`/`description`/`name`/...) ≤100–10 000; `chat` (`usernames`/`addUsernames`/`removeUserIds` ≤50, username ≤320, nom ≤300), `measures` (`measureIds` ≤500,
+  `lifetimeYears` ≤100), `members.email` ≤320, `users`/`admin-users` `name` ≤200, `image` ≤2048. Body limiti (`index.ts`, CORS'dan keyin): `/api/*` 1 MB,
+  `…/conversations/:id/attachments` 11 MB, `413 { code: "PAYLOAD_TOO_LARGE" }`.
+  **Spec jadvalidan FARQ (ataylab — D02 qoidasi: Free so'rov byudjeti ≤40 ustun):** massiv chegaralari D02 dagi kichikroq qiymatlarda qoldi
+  (`consumption.bills` 144 — spec 600; `layers` 8 — 20; `openings` jami 160 — 200/element; `constructionTypes` 15, `openingTypes` 14, `buildingBlocks` 22 — 100;
+  `envelopeElements` 100 — 500; `systems`-guruhlar 20–200 — hammasi 200). Spec'dagilar Paid uchun edi; byudjetga sig'masa PUT 40 so'rovdan oshib, Free'da yiqiladi.
+  Real auditda bu hajmlar yetarli deb baholandi, lekin yetmasa — Paid triggeri (ADR-016), chegarani byudjetsiz oshirish emas.
+  Tekshirilmagan qiymatlar (kengroq olingan): `occupantCount`, maydon/hajm yuqori chegarasi, `investmentCostUsd` yuqorisi — faqat `.finite()`.
+  Testlar: `tests/services/schemas.test.ts` (17), `tests/integration/body-limit.test.ts` (3: 1 MB → 413, upload >1 MB o'tadi, >11 MB → 413).
+  Tekshiruv: api 34 fayl / 173 test, type-check, E2E 7/7 yashil (forma qiymatlari yangi chegaralarga sig'adi).

@@ -11,7 +11,7 @@ export type UpdateUserRoleInput = z.infer<typeof updateUserRoleSchema>;
 // edit), minus `image` — admin editing someone else's profile doesn't need
 // to touch their avatar.
 export const updateUserProfileSchema = z.object({
-  name: z.string().min(1).optional(),
+  name: z.string().min(1).max(200).optional(),
   username: z
     .string()
     .min(3)

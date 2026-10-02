@@ -2,7 +2,7 @@ import { buildingMemberRoleEnum } from "@yres/db";
 import { z } from "zod";
 
 export const inviteMemberSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email().max(320),
   role: z.enum(buildingMemberRoleEnum.enumValues),
 });
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;

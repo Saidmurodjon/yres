@@ -6,13 +6,17 @@ import { z } from "zod";
 // `consumption.service.ts`'s CARRIER_KWH_PER_NATIVE_UNIT, since
 // audit.engine.ts's calibration step silently skips any bill missing it and
 // a client-supplied value could drift from the authoritative conversion.
+// Calendar years the app can sensibly hold bills for; amounts cannot be negative or non-finite.
+const yearSchema = z.number().finite().int().min(1990).max(2100);
+const amountSchema = z.number().finite().nonnegative();
+
 const utilityBillInputSchema = z.object({
   energyCarrier: z.enum(energyCarrierEnum.enumValues),
-  year: z.number().int(),
-  month: z.number().int().min(1).max(12),
-  consumptionNative: z.number(),
-  expenseLocal: z.number().nullable().optional(),
-  tariffLocal: z.number().nullable().optional(),
+  year: yearSchema,
+  month: z.number().finite().int().min(1).max(12),
+  consumptionNative: amountSchema,
+  expenseLocal: amountSchema.nullable().optional(),
+  tariffLocal: amountSchema.nullable().optional(),
 });
 
 export const createUtilityBillsSchema = z.object({
@@ -23,10 +27,10 @@ export const createUtilityBillsSchema = z.object({
 export type CreateUtilityBillsInput = z.infer<typeof createUtilityBillsSchema>;
 
 const monthlyBillInputSchema = z.object({
-  month: z.number().int().min(1).max(12),
-  consumptionNative: z.number(),
-  expenseLocal: z.number().nullable().optional(),
-  tariffLocal: z.number().nullable().optional(),
+  month: z.number().finite().int().min(1).max(12),
+  consumptionNative: amountSchema,
+  expenseLocal: amountSchema.nullable().optional(),
+  tariffLocal: amountSchema.nullable().optional(),
 });
 
 // One full year of a single carrier's bills — matches the source workbook's
@@ -34,7 +38,7 @@ const monthlyBillInputSchema = z.object({
 // offer that as a grid instead of one add-a-bill form per month.
 export const replaceUtilityBillsSchema = z.object({
   energyCarrier: z.enum(energyCarrierEnum.enumValues),
-  year: z.number().int(),
+  year: yearSchema,
   bills: z.array(monthlyBillInputSchema).max(12),
 });
 export type ReplaceUtilityBillsInput = z.infer<typeof replaceUtilityBillsSchema>;

@@ -7,18 +7,18 @@ import {
 import { z } from "zod";
 
 const constructionLayerInputSchema = z.object({
-  layerOrder: z.number().int().nonnegative(),
+  layerOrder: z.number().finite().int().nonnegative(),
   materialId: z.string().uuid(),
-  thicknessM: z.number().positive(),
+  thicknessM: z.number().finite().positive(),
 });
 
 const constructionTypeInputSchema = z.object({
   // Client-assigned code, unique within this payload. Used to cross-reference
   // envelope elements to their construction type without needing real DB ids
   // up front (this is a full bulk-replace, so ids don't exist yet).
-  code: z.string().min(1),
+  code: z.string().min(1).max(100),
   elementCategory: z.enum(envelopeElementCategoryEnum.enumValues),
-  description: z.string().nullable().optional(),
+  description: z.string().max(10_000).nullable().optional(),
   layers: z.array(constructionLayerInputSchema).max(8).default([]),
   // Only meaningful when this payload's `scenario` is "after" — the `code`
   // of the existing "before"-scenario construction type this one retrofits
@@ -27,48 +27,48 @@ const constructionTypeInputSchema = z.object({
   // Resolved to a real `construction_type.id` in the route since the
   // before-scenario type was created by an earlier PUT and isn't part of
   // this payload.
-  retrofitOfCode: z.string().min(1).nullable().optional(),
+  retrofitOfCode: z.string().min(1).max(100).nullable().optional(),
 });
 
 const openingTypeInputSchema = z.object({
-  code: z.string().min(1),
+  code: z.string().min(1).max(100),
   category: z.enum(openingCategoryEnum.enumValues),
-  uValueWm2k: z.number().positive(),
-  widthM: z.number().positive().nullable().optional(),
-  heightM: z.number().positive().nullable().optional(),
+  uValueWm2k: z.number().finite().positive(),
+  widthM: z.number().finite().positive().nullable().optional(),
+  heightM: z.number().finite().positive().nullable().optional(),
   // Solar-gain properties — only meaningful for category: "window", used by
   // the audit engine's EN ISO 13790 solar gain calculation.
-  gValue: z.number().min(0).max(1).nullable().optional(),
-  frameFactor: z.number().min(0).max(1).nullable().optional(),
-  shadingFactor: z.number().min(0).max(1).optional(),
-  description: z.string().nullable().optional(),
+  gValue: z.number().finite().min(0).max(1).nullable().optional(),
+  frameFactor: z.number().finite().min(0).max(1).nullable().optional(),
+  shadingFactor: z.number().finite().min(0).max(1).optional(),
+  description: z.string().max(10_000).nullable().optional(),
 });
 
 const envelopeOpeningInputSchema = z.object({
-  openingTypeCode: z.string().min(1),
-  count: z.number().int().positive().default(1),
+  openingTypeCode: z.string().min(1).max(100),
+  count: z.number().finite().int().positive().default(1),
 });
 
 const envelopeElementInputSchema = z.object({
-  blockName: z.string().min(1),
+  blockName: z.string().min(1).max(300),
   orientation: z.enum(orientationEnum.enumValues),
-  sideCode: z.string().nullable().optional(),
-  description: z.string().nullable().optional(),
-  constructionTypeCode: z.string().min(1),
-  lengthM: z.number().positive(),
-  heightEnvContactM: z.number().nonnegative().optional(),
-  heightGroundContactM: z.number().nonnegative().optional(),
+  sideCode: z.string().max(100).nullable().optional(),
+  description: z.string().max(10_000).nullable().optional(),
+  constructionTypeCode: z.string().min(1).max(100),
+  lengthM: z.number().finite().positive(),
+  heightEnvContactM: z.number().finite().nonnegative().optional(),
+  heightGroundContactM: z.number().finite().nonnegative().optional(),
   openings: z.array(envelopeOpeningInputSchema).max(20).default([]),
 });
 
 const buildingBlockInputSchema = z.object({
-  name: z.string().min(1),
-  footprintLengthM: z.number().positive(),
-  footprintWidthM: z.number().positive(),
-  numberOfFloors: z.number().int().positive(),
-  floorToFloorHeightM: z.number().positive(),
-  perimeterM: z.number().positive(),
-  perimeterLossCoefficient: z.number().min(0).max(1).optional(),
+  name: z.string().min(1).max(300),
+  footprintLengthM: z.number().finite().positive(),
+  footprintWidthM: z.number().finite().positive(),
+  numberOfFloors: z.number().finite().int().positive(),
+  floorToFloorHeightM: z.number().finite().positive(),
+  perimeterM: z.number().finite().positive(),
+  perimeterLossCoefficient: z.number().finite().min(0).max(1).optional(),
 });
 
 // Array bounds are sized so one PUT stays inside the D1 query budget (database.md: ≤ 40 per
