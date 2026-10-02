@@ -24,6 +24,16 @@ qaytarmang:
   server loglarida noaniq `account_not_linked` xatosi bilan `/login`ga sezdirmasdan qaytarib
   yuboradi, foydalanuvchiga esa hech narsa ko'rinmaydi. Buni himoya qilishi kerak bo'lgan holat
   uchun haqiqiy "tasdiqlashni qayta yuborish" oqimini qurmasdan qayta yoqmang.
+  **Lekin bu sozlama hozirgi holatida xavfsizlik teshigi (S-1, kritik, Faza 0).** Email/parol
+  ro'yxatdan o'tish email tasdiqlashni talab qilmaydi, shuning uchun hujumchi `victim@gmail.com`
+  bilan parol-akkaunt ochib qo'yishi mumkin; haqiqiy egasi keyin "Google bilan kirish"ni bossa,
+  Google shu akkauntga ulanadi va hujumchining paroli ishlashda davom etadi (akkauntni oldindan
+  egallash). "Qayta yoqmang" qoidasi S-1 tuzatishini to'smaydi — u faqat sozlamani *yolg'iz*
+  `true` qilishni taqiqlaydi. Ruxsat etilgan ikki yo'l (`docs/production/02-arxitektura-va-
+  texnologiyalar.md` S-1): (a) `emailAndPassword.requireEmailVerification: true` + haqiqiy
+  "tasdiqlashni qayta yuborish" oqimi, yoki (b) Google ulanayotganda lokal akkaunt tasdiqlanmagan
+  bo'lsa, uning `credential` parolini bekor qilish va barcha eski sessiyalarni revoke qilish —
+  (b) yuqoridagi UX'ni saqlaydi. Qaysi biri — loyiha egasi bilan kelishing.
 - OAuth bug'i haqida xabar berilganda va muvaffaqiyatsizlik holati noaniq bo'lsa ("shunchaki
   login sahifasiga qaytib qolyapti"), foydalanuvchi uni jonli qayta hosil qilayotganda
   `wrangler tail --env production`ni ishga tushirish eng tez haqiqiy diagnostikadir — Better Auth
