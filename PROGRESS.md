@@ -2151,3 +2151,31 @@ shuning uchun T01 da yo spec'larni tuzatish, yo E2E'ni aniq izoh bilan CI'dan ch
   binari va `playwright install --with-deps` ni ubuntu-latest da sinaydi; yiqilsa xatoni shu yerga yozing.
 
 **Navbatda:** T02 (S-1 akkauntni oldindan egallash, yo'l (b)).
+
+## Faza 0 · T02 — S-1: akkauntni oldindan egallash yopildi, yo'l (b) (2026-10-02)
+
+- `apps/api/src/auth/account-linking.ts`: `revokeUnverifiedCredentialOnSocialLink` (unverified user + social link ⇒ `credential` akkaunt
+  va barcha sessiyalar bitta `db.batch()` da o'chadi; `credential` provayder / verified / noma'lum user ⇒ no-op; logda faqat `userId`)
+  va `guardNewAccountLink` (xato bo'lsa — yangi hosil bo'lgan link qatorini o'chirib, xatoni qayta otadi). `auth/index.ts` da
+  `databaseHooks.account.create.after`; `requireLocalEmailVerified: false` o'zgarmadi, ikkala joyga "juft" izohi qo'yildi. `auth.md` yangilandi.
+- **Better Auth 1.6.23 (`bun.lock`) manbasi QAYTA O'QILDI** (`node_modules/better-auth/dist/…`), tartib spec bilan bir xil:
+  `oauth2/link-account.mjs:31` `internalAdapter.linkAccount` → (`db/with-hooks.mjs:31-39` `account.create.after`) → `:49` `updateUser({ emailVerified: true })`
+  → `:134` `createSession`. Shu sababli hook paytida `emailVerified` hali `false`.
+- **Hook faqat implicit linking'da emas:** `createAccount`/`linkAccount` ikkalasi ham `createWithHooks("account")` — shuning uchun hook
+  *aniq* `/link-social` yo'lida ham ishlaydi (`api/routes/callback.mjs:111` `link` holati, `api/routes/account.mjs:156` idToken varianti).
+  Tizimga kirgan, hali tasdiqlanmagan foydalanuvchi o'z Google'ini ulasa — o'z paroli va joriy sessiyalari o'chadi. Bu xavfsizlik
+  teshigi emas (faqat o'ziga ta'sir qiladi, "parolni unutdim" bilan tiklanadi); farqlovchi shart qo'shilmadi (ko'lam). Kod izohida yozilgan.
+  Frontend `/link-social` ni ishlatmaydi.
+- **Hook xatosi:** `with-hooks.mjs:33` `queueAfterTransactionHook` (`@better-auth/core/dist/context/transaction.mjs:86` — tranzaksiya
+  yo'q bo'lsa darhol `await`) → xato **yutilmaydi**, `linkAccount` otadi, `link-account.mjs:30-40` uni ushlab "unable to link account" qaytaradi.
+  Lekin link qatori allaqachon INSERT qilingan bo'lardi ⇒ keyingi Google kirishi "linkedAccount bor" shoxiga tushib, hookni chetlab
+  o'tib emailni tasdiqlab qo'yardi (parol saqlangan holda) — **spec'da yo'q teshik**; shuning uchun `guardNewAccountLink` fail-closed
+  (xatoda linkni o'chiradi). Testi bor (batch'ni sindirib).
+- Testlar `tests/integration/account-linking.test.ts` (8): A–D (spec), noma'lum user, Better Auth adapteri orqali hook ulanganligi (unverified →
+  parol/sessiyalar ketadi), verified foydalanuvchi o'zgarmaydi (credential + google qoladi), fail-closed. Oddiy email/parol ro'yxatdan
+  o'tish (credential, hook no-op) mavjud integratsiya testlari bilan qoplangan (har `signUpTestUser` shu hook'dan o'tadi).
+- **Loyiha egasi uchun qo'lda tekshirish (haqiqiy Google kerak, bu sessiyada tekshirilmagan):** (1) yangi email bilan parol akkaunt oching,
+  tasdiqlamang; (2) o'sha Gmail bilan "Google bilan kirish"; (3) eski parol bilan kirish **ishlamasligi**, Google bilan kirish ishlashi;
+  (4) parol kerak bo'lsa "Parolni unutdim" yangi parol beradi (`social-features.md`: u o'zgarmaydi).
+
+**Navbatda:** T03 (V-1 chat biriktirmalari XSS).

@@ -3,6 +3,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import type { Env } from "../index";
 import { sendEmail } from "../lib/email";
+import { guardNewAccountLink } from "./account-linking";
 
 export function createAuth(env: Env, db: Database) {
   return betterAuth({
@@ -20,6 +21,16 @@ export function createAuth(env: Env, db: Database) {
     // covers *this*; the separate welcome-email hook is a later phase, not
     // bundled here so this commit stays scoped to "don't break signup."
     databaseHooks: {
+      account: {
+        create: {
+          // S-1: runs when Google gets attached to an existing local account, before Better Auth marks
+          // it verified — see auth/account-linking.ts. `requireLocalEmailVerified: false` below is only
+          // safe together with this hook; never change one without the other.
+          after: async (linked) => {
+            await guardNewAccountLink(db, linked);
+          },
+        },
+      },
       user: {
         create: {
           before: async (user) => {
@@ -95,6 +106,9 @@ export function createAuth(env: Env, db: Database) {
         // true) throws "account_not_linked" for anyone who signed up with
         // email/password and never clicked that link, silently bouncing
         // them back to /login on every Google sign-in attempt.
+        //
+        // Safe only because `revokeUnverifiedCredentialOnSocialLink` (databaseHooks.account above)
+        // drops the unverified local password and sessions on link — S-1, auth.md.
         requireLocalEmailVerified: false,
       },
     },

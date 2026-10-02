@@ -60,7 +60,7 @@ D03 dan oldin yozilgan integratsiya testining lokal yiqilishini "o'tdi" deb da'v
 | D03 | Test harness: lokal D1 (Miniflare), CI'dan Postgres olib tashlanadi | `D03-d1-test-harness.md` | 1 | ✅ |
 | D04 | Production cutover (loyiha egasi bilan) + Neon'ga oid hujjatlarni yangilash | `D04-d1-cutover.md` | 1 | ⏳ §B (hujjat) ✅; §A/§C — loyiha egasi |
 | T01 | CI: branch trigger, artefaktlar | `T01-ci-migratsiyalar.md` | 1 | ✅ (CI natijasi GitHub'da egasi tomonidan tekshiriladi) |
-| T02 | S-1 akkauntni oldindan egallash — yo'l (b) | `T02-s1-akkaunt-egallash.md` | 1 | ⬜ |
+| T02 | S-1 akkauntni oldindan egallash — yo'l (b) | `T02-s1-akkaunt-egallash.md` | 1 | ✅ (haqiqiy Google bilan qo'lda tekshirish — egasi) |
 | T03 | V-1 chat biriktirmalari XSS | `T03-v1-chat-xss.md` | 1 | ⬜ |
 | T04 | Xavfsizlik gigiyenasi: S-4, A-2, V-3, V-5, V-2 | `T04-xavfsizlik-gigiyenasi.md` | 5 (a–e) | ⬜ |
 | T05 | `parseLocaleNumber` + `NumberInput` + barcha raqam maydonlari | `T05-number-input.md` | 2 (a, b) | ⬜ |

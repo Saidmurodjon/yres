@@ -34,6 +34,8 @@ qaytarmang:
   "tasdiqlashni qayta yuborish" oqimi, yoki (b) Google ulanayotganda lokal akkaunt tasdiqlanmagan
   bo'lsa, uning `credential` parolini bekor qilish va barcha eski sessiyalarni revoke qilish —
   (b) yuqoridagi UX'ni saqlaydi. **Qaror (2026-10-02): (b) tanlandi** — (a)ni qurmang.
+  **Amalga oshirildi (2026-10-02):** `apps/api/src/auth/account-linking.ts` (`revokeUnverifiedCredentialOnSocialLink` +
+  fail-closed `guardNewAccountLink`), `databaseHooks.account.create.after` orqali; sozlama va hook juft — biri ikkinchisisiz o'zgarmaydi.
 - OAuth bug'i haqida xabar berilganda va muvaffaqiyatsizlik holati noaniq bo'lsa ("shunchaki
   login sahifasiga qaytib qolyapti"), foydalanuvchi uni jonli qayta hosil qilayotganda
   `wrangler tail --env production`ni ishga tushirish eng tez haqiqiy diagnostikadir — Better Auth
