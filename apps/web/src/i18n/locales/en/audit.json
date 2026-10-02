@@ -46,7 +46,10 @@
       "confirmReplaceTitle": "Replace the existing envelope?",
       "confirmReplaceDescription_one": "The existing envelope ({{count}} element) will be deleted and replaced with the quick envelope. This cannot be undone.",
       "confirmReplaceDescription_other": "The existing envelope ({{count}} elements) will be deleted and replaced with the quick envelope. This cannot be undone.",
-      "confirmReplace": "Replace"
+      "confirmReplace": "Replace",
+      "loadFailedTitle": "Couldn't load the envelope",
+      "loadFailed": "We can't tell whether this building already has an envelope, so the quick form is locked — it could overwrite one.",
+      "backToExisting": "Back to the existing envelope"
     },
     "consumption": {
       "title": "Historical utility bills (optional)",

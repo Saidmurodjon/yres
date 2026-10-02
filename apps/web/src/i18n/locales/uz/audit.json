@@ -44,7 +44,10 @@
       "replaceWithQuick": "Tezkor qobiq bilan almashtirish…",
       "confirmReplaceTitle": "Mavjud qobiq almashtirilsinmi?",
       "confirmReplaceDescription": "Mavjud qobiq ({{count}} element) o'chiriladi va tezkor qobiq bilan almashtiriladi. Buni qaytarib bo'lmaydi.",
-      "confirmReplace": "Almashtirish"
+      "confirmReplace": "Almashtirish",
+      "loadFailedTitle": "Qobiq ma'lumotlarini yuklab bo'lmadi",
+      "loadFailed": "Binoda qobiq bor-yo'qligi noma'lum, shuning uchun tezkor qobiq formasi yopiq — u mavjud qobiqni almashtirib yuborishi mumkin edi.",
+      "backToExisting": "Mavjud qobiqqa qaytish"
     },
     "consumption": {
       "title": "Tarixiy kommunal to'lov hisoblari (ixtiyoriy)",

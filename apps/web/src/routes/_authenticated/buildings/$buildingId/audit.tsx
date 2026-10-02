@@ -59,7 +59,12 @@ function AuditWizard() {
   const { buildingId } = Route.useParams();
   const navigate = useNavigate();
   const { data: buildingData, isLoading: buildingLoading } = useBuilding(buildingId);
-  const { data: envelopeData, isLoading: envelopeLoading } = useEnvelope(buildingId);
+  const {
+    data: envelopeData,
+    isLoading: envelopeLoading,
+    isError: envelopeError,
+    refetch: refetchEnvelope,
+  } = useEnvelope(buildingId);
 
   const [step, setStep] = useState<WizardStep>("envelope");
 
@@ -70,10 +75,10 @@ function AuditWizard() {
   // Decided once, when the envelope has loaded; later saves must not yank the user between steps.
   const initialStepSet = useRef(false);
   useEffect(() => {
-    if (envelopeLoading || initialStepSet.current) return;
+    if (envelopeLoading || envelopeError || initialStepSet.current) return;
     initialStepSet.current = true;
     if (hasEnvelope) setStep("consumption");
-  }, [envelopeLoading, hasEnvelope]);
+  }, [envelopeLoading, envelopeError, hasEnvelope]);
 
   const STEPS: { id: WizardStep; label: string }[] = STEP_IDS.map((id) => ({
     id,
@@ -121,6 +126,19 @@ function AuditWizard() {
 
       {envelopeLoading ? (
         <Skeleton className="h-64 w-full" />
+      ) : step === "envelope" && envelopeError ? (
+        // Without the envelope we cannot tell whether the quick form would overwrite one: no form, no save.
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("wizard.envelope.loadFailedTitle")}</CardTitle>
+            <CardDescription role="alert">⚠ {t("wizard.envelope.loadFailed")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button variant="outline" onClick={() => refetchEnvelope()}>
+              {t("common:retry")}
+            </Button>
+          </CardContent>
+        </Card>
       ) : step === "envelope" ? (
         <EnvelopeStep
           buildingId={buildingId}
@@ -556,7 +574,22 @@ function EnvelopeStep({
         </div>
       )}
 
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
+        {hasEnvelope && (
+          <Button
+            type="button"
+            variant="outline"
+            disabled={replaceEnvelope.isPending}
+            onClick={() => {
+              setValues(DEFAULT_QUICK_ENVELOPE);
+              setInvalidFields(new Set());
+              setError(null);
+              setShowQuickForm(false);
+            }}
+          >
+            {t("wizard.envelope.backToExisting")}
+          </Button>
+        )}
         <Button type="submit" disabled={replaceEnvelope.isPending}>
           {replaceEnvelope.isPending ? (
             <>
