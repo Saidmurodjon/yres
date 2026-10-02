@@ -3,6 +3,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import type { Env } from "../index";
 import { sendEmail } from "../lib/email";
+import { escapeHtml } from "../lib/html";
 import { guardNewAccountLink } from "./account-linking";
 
 export function createAuth(env: Env, db: Database) {
@@ -45,7 +46,7 @@ export function createAuth(env: Env, db: Database) {
             await sendEmail(env, {
               to: user.email,
               subject: "Welcome to YRES",
-              html: `<p>Welcome to YRES, ${user.name}!</p><p>Your account is ready — sign in to start auditing buildings.</p>`,
+              html: `<p>Welcome to YRES, ${escapeHtml(user.name)}!</p><p>Your account is ready — sign in to start auditing buildings.</p>`,
             });
           },
         },
@@ -57,7 +58,7 @@ export function createAuth(env: Env, db: Database) {
         await sendEmail(env, {
           to: user.email,
           subject: "Reset your YRES password",
-          html: `<p>Someone requested a password reset for your YRES account.</p><p><a href="${url}">Click here to choose a new password</a>. This link expires in 1 hour.</p><p>If you didn't request this, you can ignore this email.</p>`,
+          html: `<p>Someone requested a password reset for your YRES account.</p><p><a href="${escapeHtml(url)}">Click here to choose a new password</a>. This link expires in 1 hour.</p><p>If you didn't request this, you can ignore this email.</p>`,
         });
       },
     },
@@ -66,7 +67,7 @@ export function createAuth(env: Env, db: Database) {
         await sendEmail(env, {
           to: user.email,
           subject: "Verify your YRES email address",
-          html: `<p>Welcome to YRES — please confirm this is your email address.</p><p><a href="${url}">Verify email</a></p>`,
+          html: `<p>Welcome to YRES — please confirm this is your email address.</p><p><a href="${escapeHtml(url)}">Verify email</a></p>`,
         });
       },
     },

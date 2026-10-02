@@ -2200,3 +2200,8 @@ shuning uchun T01 da yo spec'larni tuzatish, yo E2E'ni aniq izoh bilan CI'dan ch
   bilan tekshirilmaydi; bu T04e (V-2, WS freymlari zod) ko'lamida.
 
 **Navbatda:** T04 (xavfsizlik gigiyenasi: a–e).
+
+## Faza 0 · T04 — xavfsizlik gigiyenasi (a–e; har biri alohida commit)
+
+- **T04a (S-4):** `lib/html.ts` `escapeHtml` (`&` birinchi); welcome email'dagi `user.name` va reset/verify email'lardagi `href` `url` escape qilinadi
+  (`auth/index.ts`). Boshqa email shabloni yo'q (grep). Unit test `tests/services/html.test.ts` (5).
