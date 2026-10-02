@@ -33,7 +33,7 @@ qaytarmang:
   texnologiyalar.md` S-1): (a) `emailAndPassword.requireEmailVerification: true` + haqiqiy
   "tasdiqlashni qayta yuborish" oqimi, yoki (b) Google ulanayotganda lokal akkaunt tasdiqlanmagan
   bo'lsa, uning `credential` parolini bekor qilish va barcha eski sessiyalarni revoke qilish —
-  (b) yuqoridagi UX'ni saqlaydi. Qaysi biri — loyiha egasi bilan kelishing.
+  (b) yuqoridagi UX'ni saqlaydi. **Qaror (2026-10-02): (b) tanlandi** — (a)ni qurmang.
 - OAuth bug'i haqida xabar berilganda va muvaffaqiyatsizlik holati noaniq bo'lsa ("shunchaki
   login sahifasiga qaytib qolyapti"), foydalanuvchi uni jonli qayta hosil qilayotganda
   `wrangler tail --env production`ni ishga tushirish eng tez haqiqiy diagnostikadir — Better Auth

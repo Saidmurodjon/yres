@@ -1953,6 +1953,9 @@ Kodga tegilmadi — faqat hujjat/qoida o'zgarishlari, Faza 0 dan oldingi tayyorg
 
 Tekshiruv: faqat markdown o'zgardi — type-check/build/lint talab qilinmaydi.
 
-**Navbatda:** K2–K4 qarorlari (Faza 1 ni bloklaydi); S-1 uchun (a)/(b) tanlovi; branch strategiyasi
+**Qarorlar (shu kuni):** K2 — nominal 6,08 % (v7.20 kabi), K3 — ikkala ko'rinish, K4 — FES eksporti
+parametr, sukutda o'chiq; S-1 — (b) yo'l. Master reja va `auth.md`ga yozildi.
+
+**Navbatda:** branch strategiyasi
 (repo'da faqat `claude/yres-platform-development-svx6nn` bor, `main` yo'q); keyin Faza 0
 (master reja §6dagi tayyor prompt).

@@ -197,9 +197,9 @@ Agentlarning ~45 savoli takrorlanishlardan tozalandi. **Qalin** — keyingi faza
 | ID | Qaror | Tavsiya | Bloklaydi | Manba |
 |---|---|---|---|---|
 | **K1** | YRES uchun haqiqat manbai endi v7.20 mi ("v5 ga sodiqlik" qoidasi bekor qilinadimi)? | Ha — ✅ **Qaror (2026-10-02): Ha.** `calculation-engine.md` yangilandi | Faza 1 | 01 Q1 |
-| **K2** | Moliya: nominal yoki real narxlar (WB talabi)? Diskont, o'sish sur'atlari, bazaviy yil, kurs manbasi (shartnoma 12 140,91 yoki MB) | v7.20 dagi kabi nominal 6,08 %, kurs loyiha darajasida | Faza 1 | 01 Q10, 05 Q4 |
-| **K3** | Konvert tejashi hisobotda foydali issiqlik (kWh) yoki yakuniy yoqilg'i (÷η) ko'rinishida beriladimi? | Ikkalasi, tariflash yakuniy bo'yicha | Faza 1 | 01 Q2 |
-| **K4** | FES eksport daromadi (1 100 so'm/kWh) byudjet tashkiloti uchun standart holatda yoqilganmi? | Loyiha parametri, sukut bo'yicha o'chiq | Faza 1 | 01 Q4 |
+| **K2** | Moliya: nominal yoki real narxlar (WB talabi)? Diskont, o'sish sur'atlari, bazaviy yil, kurs manbasi (shartnoma 12 140,91 yoki MB) | v7.20 dagi kabi nominal 6,08 %, kurs loyiha darajasida — ✅ **Qaror (2026-10-02): tavsiya qabul qilindi** | Faza 1 | 01 Q10, 05 Q4 |
+| **K3** | Konvert tejashi hisobotda foydali issiqlik (kWh) yoki yakuniy yoqilg'i (÷η) ko'rinishida beriladimi? | Ikkalasi, tariflash yakuniy bo'yicha — ✅ **Qaror (2026-10-02): tavsiya qabul qilindi** | Faza 1 | 01 Q2 |
+| **K4** | FES eksport daromadi (1 100 so'm/kWh) byudjet tashkiloti uchun standart holatda yoqilganmi? | Loyiha parametri, sukut bo'yicha o'chiq — ✅ **Qaror (2026-10-02): tavsiya qabul qilindi** | Faza 1 | 01 Q4 |
 | **K5** | EE toifa shkalasi (VM 690 2-ilova) rasmiy matni | Hozircha "vaqtinchalik" belgisi bilan | Faza 2 | 01 Q3, 05 Q5 |
 | **K6** | "Qabul qilingan FAIL"ni kim tasdiqlaydi (auditor / buyurtmachi)? | Auditor + asos matni; buyurtmachi hisobotda ko'radi | Faza 2 | 01 Q5 |
 | **K7** | Asl texnik topshiriq (ToR): hisobot tili, formati, imzo, nusxalar soni | ToR'ni topib 3-MTM'ga qo'shish | Faza 5 | 05 Q1–Q3 |
