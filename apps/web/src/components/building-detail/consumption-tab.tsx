@@ -213,6 +213,12 @@ export function ConsumptionTab({
     }
     return result;
   }, [gridsByYear, baseline]);
+  // A cell with text that is not a number is flagged at once (red border, aria-invalid, message in the
+  // title) - not only in the save error - so the offending cell is findable.
+  const cellError = (raw: string) => {
+    const parsed = parseLocaleNumber(raw, locale);
+    return !parsed.ok && parsed.reason === "invalid" ? t("common:number.invalid") : undefined;
+  };
   const dirtyGroupCount = [...dirtyByYear.values()].reduce((sum, n) => sum + n, 0);
   useRegisterDirty("consumption", dirtyGroupCount > 0);
 
@@ -503,6 +509,7 @@ export function ConsumptionTab({
                                       <NumberInput
                                         className="h-7 px-1.5 text-sm"
                                         showMessage={false}
+                                        error={cellError(value)}
                                         aria-label={t("ariaConsumption", {
                                           month: monthLabel,
                                           carrier: ENERGY_CARRIER_LABELS[carrier],
@@ -524,6 +531,7 @@ export function ConsumptionTab({
                             <NumberInput
                               className="h-7 w-20 px-1.5 text-sm"
                               showMessage={false}
+                              error={cellError(row.tariffLocal)}
                               value={row.tariffLocal}
                               onValueChange={(raw) => updateTariff(y, carrier, raw)}
                             />

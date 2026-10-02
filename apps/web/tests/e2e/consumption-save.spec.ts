@@ -42,6 +42,7 @@ test("saves two years in one click; clearing a carrier removes it from the serve
 
   // An unreadable cell stops everything and names it.
   await cell(page, "Gas", "March").fill("12abc");
+  await expect(cell(page, "Gas", "March")).toHaveAttribute("aria-invalid", "true");
   await saveButton.click();
   await expect(page.getByText(/not saved|nothing was saved/i)).toBeVisible();
   await cell(page, "Gas", "March").fill("");
