@@ -1,34 +1,40 @@
 import { relations } from "drizzle-orm";
-import { boolean, integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { building } from "./buildings";
 import { measureCategoryEnum } from "./enums";
 
-export const energyMeasure = pgTable("energy_measure", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  buildingId: uuid("building_id")
+export const energyMeasure = sqliteTable("energy_measure", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  buildingId: text("building_id")
     .notNull()
     .references(() => building.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  category: measureCategoryEnum("category").notNull(),
-  investmentCostUsd: numeric("investment_cost_usd", { mode: "number" }).notNull(),
+  category: text("category", { enum: measureCategoryEnum.enumValues }).notNull(),
+  investmentCostUsd: real("investment_cost_usd").notNull(),
   lifetimeYears: integer("lifetime_years").notNull().default(20),
-  maintenanceCostPercent: numeric("maintenance_cost_percent", { mode: "number" })
+  maintenanceCostPercent: real("maintenance_cost_percent").notNull().default(0),
+  proposedForImplementation: integer("proposed_for_implementation", { mode: "boolean" })
     .notNull()
-    .default(0),
-  proposedForImplementation: boolean("proposed_for_implementation").notNull().default(false),
+    .default(false),
   sourceSheetRef: text("source_sheet_ref"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
-export const nonEeMeasure = pgTable("non_ee_measure", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  buildingId: uuid("building_id")
+export const nonEeMeasure = sqliteTable("non_ee_measure", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  buildingId: text("building_id")
     .notNull()
     .references(() => building.id, { onDelete: "cascade" }),
   description: text("description").notNull(),
   unit: text("unit"),
-  quantity: numeric("quantity", { mode: "number" }).notNull().default(1),
-  unitCostUsd: numeric("unit_cost_usd", { mode: "number" }).notNull(),
+  quantity: real("quantity").notNull().default(1),
+  unitCostUsd: real("unit_cost_usd").notNull(),
 });
 
 export const energyMeasureRelations = relations(energyMeasure, ({ one }) => ({

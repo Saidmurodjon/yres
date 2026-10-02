@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { jsonb, numeric, pgTable, text, uuid } from "drizzle-orm/pg-core";
+import { real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { building } from "./buildings";
 import { scenarioEnum } from "./enums";
 
@@ -10,16 +10,18 @@ export interface LightingTechnologyMix {
   ledFraction: number;
 }
 
-export const lightingZone = pgTable("lighting_zone", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  buildingId: uuid("building_id")
+export const lightingZone = sqliteTable("lighting_zone", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  buildingId: text("building_id")
     .notNull()
     .references(() => building.id, { onDelete: "cascade" }),
-  scenario: scenarioEnum("scenario").notNull(),
+  scenario: text("scenario", { enum: scenarioEnum.enumValues }).notNull(),
   name: text("name").notNull(),
-  areaM2: numeric("area_m2", { mode: "number" }).notNull(),
-  technologyMix: jsonb("technology_mix").$type<LightingTechnologyMix>().notNull(),
-  utilizationFactor: numeric("utilization_factor", { mode: "number" }).notNull(),
+  areaM2: real("area_m2").notNull(),
+  technologyMix: text("technology_mix", { mode: "json" }).$type<LightingTechnologyMix>().notNull(),
+  utilizationFactor: real("utilization_factor").notNull(),
 });
 
 export const lightingZoneRelations = relations(lightingZone, ({ one }) => ({

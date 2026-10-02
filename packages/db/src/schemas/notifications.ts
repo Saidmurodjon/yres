@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { boolean, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { index, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { user } from "./auth";
 
 /**
@@ -7,10 +7,12 @@ import { user } from "./auth";
  * live via the `UserNotificationChannel` Durable Object when the recipient
  * has a socket open, always persisted here regardless.
  */
-export const notification = pgTable(
+export const notification = sqliteTable(
   "notification",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -19,8 +21,10 @@ export const notification = pgTable(
     title: text("title").notNull(),
     body: text("body"),
     linkUrl: text("link_url"),
-    isRead: boolean("is_read").notNull().default(false),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
+    isRead: integer("is_read", { mode: "boolean" }).notNull().default(false),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (table) => [index("notification_user_created_at_idx").on(table.userId, table.createdAt)],
 );

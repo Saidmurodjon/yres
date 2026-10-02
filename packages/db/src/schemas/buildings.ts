@@ -1,71 +1,80 @@
 import { relations } from "drizzle-orm";
-import { date, index, integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { index, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { user } from "./auth";
 import { climateRegion } from "./climate";
 import { buildingStatusEnum, buildingTypeEnum } from "./enums";
 
-export const building = pgTable(
+export const building = sqliteTable(
   "building",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     location: text("location").notNull(),
-    climateRegionId: uuid("climate_region_id")
+    /**
+     * `name + " " + location`, lowercased with `toLocaleLowerCase()` — written by the app on every
+     * insert/update. SQLite's `LIKE`/`lower()` only case-fold ASCII, so "Тошкент" would never match
+     * "тошкент" without it (database.md). Search filters on this column, not on `name`/`location`.
+     */
+    searchText: text("search_text").notNull().default(""),
+    climateRegionId: text("climate_region_id")
       .notNull()
       .references(() => climateRegion.id),
-    buildingType: buildingTypeEnum("building_type").notNull().default("other"),
+    buildingType: text("building_type", { enum: buildingTypeEnum.enumValues })
+      .notNull()
+      .default("other"),
     yearBuilt: integer("year_built"),
-    status: buildingStatusEnum("status").notNull().default("not_started"),
-    deadline: date("deadline"),
+    status: text("status", { enum: buildingStatusEnum.enumValues })
+      .notNull()
+      .default("not_started"),
+    /** `YYYY-MM-DD`. */
+    deadline: text("deadline"),
     /** Optional — additive to `location`'s free-text region string, doesn't replace it (dashboard.md). Used for the PDF report's coordinates line + static map (docs/report-redesign-proposal.md §7). */
-    latitude: numeric("latitude", { mode: "number" }),
-    longitude: numeric("longitude", { mode: "number" }),
+    latitude: real("latitude"),
+    longitude: real("longitude"),
 
     // Building_data sheet
-    netCooledFloorAreaM2: numeric("net_cooled_floor_area_m2", { mode: "number" }).default(0),
+    netCooledFloorAreaM2: real("net_cooled_floor_area_m2").default(0),
     heatingSeasonDurationDays: integer("heating_season_duration_days").notNull(),
-    indoorTempNonOperationC: numeric("indoor_temp_non_operation_c", {
-      mode: "number",
-    }).notNull(),
-    indoorTempOperationC: numeric("indoor_temp_operation_c", { mode: "number" }).notNull(),
-    outdoorAvgHeatingSeasonTempC: numeric("outdoor_avg_heating_season_temp_c", {
-      mode: "number",
-    }).notNull(),
-    outdoorDesignTempC: numeric("outdoor_design_temp_c", { mode: "number" }).notNull(),
-    nonOperationHoursPerDay: numeric("non_operation_hours_per_day", {
-      mode: "number",
-    }).notNull(),
-    operationHoursPerDay: numeric("operation_hours_per_day", { mode: "number" }).notNull(),
+    indoorTempNonOperationC: real("indoor_temp_non_operation_c").notNull(),
+    indoorTempOperationC: real("indoor_temp_operation_c").notNull(),
+    outdoorAvgHeatingSeasonTempC: real("outdoor_avg_heating_season_temp_c").notNull(),
+    outdoorDesignTempC: real("outdoor_design_temp_c").notNull(),
+    nonOperationHoursPerDay: real("non_operation_hours_per_day").notNull(),
+    operationHoursPerDay: real("operation_hours_per_day").notNull(),
     occupantCount: integer("occupant_count").notNull().default(0),
-    coolingEnthalpyInsideKjKg: numeric("cooling_enthalpy_inside_kj_kg", { mode: "number" }),
-    coolingEnthalpyOutsideKjKg: numeric("cooling_enthalpy_outside_kj_kg", { mode: "number" }),
-    coolingEnthalpyHottestDayKjKg: numeric("cooling_enthalpy_hottest_day_kj_kg", {
-      mode: "number",
-    }),
+    coolingEnthalpyInsideKjKg: real("cooling_enthalpy_inside_kj_kg"),
+    coolingEnthalpyOutsideKjKg: real("cooling_enthalpy_outside_kj_kg"),
+    coolingEnthalpyHottestDayKjKg: real("cooling_enthalpy_hottest_day_kj_kg"),
 
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (table) => [index("building_user_id_idx").on(table.userId)],
 );
 
-export const buildingBlock = pgTable("building_block", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  buildingId: uuid("building_id")
+export const buildingBlock = sqliteTable("building_block", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  buildingId: text("building_id")
     .notNull()
     .references(() => building.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  footprintLengthM: numeric("footprint_length_m", { mode: "number" }).notNull(),
-  footprintWidthM: numeric("footprint_width_m", { mode: "number" }).notNull(),
+  footprintLengthM: real("footprint_length_m").notNull(),
+  footprintWidthM: real("footprint_width_m").notNull(),
   numberOfFloors: integer("number_of_floors").notNull(),
-  floorToFloorHeightM: numeric("floor_to_floor_height_m", { mode: "number" }).notNull(),
-  perimeterM: numeric("perimeter_m", { mode: "number" }).notNull(),
-  perimeterLossCoefficient: numeric("perimeter_loss_coefficient", { mode: "number" })
-    .notNull()
-    .default(0.4),
+  floorToFloorHeightM: real("floor_to_floor_height_m").notNull(),
+  perimeterM: real("perimeter_m").notNull(),
+  perimeterLossCoefficient: real("perimeter_loss_coefficient").notNull().default(0.4),
 });
 
 export const buildingRelations = relations(building, ({ one, many }) => ({

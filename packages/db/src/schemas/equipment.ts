@@ -1,26 +1,24 @@
 import { relations } from "drizzle-orm";
-import { integer, numeric, pgTable, text, uuid } from "drizzle-orm/pg-core";
+import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { building } from "./buildings";
 import { scenarioEnum } from "./enums";
 
-export const equipmentItem = pgTable("equipment_item", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  buildingId: uuid("building_id")
+export const equipmentItem = sqliteTable("equipment_item", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  buildingId: text("building_id")
     .notNull()
     .references(() => building.id, { onDelete: "cascade" }),
-  scenario: scenarioEnum("scenario").notNull(),
+  scenario: text("scenario", { enum: scenarioEnum.enumValues }).notNull(),
   name: text("name").notNull(),
   category: text("category"),
-  unitPowerKw: numeric("unit_power_kw", { mode: "number" }).notNull(),
+  unitPowerKw: real("unit_power_kw").notNull(),
   quantity: integer("quantity").notNull().default(1),
-  heatingSeasonHours: numeric("heating_season_hours", { mode: "number" }).notNull().default(0),
-  coolingSeasonHours: numeric("cooling_season_hours", { mode: "number" }).notNull().default(0),
-  heatingUtilizationFactor: numeric("heating_utilization_factor", { mode: "number" })
-    .notNull()
-    .default(1),
-  coolingUtilizationFactor: numeric("cooling_utilization_factor", { mode: "number" })
-    .notNull()
-    .default(1),
+  heatingSeasonHours: real("heating_season_hours").notNull().default(0),
+  coolingSeasonHours: real("cooling_season_hours").notNull().default(0),
+  heatingUtilizationFactor: real("heating_utilization_factor").notNull().default(1),
+  coolingUtilizationFactor: real("cooling_utilization_factor").notNull().default(1),
 });
 
 export const equipmentItemRelations = relations(equipmentItem, ({ one }) => ({

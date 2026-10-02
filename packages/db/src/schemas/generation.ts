@@ -1,18 +1,20 @@
 import { relations } from "drizzle-orm";
-import { numeric, pgTable, uuid } from "drizzle-orm/pg-core";
+import { real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { building } from "./buildings";
 import { endUseEnum, generationSourceTypeEnum, scenarioEnum } from "./enums";
 
-export const generationSource = pgTable("generation_source", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  buildingId: uuid("building_id")
+export const generationSource = sqliteTable("generation_source", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  buildingId: text("building_id")
     .notNull()
     .references(() => building.id, { onDelete: "cascade" }),
-  endUse: endUseEnum("end_use").notNull(),
-  scenario: scenarioEnum("scenario").notNull(),
-  sourceType: generationSourceTypeEnum("source_type").notNull(),
-  efficiencyOrSeer: numeric("efficiency_or_seer", { mode: "number" }).notNull(),
-  shareOfDemand: numeric("share_of_demand", { mode: "number" }).notNull().default(1),
+  endUse: text("end_use", { enum: endUseEnum.enumValues }).notNull(),
+  scenario: text("scenario", { enum: scenarioEnum.enumValues }).notNull(),
+  sourceType: text("source_type", { enum: generationSourceTypeEnum.enumValues }).notNull(),
+  efficiencyOrSeer: real("efficiency_or_seer").notNull(),
+  shareOfDemand: real("share_of_demand").notNull().default(1),
 });
 
 export const generationSourceRelations = relations(generationSource, ({ one }) => ({

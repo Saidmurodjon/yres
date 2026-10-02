@@ -1,8 +1,17 @@
-import { pgEnum } from "drizzle-orm/pg-core";
+/**
+ * SQLite/D1 has no enum type — columns are plain `text({ enum })`, and the
+ * value set is enforced only by zod (database.md). Each `xEnum` keeps the
+ * `{ enumValues }` shape the old pg-core enums had, so callers'
+ * `z.enum(xEnum.enumValues)` and `(typeof xEnum.enumValues)[number]` keep
+ * working unchanged. Adding a value here and to the zod schema is one commit.
+ */
+function defineEnum<const T extends readonly [string, ...string[]]>(values: T) {
+  return { enumValues: values };
+}
 
-export const scenarioEnum = pgEnum("scenario", ["before", "after"]);
+export const scenarioEnum = defineEnum(["before", "after"]);
 
-export const buildingTypeEnum = pgEnum("building_type", [
+export const buildingTypeEnum = defineEnum([
   "residential_mfh",
   "residential_sfh",
   "office",
@@ -19,14 +28,14 @@ export const buildingTypeEnum = pgEnum("building_type", [
  * calculation run's pending/running/completed/failed lifecycle, not the
  * building's overall progress.
  */
-export const buildingStatusEnum = pgEnum("building_status", [
+export const buildingStatusEnum = defineEnum([
   "not_started",
   "in_progress",
   "completed",
   "on_hold",
 ]);
 
-export const orientationEnum = pgEnum("orientation", [
+export const orientationEnum = defineEnum([
   "north",
   "south",
   "east",
@@ -38,7 +47,7 @@ export const orientationEnum = pgEnum("orientation", [
   "horizontal",
 ]);
 
-export const envelopeElementCategoryEnum = pgEnum("envelope_element_category", [
+export const envelopeElementCategoryEnum = defineEnum([
   "external_wall",
   "socle_heated",
   "socle_unheated",
@@ -47,18 +56,13 @@ export const envelopeElementCategoryEnum = pgEnum("envelope_element_category", [
   "floor",
 ]);
 
-export const openingCategoryEnum = pgEnum("opening_category", ["window", "door"]);
+export const openingCategoryEnum = defineEnum(["window", "door"]);
 
-export const energyCarrierEnum = pgEnum("energy_carrier", [
-  "gas",
-  "electricity",
-  "district_heat",
-  "coal",
-]);
+export const energyCarrierEnum = defineEnum(["gas", "electricity", "district_heat", "coal"]);
 
-export const endUseEnum = pgEnum("end_use", ["heating", "dhw", "cooling"]);
+export const endUseEnum = defineEnum(["heating", "dhw", "cooling"]);
 
-export const generationSourceTypeEnum = pgEnum("generation_source_type", [
+export const generationSourceTypeEnum = defineEnum([
   "gas_boiler",
   "electric_boiler",
   "district_heating",
@@ -69,11 +73,11 @@ export const generationSourceTypeEnum = pgEnum("generation_source_type", [
   "other",
 ]);
 
-export const distributionSystemTypeEnum = pgEnum("distribution_system_type", ["heating", "dhw"]);
+export const distributionSystemTypeEnum = defineEnum(["heating", "dhw"]);
 
-export const renewableSystemTypeEnum = pgEnum("renewable_system_type", ["pv", "solar_dhw"]);
+export const renewableSystemTypeEnum = defineEnum(["pv", "solar_dhw"]);
 
-export const measureCategoryEnum = pgEnum("measure_category", [
+export const measureCategoryEnum = defineEnum([
   "envelope_wall_insulation",
   "envelope_roof_insulation",
   "envelope_floor_insulation",
@@ -89,12 +93,7 @@ export const measureCategoryEnum = pgEnum("measure_category", [
   "other",
 ]);
 
-export const auditRunStatusEnum = pgEnum("audit_run_status", [
-  "pending",
-  "running",
-  "completed",
-  "failed",
-]);
+export const auditRunStatusEnum = defineEnum(["pending", "running", "completed", "failed"]);
 
 /**
  * Per-building collaborator access level (separate from the global
@@ -102,7 +101,7 @@ export const auditRunStatusEnum = pgEnum("audit_run_status", [
  * always an implicit "owner" and never appears as a `buildingMember` row —
  * this enum only covers people *invited* to a building they don't own.
  */
-export const buildingMemberRoleEnum = pgEnum("building_member_role", ["editor", "viewer"]);
+export const buildingMemberRoleEnum = defineEnum(["editor", "viewer"]);
 
 /**
  * Global user role — separate from `buildingMemberRoleEnum` above, which is
@@ -112,4 +111,9 @@ export const buildingMemberRoleEnum = pgEnum("building_member_role", ["editor", 
  * whatever buildings are explicitly shared with the user. See
  * `docs/social-features.md` for the full design.
  */
-export const userRoleEnum = pgEnum("user_role", ["admin", "auditor", "viewer"]);
+export const userRoleEnum = defineEnum(["admin", "auditor", "viewer"]);
+
+export const conversationTypeEnum = defineEnum(["direct", "group"]);
+
+/** "owner" can rename/add/remove members in a group; meaningless for "direct" conversations. */
+export const conversationMemberRoleEnum = defineEnum(["owner", "member"]);

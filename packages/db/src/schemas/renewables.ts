@@ -1,38 +1,44 @@
 import { relations } from "drizzle-orm";
-import { integer, numeric, pgTable, text, uuid } from "drizzle-orm/pg-core";
+import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { building } from "./buildings";
 import { orientationEnum, renewableSystemTypeEnum } from "./enums";
 
-export const renewableSystem = pgTable("renewable_system", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  buildingId: uuid("building_id")
+export const renewableSystem = sqliteTable("renewable_system", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  buildingId: text("building_id")
     .notNull()
     .references(() => building.id, { onDelete: "cascade" }),
-  systemType: renewableSystemTypeEnum("system_type").notNull(),
-  capacityKw: numeric("capacity_kw", { mode: "number" }),
+  systemType: text("system_type", { enum: renewableSystemTypeEnum.enumValues }).notNull(),
+  capacityKw: real("capacity_kw"),
   collectorCount: integer("collector_count"),
-  availableAreaM2: numeric("available_area_m2", { mode: "number" }).notNull(),
-  unitCostUsd: numeric("unit_cost_usd", { mode: "number" }).notNull(),
+  availableAreaM2: real("available_area_m2").notNull(),
+  unitCostUsd: real("unit_cost_usd").notNull(),
 });
 
-export const renewableProductionMonthly = pgTable("renewable_production_monthly", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  renewableSystemId: uuid("renewable_system_id")
+export const renewableProductionMonthly = sqliteTable("renewable_production_monthly", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  renewableSystemId: text("renewable_system_id")
     .notNull()
     .references(() => renewableSystem.id, { onDelete: "cascade" }),
   month: integer("month").notNull(),
-  productionKwh: numeric("production_kwh", { mode: "number" }).notNull(),
+  productionKwh: real("production_kwh").notNull(),
 });
 
-export const shadingElement = pgTable("shading_element", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  buildingId: uuid("building_id")
+export const shadingElement = sqliteTable("shading_element", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  buildingId: text("building_id")
     .notNull()
     .references(() => building.id, { onDelete: "cascade" }),
   description: text("description").notNull(),
-  orientation: orientationEnum("orientation").notNull(),
-  shadingFactor: numeric("shading_factor", { mode: "number" }).notNull(),
-  unitCostUsd: numeric("unit_cost_usd", { mode: "number" }).notNull(),
+  orientation: text("orientation", { enum: orientationEnum.enumValues }).notNull(),
+  shadingFactor: real("shading_factor").notNull(),
+  unitCostUsd: real("unit_cost_usd").notNull(),
 });
 
 export const renewableSystemRelations = relations(renewableSystem, ({ one, many }) => ({

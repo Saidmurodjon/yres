@@ -1,16 +1,11 @@
 import { defineConfig } from "drizzle-kit";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is required to run drizzle-kit.");
-}
-
+// Only `generate` runs through drizzle-kit — migrations are applied with
+// `wrangler d1 migrations apply` (database.md), so no credentials are needed.
 export default defineConfig({
-  dialect: "postgresql",
+  dialect: "sqlite",
   schema: "./src/schemas/index.ts",
   out: "./drizzle",
-  dbCredentials: {
-    url: process.env.DATABASE_URL,
-  },
   strict: true,
   verbose: true,
 });

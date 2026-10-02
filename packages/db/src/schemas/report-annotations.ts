@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { integer, sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
 import { user } from "./auth";
 import { building } from "./buildings";
 
@@ -13,11 +13,13 @@ import { building } from "./buildings";
  * `EnergyBalanceRow.category` (calculation-engine.md), since new report
  * sections may need new keys without a schema migration.
  */
-export const reportAnnotation = pgTable(
+export const reportAnnotation = sqliteTable(
   "report_annotation",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
-    buildingId: uuid("building_id")
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    buildingId: text("building_id")
       .notNull()
       .references(() => building.id, { onDelete: "cascade" }),
     sectionKey: text("section_key").notNull(),
@@ -25,8 +27,12 @@ export const reportAnnotation = pgTable(
     createdByUserId: text("created_by_user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (table) => [
     unique("report_annotation_building_id_section_key_unique").on(

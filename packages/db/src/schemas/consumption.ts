@@ -1,22 +1,24 @@
 import { relations } from "drizzle-orm";
-import { integer, numeric, pgTable, unique, uuid } from "drizzle-orm/pg-core";
+import { integer, real, sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
 import { building } from "./buildings";
 import { energyCarrierEnum } from "./enums";
 
-export const utilityBill = pgTable(
+export const utilityBill = sqliteTable(
   "utility_bill",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
-    buildingId: uuid("building_id")
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    buildingId: text("building_id")
       .notNull()
       .references(() => building.id, { onDelete: "cascade" }),
-    energyCarrier: energyCarrierEnum("energy_carrier").notNull(),
+    energyCarrier: text("energy_carrier", { enum: energyCarrierEnum.enumValues }).notNull(),
     year: integer("year").notNull(),
     month: integer("month").notNull(),
-    consumptionNative: numeric("consumption_native", { mode: "number" }).notNull(),
-    consumptionKwh: numeric("consumption_kwh", { mode: "number" }),
-    expenseLocal: numeric("expense_local", { mode: "number" }),
-    tariffLocal: numeric("tariff_local", { mode: "number" }),
+    consumptionNative: real("consumption_native").notNull(),
+    consumptionKwh: real("consumption_kwh"),
+    expenseLocal: real("expense_local"),
+    tariffLocal: real("tariff_local"),
   },
   // One bill per building/carrier/year/month — required for the consumption
   // grid's "save a whole year at once" endpoint to upsert (onConflictDoUpdate)

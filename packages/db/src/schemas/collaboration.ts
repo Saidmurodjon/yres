@@ -1,24 +1,28 @@
 import { relations } from "drizzle-orm";
-import { index, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { index, integer, sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
 import { user } from "./auth";
 import { building } from "./buildings";
 import { buildingMemberRoleEnum } from "./enums";
 
-export const buildingMember = pgTable(
+export const buildingMember = sqliteTable(
   "building_member",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
-    buildingId: uuid("building_id")
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    buildingId: text("building_id")
       .notNull()
       .references(() => building.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    role: buildingMemberRoleEnum("role").notNull(),
+    role: text("role", { enum: buildingMemberRoleEnum.enumValues }).notNull(),
     invitedByUserId: text("invited_by_user_id")
       .notNull()
       .references(() => user.id),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (table) => [
     unique().on(table.buildingId, table.userId),

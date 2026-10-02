@@ -1,25 +1,27 @@
 import { relations } from "drizzle-orm";
-import { numeric, pgTable, text, uuid } from "drizzle-orm/pg-core";
+import { real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { building } from "./buildings";
 import { scenarioEnum } from "./enums";
 
-export const ventilationSystem = pgTable("ventilation_system", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  buildingId: uuid("building_id")
+export const ventilationSystem = sqliteTable("ventilation_system", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  buildingId: text("building_id")
     .notNull()
     .references(() => building.id, { onDelete: "cascade" }),
-  scenario: scenarioEnum("scenario").notNull(),
+  scenario: text("scenario", { enum: scenarioEnum.enumValues }).notNull(),
   systemType: text("system_type").notNull(), // 'natural' | 'mechanical'
-  airChangeRatePerHour: numeric("air_change_rate_per_hour", { mode: "number" }),
-  freshAirPerPersonM3h: numeric("fresh_air_per_person_m3h", { mode: "number" }),
-  heatRecoveryEfficiency: numeric("heat_recovery_efficiency", { mode: "number" }),
-  fanElectricalPowerKw: numeric("fan_electrical_power_kw", { mode: "number" }),
+  airChangeRatePerHour: real("air_change_rate_per_hour"),
+  freshAirPerPersonM3h: real("fresh_air_per_person_m3h"),
+  heatRecoveryEfficiency: real("heat_recovery_efficiency"),
+  fanElectricalPowerKw: real("fan_electrical_power_kw"),
   /** Mechanical-only: hours the AHU actually runs during the cooling season
    * (`Heat gains Mec Vent` sheet's `Equipment!H*J` operation-hours ×
    * utilization-factor product, collapsed into one input) — drives the
    * fresh-air enthalpy cooling load, see `ventilation.service.ts`'s
    * `calculateMechanicalVentilationCoolingGainKwh`. */
-  coolingSeasonHours: numeric("cooling_season_hours", { mode: "number" }),
+  coolingSeasonHours: real("cooling_season_hours"),
 });
 
 export const ventilationSystemRelations = relations(ventilationSystem, ({ one }) => ({

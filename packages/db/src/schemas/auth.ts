@@ -1,37 +1,45 @@
-import { boolean, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { userRoleEnum } from "./enums";
 
-export const user = pgTable("user", {
+export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").notNull().default(false),
+  emailVerified: integer("email_verified", { mode: "boolean" }).notNull().default(false),
   image: text("image"),
-  role: userRoleEnum("role").notNull().default("auditor"),
+  role: text("role", { enum: userRoleEnum.enumValues }).notNull().default("auditor"),
   /** Defaults to `email` at signup (see auth.ts's `user.create.before` hook); editable afterward in profile settings. See docs/social-features.md. */
   username: text("username").notNull().unique(),
   /** Chat presence "last seen" — updated when the user's UserNotificationChannel socket disconnects, not tied to login/session. */
-  lastSeenAt: timestamp("last_seen_at"),
+  lastSeenAt: integer("last_seen_at", { mode: "timestamp_ms" }),
   /** Admin-only soft deactivation (see admin-users.ts) — blocks every authMiddleware-gated request immediately, even with a live session. Never hard-deletes a user: building.userId cascades (would destroy their buildings), while audit_run/message/conversation FKs to user.id have no cascade at all (a hard delete would just fail once they have any activity). */
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
-export const session = pgTable("session", {
+export const session = sqliteTable("session", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   token: text("token").notNull().unique(),
-  expiresAt: timestamp("expires_at").notNull(),
+  expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
-export const account = pgTable("account", {
+export const account = sqliteTable("account", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .notNull()
@@ -41,19 +49,27 @@ export const account = pgTable("account", {
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),
   idToken: text("id_token"),
-  accessTokenExpiresAt: timestamp("access_token_expires_at"),
-  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+  accessTokenExpiresAt: integer("access_token_expires_at", { mode: "timestamp_ms" }),
+  refreshTokenExpiresAt: integer("refresh_token_expires_at", { mode: "timestamp_ms" }),
   scope: text("scope"),
   password: text("password"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
-export const verification = pgTable("verification", {
+export const verification = sqliteTable("verification", {
   id: text("id").primaryKey(),
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  expiresAt: integer("expires_at", { mode: "timestamp_ms" }).notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });

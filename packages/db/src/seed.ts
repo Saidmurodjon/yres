@@ -1,5 +1,5 @@
 import type { BatchItem } from "drizzle-orm/batch";
-import { type Database, createDb } from "./index";
+import type { Database } from "./index";
 import {
   LAMP_TYPE_NAMES,
   climateMonthlyNormal,
@@ -31,16 +31,6 @@ import {
  * trip over (the neon-http driver has no interactive transactions; see
  * apps/api/src/routes/envelope.ts for the same pattern/rationale).
  */
-export async function seedReferenceData(databaseUrl: string) {
-  await seedReferenceDataWithDb(createDb(databaseUrl));
-}
-
-/**
- * Same as {@link seedReferenceData}, but takes an already-constructed
- * Drizzle client — lets this run against any Postgres driver satisfying the
- * schema (e.g. `node-postgres` for local testing against a non-Neon
- * database), not just the Neon HTTP client `createDb` builds.
- */
 export async function seedReferenceDataWithDb(db: Database) {
   const [existingRegion] = await db.select({ id: climateRegion.id }).from(climateRegion).limit(1);
   if (existingRegion) {
@@ -52,7 +42,7 @@ export async function seedReferenceDataWithDb(db: Database) {
   const UZS_PER_USD = 12024;
   const effectiveDate = new Date().toISOString().slice(0, 10);
 
-  const statements: BatchItem<"pg">[] = [
+  const statements: BatchItem<"sqlite">[] = [
     // --- Materials (U-values sheet, Y7:Z46 conductivity table) ---
     // Full transcription of that lookup table (previously only ~9 of its ~38
     // rows were captured). A few source rows were left out rather than added
@@ -435,22 +425,5 @@ export async function seedReferenceDataWithDb(db: Database) {
       ]),
   ];
 
-  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
-}
-
-if (import.meta.main) {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    console.error("DATABASE_URL is required");
-    process.exit(1);
-  }
-  seedReferenceData(databaseUrl)
-    .then(() => {
-      console.log("Reference data seeded.");
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error("Seed failed:", error);
-      process.exit(1);
-    });
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 }

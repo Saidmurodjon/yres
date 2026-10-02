@@ -1,75 +1,12 @@
 {
   "version": "7",
-  "dialect": "postgresql",
+  "dialect": "sqlite",
   "entries": [
     {
       "idx": 0,
-      "version": "7",
-      "when": 1783859965926,
-      "tag": "0000_typical_zodiak",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1783867211244,
-      "tag": "0001_late_tyger_tiger",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1783943071858,
-      "tag": "0002_handy_silver_samurai",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1784273018836,
-      "tag": "0003_giant_mandrill",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1784278825890,
-      "tag": "0004_dark_thunderbolt",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1784685849902,
-      "tag": "0005_bumpy_veda",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1784816100576,
-      "tag": "0006_workable_zaladane",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1784818671175,
-      "tag": "0007_stale_paper_doll",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1784855970218,
-      "tag": "0008_rare_roxanne_simpson",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1784858271833,
-      "tag": "0009_heavy_madame_masque",
+      "version": "6",
+      "when": 1790923398655,
+      "tag": "0000_baseline",
       "breakpoints": true
     }
   ]

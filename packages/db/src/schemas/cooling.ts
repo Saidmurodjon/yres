@@ -1,28 +1,32 @@
 import { relations } from "drizzle-orm";
-import { numeric, pgTable, text, uuid } from "drizzle-orm/pg-core";
+import { real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { building } from "./buildings";
 import { orientationEnum, scenarioEnum } from "./enums";
 
-export const coolingWindow = pgTable("cooling_window", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  buildingId: uuid("building_id")
+export const coolingWindow = sqliteTable("cooling_window", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  buildingId: text("building_id")
     .notNull()
     .references(() => building.id, { onDelete: "cascade" }),
-  scenario: scenarioEnum("scenario").notNull(),
-  orientation: orientationEnum("orientation").notNull(),
-  areaM2: numeric("area_m2", { mode: "number" }).notNull(),
-  gValue: numeric("g_value", { mode: "number" }).notNull(),
-  shadingFactor: numeric("shading_factor", { mode: "number" }).notNull().default(1),
+  scenario: text("scenario", { enum: scenarioEnum.enumValues }).notNull(),
+  orientation: text("orientation", { enum: orientationEnum.enumValues }).notNull(),
+  areaM2: real("area_m2").notNull(),
+  gValue: real("g_value").notNull(),
+  shadingFactor: real("shading_factor").notNull().default(1),
 });
 
-export const coolingSystem = pgTable("cooling_system", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  buildingId: uuid("building_id")
+export const coolingSystem = sqliteTable("cooling_system", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  buildingId: text("building_id")
     .notNull()
     .references(() => building.id, { onDelete: "cascade" }),
-  scenario: scenarioEnum("scenario").notNull(),
+  scenario: text("scenario", { enum: scenarioEnum.enumValues }).notNull(),
   description: text("description"),
-  seer: numeric("seer", { mode: "number" }).notNull(),
+  seer: real("seer").notNull(),
 });
 
 export const coolingWindowRelations = relations(coolingWindow, ({ one }) => ({

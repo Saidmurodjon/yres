@@ -12,17 +12,15 @@
   },
   "scripts": {
     "generate": "drizzle-kit generate",
-    "migrate": "drizzle-kit migrate",
     "seed": "bun run src/seed.ts",
-    "studio": "drizzle-kit studio",
     "type-check": "tsc --noEmit",
     "lint": "biome lint ."
   },
   "dependencies": {
-    "@neondatabase/serverless": "^0.10.4",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241230.0",
     "drizzle-kit": "^0.31.10",
     "typescript": "^5.7.2"
   }

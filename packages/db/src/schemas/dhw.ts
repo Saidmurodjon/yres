@@ -1,33 +1,35 @@
 import { relations } from "drizzle-orm";
-import { integer, numeric, pgTable, text, uuid } from "drizzle-orm/pg-core";
+import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { building } from "./buildings";
 import { distributionSystemTypeEnum, energyCarrierEnum, scenarioEnum } from "./enums";
 
-export const dhwSource = pgTable("dhw_source", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  buildingId: uuid("building_id")
+export const dhwSource = sqliteTable("dhw_source", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  buildingId: text("building_id")
     .notNull()
     .references(() => building.id, { onDelete: "cascade" }),
-  scenario: scenarioEnum("scenario").notNull(),
+  scenario: text("scenario", { enum: scenarioEnum.enumValues }).notNull(),
   sourceName: text("source_name").notNull(),
-  energyCarrier: energyCarrierEnum("energy_carrier").notNull(),
-  specificConsumptionLPersonDay: numeric("specific_consumption_l_person_day", {
-    mode: "number",
-  }).notNull(),
+  energyCarrier: text("energy_carrier", { enum: energyCarrierEnum.enumValues }).notNull(),
+  specificConsumptionLPersonDay: real("specific_consumption_l_person_day").notNull(),
   personsServed: integer("persons_served").notNull(),
 });
 
-export const distributionSystem = pgTable("distribution_system", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  buildingId: uuid("building_id")
+export const distributionSystem = sqliteTable("distribution_system", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  buildingId: text("building_id")
     .notNull()
     .references(() => building.id, { onDelete: "cascade" }),
-  systemType: distributionSystemTypeEnum("system_type").notNull(),
-  scenario: scenarioEnum("scenario").notNull(),
+  systemType: text("system_type", { enum: distributionSystemTypeEnum.enumValues }).notNull(),
+  scenario: text("scenario", { enum: scenarioEnum.enumValues }).notNull(),
   pipeDiameterClass: text("pipe_diameter_class").notNull(),
-  lengthM: numeric("length_m", { mode: "number" }).notNull(),
-  insulatedFraction: numeric("insulated_fraction", { mode: "number" }).notNull().default(0),
-  meanFluidTempC: numeric("mean_fluid_temp_c", { mode: "number" }).notNull(),
+  lengthM: real("length_m").notNull(),
+  insulatedFraction: real("insulated_fraction").notNull().default(0),
+  meanFluidTempC: real("mean_fluid_temp_c").notNull(),
 });
 
 export const dhwSourceRelations = relations(dhwSource, ({ one }) => ({

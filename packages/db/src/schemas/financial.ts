@@ -1,15 +1,16 @@
-import { date, numeric, pgTable, uuid } from "drizzle-orm/pg-core";
+import { real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { energyCarrierEnum } from "./enums";
 
-export const energyTariff = pgTable("energy_tariff", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  energyCarrier: energyCarrierEnum("energy_carrier").notNull(),
-  unitCostLocal: numeric("unit_cost_local", { mode: "number" }).notNull(),
-  unitCostUsd: numeric("unit_cost_usd", { mode: "number" }).notNull(),
-  emissionFactorKgCo2PerKwh: numeric("emission_factor_kg_co2_per_kwh", {
-    mode: "number",
-  }).notNull(),
-  primaryEnergyFactor: numeric("primary_energy_factor", { mode: "number" }).notNull(),
-  exchangeRateLocalPerUsd: numeric("exchange_rate_local_per_usd", { mode: "number" }).notNull(),
-  effectiveDate: date("effective_date").notNull(),
+export const energyTariff = sqliteTable("energy_tariff", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  energyCarrier: text("energy_carrier", { enum: energyCarrierEnum.enumValues }).notNull(),
+  unitCostLocal: real("unit_cost_local").notNull(),
+  unitCostUsd: real("unit_cost_usd").notNull(),
+  emissionFactorKgCo2PerKwh: real("emission_factor_kg_co2_per_kwh").notNull(),
+  primaryEnergyFactor: real("primary_energy_factor").notNull(),
+  exchangeRateLocalPerUsd: real("exchange_rate_local_per_usd").notNull(),
+  /** `YYYY-MM-DD`. */
+  effectiveDate: text("effective_date").notNull(),
 });

@@ -1,55 +1,59 @@
 import { relations } from "drizzle-orm";
 import {
-  type AnyPgColumn,
+  type AnySQLiteColumn,
   index,
   integer,
-  pgEnum,
-  pgTable,
+  sqliteTable,
   text,
-  timestamp,
   unique,
-  uuid,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/sqlite-core";
 import { user } from "./auth";
+import { conversationMemberRoleEnum, conversationTypeEnum } from "./enums";
 
-export const conversationTypeEnum = pgEnum("conversation_type", ["direct", "group"]);
-/** "owner" can rename/add/remove members in a group; meaningless for "direct" conversations. */
-export const conversationMemberRoleEnum = pgEnum("conversation_member_role", ["owner", "member"]);
-
-export const conversation = pgTable("conversation", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  type: conversationTypeEnum("type").notNull(),
+export const conversation = sqliteTable("conversation", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  type: text("type", { enum: conversationTypeEnum.enumValues }).notNull(),
   /** Null for "direct" conversations — only groups are named. */
   name: text("name"),
   createdBy: text("created_by")
     .notNull()
     .references(() => user.id),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
-export const conversationMember = pgTable(
+export const conversationMember = sqliteTable(
   "conversation_member",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
-    conversationId: uuid("conversation_id")
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    conversationId: text("conversation_id")
       .notNull()
       .references(() => conversation.id, { onDelete: "cascade" }),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
-    role: conversationMemberRoleEnum("role").notNull().default("member"),
-    joinedAt: timestamp("joined_at").notNull().defaultNow(),
+    role: text("role", { enum: conversationMemberRoleEnum.enumValues }).notNull().default("member"),
+    joinedAt: integer("joined_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
     /** Drives both the unread-count badge and the ✓✓ read receipt (a message is "read" by a member once their lastReadAt >= the message's createdAt). */
-    lastReadAt: timestamp("last_read_at"),
+    lastReadAt: integer("last_read_at", { mode: "timestamp_ms" }),
   },
   (table) => [unique().on(table.conversationId, table.userId)],
 );
 
-export const message = pgTable(
+export const message = sqliteTable(
   "message",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
-    conversationId: uuid("conversation_id")
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    conversationId: text("conversation_id")
       .notNull()
       .references(() => conversation.id, { onDelete: "cascade" }),
     senderId: text("sender_id")
@@ -57,17 +61,21 @@ export const message = pgTable(
       .references(() => user.id),
     body: text("body").notNull(),
     /** Quoted reply — self-referencing, nullable. */
-    replyToId: uuid("reply_to_id").references((): AnyPgColumn => message.id),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    editedAt: timestamp("edited_at"),
+    replyToId: text("reply_to_id").references((): AnySQLiteColumn => message.id),
+    createdAt: integer("created_at", { mode: "timestamp_ms" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    editedAt: integer("edited_at", { mode: "timestamp_ms" }),
     /** Soft delete — row is kept (for other members' history) but the client renders a tombstone. */
-    deletedAt: timestamp("deleted_at"),
+    deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
     attachmentUrl: text("attachment_url"),
     attachmentName: text("attachment_name"),
     attachmentMimeType: text("attachment_mime_type"),
     attachmentSizeBytes: integer("attachment_size_bytes"),
   },
-  (table) => [index("message_conversation_created_at_idx").on(table.conversationId, table.createdAt)],
+  (table) => [
+    index("message_conversation_created_at_idx").on(table.conversationId, table.createdAt),
+  ],
 );
 
 export const conversationRelations = relations(conversation, ({ many }) => ({
