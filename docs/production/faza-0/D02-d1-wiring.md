@@ -55,6 +55,10 @@
    Qo'llash joylari — `grep -rn "\.insert(" apps/api/src` dagi har `values(rows)` (massiv) chaqiruvi: `envelope.ts`,
    `systems.ts` (9 route), `consumption.ts`, `measures.ts`, `members.ts`, `chat.ts` va boshqalar. Bitta qatorli insert'lar o'zgarmaydi.
    Unit test (`tests/services/batch.test.ts`): 0 qator → `[]`; 10 ustun × 25 qator → 3 bo'lak (10+10+5); bo'lak hech qachon > 100 parametr.
+   **So'rov byudjeti (Free reja, `database.md`):** har ko'p qatorli PUT route'i uchun zod chegaralaridagi eng yomon holatda
+   bayonotlar soni ≤ 40 bo'lishini hisoblang va route izohiga yozing. T04c dagi chegaralar Paid uchun mo'ljallangan edi —
+   sig'masa, chegarani kamaytiring (masalan `envelopeElements` 500 → real ehtiyojga) va PROGRESS.md da sanab o'ting.
+   Integratsiya testi (D03 dan keyin): eng yomon holatdagi envelope PUT lokal D1'da o'tadi.
 4. **Batch tipi:** `BatchItem<"pg">` → `BatchItem<"sqlite">` (`envelope.ts`, `consumption.ts`, `systems.ts`, `seed.ts` va boshqalar — grep).
 5. **Sana/boolean qaytish shakli:** `timestamp_ms` → drizzle `Date` qaytaradi (avval ham `Date` edi), JSON javoblarda
    ISO satr bo'lib ketadi — o'zgarish yo'q bo'lishi kerak. `date` → endi `text`: API javobida avval ham satr edi — tekshiring

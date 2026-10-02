@@ -13,7 +13,7 @@ Bu topshiriqda **hech qanday tashqi tizimga ulanilmaydi** — Cloudflare sozlama
 
 1. `docs/runbooks/backup-va-tiklash.md` (o'zbekcha, qadam-baqadam, buyruqlar nusxalanadigan):
    - **Maqsadlar:** RPO ≤ 24 soat (Time Travel bilan — daqiqalar), RTO ≤ 4 soat (ADR-011).
-   - **D1 Time Travel:** retention reja bo'yicha (Paid 30 kun). Holatni ko'rish:
+   - **D1 Time Travel:** retention reja bo'yicha (hozir Free — **7 kun**; Paid — 30 kun). Holatni ko'rish:
      `npx wrangler d1 time-travel info yres-production --env production`.
    - **Tiklash mashqi (choraklik) — production'ga tegmasdan:** (1) `wrangler d1 export yres-production --remote --env production
      --output=backup-<sana>.sql` (logik nusxa); (2) yangi sinov bazasi `wrangler d1 create yres-restore-drill` va unga
@@ -27,7 +27,8 @@ Bu topshiriqda **hech qanday tashqi tizimga ulanilmaydi** — Cloudflare sozlama
 2. `docs/adr/ADR-011-backup-dr.md` va `ADR-015-workers-paid.md` — qisqa ADR shakli: Kontekst · Variantlar ·
    Qaror · Oqibatlar · Holat. Matnni 02 §6 jadvalidan oling. Holat: **"Taklif — loyiha egasi tasdig'i kutilmoqda"**
    (ular K-reyestrida hali tasdiqlanmagan — "Qabul qilindi" deb yozmang). ADR-015 da: PDF generatsiyasi Free rejaning
-   CPU limitidan oshishi (02 P-1), Queues/Workflows faqat Paid'da, **D1 Free'da 50 so'rov/chaqiruv va 500 MB/baza** (ADR-016).
+   CPU limitidan oshishi (02 P-1), Queues/Workflows faqat Paid'da, D1 Free'da 50 so'rov/chaqiruv va 500 MB/baza. **Holat:**
+   "Kechiktirilgan — Free bilan boshlanadi (loyiha egasi, 2026-10-02); o'tish ADR-016 dagi triggerlar bo'yicha".
    ADR-011 da: RPO/RTO va Time Travel + eksport. ADR-016 — allaqachon yozilgan (`docs/adr/ADR-016-cloudflare-d1.md`), unga havola qiling.
 3. `docs/deployment.md` va `.claude/rules/deployment.md` — "Backup va tiklash: `docs/runbooks/backup-va-tiklash.md`" havolasi.
 
@@ -36,7 +37,7 @@ Bu topshiriqda **hech qanday tashqi tizimga ulanilmaydi** — Cloudflare sozlama
 Sonnet bularni **bajarmaydi**, faqat ro'yxatni qoldiradi:
 
 - [ ] Birinchi tiklash mashqini runbook bo'yicha bajarish va jurnalga yozish (Faza 0 chiqish mezoni).
-- [ ] Cloudflare: Workers rejasini tekshirish, Paid'ga o'tish (ADR-015) va ADR holatini yangilash.
+- [ ] Cloudflare: hozir Free. Paid'ga o'tish faqat ADR-016 triggerlari bo'yicha (`1102`/CPU xatolari, 40-so'rov byudjeti, 400 MB, Time Travel).
 - [ ] GitHub → Actions: T01 push'idan keyingi CI natijasini ko'rish; yiqilgan integratsiya testlari bo'lsa — ro'yxatini Claude'ga berish.
 - [ ] T02–T04 deploy qilingach: S-1 qo'lda tekshiruvi, CSP konsol tekshiruvi (T04d), chat yuklash (T03).
 - [ ] Branch strategiyasi: `main` ochilsinmi (CI `push: main` triggeri va `deploy.yml` unga bog'liq)?

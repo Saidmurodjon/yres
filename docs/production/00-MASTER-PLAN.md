@@ -72,7 +72,7 @@ Maqsad: production'dagi mavjud xavflar va jimgina ma'lumot yo'qolishini yopish.
 | **Neon → Cloudflare D1 (K20, ADR-016)** — sxema, wiring, lokal D1 test harness, production cutover (`faza-0/D01–D04`) | ADR-016 |
 | CI: D1 migratsiyalari, branch trigger, artefaktlar; Actions tarixini tekshirish | 06 §7-0 |
 | S-1 akkaunt egallash, V-1 chat XSS (`Content-Disposition: attachment` + MIME allowlist), S-4, A-2, V-3, V-5 | 02 §2.1–2.3 |
-| D1 Time Travel tiklash repetitsiyasi; Workers Paid rejasi (ADR-015 — D1 so'rov limitlari sababli endi majburiy) | 02 M-1, ADR-011 |
+| D1 Time Travel tiklash repetitsiyasi; Workers **Free** bilan boshlanadi, Paid'ga o'tish triggerlari ADR-016 da (ADR-015 kechiktirildi) | 02 M-1, ADR-011 |
 | `parseLocaleNumber` + `NumberInput`; dirty-himoya (tizimlar, qobiq dialogi, `useBlocker`); o'chirishga tasdiq; iste'mol ko'p yilli saqlash; "Auditni ishga tushirish" qobiqni almashtirmasin | 03 §8 P0 (U1–U7) |
 | `xlsx@0.18.5` zaifligini yopish | 02 |
 

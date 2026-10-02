@@ -16,9 +16,14 @@
   (`packages/db/src/batch.ts`) orqali; u qatorlarni `100 / ustunlar_soni` bo'laklarga bo'lib, bir nechta insert bayonotini
   qaytaradi, ular **o'sha bitta** batch'ga qo'shiladi. Xom `values(rows)` 10 ta 10-ustunli qatordan oshganda
   `too many SQL variables` bilan yiqiladi — bu D1'ga xos, Postgres'da yo'q edi.
-- **Bir Worker chaqiruvida ≤ 1 000 so'rov (Paid; Free'da 50).** Batch ichidagi har bayonot hisobga kiradi. Sikl ichida
-  so'rov yubormang; ko'p qatorli o'qishni `inArray` bilan bitta so'rovga yig'ing.
-- **Bayonot ≤ 100 KB, qator/satr ≤ 2 MB, baza ≤ 10 GB (oshirilmaydi).** Katta fayl/matn — R2'da, bazada faqat kalit.
+- **So'rov byudjeti: bitta HTTP so'rov / DO xabari ≤ 40 ta D1 so'rovi.** Hozirgi reja — Workers Free, unda chegara
+  **50/chaqiruv** (Paid'da 1 000); batch ichidagi **har bayonot** va Better Auth sessiya tekshiruvi ham hisobga kiradi —
+  40 shu sababli zaxira bilan. Sikl ichida so'rov yubormang; ko'p qatorli o'qishni `inArray` bilan bitta so'rovga yig'ing.
+  Ko'p qatorli yozuvli endpoint'da zod `.max()` chegaralari eng yomon holatni byudjetga sig'dirishi kerak:
+  `1 + Σ ceil(qatorlar / floor(100 / ustunlar))` (delete'lar + bo'laklangan insert'lar) — buni endpoint izohida hisoblab yozing.
+  Mavjud o'lchov: `runFullAudit` ≈ 20, PDF hisobot ≈ 30. Byudjetga sig'maydigan ehtiyoj — Paid'ga o'tish triggeri (ADR-016), uni
+  so'rovni bir necha HTTP chaqiruvga bo'lib, atomiklikni buzib "chetlab o'tmang".
+- **Bayonot ≤ 100 KB, qator/satr ≤ 2 MB, baza ≤ 500 MB (Free; Paid'da 10 GB, oshirilmaydi).** Katta fayl/matn — R2'da, bazada faqat kalit.
 - **Tiplar (D01 xaritasi):** id — `text` + `crypto.randomUUID()`; pul/fizik kattalik — `real`; vaqt — `integer`
   `timestamp_ms`; boolean — `integer` `boolean` rejimi; sana — `text` `YYYY-MM-DD`; JSON — `text` `json` rejimi;
   enum — `text({ enum })`. **Enum DB darajasida tekshirilmaydi** — yagona himoya zod sxemasi; yangi enum qiymati
@@ -40,7 +45,7 @@
   skriptdan yozish — faqat `wrangler d1 ... --remote` bilan va faqat loyiha egasi buyrug'i bilan.
 - **Mavjud jadvalga unique constraint qo'shishdan oldin dublikatlarni tekshiring** (`group by ... having count(*) > 1`) —
   quyidagi Neon bo'limidagi qoida D1'da ham amal qiladi.
-- **Backup — D1 Time Travel** (Paid: 30 kun) + logik eksport (`wrangler d1 export`); runbook `docs/runbooks/backup-va-tiklash.md` (T10).
+- **Backup — D1 Time Travel** (Free: 7 kun, Paid: 30 kun) + logik eksport (`wrangler d1 export`); runbook `docs/runbooks/backup-va-tiklash.md` (T10).
 
 ## Neon (eski — D02 tugaguncha amal qiladi, D04 da o'chiriladi)
 

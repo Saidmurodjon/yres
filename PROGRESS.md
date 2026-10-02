@@ -2006,4 +2006,14 @@ orqaga); **≤ 100 parametr/bayonot**; ≤ 1 000 so'rov/chaqiruv (Free: 50); baz
 Koddagi hajm: 39 jadval, 17 enum, 85 `numeric`, 35 `defaultRandom`, 2 ta `ilike`; DB faqat `createDb` orqali ulanadi
 (`middleware/db.ts`, `conversation-room.ts`) — ko'chirish yuzasi tor.
 
-**Navbatda:** Sonnet sessiyasi — `faza-0/README.md`, D01 dan. Loyiha egasi: Workers Paid (D1 Free limitlari audit run'ga yetmaydi).
+**Navbatda:** Sonnet sessiyasi — `faza-0/README.md`, D01 dan.
+
+### Tuzatish: Workers Free bilan boshlanadi (2026-10-02)
+
+Loyiha egasi: boshlanishiga bepul reja yetarli. Yuqoridagi "D1 Free limitlari audit run'ga yetmaydi" degan gap
+**tekshirilmagan va noto'g'ri edi** — kod bo'yicha sanaldi: `runFullAudit` ≈ 20 D1 so'rovi, PDF hisobot route'i ≈ 30;
+Free chegarasi 50/chaqiruv. Production ham shu paytgacha Free'da ishlagan (`wrangler.toml` izohi).
+O'zgarishlar: `database.md` ga **so'rov byudjeti ≤ 40** qoidasi; T07 bulk endpoint'i yil bo'yicha bitta delete'ga
+qayta loyihalandi (avvalgi variant 60 ta delete bilan Free chegarasidan oshardi); D02 ga eng yomon holat hisobi; ADR-016 ga
+Paid'ga o'tish triggerlari (`1102`/CPU — eng ehtimolli PDF, byudjet, 400 MB, Time Travel 7 kun yetmasligi, Queues);
+ADR-015 "kechiktirilgan". Asosiy xavf D1 emas, Workers Free'ning CPU chegarasi (PDF) — D04 smoke'ida tekshiriladi.

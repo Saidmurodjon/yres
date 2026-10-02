@@ -18,7 +18,7 @@ backup/PITR alohida reja va alohida runbook talab qiladi. Production'dagi ma'lum
 |---|---|---|
 | (a) Neon'da qolish | Ish yo'q, Postgres imkoniyatlari | Yuqoridagi muammolar qoladi; ikki provayder, ikki hisob-kitob |
 | (b) Neon + Hyperdrive | Postgres qoladi, ulanish tezlashadi | Baza baribir tashqarida; lokal/test muammosi hal bo'lmaydi |
-| **(c) Cloudflare D1** | Hammasi bitta platformada; `wrangler dev` haqiqiy lokal D1 beradi; `batch()` atomik (joriy andoza saqlanadi); Time Travel PITR (Paid: 30 kun) o'rnatilgan; DO'dan binding orqali | SQLite: tiplar soddaroq, 100 parametr/so'rov, 10 GB/baza chegarasi, Kirill harflari uchun case-insensitive `LIKE` yo'q |
+| **(c) Cloudflare D1** | Hammasi bitta platformada; `wrangler dev` haqiqiy lokal D1 beradi; `batch()` atomik (joriy andoza saqlanadi); Time Travel PITR o'rnatilgan (Free: 7 kun, Paid: 30 kun); DO'dan binding orqali | SQLite: tiplar soddaroq, 100 parametr/so'rov, 10 GB/baza chegarasi, Kirill harflari uchun case-insensitive `LIKE` yo'q |
 
 ## Qaror
 
@@ -37,7 +37,14 @@ Drizzle ORM qoladi (`drizzle-orm/d1`, `sqlite-core`), Better Auth drizzle adapte
 **Yangi cheklovlar (qoidaga aylandi — `database.md`):**
 - **Bitta so'rovda ≤ 100 bog'langan parametr** → ommaviy `insert().values(rows)` bo'laklarga bo'linadi
   (bir batch ichida bir nechta insert).
-- Bitta Worker chaqiruvida ≤ 1 000 so'rov (Paid; Free'da 50) — Workers Paid (ADR-015) endi qat'iyroq talab.
+- **Boshlang'ich reja — Workers Free** (loyiha egasi qarori, 2026-10-02). Free'da bitta Worker chaqiruvida **≤ 50 so'rov**
+  (batch ichidagi har bayonot hisobga kiradi), baza ≤ 500 MB, Time Travel 7 kun. O'lchangan yuk (2026-10-02, kod bo'yicha):
+  `runFullAudit` ≈ 20 so'rov, PDF hisobot route'i ≈ 30 — sig'adi. Shuning uchun har endpoint uchun **so'rov byudjeti ≤ 40**
+  qoidasi kiritildi (`database.md`), zod chegaralari eng yomon holatni shu byudjetga sig'diradi.
+- **Paid'ga o'tish triggerlari** (ADR-015, oldindan emas): (1) production'da `1102 Worker exceeded resource limits` yoki CPU
+  xatolari (eng ehtimolli — PDF generatsiyasi, 02 P-1); (2) biror zarur endpoint 40 so'rov byudjetiga sig'masligi;
+  (3) baza 400 MB ga yaqinlashishi; (4) 7 kunlik Time Travel yetarli bo'lmasligi (birinchi haqiqiy mijoz ma'lumoti
+  kelganda qayta ko'rib chiqiladi); (5) Queues/Workflows kerak bo'lishi (Faza 5/6).
 - Baza ≤ 10 GB (oshirib bo'lmaydi). Dalil fayllari R2'da bo'lgani uchun YRES hajmi bundan ancha kichik
   bo'lishi kutiladi; kelajakda tashkilot bo'yicha alohida D1 bazalari varianti ochiq qoladi (ADR-001 (c)).
 - Tiplar: `uuid` → `text` (ilova `crypto.randomUUID()`), `numeric` → `real` (JS'da baribir `number` edi),

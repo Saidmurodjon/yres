@@ -6,8 +6,7 @@
 ## A. Loyiha egasi (Sonnet buyruqlarni tayyorlab beradi, egasi ishga tushiradi)
 
 1. `cd apps/api && npx wrangler d1 create yres-production` → chiqqan `database_id` ni Sonnet'ga beradi.
-2. Workers Paid rejasi faolligini tasdiqlaydi (ADR-015: D1 Free'da 50 so'rov/chaqiruv — audit run va ko'p qatorli
-   batch'lar bunga sig'maydi).
+2. Reja — **Workers Free** (qaror 2026-10-02). Paid'ga o'tish faqat ADR-016 dagi triggerlardan biri yuz berganda.
 
 ## B. Sonnet
 
@@ -34,7 +33,8 @@ npx wrangler secret delete DATABASE_URL --env production
 cd ../web && VITE_API_URL=https://yres-api.saidmurod.com bun run build \
   && npx wrangler pages deploy dist --project-name=yres-web --branch=main --commit-dirty=true
 ```
-Keyin smoke: ro'yxatdan o'tish (yangi akkaunt — eski test akkauntlar ko'chirilmagan), Google bilan kirish, bino yaratish,
+Keyin smoke (Free reja CPU chegarasi uchun ayniqsa **PDF yuklab olish** va **ro'yxatdan o'tish/kirish** — `1102` xatosi
+chiqsa, bu Paid triggeri, `npx wrangler tail --env production` bilan tasdiqlang): ro'yxatdan o'tish (yangi akkaunt — eski test akkauntlar ko'chirilmagan), Google bilan kirish, bino yaratish,
 qobiq, audit run, PDF, chat xabari (DO → D1). Hammasi ishlasa — Neon loyihasini Neon konsolida o'chirish (bir necha kun
 kutib turish tavsiya etiladi, lekin u yerdagi ma'lumot test ma'lumoti).
 
