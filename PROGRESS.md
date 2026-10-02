@@ -2230,3 +2230,13 @@ shuning uchun T01 da yo spec'larni tuzatish, yo E2E'ni aniq izoh bilan CI'dan ch
   `POST /conversations` (direct) dagi `myDirectConvIds` ham materiallashtirilgan edi (>100 direct chat bo'lsa yangi chat ochilmasdi) — subquery. Qolgan `inArray` lar
   chegaralangan (envelope ≤15 kod, chat usernames/removeUserIds ≤50). Testlar `tests/integration/d1-parameter-limit.test.ts` (4) tuzatishdan OLDIN to'rttasi ham
   `too many SQL variables` bilan yiqildi, keyin yashil. `database.md` ga bir jumla qo'shildi.
+- **T04d (V-5):** API — `secureHeaders` (`index.ts`, CORS/body-limit'dan keyin): CORP `same-site`, COOP/COEP o'chirilgan, CSP `default-src 'none'; frame-ancestors 'none'; sandbox`.
+  **Spec'da yo'q tuzoq:** `secureHeaders` route'dan KEYIN ishlaydi va `ctx.res.headers.set` bilan route'ning o'z `Content-Security-Policy`sini USTIDAN YOZADI — T03 dagi
+  `sandbox` yo'qolardi; shu sababli global CSP'ga `sandbox` qo'shildi (testlangan: `chat-attachments.test.ts`). WebSocket upgrade'lar o'tkazib yuboriladi (DO javobi sarlavhalari o'zgarmas) —
+  **haqiqiy `wrangler dev` da WS ulanish + xabar tekshirildi (101, xabar qaytdi)**. Web — `public/_headers` (HSTS, nosniff, XFO DENY, Referrer, Permissions, CSP; inline tema skripti SHA-256
+  `vSGhtd+BGY0jcAYofx0UeO2ast1Wt3E0jlI1b1Oisqc=` — `dist/index.html` dagi matn bilan bir xil ekani skript bilan tekshirildi, Vite o'zgartirmaydi); `index.html` da izoh; `dist/_headers` mavjud.
+  Testlar `tests/integration/security-headers.test.ts` (3). **Haqiqiy CSP bilan** (dist'ni `_headers` CSP'si bilan Bun orqali berib, Chromium'da): login sahifasi chiqdi, inline tema skripti ishladi
+  (`data-theme="dark"`), CSP buzilishi yo'q.
+  **Tekshirilmadi:** Pages'dagi haqiqiy `_headers` qo'llanishi; Google OAuth, chat WS, PDF yuklab olish, Excel import CSP ostida (faqat login sahifasi sinaldi); Better Auth OAuth redirect javoblari
+  secureHeaders bilan (Google'siz). **Egasi uchun deploy'dan keyin:** DevTools Console'da CSP xatosi yo'qligini tekshiring: (1) login/ro'yxatdan o'tish, (2) Google bilan kirish (redirect), (3) chat — matn,
+  rasm preview, fayl yuborish, WebSocket, (4) PDF hisobotni yuklab olish, (5) Excel import/eksport (consumption tab), (6) tema almashtirish va til. CSP xato bersa — `_headers` ni shu yerga qaytib tuzating.

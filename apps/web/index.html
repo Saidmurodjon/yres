@@ -8,7 +8,9 @@
          <html> before any CSS renders. "system" (or no stored preference)
          intentionally sets nothing — packages/ui/src/styles/globals.css's
          `@media (prefers-color-scheme: dark)` fallback already handles
-         that case on its own. -->
+         that case on its own.
+         CSP: this script is allowed by its SHA-256 hash in public/_headers. If you change it,
+         update that hash (see the comment there), or the theme script stops running in production. -->
     <script>
       (function () {
         try {

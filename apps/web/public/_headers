@@ -1,0 +1,11 @@
+# Cloudflare Pages response headers (V-5, security.md). The CSP's script hash is the SHA-256 of the inline
+# theme-bootstrap <script> in index.html — if that script changes, recompute and replace it here:
+#   sha256 of the exact text between <script> and </script> in dist/index.html, base64.
+# style-src keeps 'unsafe-inline' on purpose: Radix and recharts set inline style attributes.
+/*
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-vSGhtd+BGY0jcAYofx0UeO2ast1Wt3E0jlI1b1Oisqc='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://yres-api.saidmurod.com; font-src 'self' data:; connect-src 'self' https://yres-api.saidmurod.com wss://yres-api.saidmurod.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'

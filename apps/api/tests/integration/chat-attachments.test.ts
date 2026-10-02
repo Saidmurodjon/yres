@@ -103,7 +103,11 @@ describe("Chat attachments (V-1)", () => {
     expect(served.headers.get("Content-Type")).toBe("image/png");
     expect(served.headers.get("Content-Disposition")).toMatch(/^inline;/);
     expect(served.headers.get("X-Content-Type-Options")).toBe("nosniff");
-    expect(served.headers.get("Content-Security-Policy")).toBe("sandbox; default-src 'none'");
+    // secureHeaders() overwrites the route's own CSP; the global one must therefore keep `sandbox` itself.
+    const csp = served.headers.get("Content-Security-Policy") ?? "";
+    expect(csp).toContain("sandbox");
+    expect(csp).toContain("default-src 'none'");
+    expect(served.headers.get("Cross-Origin-Resource-Policy")).toBe("same-site");
   });
 
   it("serves a PDF as a download", async () => {

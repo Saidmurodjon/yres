@@ -3,6 +3,7 @@ import { type Context, Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { secureHeaders } from "hono/secure-headers";
 import { createAuth } from "./auth";
 import { ConversationRoom } from "./durable-objects/conversation-room";
 import { UserNotificationChannel } from "./durable-objects/user-notification-channel";
@@ -75,6 +76,27 @@ const uploadBodyLimit = bodyLimit({ maxSize: 11 * 1024 * 1024, onError: payloadT
 const CHAT_UPLOAD_PATH = /^\/api\/chat\/conversations\/[^/]+\/attachments$/;
 app.use("/api/*", (c, next) =>
   (CHAT_UPLOAD_PATH.test(c.req.path) ? uploadBodyLimit : jsonBodyLimit)(c, next),
+);
+
+// V-5: baseline security headers on every API response. Notes that are not obvious:
+// - CORP `same-site`, not `same-origin`: the web app (yres.…) loads chat images from the API (yres-api.…),
+//   a different origin of the same site; `same-origin` would break those previews.
+// - `sandbox` in the CSP matters for chat attachments: secureHeaders() runs after the route and OVERWRITES
+//   the route's own Content-Security-Policy, so the attachment route's `sandbox; default-src 'none'` would
+//   otherwise silently turn into a policy without sandbox (lib/attachments.ts, V-1). Keep it here.
+// - Skipped for WebSocket upgrades: the response comes from a Durable Object stub and its headers are immutable.
+const apiSecureHeaders = secureHeaders({
+  crossOriginResourcePolicy: "same-site",
+  crossOriginOpenerPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: {
+    defaultSrc: ["'none'"],
+    frameAncestors: ["'none'"],
+    sandbox: [],
+  },
+});
+app.use("*", (c, next) =>
+  c.req.header("upgrade")?.toLowerCase() === "websocket" ? next() : apiSecureHeaders(c, next),
 );
 // Constructs the Drizzle client once per request; every route and the auth
 // handler below read it via c.get("db") instead of each building their own
