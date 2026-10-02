@@ -39,6 +39,16 @@ export function parseLocaleNumber(
     // The last separator is the decimal one, the other kind is a thousands separator.
     const decimal = text.lastIndexOf(",") > text.lastIndexOf(".") ? "," : ".";
     const thousands = decimal === "," ? "." : ",";
+    // One decimal mark, and everything before it must be a properly grouped integer part:
+    // "1,234.5" and "1.234,5" are fine, "1,2.3" and "1.2,3.4" are not.
+    const decimalAt = text.indexOf(decimal);
+    const integerPart = text.slice(0, decimalAt);
+    const grouped = thousands === "," ? GROUPED_WITH_COMMA : GROUPED_WITH_DOT;
+    const plainInteger = /^-?\d+$/;
+    const integerPartOk = integerPart.includes(thousands)
+      ? grouped.test(integerPart)
+      : plainInteger.test(integerPart) || integerPart === "" || integerPart === "-";
+    if (count(text, decimal) !== 1 || !integerPartOk) return { ok: false, reason: "invalid" };
     text = text.replaceAll(thousands, "");
     if (decimal === ",") text = text.replace(",", ".");
   } else if (commas > 0) {

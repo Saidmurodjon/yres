@@ -67,4 +67,8 @@ export const DIVERGING_COLORS = {
  * `SCENARIO_COLORS`. Index from the end when fewer than 3 series are shown,
  * so the most recent period always keeps the primary accent.
  */
-export const RECENCY_COLORS = [CHART_COLORS.muted, CHART_COLORS.warning, CHART_COLORS.primary] as const;
+export const RECENCY_COLORS = [
+  CHART_COLORS.muted,
+  CHART_COLORS.warning,
+  CHART_COLORS.primary,
+] as const;

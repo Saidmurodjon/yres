@@ -34,6 +34,10 @@ describe("parseLocaleNumber", () => {
     ["5.", ["uz"], 5],
     ["  7  ", ALL, 7],
     ["0,123", ["en"], 0.123],
+    ["1,234,567.89", ["en"], 1234567.89],
+    ["1.234.567,89", ["ru"], 1234567.89],
+    ["1 234 567,5", ["ru"], 1234567.5],
+    ["-1.234,5", ["uz"], -1234.5],
   ] as const)("%j in %j → %j", (raw, locales, expected) => {
     for (const locale of locales) expect(ok(raw, locale)).toBe(expected);
   });
@@ -59,6 +63,11 @@ describe("parseLocaleNumber", () => {
     "1.2.3",
     "+5",
     "1,234,56",
+    "1,2.3",
+    "1.2,3.4",
+    "1.234,5,6",
+    "1,234.5.6",
+    "0,123.4",
   ])("rejects %j as invalid", (raw) => {
     for (const locale of ALL)
       expect(parseLocaleNumber(raw, locale)).toEqual({ ok: false, reason: "invalid" });
@@ -95,7 +104,7 @@ describe("formatNumberForInput", () => {
 
   it("round-trips through parseLocaleNumber in every locale", () => {
     for (const locale of ALL) {
-      for (const value of [0, 12.5, -29.02, 1234.5, 0.001, 1234567.891]) {
+      for (const value of [0, 12.5, -29.02, 1234.5, 0.001, 0.000123, 0.035, 1234567.891, 1e-7]) {
         expect(parseLocaleNumber(formatNumberForInput(value, locale), locale)).toEqual({
           ok: true,
           value,
