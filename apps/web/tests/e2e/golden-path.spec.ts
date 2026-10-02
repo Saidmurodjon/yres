@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
  * Golden-path E2E test: register -> create building -> quick envelope setup
  * -> skip consumption -> run audit -> view results. Mirrors the brief's
  * "5 minute audit" flow. Runs against the real Hono app (tests/e2e/server.ts
- * in apps/api) backed by a local Postgres instance seeded with real
+ * in apps/api) backed by Miniflare's local D1 seeded with real
  * reference data (see packages/db/src/seed.ts).
  */
 test("register, create building, run a quick audit, and see results", async ({ page }) => {

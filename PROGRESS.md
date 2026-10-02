@@ -2097,3 +2097,33 @@ ishlamagan (`ci.yml` faqat `main` da, `main` yo'q). Specs'ni yangilash D03 ko'la
 (Chromium shu mashinada `playwright install chromium` bilan o'rnatildi.)
 
 **Navbatda:** D04 — §B (hujjatlar) bajarish mumkin; §C (production cutover) loyiha egasi qadamlarini kutadi.
+
+## Faza 0 · D04 §B — Neon'ga oid hujjat/konfiguratsiya D1 ga moslandi (2026-10-02)
+
+Bajarildi (loyiha egasi qadamlarisiz): `database.md` to'liq qayta yozildi (D1 asosiy matn, Neon bo'limi yo'q);
+`realtime.md`, `social-features.md` (rule), `hisobot.md`, `deployment.md` (rule: `DATABASE_URL` sirdan olindi, deploy tartibiga
+migratsiya qadami), `CLAUDE.md`, `README.md`, `docs/deployment.md` (§1 endi D1), `docs/er-diagram.md`, `docs/social-features.md`,
+00-MASTER-PLAN K20 qatori, `.env.example`, `.dev.vars.example`, kod izohlari. `deploy.yml`: `db:migrate`+`db:seed` →
+bitta `db:migrate:prod` (CF token bilan; workflow hali ishlatilmagan). `docs/production/01–06` va ADR tegilmadi.
+Grep (`Neon|neon-http|DATABASE_URL|@neondatabase` apps packages .claude CLAUDE.md README.md docs/deployment.md .github)
+— faqat tarixiy eslatmalar: `database.md`/`CLAUDE.md` bir qatordan.
+
+**KUTILMOQDA (loyiha egasi), D04 §A/§B.1/§C — Sonnet bajarmaydi:**
+1. `cd apps/api && npx wrangler d1 create yres-production` → `database_id` ni bering; men `wrangler.toml`
+   `[[env.production.d1_databases]]` dagi `REPLACE_WITH_PRODUCTION_D1_ID` ni almashtiraman (hozir placeholder — shu holda deploy qilmang).
+2. Cutover (egasi ishga tushiradi, shu tartibda):
+```bash
+cd apps/api
+npx wrangler d1 migrations apply yres-production --remote --env production   # baseline + reference_data
+npx wrangler deploy --env production
+npx wrangler secret delete DATABASE_URL --env production
+cd ../web && VITE_API_URL=https://yres-api.saidmurod.com bun run build \
+  && npx wrangler pages deploy dist --project-name=yres-web --branch=main --commit-dirty=true
+```
+3. Smoke: ro'yxatdan o'tish (yangi akkaunt), Google bilan kirish, bino yaratish, qobiq, audit run, **PDF yuklab olish**
+   va ro'yxatdan o'tish/kirish (Free CPU chegarasi — `1102` chiqsa Paid triggeri, `npx wrangler tail --env production`
+   bilan tasdiqlang), chat xabari (DO → D1), eng og'ir envelope PUT (50 so'rov chegarasi haqiqiy Free'da). Hammasi ishlasa —
+   Neon loyihasini konsolda o'chirish. Keyin shu yerga "✅ production D1'da" yozing.
+
+**Navbatda:** T01 (CI) — Playwright E2E bo'yicha qaror majburiy (nazoratchi talabi): CI'da E2E qadami bor va spec'lar yiqiladi,
+shuning uchun T01 da yo spec'larni tuzatish, yo E2E'ni aniq izoh bilan CI'dan chiqarish; "yashil" deb e'lon qilmaslik.

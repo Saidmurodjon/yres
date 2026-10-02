@@ -129,8 +129,8 @@ ishlating — ular allaqachon bosma hisobot uchun mo'ljallangan (yuqori kontrast
 ## Tekshirish
 
 Hisobot bo'limi ustida ishlaganda, `bun run test` (`apps/api`) yetarli emas — `report.service.ts`
-uchun hozircha maxsus unit test yo'q (faqat `tests/integration/report.test.ts`, u lokal Postgres
-kerak qiladi, `testing-and-verification.md`ga qarang). PDF'ning haqiqatan to'g'ri chiqishini
+uchun hozircha maxsus unit test yo'q (faqat `tests/integration/report.test.ts`, u lokal Miniflare D1'da
+ishlaydi, `testing-and-verification.md`ga qarang). PDF'ning haqiqatan to'g'ri chiqishini
 tekshirish uchun `/:id/audit/report` endpoint'ini haqiqiy (yoki mock) ma'lumot bilan chaqirib,
 natijadagi baytlarni `.pdf` faylga yozib, qo'lda ochib ko'ring — `pdf-lib`ning o'zi validatsiya
 qilmaydi, noto'g'ri koordinata/o'lcham matnni sahifadan tashqariga chiqarib yuborishi mumkin,

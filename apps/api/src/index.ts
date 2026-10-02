@@ -66,7 +66,7 @@ app.use("*", logger());
 // Constructs the Drizzle client once per request; every route and the auth
 // handler below read it via c.get("db") instead of each building their own
 // (see middleware/db.ts's doc comment for why — it's what lets a
-// standalone test server swap in a different Postgres driver without any
+// standalone test server inject its own client without any
 // module-mocking tricks).
 app.use("*", dbMiddleware);
 

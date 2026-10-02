@@ -1,7 +1,7 @@
 # YRES Entity-Relationship Design
 
 Derived from `docs/data-dictionary.md`. This document translates the workbook's 27
-conceptual entities into a concrete PostgreSQL schema (see `packages/db/src/schemas/`).
+conceptual entities into a concrete SQLite (Cloudflare D1) schema (originally drafted for PostgreSQL; types follow `.claude/rules/database.md`) (see `packages/db/src/schemas/`).
 
 ## Design principles
 

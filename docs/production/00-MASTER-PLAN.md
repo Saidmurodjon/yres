@@ -216,7 +216,7 @@ Agentlarning ~45 savoli takrorlanishlardan tozalandi. **Qalin** — keyingi faza
 | K17 | Sanity oraliqlari (CAPEX 200–300 USD/m², qoplanish 8–20 y) manbasi | Bino turi profiliga ko'chiriladi, versiyalanadi | Faza 2 | 01 Q6 |
 | K18 | 3-MTM loyihasini YRES'ga import qilish kerakmi yoki u faqat regressiya etaloni bo'ladimi? | Avval etalon, keyin import (UAT uchun) | Faza 1/3 | 01 Q7 |
 | K19 | Excel'dagi eskirgan izohlar v7.21 da tuzatiladimi (`Checks` D-bo'limi, C2, `Breakdown!72`)? | Ha, golden'dan oldin | Faza 1 | 01 Q12 |
-| **K20** | Baza: Neon Postgres'da qolamizmi yoki Cloudflare D1'ga o'tamizmi? | ✅ **Qaror (2026-10-02): D1** — to'liq Cloudflare; production'da faqat test ma'lumot, ko'chirilmaydi, bo'sh bazadan. `docs/adr/ADR-016-cloudflare-d1.md` | Faza 0 | loyiha egasi |
+| **K20** | Baza: Neon Postgres'da qolamizmi yoki Cloudflare D1'ga o'tamizmi? | ✅ **Qaror (2026-10-02): D1; kod ijro etildi (D01–D03, 2026-10-02; production cutover — D04 §C kutilmoqda)** — to'liq Cloudflare; production'da faqat test ma'lumot, ko'chirilmaydi, bo'sh bazadan. `docs/adr/ADR-016-cloudflare-d1.md` | Faza 0 | loyiha egasi |
 
 ---
 

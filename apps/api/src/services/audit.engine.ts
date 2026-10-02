@@ -119,9 +119,8 @@ const ORIENTATION_GROUP_BY_ENUM: Record<string, SolarOrientationGroup> = {
 export async function runFullAudit(db: Database, buildingId: string): Promise<AuditResult> {
   // Every one of these depends only on `buildingId` (or nothing, for the 4
   // reference tables) — none depends on another's result — so they run as a
-  // single batch instead of ~16 sequential round trips against the Neon
-  // HTTP driver, which has no persistent connection to amortize that cost
-  // over.
+  // single batch instead of ~16 sequential round trips to D1 (each
+  // query is its own binding call, so serial awaits add up).
   const [
     buildingRecord,
     elementRows,

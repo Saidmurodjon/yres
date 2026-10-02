@@ -10,7 +10,7 @@ referenceRoutes.use("*", authMiddleware);
 
 // These 3 reference tables change essentially never (they're seeded once,
 // not user-editable) and are read on every envelope/lighting form load, so
-// they're cached at the edge instead of hitting Neon on every request.
+// they're cached at the edge instead of hitting D1 on every request.
 const REFERENCE_CACHE_TTL_SECONDS = 3600;
 
 // GET /materials - global material conductivity reference table, used to

@@ -32,8 +32,8 @@ export default defineConfig({
   ],
   webServer: [
     {
-      // Real Hono app + real route code, backed by a local Postgres
-      // instance seeded with real reference data — see
+      // Real Hono app + real route code, backed by Miniflare's local D1
+      // seeded with real reference data — see
       // apps/api/tests/e2e/server.ts's doc comment for why this needs its
       // own server rather than the production dev command.
       command: "bun run tests/e2e/server.ts",

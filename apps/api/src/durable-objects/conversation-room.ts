@@ -30,9 +30,8 @@ interface IncomingWsMessage {
  * the hibernatable socket via `serializeAttachment` (survives hibernation,
  * unlike a plain in-memory Map).
  *
- * Postgres stays the single source of truth: every mutation goes through
- * `@yres/db` (the Neon HTTP driver works fine from inside a DO — it's just
- * another Workers execution context) before being broadcast. Members who
+ * D1 stays the single source of truth: every mutation goes through
+ * `@yres/db` (a DO receives the same `env.DB` binding as the Worker) before being broadcast. Members who
  * aren't currently connected get a real `notification` row + a live push
  * to their own `UserNotificationChannel`, the same as any other
  * notification source (see lib/notify.ts).

@@ -19,7 +19,7 @@ nozik jihatlarni qamrab oladi:
 - **Real-time (bildirishnoma bell'i va chat) Cloudflare Durable Objects'ga
   tayanadi** — bu loyiha uchun butunlay yangi infratuzilma turi (avval faqat
   R2 + rate-limiter bor edi). `ConversationRoom` (suhbat-bo'yicha) va
-  `UserNotificationChannel` (foydalanuvchi-bo'yicha) DO'lari Postgres'ni
+  `UserNotificationChannel` (foydalanuvchi-bo'yicha) DO'lari D1'ni
   yagona haqiqat manbai sifatida saqlaydi — DO faqat ulangan socket'larga
   tarqatish nuqtasi, holat saqlovchi emas.
 - **Chat "Telegramdek qulay" bo'lishi kerak** — bu shunchaki UI bezagi emas,
@@ -32,7 +32,7 @@ nozik jihatlarni qamrab oladi:
   qidiruv, qo'ng'iroq va h.k.) ataylab **maqsad emas** deb belgilangan —
   ularni qo'shishdan oldin loyiha egasidan aniq so'rov kutilsin.
 - **Bu sandbox'da DO/WebSocket xatti-harakatini integratsion tekshirib
-  bo'lmaydi** (Cloudflare runtime yo'q, lokal Postgres yo'q). Haqiqiy
+  bo'lmaydi** (Cloudflare runtime yo'q — lekin `wrangler dev` Miniflare'da DO/WebSocket'ni lokal simulyatsiya qiladi, `realtime.md`ga qarang). Haqiqiy
   WebSocket/broadcast xatti-harakati faqat haqiqiy `wrangler deploy`dan
   keyin qo'lda tekshiriladi.
 - **Kirishda (login) hech qanday email yuborilmaydi — umuman.** Faqat

@@ -39,12 +39,12 @@ izohlardan oldindan bilib bo'lmaydigan nozik jihatlarni qamrab oladi.
   logga yozib yutadi. **DO xatosi yoki ulangan socket yo'qligi hech qachon chaqiruvchi haqiqiy
   amalni (masalan bino a'zosini taklif qilish) buzmasligi kerak** — yangi bildirishnoma
   manbasini ulaganda ham xuddi shu tartibga rioya qiling.
-- **Postgres — yagona haqiqat manbai, DO faqat tarqatish nuqtasi.** `ConversationRoom`ning
+- **D1 — yagona haqiqat manbai, DO faqat tarqatish nuqtasi.** `ConversationRoom`ning
   `webSocketMessage()`i har bir mutatsiyani (`message` insert/edit/delete, `conversationMember`
-  o'qildi-belgisi) avval `@yres/db` orqali Postgres'ga yozadi, keyin barcha ulangan socket'larga
+  o'qildi-belgisi) avval `@yres/db` orqali D1'ga yozadi, keyin barcha ulangan socket'larga
   translatsiya qiladi. DO'ning o'zi hech qanday qayta tiklab bo'lmaydigan holatni saqlamaydi —
-  Neon'ning HTTP drayveri DO ichidan ham oddiy Workers bajarilish kontekstidagi kabi ishlaydi
-  (`database.md`dagi HTTP-drayver cheklovi bu yerda ham amal qiladi).
+  DO `createDb(this.env.DB)` bilan Worker bilan bir xil D1 binding'ini oladi, ulanish satri yo'q
+  (`database.md`dagi so'rov byudjeti — DO xabari uchun ≤ 40 D1 so'rovi — bu yerda ham amal qiladi).
 - **Ulanmagan a'zolar** (`notifyOfflineMembers()`) hozirda ulangan socket'lardagi
   `deserializeAttachment()`dan yig'ilgan `userId` to'plamiga qarab aniqlanadi — bu shunchaki
   `conversationMember`ning barcha a'zolaridan xabar yuboruvchini va hozir ulangan a'zolarni

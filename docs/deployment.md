@@ -2,28 +2,29 @@
 
 YRES deploys as two independent pieces:
 
-- **`apps/api`** — a Hono app on **Cloudflare Workers**, backed by **Neon** (serverless Postgres).
+- **`apps/api`** — a Hono app on **Cloudflare Workers**, backed by **Cloudflare D1** (SQLite).
 - **`apps/web`** — a static React SPA on **Cloudflare Pages**, calling the API over HTTPS.
 
-This guide covers first-time setup. It assumes you own (or will create) the Cloudflare and Neon
-accounts — nothing here can be completed without those credentials, which this repository's
+This guide covers first-time setup. It assumes you own (or will create) the Cloudflare
+account — nothing here can be completed without those credentials, which this repository's
 development environment does not have access to.
 
-## 1. Provision Neon (database)
+## 1. Provision D1 (database)
 
-1. Create a project at [neon.tech](https://neon.tech). Note the pooled connection string it gives
-   you (`postgresql://user:pass@ep-xxxx.aws.neon.tech/neondb?sslmode=require`) — this is your
-   `DATABASE_URL`.
-2. Apply the schema and seed reference data (do this once per environment — dev, staging, prod
-   each need their own):
+1. Create the database (once per environment):
    ```bash
-   export DATABASE_URL="postgresql://...your Neon connection string..."
-   bun run db:migrate   # applies packages/db/drizzle/*.sql
-   bun run db:seed       # populates materials, climate normals, tariffs, etc. (safe to re-run)
+   cd apps/api
+   npx wrangler d1 create yres-production
    ```
-   Without the seed step, the app still runs, but envelope U-value calculations have no materials
-   to pick from and there's no climate region to attach a building to — see
-   `packages/db/src/seed.ts` for exactly what it populates and where each value came from.
+   Put the printed `database_id` into `apps/api/wrangler.toml` under `[[env.production.d1_databases]]`.
+2. Apply the schema and reference data (materials, climate normals, tariffs, ... — a versioned
+   migration, `packages/db/drizzle/0001_reference_data.sql`):
+   ```bash
+   bun run db:migrate:prod   # wrangler d1 migrations apply DB --remote --env production
+   ```
+   Later schema or reference-data changes are new migration files, applied the same way **before** deploying
+   the Worker code that needs them (additive changes only — see `.claude/rules/data-integrity.md`).
+   There is no connection string and no database secret: the Worker reaches D1 through the `DB` binding.
 
 ## 2. Provision Cloudflare
 
@@ -91,7 +92,6 @@ any error).
 **Cloudflare Worker secrets** (not stored in `wrangler.toml` — set directly):
 ```bash
 cd apps/api
-bunx wrangler secret put DATABASE_URL --env production
 bunx wrangler secret put BETTER_AUTH_SECRET --env production   # any long random string
 bunx wrangler secret put GOOGLE_CLIENT_ID --env production      # optional
 bunx wrangler secret put GOOGLE_CLIENT_SECRET --env production  # optional
@@ -112,8 +112,7 @@ shared across Worker isolates.
 
 | Secret | Value |
 |---|---|
-| `DATABASE_URL` | Same Neon connection string as above (used to run migrations from CI) |
-| `CLOUDFLARE_API_TOKEN` | From step 2.2 |
+| `CLOUDFLARE_API_TOKEN` | From step 2.2 (also used by CI to apply D1 migrations) |
 | `CLOUDFLARE_ACCOUNT_ID` | From step 2.1 |
 | `VITE_API_URL` | Your deployed Worker URL, e.g. `https://yres-api-production.<subdomain>.workers.dev` |
 
@@ -134,21 +133,18 @@ this just needs the environment itself configured with your desired protection r
 
 **Automatically**: merge to `main`. `.github/workflows/ci.yml` runs lint/type-check/test/build on
 every push and PR; `.github/workflows/deploy.yml` runs after CI succeeds on `main` (or via manual
-`workflow_dispatch` from the Actions tab), applying migrations, seeding, and deploying both apps
+`workflow_dispatch` from the Actions tab), applying D1 migrations and deploying both apps
 — gated on the secrets and environment protection above actually being configured.
 
 **Manually**, from a machine with the Cloudflare CLI authenticated (`bunx wrangler login`):
 ```bash
-bun run db:migrate    # DATABASE_URL env var must be set
-bun run db:seed
+bun run db:migrate:prod   # additive D1 migrations first
 bun run deploy:api     # wrangler deploy --env production
 bun run deploy:web     # vite build (needs VITE_API_URL) + wrangler pages deploy
 ```
 
 ## Local development
 
-No Cloudflare/Neon account needed — see the root `README.md`. `bun run dev` starts the Vite dev
-server (5173) and `wrangler dev` (3000) side by side via Turborepo; point `DATABASE_URL` at any
-Postgres instance reachable over the network (a local Postgres works for schema/migration testing,
-but the app's Neon HTTP driver needs a real Neon endpoint — see the comment in
-`packages/db/src/seed.ts`'s `seedReferenceDataWithDb` for why).
+No Cloudflare account needed — see the root `README.md`. `bun run dev` starts the Vite dev
+server (5173) and `wrangler dev` (3000) side by side via Turborepo; `wrangler dev` uses a local D1
+(Miniflare), created from the migrations by `bun run db:migrate:local` (the API's `predev` step runs it).

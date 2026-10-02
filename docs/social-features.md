@@ -173,10 +173,9 @@ Ikkita DO klassi:
 - **`ConversationRoom`** — har bir suhbat uchun bitta instansiya
   (`idFromName(conversationId)`). Klient unga WebSocket ochadi (DO id'sini
   topib, upgrade so'rovini yo'naltiruvchi Worker route orqali). Xabar socket
-  orqali kelganda, DO'ning o'zi qatorni Postgres'ga yozadi (umumiy `@yres/db`
-  klienti orqali — Neon HTTP drayveri DO ichidan ham yaxshi ishlaydi, bu
-  shunchaki boshqa Workers ijro konteksti) va keyin saqlangan qatorni o'sha
-  suhbatga hozir ulangan har bir socket'ga tarqatadi. **Postgres yagona
+  orqali kelganda, DO'ning o'zi qatorni D1'ga yozadi (umumiy `@yres/db`
+  klienti orqali — DO ham Worker bilan bir xil `env.DB` binding'ini oladi) va keyin saqlangan qatorni o'sha
+  suhbatga hozir ulangan har bir socket'ga tarqatadi. **D1 yagona
   haqiqat manbai bo'lib qoladi; DO faqat tarqatish nuqtasi** — u bazadan
   qayta tiklab bo'lmaydigan hech qanday holatni saqlamaydi. Bo'sh
   ulanishlar DO'ni xotirada ushlab turmasligi uchun WebSocket Hibernation
@@ -211,7 +210,7 @@ Excel-hisobot PDF'lari `REPORTS_BUCKET`da saqlangani kabi andoza.
   Preview MCP mavjud bo'lmasa). **Lekin foydalanuvchining haqiqiy mashinasida
   `bun run dev` (`apps/api`) haqiqiy WebSocket/DO xatti-harakatini Miniflare
   orqali to'liq mahalliy simulyatsiya qiladi** — Cloudflare hisobiga yoki
-  deploy'ga hojat yo'q, faqat haqiqiy Neon `DATABASE_URL` kerak
+  deploy'ga hojat yo'q, faqat lokal D1 kerak (`bun run db:migrate:local`)
   (`.claude/rules/realtime.md`ga qarang, u yerda shu tarzda haqiqiy bug —
   `webSocketClose()`ning 1005/1006 kodlarni noto'g'ri qaytarishi — topilgan
   va tuzatilgan). Faqat production'ga xos narsalar (haqiqiy Cloudflare

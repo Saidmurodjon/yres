@@ -32,7 +32,7 @@ calculation wiring.
 |---|---|
 | Frontend | React 19 + TypeScript, TanStack Router + Query, Tailwind CSS v4 + shadcn/ui (Radix) |
 | Backend | Hono (TypeScript), deployed as a Cloudflare Worker |
-| Database | Neon (PostgreSQL) + Drizzle ORM |
+| Database | Cloudflare D1 (SQLite) + Drizzle ORM |
 | Auth | Better Auth (email/password + Google OAuth) |
 | Monorepo | Turborepo + Bun workspaces |
 | CI/CD | GitHub Actions (`.github/workflows/`) |
@@ -45,12 +45,12 @@ apps/
   api/        Hono backend (Cloudflare Worker) + calculation engine (src/services/)
 packages/
   ui/         Shared shadcn/ui-style components (Radix primitives + Tailwind v4)
-  db/         Drizzle ORM schemas, migrations, reference-data seed script
+  db/         Drizzle ORM schemas, migrations, reference-data (versioned migration)
   types/      Shared TypeScript types (calculation result shapes)
 docs/
   data-dictionary.md   Worksheet-by-worksheet analysis of the source Excel workbook
   er-diagram.md        Entity-relationship design derived from the data dictionary
-  deployment.md        Neon/Cloudflare setup, secrets, first deploy
+  deployment.md        Cloudflare/D1 setup, secrets, first deploy
 ```
 
 ## Local development
@@ -60,11 +60,8 @@ bun install
 cp .env.example .env               # root env template
 cp apps/web/.env.example apps/web/.env
 
-# DATABASE_URL must point at a real Neon endpoint — see docs/deployment.md
-# and packages/db/src/seed.ts's header comment for why a plain local
-# Postgres won't work with the app's Neon HTTP driver.
-bun run db:migrate                  # apply the committed migration in packages/db/drizzle/
-bun run db:seed                      # populate materials, climate normals, tariffs, etc.
+# No external database: wrangler dev and the tests use a local D1 (Miniflare).
+bun run db:migrate:local             # apply packages/db/drizzle/*.sql (schema + reference data) to the local D1
 
 bun run dev                           # starts apps/web (5173) and apps/api (3000) via turbo
 ```
@@ -79,12 +76,12 @@ generated migration together.
 bun run build         # build all apps/packages
 bun run lint           # biome lint
 bun run type-check     # tsc --noEmit across workspaces
-bun run test            # vitest (apps/api's 42 calculation-engine unit tests)
+bun run test            # vitest (apps/api: calculation-engine unit tests + integration tests on a local D1)
 bun run format          # biome format --write .
-bun run db:studio       # Drizzle Studio (visual DB browser)
+bun run db:migrate:local   # apply migrations to the local D1
 ```
 
 ## Deploying
 
-See `docs/deployment.md` — provisioning Neon and Cloudflare, required secrets, and the
+See `docs/deployment.md` — provisioning Cloudflare (Workers, D1, Pages), required secrets, and the
 GitHub Actions CI/deploy pipeline.

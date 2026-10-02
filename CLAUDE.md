@@ -19,11 +19,11 @@ bir marta haqiqiy production bug'iga sabab bo'lgan va kodni sovuq holda o'qishda
 | Fayl | Nimani qamrab oladi |
 |---|---|
 | `stack.md` | Paket menejeri (bun), monorepo tuzilishi, TypeScript/Biome konventsiyalari |
-| `database.md` | **Neon → Cloudflare D1 o'tish davri (ADR-016)**: `db.batch()` atomikligi, 100-parametr limiti (`insertChunked`), SQLite tiplari, Kirill qidiruvi, FK/`defer_foreign_keys`, wrangler migratsiyalari; eski Neon bo'limi D04 gacha |
+| `database.md` | **Cloudflare D1 (ADR-016)**: `db.batch()` atomikligi, 100-parametr limiti (`insertChunked`), SQLite tiplari, Kirill qidiruvi, FK/`defer_foreign_keys`, wrangler migratsiyalari, versiyalangan ma'lumotnoma migratsiyasi |
 | `auth.md` | Better Auth cross-subdomain cookie'lari, `errorCallbackURL`, account-linking sozlamasi |
 | `frontend.md` | **`packages/ui` uchun Tailwind `@source` nozik jihati** (faqat `apps/web`ga tegsangiz ham buni o'qing), deploy'dan keyingi eskirgan-chunk holatini boshqarish, jadval/tab'lar overflow'i, mobil navigatsiya |
 | `calculation-engine.md` | `audit.engine.ts`ning standartlashtirilgan-vs-haqiqiy kalibrlashi, tashuvchi (carrier) moslashtirish, energiya balansi bo'limlari, **manba Excel'ga nisbatan audit topilmalari** (to'liq: `docs/calculation-engine-audit.md`) |
-| `testing-and-verification.md` | Unit vs integratsiya testlari, lokal bazasiz UI'ni tekshirish |
+| `testing-and-verification.md` | Unit vs integratsiya testlari (lokal Miniflare D1'da), lokal bazasiz UI'ni tekshirish |
 | `deployment.md` | Qo'lda deploy buyruqlari, production manzillari, sirlar (secrets) |
 | `git-and-commits.md` | Ushbu repo tarixi ergashadigan commit granulyarligi va xabar uslubi |
 | `social-features.md` | Navbar/rollar/profil/bildirishnoma/chat tashabbusi — `user.role`ning endi haqiqiy ekanligi, username backfill, Durable Objects arxitekturasi (to'liq dizayn: `docs/social-features.md`) |
@@ -63,7 +63,7 @@ tuzatish ishlayotganini faqat diff'ni o'qib da'vo qilmang.
 ## Joriy faza
 
 Production rejasi: `docs/production/00-MASTER-PLAN.md`. **Joriy ijro paketi — Faza 0:**
-`docs/production/faza-0/README.md` (avval D01–D04: Neon → D1 ko'chirish, keyin T01–T10; har biri kodga qarshi tekshirilgan spec).
+`docs/production/faza-0/README.md` (D01–D03 bajarilgan — Neon → D1 ko'chirish; D04 §C production cutover loyiha egasini kutadi; keyin T01–T10; har biri kodga qarshi tekshirilgan spec).
 Kod yozuvchi sessiya avval shu README'ni o'qiydi va unga qat'iy amal qiladi.
 
 ## Ko'p bosqichli yoki uzoq davom etadigan topshiriqlarda ishlash tartibi

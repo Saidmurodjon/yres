@@ -1,6 +1,6 @@
 # Deployment
 
-To'liq birinchi marta sozlash (Neon/Cloudflare provisioning, sirlar, GitHub Actions)
+To'liq birinchi marta sozlash (Cloudflare/D1 provisioning, sirlar, GitHub Actions)
 `docs/deployment.md`da — bu fayl faqat kundalik amalda ishlatiladigan qo'lda deploy yo'lini va
 qayta kashf qilishga arzimaydigan faktlarni qamrab oladi.
 
@@ -17,8 +17,9 @@ routing'i qayta sozlanishi kerak bo'lsa, shu munosabatni saqlang.
 ## Qo'lda deploy
 
 ```bash
-# API
+# API — avval migratsiya (faqat qo'shuvchi — data-integrity.md), keyin kod
 cd apps/api
+npx wrangler d1 migrations apply DB --remote --env production   # = bun run db:migrate:prod
 npx wrangler deploy --env production
 
 # Web — VITE_API_URL *build* vaqtida o'rnatilishi shart (Vite env o'zgaruvchilarini inline qiladi), shunchaki deploy vaqtida emas
@@ -48,14 +49,13 @@ tuzatishi uchun `grep -o '\.inline-flex{[^}]*}' apps/web/dist/assets/*.css`.
 ## Sirlar (Secrets)
 
 `apps/api/`dan `wrangler secret put <NAME> --env production` orqali o'rnatiladi, hech qachon
-commit qilinmaydi. Joriy to'plam: `DATABASE_URL`, `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`,
+commit qilinmaydi. Joriy to'plam: `BETTER_AUTH_SECRET`, `GOOGLE_CLIENT_ID`,
 `GOOGLE_CLIENT_SECRET`, `RESEND_API_KEY`. `SENTRY_DSN` ixtiyoriy (bo'sh bo'lsa xato hisoboti
 hech narsa qilmaydi — `apps/api/src/index.ts`dagi `withSentry` o'ramiga qarang).
 `YANDEX_STATIC_MAPS_API_KEY` ham ixtiyoriy — bo'sh bo'lsa PDF hisobotdagi bino-joylashuvi
 xaritasi rasmi shunchaki o'tkazib yuboriladi, koordinatalar matn sifatida qoladi
 (`report.service.ts`ning `fetchYandexStaticMapPng()`i har qanday xatoda `null` qaytaradi).
 Wrangler
-sirlari faqat-yozish uchun — CLI orqali sir qiymatini qaytarib o'qishning iloji yo'q; agar
-bir martalik skript uchun (migratsiya, ma'lumot backfill'i) haqiqiy `DATABASE_URL` kerak bo'lsa,
-uni deploy qilingan Worker'dan chiqarib olishga urinish o'rniga to'g'ridan-to'g'ri
-foydalanuvchidan so'rang.
+sirlari faqat-yozish uchun — CLI orqali sir qiymatini qaytarib o'qishning iloji yo'q. Baza uchun sir
+yo'q: D1 `wrangler.toml`dagi `DB` binding'i orqali ulanadi. Production D1'ga yozish (`--remote`) — faqat
+loyiha egasi buyrug'i bilan (`database.md`).
