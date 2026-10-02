@@ -3,6 +3,7 @@ import { Button, Textarea } from "@yres/ui";
 import { Paperclip, Send, X } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ConfirmDialog } from "../../../components/confirm-dialog";
 import {
   useConversationSocket,
   useConversations,
@@ -47,6 +48,8 @@ function ChatThreadPage() {
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [editing, setEditing] = useState<ChatMessage | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  // A deleted message disappears for everyone in the chat: confirm first.
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -200,7 +203,7 @@ function ChatThreadPage() {
                           <button
                             type="button"
                             className="text-xs underline opacity-70"
-                            onClick={() => socket.deleteMessage(m.id)}
+                            onClick={() => setPendingDeleteId(m.id)}
                           >
                             {t("thread.delete")}
                           </button>
@@ -287,6 +290,18 @@ function ChatThreadPage() {
           <Send className="h-4 w-4" />
         </Button>
       </form>
+      <ConfirmDialog
+        open={pendingDeleteId !== null}
+        title={t("common:confirmDelete.messageTitle")}
+        description={t("common:confirmDelete.messageDescription")}
+        confirmLabel={t("common:confirmDelete.confirm")}
+        destructive
+        onConfirm={() => {
+          if (pendingDeleteId) socket.deleteMessage(pendingDeleteId);
+          setPendingDeleteId(null);
+        }}
+        onCancel={() => setPendingDeleteId(null)}
+      />
     </div>
   );
 }

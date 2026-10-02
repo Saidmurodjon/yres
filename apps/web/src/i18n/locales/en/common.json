@@ -38,7 +38,13 @@
   "confirmDelete": {
     "title": "Delete this item?",
     "description": "This cannot be undone.",
-    "confirm": "Delete"
+    "confirm": "Delete",
+    "named": "“{{name}}” will be deleted. This cannot be undone.",
+    "removeMemberTitle": "Remove this person?",
+    "removeMemberDescription": "{{name}} will lose access to this building.",
+    "removeMemberConfirm": "Remove",
+    "messageTitle": "Delete this message?",
+    "messageDescription": "The message will be removed for everyone in the chat. This cannot be undone."
   },
   "pagination": {
     "pageOf": "Page {{page}} of {{pageCount}}",

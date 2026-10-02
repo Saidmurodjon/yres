@@ -29,6 +29,7 @@ import { useInviteMember, useMembers, useRemoveMember, useUpdateMemberRole } fro
 import { ApiError } from "../../lib/api";
 import type { BuildingRole } from "../../lib/api-types";
 import { formatDate } from "../../lib/labels";
+import { ConfirmDialog } from "../confirm-dialog";
 import { useRegisterDirty } from "../unsaved-changes";
 
 export function SharingTab({ buildingId, role }: { buildingId: string; role: BuildingRole }) {
@@ -44,6 +45,8 @@ export function SharingTab({ buildingId, role }: { buildingId: string; role: Bui
   const [actionError, setActionError] = useState<string | null>(null);
 
   const isOwner = role === "owner";
+  // Removing someone's access is confirmed first.
+  const [pendingRemove, setPendingRemove] = useState<{ id: string; name: string } | null>(null);
   // A typed-but-unsent invitation is an unsaved edit.
   useRegisterDirty("sharing.invite", email.trim() !== "");
 
@@ -71,12 +74,14 @@ export function SharingTab({ buildingId, role }: { buildingId: string; role: Bui
     }
   }
 
-  async function handleRemove(memberId: string) {
+  async function handleRemove(memberId: string): Promise<boolean> {
     setActionError(null);
     try {
       await removeMember.mutateAsync(memberId);
+      return true;
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : t("sharing.removeFailed"));
+      return false;
     }
   }
 
@@ -165,7 +170,7 @@ export function SharingTab({ buildingId, role }: { buildingId: string; role: Bui
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleRemove(member.id)}
+                          onClick={() => setPendingRemove({ id: member.id, name: member.name })}
                           disabled={removeMember.isPending}
                           aria-label={t("sharing.removeAria", { name: member.name })}
                         >
@@ -227,6 +232,26 @@ export function SharingTab({ buildingId, role }: { buildingId: string; role: Bui
           </Card>
         </form>
       )}
+      <ConfirmDialog
+        open={pendingRemove !== null}
+        title={t("common:confirmDelete.removeMemberTitle")}
+        description={t("common:confirmDelete.removeMemberDescription", {
+          name: pendingRemove?.name ?? "",
+        })}
+        confirmLabel={t("common:confirmDelete.removeMemberConfirm")}
+        destructive
+        pending={removeMember.isPending}
+        error={actionError}
+        onConfirm={async () => {
+          if (!pendingRemove) return;
+          // On failure the dialog stays open and shows the error.
+          if (await handleRemove(pendingRemove.id)) setPendingRemove(null);
+        }}
+        onCancel={() => {
+          setActionError(null);
+          setPendingRemove(null);
+        }}
+      />
     </div>
   );
 }

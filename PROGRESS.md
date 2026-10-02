@@ -2330,3 +2330,14 @@ T06b — qamrab olinganlar:
 - **Qo'lda (loyiha egasi):** 375 px da `ConfirmDialog` joylashuvi; uz/ru matnlar (ruscha ko'rib chiqilsin); iste'mol tab'ida ko'p yilli tahrir + yil saqlash; o'lchovlar tanlovi + yangi forma; profil formasi.
 
 **Navbatda:** T06c — server obyektlarini o'chirishga `ConfirmDialog`.
+
+## Faza 0 · T06c — server obyektini o'chirishga tasdiq (2026-10-02)
+
+- `ConfirmDialog` ga `error` prop: muvaffaqiyatsiz o'chirish xatosi **dialog ichida** (`⚠` + matn, `role="alert"`) ko'rinadi, dialog ochiq qoladi (jimgina yutilmaydi); `pending` paytida tugma o'chiq va dialog yopilmaydi (ikki marta bosib bo'lmaydi).
+- Qamrab olindi: `measures-tab.tsx` (chora-tadbir + non-EE: nomi tavsifda, `destructive`, fokus "Cancel"da), `sharing-tab.tsx` (a'zoni olib tashlash: kim kirish huquqini yo'qotishi tavsifda), chat xabarini o'chirish (hamma uchun yo'qoladi; WS orqali — natija kutilmaydi,
+  shuning uchun `pending`/inline xato yo'q — asos), `delete-building-dialog.tsx` (allaqachon tasdiqli, andoza). i18n (uz/ru/en `common.confirmDelete.*`) — **ruscha ko'rib chiqilsin**.
+- Grep (`mutate(`/`mutateAsync(` + delete/remove): faqat shu to'rtta; admin (rol/holat) va chat guruhidan a'zo olib tashlash UI'da yo'q / qaytariladigan (admin) — tasdiq qo'shilmadi, asos: qaytarish mumkin. Lokal (saqlanmagan) jadval qatorini o'chirish tasdiqsiz (dirty-himoya ostida), "5 soniyalik undo" — Faza 3.
+- Haqiqiy brauzerda `tests/e2e/confirm-delete.spec.ts`: chora-tadbir qo'shish (`12 500,5` — T05 parse), o'chirish → dialog, fokus Cancel'da, Cancel — qoladi, Delete — yo'qoladi. Playwright jami 22/22. Xato yo'li (server o'chirishni rad etsa) brauzerda sinalmadi — qo'lda: tarmoqni uzib o'chirishga urinib ko'ring.
+- Tekshiruv: type-check, biome, build.
+
+**Faza 0 holati:** D01–D03, T01–T06 ✅; D04 §C (production cutover) loyiha egasini kutadi. **Navbatda:** T07 (iste'mol: bo'sh tashuvchini o'chirish + ko'p yilni atomik saqlash).

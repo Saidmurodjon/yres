@@ -21,6 +21,8 @@ export interface ConfirmDialogProps {
   destructive?: boolean;
   /** Confirm is disabled and shows a spinner while the action runs. */
   pending?: boolean;
+  /** Why the action failed, shown inside the dialog (which the caller keeps open) — never swallowed. */
+  error?: string | null;
   onConfirm: () => void | Promise<void>;
   onCancel: () => void;
 }
@@ -38,6 +40,7 @@ export function ConfirmDialog({
   cancelLabel,
   destructive = false,
   pending = false,
+  error,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -56,6 +59,11 @@ export function ConfirmDialog({
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            ⚠ {error}
+          </p>
+        )}
         <DialogFooter className="gap-2 sm:gap-0">
           <Button
             data-confirm-cancel

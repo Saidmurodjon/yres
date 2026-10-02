@@ -37,6 +37,7 @@ import { ApiError } from "../../lib/api";
 import type { MeasureCategory } from "../../lib/api-types";
 import { MEASURE_CATEGORY_LABELS, formatNumber } from "../../lib/labels";
 import { parseLocaleNumber, toNumberLocale } from "../../lib/number";
+import { ConfirmDialog } from "../confirm-dialog";
 import { NumberInput } from "../number-input";
 import { useRegisterDirty } from "../unsaved-changes";
 
@@ -91,6 +92,13 @@ export function MeasuresTab({
   const [nonEeForm, setNonEeForm] = useState<NewNonEeMeasureForm>(emptyNonEeForm());
   const [nonEeFormError, setNonEeFormError] = useState<string | null>(null);
   const [nonEeDeleteError, setNonEeDeleteError] = useState<string | null>(null);
+
+  // Deleting a server object cannot be undone: it is confirmed first (ConfirmDialog, destructive).
+  const [pendingDelete, setPendingDelete] = useState<{
+    kind: "measure" | "nonEe";
+    id: string;
+    name: string;
+  } | null>(null);
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -196,12 +204,14 @@ export function MeasuresTab({
     }
   }
 
-  async function handleDelete(id: string) {
+  async function handleDelete(id: string): Promise<boolean> {
     setDeleteError(null);
     try {
       await deleteMeasure.mutateAsync(id);
+      return true;
     } catch (err) {
       setDeleteError(err instanceof ApiError ? err.message : t("ee.failedToDelete"));
+      return false;
     }
   }
 
@@ -243,12 +253,14 @@ export function MeasuresTab({
     }
   }
 
-  async function handleDeleteNonEeMeasure(id: string) {
+  async function handleDeleteNonEeMeasure(id: string): Promise<boolean> {
     setNonEeDeleteError(null);
     try {
       await deleteNonEeMeasure.mutateAsync(id);
+      return true;
     } catch (err) {
       setNonEeDeleteError(err instanceof ApiError ? err.message : t("ancillary.failedToDelete"));
+      return false;
     }
   }
 
@@ -335,7 +347,13 @@ export function MeasuresTab({
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDelete(measure.id)}
+                            onClick={() =>
+                              setPendingDelete({
+                                kind: "measure",
+                                id: measure.id,
+                                name: measure.name,
+                              })
+                            }
                             disabled={deleteMeasure.isPending}
                             aria-label={t("ee.deleteAria", { name: measure.name })}
                           >
@@ -464,7 +482,9 @@ export function MeasuresTab({
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteNonEeMeasure(m.id)}
+                          onClick={() =>
+                            setPendingDelete({ kind: "nonEe", id: m.id, name: m.description })
+                          }
                           disabled={deleteNonEeMeasure.isPending}
                           aria-label={t("ancillary.deleteAria", { description: m.description })}
                         >
@@ -534,6 +554,29 @@ export function MeasuresTab({
           </Card>
         </form>
       )}
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={t("common:confirmDelete.title")}
+        description={t("common:confirmDelete.named", { name: pendingDelete?.name ?? "" })}
+        confirmLabel={t("common:confirmDelete.confirm")}
+        destructive
+        pending={deleteMeasure.isPending || deleteNonEeMeasure.isPending}
+        error={pendingDelete?.kind === "nonEe" ? nonEeDeleteError : deleteError}
+        onConfirm={async () => {
+          if (!pendingDelete) return;
+          const deleted =
+            pendingDelete.kind === "measure"
+              ? await handleDelete(pendingDelete.id)
+              : await handleDeleteNonEeMeasure(pendingDelete.id);
+          // On failure the dialog stays open and shows the error.
+          if (deleted) setPendingDelete(null);
+        }}
+        onCancel={() => {
+          setDeleteError(null);
+          setNonEeDeleteError(null);
+          setPendingDelete(null);
+        }}
+      />
     </div>
   );
 }

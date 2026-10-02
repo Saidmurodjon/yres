@@ -38,7 +38,13 @@
   "confirmDelete": {
     "title": "Удалить этот элемент?",
     "description": "Это действие нельзя отменить.",
-    "confirm": "Удалить"
+    "confirm": "Удалить",
+    "named": "«{{name}}» будет удалено. Это действие нельзя отменить.",
+    "removeMemberTitle": "Убрать этого человека?",
+    "removeMemberDescription": "{{name}} потеряет доступ к этому зданию.",
+    "removeMemberConfirm": "Убрать",
+    "messageTitle": "Удалить это сообщение?",
+    "messageDescription": "Сообщение будет удалено для всех участников чата. Это действие нельзя отменить."
   },
   "pagination": {
     "pageOf": "Страница {{page}} из {{pageCount}}",

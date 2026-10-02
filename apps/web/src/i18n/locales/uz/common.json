@@ -38,7 +38,13 @@
   "confirmDelete": {
     "title": "Bu element o'chirilsinmi?",
     "description": "Buni qaytarib bo'lmaydi.",
-    "confirm": "O'chirish"
+    "confirm": "O'chirish",
+    "named": "“{{name}}” o'chiriladi. Buni qaytarib bo'lmaydi.",
+    "removeMemberTitle": "Bu shaxs olib tashlansinmi?",
+    "removeMemberDescription": "{{name}} bu binoga kirish huquqini yo'qotadi.",
+    "removeMemberConfirm": "Olib tashlash",
+    "messageTitle": "Bu xabar o'chirilsinmi?",
+    "messageDescription": "Xabar suhbatdagi hamma uchun o'chiriladi. Buni qaytarib bo'lmaydi."
   },
   "pagination": {
     "pageOf": "{{page}}-sahifa, jami {{pageCount}}",
