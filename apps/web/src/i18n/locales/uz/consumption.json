@@ -51,6 +51,12 @@
       "invalidConsumption": "{{row}}-qator: miqdor raqam bo'lishi kerak.",
       "invalidTariff": "{{row}}-qator: tarif raqam bo'lishi kerak.",
       "parseFailed": "Faylni o'qib bo'lmadi — u haqiqiy .xlsx fayl ekanini tekshiring."
-    }
-  }
+    },
+    "importedUnsaved": "Hali saqlanmagan — «O'zgarishlarni saqlash»ni bosing."
+  },
+  "saveAllButton_one": "O'zgarishlarni saqlash ({{count}})",
+  "saveAllButton_other": "O'zgarishlarni saqlash ({{count}})",
+  "savedAllMessage": "Barcha o'zgarishlar saqlandi.",
+  "tooManyYears": "{{count}} yilda saqlanmagan o'zgarishlar bor; bir vaqtda ko'pi bilan {{max}} yilni saqlash mumkin. Avval so'nggi yillarni, keyin qolganini saqlang.",
+  "unsavedYearAria": "Saqlanmagan o'zgarishlar"
 }

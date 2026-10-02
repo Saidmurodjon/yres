@@ -2353,3 +2353,14 @@ T06b — qamrab olinganlar:
 - Testlar `consumption-bulk.test.ts` (5): 2×2 saqlanadi; bo'sh guruh va yuborilmagan tashuvchi eski qatorlarni o'chiradi; takroriy → 400 va hech narsa yozilmaydi; 5×4×12 = 240 qator lokal D1'da o'tadi; viewer 403 / begona 404. api 38+ fayl yashil.
 - Web: `api.consumption.bulkReplace`, `useBulkReplaceConsumption` (invalidatsiya), `BulkReplaceYearInput` turi.
 **Navbatda:** T07b — consumption-tab "O'zgarishlarni saqlash".
+
+## Faza 0 · T07b — iste'mol tab'i: "O'zgarishlarni saqlash" (2026-10-02)
+
+- `consumption-tab.tsx`: boshlang'ich holat (`baseline`, yuklangan/oxirgi saqlangan grid); (yil, tashuvchi) baseline'dan farq qilsa iflos. Bitta tugma `Save changes (N)` (i18next ko'plik: uz/en `_one/_other`, ru `_one/_few/_many/_other`) — `useBulkReplaceConsumption`
+  bilan bitta atomik so'rov, har iflos yilning BARCHA tashuvchilari `ENERGY_CARRIERS` dan (qattiq kodlanmagan), bo'shatilgani `bills: []` (U5 tuzatildi). >5 iflos yil — jimgina bo'linmaydi, "N yilda saqlanmagan, ko'pi bilan 5" xatosi.
+  Noto'g'ri katak butun saqlashni to'xtatadi, xabarda yil/tashuvchi/oy; xatoda grid o'zgarmaydi. Yil tab'ida `●` (`role="img"` + `aria-label` "Saqlanmagan o'zgarishlar"). Toza holatda tugma disabled. Excel importdan keyin xabarga "hali saqlanmagan — saqlang" qo'shildi.
+  `useRegisterDirty("consumption", iflosGuruhlar > 0)` (T06b dagi vaqtinchalik `dirtyYears` o'rniga). i18n uz/ru/en — **ruscha ko'rib chiqilsin.**
+- Brauzerda `tests/e2e/consumption-save.spec.ts`: toza — tugma disabled; 2 yilda tahrir (`12,5`) → 2 ta `●`; `12abc` saqlashni to'xtatadi; bir tugma ikkala yilni saqlaydi; yangilanganda `12.5` va `7`; gaz oyi tozalanib saqlansa — yangilangandan keyin serverdan YO'Q.
+  Eslatma: grid server ma'lumoti yuklangach quriladi — undan oldin yozilgan matn ustidan yoziladi (oldindan bor, kichik poyga; testda `networkidle` kutiladi).
+- Tekshiruv: type-check, biome, web 68 test, api 197 test, **Playwright 24/24** (UI topshirig'i oxirida bir marta).
+**Navbatda:** T08 (audit tugmasi mavjud qobiqni almashtirmasin).

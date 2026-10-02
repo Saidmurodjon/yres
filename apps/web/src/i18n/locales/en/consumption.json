@@ -51,6 +51,12 @@
       "invalidConsumption": "Row {{row}}: amount must be a number.",
       "invalidTariff": "Row {{row}}: tariff must be a number.",
       "parseFailed": "Couldn't read the file — make sure it's a valid .xlsx file."
-    }
-  }
+    },
+    "importedUnsaved": "Not saved yet — press “Save changes”."
+  },
+  "saveAllButton_one": "Save changes ({{count}})",
+  "saveAllButton_other": "Save changes ({{count}})",
+  "savedAllMessage": "All changes saved.",
+  "tooManyYears": "{{count}} years have unsaved changes; at most {{max}} can be saved at once. Save the most recent years first, then the rest.",
+  "unsavedYearAria": "Unsaved changes"
 }

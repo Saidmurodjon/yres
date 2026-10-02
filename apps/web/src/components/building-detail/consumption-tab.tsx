@@ -26,9 +26,14 @@ import { Download, Plus, Save, Upload } from "lucide-react";
 import type { ClipboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useConsumption, useReplaceConsumption } from "../../hooks";
+import { useBulkReplaceConsumption, useConsumption } from "../../hooks";
 import { ApiError } from "../../lib/api";
-import type { EnergyCarrier, MonthlyBillInput, UtilityBill } from "../../lib/api-types";
+import type {
+  BulkReplaceYearInput,
+  EnergyCarrier,
+  MonthlyBillInput,
+  UtilityBill,
+} from "../../lib/api-types";
 import {
   ENERGY_CARRIERS,
   ENERGY_CARRIER_LABELS,
@@ -53,6 +58,8 @@ import {
 import { ENERGY_CARRIER_NATIVE_UNIT_LABELS, previewConsumptionKwh } from "./consumption-units";
 
 /** Matches the API (schemas/consumption.ts). */
+/** The API accepts at most this many years per save (schemas/consumption.ts); more is never split silently. */
+const MAX_YEARS_PER_SAVE = 5;
 const MIN_YEAR = 1990;
 const MAX_YEAR = 2100;
 
@@ -152,7 +159,8 @@ function buildBillGroupsForYear(
       }
       bills.push({ month: idx + 1, consumptionNative: parsed.value, tariffLocal });
     }
-    if (bills.length > 0) groups.push({ energyCarrier: carrier, bills });
+    // An emptied carrier is sent with `bills: []`: the server replaces the whole year, so this clears it.
+    groups.push({ energyCarrier: carrier, bills });
   }
   return { groups, invalid };
 }
@@ -174,7 +182,7 @@ export function ConsumptionTab({
   const { t, i18n } = useTranslation("consumption");
   const locale = toNumberLocale(i18n.language);
   const { data, isLoading, isError, error } = useConsumption(buildingId, { pageSize: 500 });
-  const replaceConsumption = useReplaceConsumption(buildingId);
+  const bulkReplace = useBulkReplaceConsumption(buildingId);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const bills = useMemo(() => data?.bills ?? [], [data]);
@@ -187,14 +195,26 @@ export function ConsumptionTab({
   const [newYearValue, setNewYearValue] = useState(String(currentYear + 1));
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  // Years whose grid has edits that are not saved yet; the whole tab counts as dirty while any year is.
-  const [dirtyYears, setDirtyYears] = useState<ReadonlySet<number>>(new Set());
-  useRegisterDirty("consumption", dirtyYears.size > 0);
-  const markDirty = (...changed: number[]) =>
-    setDirtyYears((prev) => new Set([...prev, ...changed]));
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const [importErrorDetails, setImportErrorDetails] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
+
+  // What the grids looked like when loaded / last saved; a (year, carrier) differing from it is unsaved.
+  const [baseline, setBaseline] = useState<Record<number, YearGrid>>({});
+  const dirtyByYear = useMemo(() => {
+    const result = new Map<number, number>();
+    for (const [yearKey, grid] of Object.entries(gridsByYear)) {
+      const year = Number(yearKey);
+      const base = baseline[year] ?? emptyYearGrid();
+      const count = ENERGY_CARRIERS.filter(
+        (c) => JSON.stringify(grid[c]) !== JSON.stringify(base[c]),
+      ).length;
+      if (count > 0) result.set(year, count);
+    }
+    return result;
+  }, [gridsByYear, baseline]);
+  const dirtyGroupCount = [...dirtyByYear.values()].reduce((sum, n) => sum + n, 0);
+  useRegisterDirty("consumption", dirtyGroupCount > 0);
 
   // Derive the initial grids from the server's saved bills exactly once,
   // when the first fetch lands — not on every refetch, so in-progress edits
@@ -205,7 +225,9 @@ export function ConsumptionTab({
     const fromData = bills.map((b) => b.year);
     const initialYears = [...new Set([...fromData, ...years])].sort((a, b) => b - a);
     setYears(initialYears);
-    setGridsByYear(gridsFromBills(bills, initialYears, locale));
+    const initialGrids = gridsFromBills(bills, initialYears, locale);
+    setGridsByYear(initialGrids);
+    setBaseline(structuredClone(initialGrids));
     setInitialized(true);
   }, [isLoading, initialized]);
 
@@ -221,7 +243,6 @@ export function ConsumptionTab({
       return { ...prev, [year]: { ...yearGrid, [carrier]: { ...row, months } } };
     });
     setSaved(false);
-    markDirty(year);
   }
 
   function updateTariff(year: number, carrier: EnergyCarrier, value: string) {
@@ -231,7 +252,6 @@ export function ConsumptionTab({
       return { ...prev, [year]: { ...yearGrid, [carrier]: { ...row, tariffLocal: value } } };
     });
     setSaved(false);
-    markDirty(year);
   }
 
   function handleMonthPaste(
@@ -255,7 +275,6 @@ export function ConsumptionTab({
       return { ...prev, [year]: { ...yearGrid, [carrier]: { ...row, months } } };
     });
     setSaved(false);
-    markDirty(year);
   }
 
   function addYear() {
@@ -270,12 +289,25 @@ export function ConsumptionTab({
     setActiveYear(String(parsed));
   }
 
-  async function handleSaveActiveYear() {
+  /**
+   * One atomic request for every edited year (all carriers of each — the server replaces whole years, so an
+   * emptied carrier clears its old rows). Any unreadable cell stops the whole save; nothing is skipped.
+   */
+  async function handleSaveAll() {
     setSaveError(null);
     setSaved(false);
-    // `activeYear` is the app's own String(year) of an integer tab, not user text.
-    const year = Number(activeYear);
-    const { groups, invalid } = buildBillGroupsForYear(gridFor(year), locale, t);
+    const dirtyYears = [...dirtyByYear.keys()].sort((a, b) => b - a);
+    if (dirtyYears.length > MAX_YEARS_PER_SAVE) {
+      setSaveError(t("tooManyYears", { count: dirtyYears.length, max: MAX_YEARS_PER_SAVE }));
+      return;
+    }
+    const invalid: string[] = [];
+    const payload: BulkReplaceYearInput[] = [];
+    for (const year of dirtyYears) {
+      const result = buildBillGroupsForYear(gridFor(year), locale, t);
+      invalid.push(...result.invalid.map((where) => `${year}: ${where}`));
+      payload.push({ year, carriers: result.groups });
+    }
     if (invalid.length > 0) {
       const shown = invalid.slice(0, 3).join("; ");
       const more =
@@ -285,19 +317,9 @@ export function ConsumptionTab({
     }
 
     try {
-      for (const group of groups) {
-        await replaceConsumption.mutateAsync({
-          energyCarrier: group.energyCarrier,
-          year,
-          bills: group.bills,
-        });
-      }
+      await bulkReplace.mutateAsync(payload);
       setSaved(true);
-      setDirtyYears((prev) => {
-        const next = new Set(prev);
-        next.delete(year);
-        return next;
-      });
+      setBaseline(structuredClone(gridsByYear));
     } catch (err) {
       setSaveError(err instanceof ApiError ? err.message : t("saveFailed"));
     }
@@ -320,7 +342,7 @@ export function ConsumptionTab({
 
       const summary =
         rows.length > 0
-          ? t("excel.importedSummary", { count: rows.length, years: importedYears.join(", ") })
+          ? `${t("excel.importedSummary", { count: rows.length, years: importedYears.join(", ") })} ${t("excel.importedUnsaved")}`
           : t("excel.importedNothing");
       setImportMessage(
         errors.length > 0
@@ -329,7 +351,6 @@ export function ConsumptionTab({
       );
       setImportErrorDetails(errors);
       setSaved(false);
-      if (importedYears.length > 0) markDirty(...importedYears);
     } catch {
       setImportMessage(t("excel.errors.parseFailed"));
     } finally {
@@ -407,6 +428,11 @@ export function ConsumptionTab({
                   {years.map((y) => (
                     <TabsTrigger key={y} value={String(y)}>
                       {y}
+                      {dirtyByYear.has(y) && (
+                        <span className="ml-1" role="img" aria-label={t("unsavedYearAria")}>
+                          ●
+                        </span>
+                      )}
                     </TabsTrigger>
                   ))}
                 </TabsList>
@@ -515,15 +541,16 @@ export function ConsumptionTab({
 
             {saveError && <p className="text-sm text-destructive">{saveError}</p>}
             {saved && !saveError && (
-              <p className="text-sm text-muted-foreground">
-                {t("savedMessage", { year: activeYear })}
-              </p>
+              <p className="text-sm text-muted-foreground">{t("savedAllMessage")}</p>
             )}
           </CardContent>
           <CardFooter className="justify-end">
-            <Button onClick={handleSaveActiveYear} disabled={replaceConsumption.isPending}>
+            <Button
+              onClick={handleSaveAll}
+              disabled={bulkReplace.isPending || dirtyGroupCount === 0}
+            >
               <Save className="h-4 w-4" />
-              {replaceConsumption.isPending ? t("saving") : t("saveButton", { year: activeYear })}
+              {bulkReplace.isPending ? t("saving") : t("saveAllButton", { count: dirtyGroupCount })}
             </Button>
           </CardFooter>
         </Card>
