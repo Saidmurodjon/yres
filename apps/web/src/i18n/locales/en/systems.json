@@ -48,7 +48,8 @@
     "columnSourceType": "Source type",
     "columnEfficiency": "Efficiency (0-1) or SEER",
     "columnShareOfDemand": "Share of demand (0-1)",
-    "saveError": "Failed to save generation sources."
+    "saveError": "Failed to save generation sources.",
+    "columnDistributionEfficiency": "Distribution efficiency (no pipes)"
   },
   "coolingWindows": {
     "title": "Cooling — solar-gain windows",
@@ -64,7 +65,8 @@
     "description": "AC/chiller equipment; only the first row per scenario is used to convert cooling load into electrical energy via its SEER.",
     "columnDescription": "Description",
     "columnSeer": "SEER",
-    "saveError": "Failed to save cooling systems."
+    "saveError": "Failed to save cooling systems.",
+    "columnDistributionEfficiency": "Distribution efficiency η (0–1]; 1 = no loss"
   },
   "lighting": {
     "title": "Lighting",

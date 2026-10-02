@@ -14,6 +14,7 @@ function buildInputs(): AuditInputs {
       nonOperationHoursPerDay: 14,
       operationHoursPerDay: 10,
       occupantCount: 50,
+      workingDaysPerYear: 250,
       coolingEnthalpyInsideKjKg: null,
       coolingEnthalpyOutsideKjKg: null,
     },
@@ -113,6 +114,7 @@ function buildInputs(): AuditInputs {
         sourceType: "gas_boiler",
         efficiencyOrSeer: 0.8,
         shareOfDemand: 1,
+        distributionEfficiency: null,
       },
     ],
     lightingZones: [],
@@ -149,5 +151,28 @@ describe("computeAudit", () => {
     }
     expect(result.measures).toHaveLength(1);
     expect(result.measures[0]?.standardizedAnnualSavingsKwh).toBeGreaterThan(0);
+  });
+
+  it("warns when workingDaysPerYear is missing and stays silent when it is set", () => {
+    const inputs = buildInputs();
+    expect(computeAudit(inputs, { generatedAt: "2026-01-01T00:00:00.000Z" }).warnings).toEqual([]);
+    inputs.building.workingDaysPerYear = null;
+    const warnings = computeAudit(inputs, { generatedAt: "2026-01-01T00:00:00.000Z" }).warnings;
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("workingDaysPerYear");
+  });
+
+  it("applies a source's distribution efficiency only to an end-use without pipe segments", () => {
+    const inputs = buildInputs();
+    const first = inputs.generationSources[0];
+    if (!first) throw new Error("fixture has no generation source");
+    first.distributionEfficiency = 0.8;
+    const result = computeAudit(inputs, { generatedAt: "2026-01-01T00:00:00.000Z" });
+    const source = result.generation.find((g) => g.sourceId === "g1");
+    expect(source?.distributionLossKwh).toBeCloseTo((source?.usefulEnergyNeedKwh ?? 0) * 0.2, 6);
+    expect(source?.finalEnergyConsumptionKwh).toBeCloseTo(
+      ((source?.usefulEnergyNeedKwh ?? 0) * 1.2) / 0.8,
+      6,
+    );
   });
 });

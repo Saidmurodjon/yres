@@ -60,6 +60,7 @@ const generationSourceInputSchema = z.object({
   sourceType: z.enum(generationSourceTypeEnum.enumValues),
   efficiencyOrSeer: z.number().finite().positive(),
   shareOfDemand: z.number().finite().min(0).max(1).default(1),
+  distributionEfficiency: z.number().finite().gt(0).max(1).nullable().optional(),
 });
 export const replaceGenerationSchema = scenarioBodySchema.extend({
   sources: z.array(generationSourceInputSchema).max(20).default([]),
@@ -80,6 +81,7 @@ export type ReplaceCoolingWindowsInput = z.infer<typeof replaceCoolingWindowsSch
 const coolingSystemInputSchema = z.object({
   description: z.string().max(10_000).nullable().optional(),
   seer: z.number().finite().positive(),
+  distributionEfficiency: z.number().finite().gt(0).max(1).default(1),
 });
 export const replaceCoolingSystemsSchema = scenarioBodySchema.extend({
   systems: z.array(coolingSystemInputSchema).max(50).default([]),

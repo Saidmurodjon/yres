@@ -27,6 +27,7 @@ export const createBuildingSchema = z.object({
   nonOperationHoursPerDay: z.number().finite().min(0).max(24),
   operationHoursPerDay: z.number().finite().min(0).max(24),
   occupantCount: z.number().finite().int().nonnegative().optional(),
+  workingDaysPerYear: z.number().finite().int().min(1).max(366).nullable().optional(),
   coolingEnthalpyInsideKjKg: z.number().finite().nullable().optional(),
   coolingEnthalpyOutsideKjKg: z.number().finite().nullable().optional(),
   coolingEnthalpyHottestDayKjKg: z.number().finite().nullable().optional(),

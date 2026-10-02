@@ -1143,6 +1143,32 @@ export async function generateAuditReportPdf(
     );
   }
 
+  if (result.cooling.length > 0) {
+    layout.heading(t(lang, "headingCoolingDemand"));
+    layout.table(
+      [
+        t(lang, "thScenario"),
+        t(lang, "thCoolingLoad"),
+        t(lang, "thDistribLoss"),
+        t(lang, "thEfficiencySeer"),
+        t(lang, "thElectricityKwh"),
+      ],
+      result.cooling.map((c) => [
+        c.scenario === "before" ? t(lang, "before") : t(lang, "after"),
+        fmt(lang, c.totalCoolingLoadKwh, 0),
+        fmt(lang, c.distributionLossKwh, 0),
+        fmt(lang, c.seer, 2),
+        fmt(lang, c.electricalEnergyForCoolingKwh, 0),
+      ]),
+      [90, 130, 130, 90, 130],
+    );
+  }
+
+  if (result.warnings.length > 0) {
+    layout.heading(t(lang, "headingWarnings"));
+    for (const warning of result.warnings) layout.note(warning);
+  }
+
   layout.heading(t(lang, "headingHeatingEnergyBalance"));
   layout.table(
     [t(lang, "thScenario"), t(lang, "thAnnualNetHeatingNeed")],

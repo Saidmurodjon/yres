@@ -94,7 +94,11 @@
     "fieldEnthalpyOutsideLabel": "Cooling enthalpy (outside)",
     "fieldEnthalpyHottestLabel": "Cooling enthalpy (hottest day)",
     "fieldLatitudeLabel": "Latitude",
-    "fieldLongitudeLabel": "Longitude"
+    "fieldLongitudeLabel": "Longitude",
+    "workingDaysPerYear": "Working days per year",
+    "workingDaysPerYearHint": "Used for lighting hours (days × operating hours). Empty: heating-season days are used and the result is flagged.",
+    "fieldWorkingDaysLabel": "Working days per year",
+    "fieldWorkingDaysRange": "Working days per year must be between 1 and 366."
   },
   "detail": {
     "backToBuildings": "Back to buildings",

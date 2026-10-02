@@ -127,6 +127,7 @@ export interface Building {
   nonOperationHoursPerDay: number;
   operationHoursPerDay: number;
   occupantCount: number;
+  workingDaysPerYear: number | null;
   coolingEnthalpyInsideKjKg: number | null;
   coolingEnthalpyOutsideKjKg: number | null;
   coolingEnthalpyHottestDayKjKg: number | null;
@@ -471,6 +472,7 @@ export interface GenerationSource {
   sourceType: GenerationSourceType;
   efficiencyOrSeer: number;
   shareOfDemand: number;
+  distributionEfficiency: number | null;
 }
 
 export interface CoolingWindow {
@@ -489,6 +491,7 @@ export interface CoolingSystem {
   scenario: Scenario;
   description: string | null;
   seer: number;
+  distributionEfficiency: number;
 }
 
 export interface LightingTechnologyMix {
@@ -600,6 +603,7 @@ export interface ReplaceGenerationPayload {
     sourceType: GenerationSourceType;
     efficiencyOrSeer: number;
     shareOfDemand?: number;
+    distributionEfficiency?: number | null;
   }[];
 }
 
@@ -618,6 +622,7 @@ export interface ReplaceCoolingSystemsPayload {
   systems: {
     description?: string | null;
     seer: number;
+    distributionEfficiency?: number;
   }[];
 }
 

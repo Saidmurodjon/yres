@@ -48,7 +48,8 @@
     "columnSourceType": "Manba turi",
     "columnEfficiency": "Samaradorlik (0-1) yoki SEER",
     "columnShareOfDemand": "Ehtiyoj ulushi (0-1)",
-    "saveError": "Generatsiya manbalarini saqlab bo'lmadi."
+    "saveError": "Generatsiya manbalarini saqlab bo'lmadi.",
+    "columnDistributionEfficiency": "Taqsimot samaradorligi (quvursiz)"
   },
   "coolingWindows": {
     "title": "Sovutish — quyosh nuri tushadigan derazalar",
@@ -64,7 +65,8 @@
     "description": "Konditsioner/chiller uskunasi; har bir stsenariy uchun faqat birinchi qator sovutish yukini uning SEER ko'rsatkichi orqali elektr energiyasiga aylantirish uchun ishlatiladi.",
     "columnDescription": "Tavsif",
     "columnSeer": "SEER",
-    "saveError": "Sovutish tizimlarini saqlab bo'lmadi."
+    "saveError": "Sovutish tizimlarini saqlab bo'lmadi.",
+    "columnDistributionEfficiency": "Taqsimot samaradorligi η (0–1]; 1 — yo'qotishsiz"
   },
   "lighting": {
     "title": "Yoritish",

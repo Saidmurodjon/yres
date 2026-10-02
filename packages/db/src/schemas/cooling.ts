@@ -27,6 +27,8 @@ export const coolingSystem = sqliteTable("cooling_system", {
   scenario: text("scenario", { enum: scenarioEnum.enumValues }).notNull(),
   description: text("description"),
   seer: real("seer").notNull(),
+  // v7.20 `Overall gener. & distrib. eff.!F15 = D15 × (1 − η)`; 1 = no distribution loss
+  distributionEfficiency: real("distribution_efficiency").notNull().default(1),
 });
 
 export const coolingWindowRelations = relations(coolingWindow, ({ one }) => ({

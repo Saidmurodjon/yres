@@ -44,6 +44,7 @@ export interface BuildingFormValues {
   nonOperationHoursPerDay: string;
   operationHoursPerDay: string;
   occupantCount: string;
+  workingDaysPerYear: string;
   coolingEnthalpyInsideKjKg: string;
   coolingEnthalpyOutsideKjKg: string;
   coolingEnthalpyHottestDayKjKg: string;
@@ -73,6 +74,7 @@ export const DEFAULT_BUILDING_FORM_VALUES: BuildingFormValues = {
   nonOperationHoursPerDay: "14",
   operationHoursPerDay: "10",
   occupantCount: "",
+  workingDaysPerYear: "",
   coolingEnthalpyInsideKjKg: "",
   coolingEnthalpyOutsideKjKg: "",
   coolingEnthalpyHottestDayKjKg: "",
@@ -101,6 +103,10 @@ export function buildingToFormValues(building: Building, locale: NumberLocale): 
     nonOperationHoursPerDay: formatNumberForInput(building.nonOperationHoursPerDay, locale),
     operationHoursPerDay: formatNumberForInput(building.operationHoursPerDay, locale),
     occupantCount: formatNumberForInput(building.occupantCount, locale),
+    workingDaysPerYear:
+      building.workingDaysPerYear == null
+        ? ""
+        : formatNumberForInput(building.workingDaysPerYear, locale),
     coolingEnthalpyInsideKjKg: formatNumberForInput(building.coolingEnthalpyInsideKjKg, locale),
     coolingEnthalpyOutsideKjKg: formatNumberForInput(building.coolingEnthalpyOutsideKjKg, locale),
     coolingEnthalpyHottestDayKjKg: formatNumberForInput(
@@ -279,6 +285,17 @@ export function parseBuildingFormValues(
     locale,
     { integer: true },
   );
+  const workingDaysPerYear = parseOptionalNumber(
+    values.workingDaysPerYear,
+    t("buildings:form.fieldWorkingDaysLabel"),
+    errors,
+    t,
+    locale,
+    { integer: true },
+  );
+  if (workingDaysPerYear !== undefined && (workingDaysPerYear < 1 || workingDaysPerYear > 366)) {
+    errors.push(t("buildings:form.fieldWorkingDaysRange"));
+  }
   const coolingEnthalpyInsideKjKg = parseOptionalNumber(
     values.coolingEnthalpyInsideKjKg,
     t("buildings:form.fieldEnthalpyInsideLabel"),
@@ -323,6 +340,7 @@ export function parseBuildingFormValues(
       nonOperationHoursPerDay,
       operationHoursPerDay,
       occupantCount: occupantCount ?? 0,
+      workingDaysPerYear: workingDaysPerYear ?? null,
       coolingEnthalpyInsideKjKg: coolingEnthalpyInsideKjKg ?? null,
       coolingEnthalpyOutsideKjKg: coolingEnthalpyOutsideKjKg ?? null,
       coolingEnthalpyHottestDayKjKg: coolingEnthalpyHottestDayKjKg ?? null,
@@ -450,6 +468,16 @@ export function BuildingFormFields({
               value={values.occupantCount}
               onValueChange={(raw) => set("occupantCount", raw)}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={id("workingDaysPerYear")}>{t("form.workingDaysPerYear")}</Label>
+            <NumberInput
+              integer
+              id={id("workingDaysPerYear")}
+              value={values.workingDaysPerYear}
+              onValueChange={(raw) => set("workingDaysPerYear", raw)}
+            />
+            <p className="text-xs text-muted-foreground">{t("form.workingDaysPerYearHint")}</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor={id("status")}>{t("form.status")}</Label>

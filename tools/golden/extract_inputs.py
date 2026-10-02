@@ -12,7 +12,9 @@ representation is written and the gap is listed in ``modelGaps`` (F03b registers
 """
 
 import argparse
+
 import json
+import openpyxl
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -42,6 +44,19 @@ ORIENTATION = {
     "SE": "southeast", "SW": "southwest",
 }
 LOSSES = "Losses env. before"
+
+
+FORMULA_WB = None
+# Distribution efficiencies that the workbook hard-codes inside formulas (no input cell): the formula text is
+# asserted, then the constants are used.
+UNPIPED_DHW_ETA = 0.98 * 0.85  # Overall gener. & distrib. eff.!F11 / L11 = D11*(1-(0.98*0.85))
+COOLING_DISTRIBUTION_ETA = 0.96  # F15 / L15 = D15*(1-96%)
+
+
+def check_formula(sheet: str, addr: str, expected: str) -> None:
+    actual = FORMULA_WB[sheet][addr].value
+    if str(actual).replace(" ", "") != expected.replace(" ", ""):
+        fail(f"formula mismatch at {sheet}!{addr}: expected {expected!r}, found {actual!r}")
 
 
 class Reader:
@@ -86,6 +101,7 @@ def building(r: Reader) -> dict:
         "nonOperationHoursPerDay": r.num(s, "D13", ("B13", "Non-operation hours")),
         "operationHoursPerDay": r.num(s, "D14", ("B14", "Operation hours per day")),
         "occupantCount": r.num(s, "D18", ("B18", "Average number of people")),
+        "workingDaysPerYear": int(r.num(s, "D19", ("C19", "[days/y]"))),  # Building_data!D19 = 250 (Lighting!J8 = D19 x D14)
         "coolingEnthalpyInsideKjKg": r.num(s, "D15", ("B15", "Average inside enthalpy")),
         "coolingEnthalpyOutsideKjKg": r.num(s, "D16", ("B16", "Average outside enthalpy")),
     }
@@ -455,7 +471,11 @@ def generation(r: Reader) -> list[dict]:
         ("cooling-before", "cooling", "before", "split_ac", r.num(s, "G15", ("C15", "Split systems")), r.num(s, "E15")),
         ("cooling-after", "cooling", "after", "split_ac", r.num(s, "M15", ("C15", "Split systems")), r.num(s, "K15")),
     ]
-    return [{"id": f"gen-{i}", "endUse": e, "scenario": sc, "sourceType": t, "efficiencyOrSeer": eff, "shareOfDemand": share}
+    check_formula(s, "F11", "=D11*(1-(0.98*0.85))")
+    check_formula(s, "L11", "=J11*(1-(0.98*0.85))")
+    unpiped = {"dhw-before": UNPIPED_DHW_ETA, "dhw-after": UNPIPED_DHW_ETA}  # electric DHW heaters: no pipe segments
+    return [{"id": f"gen-{i}", "endUse": e, "scenario": sc, "sourceType": t, "efficiencyOrSeer": eff, "shareOfDemand": share,
+             "distributionEfficiency": unpiped.get(i)}
             for i, e, sc, t, eff, share in items]
 
 
@@ -517,9 +537,13 @@ def cooling(r: Reader) -> tuple[list[dict], list[dict]]:
                             "gValue": r.num(s, f"H{row}", ("H3", "Reduction factor")),
                             "shadingFactor": r.num(s, f"I{row}", ("I3", "Shading reduction factor"))})
     systems = [
-        {"scenario": "before", "seer": r.num(s, "G37", ("G35", "Seasonal Coefficient"))},
-        {"scenario": "after", "seer": r.num(s, "O37", ("O35", "Seasonal Coefficient"))},
+        {"scenario": "before", "seer": r.num(s, "G37", ("G35", "Seasonal Coefficient")),
+         "distributionEfficiency": COOLING_DISTRIBUTION_ETA},
+        {"scenario": "after", "seer": r.num(s, "O37", ("O35", "Seasonal Coefficient")),
+         "distributionEfficiency": COOLING_DISTRIBUTION_ETA},
     ]
+    check_formula("Overall gener. & distrib. eff.", "F15", "=D15*(1-96%)")
+    check_formula("Overall gener. & distrib. eff.", "L15", "=J15*(1-96%)")
     return windows, systems
 
 
@@ -622,6 +646,8 @@ def main() -> None:
 
     wb = load_workbook(args.xlsx, args.sha256)
     r = Reader(Extractor(wb))
+    global FORMULA_WB
+    FORMULA_WB = openpyxl.load_workbook(args.xlsx)  # sha256 already verified above
 
     elements, wall_openings = envelope_elements(r)
     c_types, resistances = constructions(r)

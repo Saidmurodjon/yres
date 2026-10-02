@@ -6,9 +6,12 @@
   §1–2). Joriy kod hali v5 xatti-harakatida; o'tish — `docs/production/00-MASTER-PLAN.md`ning
   Faza 1i. Shundan kelib chiqadigan qoidalar:
   1. v5 dan qolgan, v7.20 dan farq qiladigan formulani "ataylab Excel bilan bir xil" deb himoya
-     qilmang — u tuzatilishi kerak bo'lgan tafovut. Eng muhimi: `generation.service.ts`ning
-     `(Q+Qd)·(2−η)`i (X33) — gaz qozonda iste'molni ~17 % kam, COP > 2 bo'lgan issiqlik nasosida
-     **manfiy** beradi. Kod izohlaridagi "kept as-is for parity" iboralari endi v5 ga ishora qiladi.
+     qilmang — u tuzatilishi kerak bo'lgan tafovut. **X33 yopildi (F04):** `generation.service.ts`
+     endi v7.20 dagidek `(Q+Qd)/η` (η — qozon FIK yoki COP); `η <= 0` → `RangeError`. Quvursiz
+     taqsimot yo'qotishi `generation_source.distribution_efficiency` (ISI: 0,98·0,85) va
+     `cooling_system.distribution_efficiency` (0,96) orqali; quvur segmentlari bor end-use'da faqat
+     quvur hisobi (qo'sh hisob yo'q). Yoritish soatlari `building.working_days_per_year` ×
+     kunlik ish soati (bo'sh bo'lsa eski xatti-harakat + `AuditResult.warnings`).
   2. Dvigatel o'zgarishi faqat golden test bilan birga kiritiladi (`3-dmtt/v7.20` fixture va
      `divergences.json`, `docs/production/06-sifat-test-va-reliz.md` §2) — o'zgarish qaysi tafovutni
      yopganini test ko'rsatsin. Maqsad hamon umuman "to'g'riroq" model emas, **v7.20 ga sodiqlik**:

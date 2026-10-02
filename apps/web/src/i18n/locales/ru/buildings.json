@@ -94,7 +94,11 @@
     "fieldEnthalpyOutsideLabel": "Энтальпия охлаждения (снаружи)",
     "fieldEnthalpyHottestLabel": "Энтальпия охлаждения (самый жаркий день)",
     "fieldLatitudeLabel": "Широта",
-    "fieldLongitudeLabel": "Долгота"
+    "fieldLongitudeLabel": "Долгота",
+    "workingDaysPerYear": "Рабочих дней в году",
+    "workingDaysPerYearHint": "Для часов работы освещения (дни × часы в сутки). Пусто — берутся дни отопительного сезона, результат помечается предупреждением.",
+    "fieldWorkingDaysLabel": "Рабочих дней в году",
+    "fieldWorkingDaysRange": "Рабочих дней в году должно быть от 1 до 366."
   },
   "detail": {
     "backToBuildings": "Назад к зданиям",

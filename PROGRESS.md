@@ -2460,3 +2460,15 @@ T06b — qamrab olinganlar:
   - D22 (F06): №14 gelio — `D64` va elektr tarifi o'rniga xom ishlab chiqarish va gaz tarifi.
 - `unexplained` = 0. Tekshiruv: type-check, biome, `bun run test` yashil (api 203, web 68).
 **Navbatda:** F04.
+
+## Faza 1 · F04 — generatsiya `(Q+Qd)/η`, taqsimot samaradorligi, ish kunlari (2026-10-02)
+
+- `generation.service.ts`: `(Q+Qd)/η` (X33 yopildi), `η <= 0`/NaN → `RangeError`; yangi `calculateUnpipedDistributionLossKwh`. COP > 1 da yakuniy energiya endi musbat (unit test).
+- Quvursiz taqsimot: `generation_source.distribution_efficiency` (nullable; ISI 0,98·0,85) — faqat end-use'da `distribution_system` segmentlari bo'lmasa; `cooling_system.distribution_efficiency` (NOT NULL, default 1; 0,96) → `CoolingResult.distributionLossKwh`, elektr = (yuk + yo'qotish)/SEER.
+- `building.working_days_per_year` (nullable): yoritish soatlari = kunlar × kunlik soat; bo'sh → eski (isitish mavsumi) + `AuditResult.warnings` (yangi maydon, PDF'da "Input warnings").
+- Migratsiya `0002_panoramic_quicksilver.sql` (faqat qo'shuvchi). Zod: η `gt(0).max(1)`. UI: tizimlar kartalarida ustun (η ∈ (0,1], tashqarisi inline xato), bino formasida "Yiliga ish kunlari" (uz/ru/en). PDF: sovutish jadvali + ogohlantirishlar. `calculation-engine.md`, `hisobot.md` yangilandi.
+- Ekstraktor: formula matni tekshiriladi (`F11`, `L11`, `F15`, `L15`) va konstantalar kirish sifatida beriladi; `Building_data!D19` = 250. `inputs.json` qayta chiqarildi.
+- Golden: sovutish "oldin" elektr 20 617,19 (`H15`) aynan; yoritish "oldin" 26 143 aynan; №13 delta 28 166,4. `divergences.json`: D20 endi "yoritish keyin" (Excel `Lighting!I13` = BoQ o'rnatilgan quvvat 4,59 W/m², dvigatel LED 7,4 W/m² — modelda kirish yo'q, `closesIn: Faza 2+`); `closesIn` yres-01 so'roviga ko'ra: D5 → P1 (Faza 2+), D6 → P2, D8 → P1, D9 → K22 (loyiha egasi), D11 → P1. unexplained = 0.
+- Qolgan farq faqat yuqori oqimdagi kirishlardan (issiqlik talabi 420 657 vs 251 383 — D3/D9; ISI talabi 32 421 vs 22 212 — DHW modeli ish kunlari/ΔT, README ro'yxatidagi ma'lum bo'shliq): `H7`/`N7`/`H11` formulalari to'g'ri, lekin ularning kirishlari hali farq qiladi, shuning uchun generatsiya id'lari mapping'ga kiritilmagan.
+- Tekshiruv: type-check, build, biome, `bun run test` (api 211, web 68) yashil.
+**Navbatda:** F05 (moliya).

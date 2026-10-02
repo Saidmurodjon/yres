@@ -272,6 +272,20 @@ class RowParser {
     return 0;
   }
 
+  /** Distribution efficiency η ∈ (0, 1]; out of range is an inline error, never silently clamped. */
+  efficiency(row: Row, key: string): number {
+    const value = this.num(row, key);
+    if (value <= 0 || value > 1) this.invalid.add(`${row.id}:${key}`);
+    return value;
+  }
+
+  /** Optional η: empty → null (no distribution loss). */
+  efficiencyOrNull(row: Row, key: string): number | null {
+    const value = this.numOrNull(row, key);
+    if (value != null && (value <= 0 || value > 1)) this.invalid.add(`${row.id}:${key}`);
+    return value;
+  }
+
   numOrNull(row: Row, key: string, opts?: { integer?: boolean }): number | null {
     const parsed = parseLocaleNumber(row[key] ?? "", this.locale, opts);
     if (parsed.ok) return parsed.value;
@@ -694,6 +708,10 @@ function GenerationSection({
       sourceType: s.sourceType,
       efficiencyOrSeer: formatNumberForInput(s.efficiencyOrSeer, locale),
       shareOfDemand: formatNumberForInput(s.shareOfDemand, locale),
+      distributionEfficiency:
+        s.distributionEfficiency == null
+          ? ""
+          : formatNumberForInput(s.distributionEfficiency, locale),
     })),
     scenario,
   );
@@ -709,6 +727,7 @@ function GenerationSection({
         sourceType: (r.sourceType || "gas_boiler") as GenerationSourceType,
         efficiencyOrSeer: parser.num(r, "efficiencyOrSeer"),
         shareOfDemand: parser.num(r, "shareOfDemand"),
+        distributionEfficiency: parser.efficiencyOrNull(r, "distributionEfficiency"),
       })),
     };
     if (!parser.ok) {
@@ -747,6 +766,11 @@ function GenerationSection({
         },
         { key: "efficiencyOrSeer", label: t("generation.columnEfficiency"), type: "number" },
         { key: "shareOfDemand", label: t("generation.columnShareOfDemand"), type: "number" },
+        {
+          key: "distributionEfficiency",
+          label: t("generation.columnDistributionEfficiency"),
+          type: "number",
+        },
       ]}
       rows={rows}
       onRowsChange={setRows}
@@ -756,6 +780,7 @@ function GenerationSection({
         sourceType: "gas_boiler",
         efficiencyOrSeer: "0.85",
         shareOfDemand: "1",
+        distributionEfficiency: "",
       })}
       onSave={handleSave}
       saving={replace.isPending}
@@ -868,6 +893,7 @@ function CoolingSystemsSection({
       id: s.id,
       description: s.description ?? "",
       seer: formatNumberForInput(s.seer, locale),
+      distributionEfficiency: formatNumberForInput(s.distributionEfficiency, locale),
     })),
     scenario,
   );
@@ -881,6 +907,7 @@ function CoolingSystemsSection({
       systems: rows.map((r) => ({
         description: r.description || null,
         seer: parser.num(r, "seer"),
+        distributionEfficiency: parser.efficiency(r, "distributionEfficiency"),
       })),
     };
     if (!parser.ok) {
@@ -904,10 +931,20 @@ function CoolingSystemsSection({
       columns={[
         { key: "description", label: t("coolingSystems.columnDescription"), type: "text" },
         { key: "seer", label: t("coolingSystems.columnSeer"), type: "number" },
+        {
+          key: "distributionEfficiency",
+          label: t("coolingSystems.columnDistributionEfficiency"),
+          type: "number",
+        },
       ]}
       rows={rows}
       onRowsChange={setRows}
-      onAddRow={() => ({ id: newLocalId(), description: "", seer: "3" })}
+      onAddRow={() => ({
+        id: newLocalId(),
+        description: "",
+        seer: "3",
+        distributionEfficiency: "1",
+      })}
       onSave={handleSave}
       saving={replace.isPending}
       error={error}

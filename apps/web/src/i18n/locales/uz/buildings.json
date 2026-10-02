@@ -94,7 +94,11 @@
     "fieldEnthalpyOutsideLabel": "Sovutish entalpiyasi (tashqi)",
     "fieldEnthalpyHottestLabel": "Sovutish entalpiyasi (eng issiq kun)",
     "fieldLatitudeLabel": "Kenglik (latitude)",
-    "fieldLongitudeLabel": "Uzunlik (longitude)"
+    "fieldLongitudeLabel": "Uzunlik (longitude)",
+    "workingDaysPerYear": "Yiliga ish kunlari",
+    "workingDaysPerYearHint": "Yoritish soatlari uchun (kunlar × kunlik ish soati). Bo'sh bo'lsa isitish mavsumi kunlari olinadi va natija ogohlantirish bilan belgilanadi.",
+    "fieldWorkingDaysLabel": "Yiliga ish kunlari",
+    "fieldWorkingDaysRange": "Yiliga ish kunlari 1 dan 366 gacha bo'lishi kerak."
   },
   "detail": {
     "backToBuildings": "Binolarga qaytish",

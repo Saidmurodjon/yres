@@ -68,6 +68,8 @@ export interface SpecificConsumptionRow {
 export interface AuditResult {
   buildingId: string;
   generatedAt: string;
+  /** Non-fatal input gaps that bias the result (e.g. missing working days → lighting hours understated). */
+  warnings: string[];
   summary: AuditSummary;
   envelopeAreas: EnvelopeAreaBreakdown;
   envelopeHeatLoss: EnvelopeHeatLossResult[];

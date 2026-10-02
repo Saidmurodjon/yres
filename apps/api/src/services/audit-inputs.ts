@@ -88,6 +88,7 @@ export interface AuditInputs {
     | "nonOperationHoursPerDay"
     | "operationHoursPerDay"
     | "occupantCount"
+    | "workingDaysPerYear"
     | "coolingEnthalpyInsideKjKg"
     | "coolingEnthalpyOutsideKjKg"
   >;
@@ -158,7 +159,7 @@ export interface AuditInputs {
     typeof coolingWindow,
     "scenario" | "orientation" | "areaM2" | "gValue" | "shadingFactor"
   >[];
-  coolingSystems: Row<typeof coolingSystem, "scenario" | "seer">[];
+  coolingSystems: Row<typeof coolingSystem, "scenario" | "seer" | "distributionEfficiency">[];
   dhwSources: Row<
     typeof dhwSource,
     "scenario" | "specificConsumptionLPersonDay" | "personsServed" | "energyCarrier"
@@ -178,7 +179,13 @@ export interface AuditInputs {
   >[];
   generationSources: Row<
     typeof generationSource,
-    "id" | "scenario" | "endUse" | "sourceType" | "efficiencyOrSeer" | "shareOfDemand"
+    | "id"
+    | "scenario"
+    | "endUse"
+    | "sourceType"
+    | "efficiencyOrSeer"
+    | "shareOfDemand"
+    | "distributionEfficiency"
   >[];
   lightingZones: Row<
     typeof lightingZone,

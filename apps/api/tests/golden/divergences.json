@@ -31,9 +31,8 @@
       "x": ["X81"],
       "title": "Window repair: infiltration share reallocated from ventilation to window",
       "status": "open",
-      "closesIn": "F07",
+      "closesIn": "P1 (Faza 2+)",
       "expectedIds": [
-        "financial.6.irrActual",
         "financial.6.npvActualUsd",
         "measures.10.actualSavingsKwh",
         "measures.10.actualSavingsUsd",
@@ -57,7 +56,7 @@
       "x": ["X84", "X96", "X33"],
       "title": "Heat pump SCOP 3.11 + backup MTB; fuel-free 'after' heat",
       "status": "open",
-      "closesIn": "F04",
+      "closesIn": "P2",
       "expectedIds": [
         "financial.11.irrActual",
         "financial.11.npvActualUsd",
@@ -73,14 +72,14 @@
         "measures.11.standardizedSavingsKwh",
         "measures.11.standardizedSavingsUsd"
       ],
-      "note": "Measure 11 (heat pump) — engine also applies (Q+Qd)·(2−η) (X33) to the 'before' boiler."
+      "note": "Measure 11 (heat pump): monthly SCOP (IHS!B16:J34) and the MTB back-up are not modelled — COP stays an input. X33 (Q+Qd)/η is closed by F04; what remains is upstream demand (D3/D9) and the DHW model."
     },
     {
       "id": "D8",
       "x": ["X65", "X66"],
       "title": "BEMS: Excel's 15 USD/m² estimate vs engine EMS_SAVINGS_RATE = 0.03",
       "status": "open",
-      "closesIn": "F06",
+      "closesIn": "P1",
       "expectedIds": [
         "financial.18.npvActualUsd",
         "measures.18.actualSavingsKwh",
@@ -92,14 +91,14 @@
         "measures.18.standardizedSavingsKwh",
         "measures.18.standardizedSavingsUsd"
       ],
-      "note": "Measure 18."
+      "note": "Measure 18 (EN ISO 52120 BEMS model)."
     },
     {
       "id": "D9",
       "x": [],
       "title": "Working-hours-only rule (K22): Socle 1/2, F1, windows, doors use working hours only",
       "status": "open",
-      "closesIn": "F08",
+      "closesIn": "K22 (loyiha egasi)",
       "expectedIds": [
         "envelope.after.total.walls",
         "envelope.after.total.windowsDoors",
@@ -113,7 +112,7 @@
       "x": ["X55"],
       "title": "Shading (measure 9) and cooling-demand reduction (measure 19) have no engine category",
       "status": "open",
-      "closesIn": "F07",
+      "closesIn": "P1",
       "expectedIds": [
         "financial.19.npvActualUsd",
         "financial.9.npvActualUsd",
@@ -144,7 +143,6 @@
         "financial.1.npvActualUsd",
         "financial.2.irrActual",
         "financial.2.npvActualUsd",
-        "financial.4.irrActual",
         "financial.4.npvActualUsd",
         "financial.7.irrActual",
         "financial.7.npvActualUsd",
@@ -161,7 +159,6 @@
         "measures.2.actualSavingsKwh",
         "measures.2.actualSavingsUsd",
         "measures.2.co2ReductionTonnesPerYear",
-        "measures.2.discountedPaybackActualYears",
         "measures.2.discountedPaybackStandardizedYears",
         "measures.2.irrStandardized",
         "measures.2.npvStandardizedUsd",
@@ -228,7 +225,6 @@
         "financial.15.npvActualUsd",
         "measures.15.actualSavingsKwh",
         "measures.15.actualSavingsUsd",
-        "measures.15.discountedPaybackActualYears",
         "measures.15.discountedPaybackStandardizedYears",
         "measures.15.irrStandardized",
         "measures.15.npvStandardizedUsd",
@@ -239,14 +235,13 @@
     {
       "id": "D20",
       "x": ["X98"],
-      "title": "Lighting hours: workbook uses Building_data!D19 x D14 = 2500 h/y (Lighting!J8), engine uses heating-season operation hours (1630)",
+      "title": "Lighting 'after': Excel takes the installed BoQ power (Lighting!I13 = sum(W x qty)/area = 4.59 W/m2); the engine uses the LED density (7.4 W/m2)",
       "status": "open",
-      "closesIn": "F04",
+      "closesIn": "Faza 2+",
       "expectedIds": [
         "financial.16.irrActual",
         "financial.16.npvActualUsd",
         "lighting.after.annualKwh",
-        "lighting.before.annualKwh",
         "measures.16.actualSavingsKwh",
         "measures.16.actualSavingsUsd",
         "measures.16.co2ReductionTonnesPerYear",
@@ -259,7 +254,7 @@
         "measures.16.standardizedSavingsKwh",
         "measures.16.standardizedSavingsUsd"
       ],
-      "note": "Lighting before 17045 vs 26143 kWh = ratio 1630/2500 exactly; after and measure 16 follow. Lighting!K13 utilisation factor (0.53083, constants only) is read as an input; L13 = D13*I13*2500*K13 = 15351.6."
+      "note": "Lighting 'before' now matches (F04: 2500 h/y from working days). After: 24736 vs 15352 kWh; L13 = D13*I13*2500*K13 needs an installed-power input the model lacks; measure 16 follows."
     },
     {
       "id": "D21",

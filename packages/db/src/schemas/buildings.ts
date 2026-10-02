@@ -47,6 +47,8 @@ export const building = sqliteTable(
     nonOperationHoursPerDay: real("non_operation_hours_per_day").notNull(),
     operationHoursPerDay: real("operation_hours_per_day").notNull(),
     occupantCount: integer("occupant_count").notNull().default(0),
+    // v7.20 `Building_data!D19`: lighting runs workingDays × operationHoursPerDay; null = heating-season days (old behaviour)
+    workingDaysPerYear: integer("working_days_per_year"),
     coolingEnthalpyInsideKjKg: real("cooling_enthalpy_inside_kj_kg"),
     coolingEnthalpyOutsideKjKg: real("cooling_enthalpy_outside_kj_kg"),
     coolingEnthalpyHottestDayKjKg: real("cooling_enthalpy_hottest_day_kj_kg"),

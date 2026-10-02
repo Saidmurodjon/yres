@@ -43,4 +43,16 @@ describe("CoolingService", () => {
       withoutMechVent.electricalEnergyForCoolingKwh,
     );
   });
+
+  it("adds the distribution loss to the electrical demand: (load + load·(1−η)) ÷ SEER", () => {
+    // v7.20 Overall gener. & distrib. eff.!F15/H15: D15 = 63 437.52 kWh, η_dist 0.96, SEER 3.2
+    const result = calculateCoolingResult("before", 63_437.52, 0, 0, 3.2, 0.96);
+    expect(result.distributionLossKwh).toBeCloseTo(63_437.52 * 0.04, 6);
+    expect(result.electricalEnergyForCoolingKwh).toBeCloseTo((63_437.52 * 1.04) / 3.2, 6);
+  });
+
+  it("η_dist = 1 (the default) means no distribution loss", () => {
+    const result = calculateCoolingResult("before", 3000, 1000, 0, 3.2);
+    expect(result.distributionLossKwh).toBe(0);
+  });
 });

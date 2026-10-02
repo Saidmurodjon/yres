@@ -4,7 +4,7 @@
     "sha256": "187d19962269d25ff6b241b97374ba868b9b38c94a9b9d27f5ac78ddf6dc5f6a",
     "version": "v7.20",
     "lastDecision": "X98",
-    "extractedAt": "2026-10-02T15:43:37+00:00",
+    "extractedAt": "2026-10-02T15:49:25+00:00",
     "extractor": "tools/golden/extract_inputs.py",
     "lampTypeNote": "lampTypes[].name '@LAMP:<key>' is replaced by LAMP_TYPE_NAMES[<key>] when the test loads the fixture"
   },
@@ -31,6 +31,7 @@
       "nonOperationHoursPerDay": 14,
       "operationHoursPerDay": 10,
       "occupantCount": 418,
+      "workingDaysPerYear": 250,
       "coolingEnthalpyInsideKjKg": 48.4,
       "coolingEnthalpyOutsideKjKg": 59.5
     },
@@ -1283,11 +1284,13 @@
     "coolingSystems": [
       {
         "scenario": "before",
-        "seer": 3.2
+        "seer": 3.2,
+        "distributionEfficiency": 0.96
       },
       {
         "scenario": "after",
-        "seer": 3.2
+        "seer": 3.2,
+        "distributionEfficiency": 0.96
       }
     ],
     "dhwSources": [
@@ -1415,7 +1418,8 @@
         "scenario": "before",
         "sourceType": "gas_boiler",
         "efficiencyOrSeer": 0.58,
-        "shareOfDemand": 1
+        "shareOfDemand": 1,
+        "distributionEfficiency": null
       },
       {
         "id": "gen-heating-after",
@@ -1423,7 +1427,8 @@
         "scenario": "after",
         "sourceType": "heat_pump",
         "efficiencyOrSeer": 3.110922843610943,
-        "shareOfDemand": 1
+        "shareOfDemand": 1,
+        "distributionEfficiency": null
       },
       {
         "id": "gen-dhw-before",
@@ -1431,7 +1436,8 @@
         "scenario": "before",
         "sourceType": "electric_boiler",
         "efficiencyOrSeer": 1,
-        "shareOfDemand": 1
+        "shareOfDemand": 1,
+        "distributionEfficiency": 0.833
       },
       {
         "id": "gen-dhw-after",
@@ -1439,7 +1445,8 @@
         "scenario": "after",
         "sourceType": "electric_boiler",
         "efficiencyOrSeer": 1,
-        "shareOfDemand": 0.30000000000000004
+        "shareOfDemand": 0.30000000000000004,
+        "distributionEfficiency": 0.833
       },
       {
         "id": "gen-dhw-solar-after",
@@ -1447,7 +1454,8 @@
         "scenario": "after",
         "sourceType": "solar_dhw",
         "efficiencyOrSeer": 1,
-        "shareOfDemand": 0.7
+        "shareOfDemand": 0.7,
+        "distributionEfficiency": null
       },
       {
         "id": "gen-cooling-before",
@@ -1455,7 +1463,8 @@
         "scenario": "before",
         "sourceType": "split_ac",
         "efficiencyOrSeer": 3.2,
-        "shareOfDemand": 1
+        "shareOfDemand": 1,
+        "distributionEfficiency": null
       },
       {
         "id": "gen-cooling-after",
@@ -1463,7 +1472,8 @@
         "scenario": "after",
         "sourceType": "split_ac",
         "efficiencyOrSeer": 3.2,
-        "shareOfDemand": 1
+        "shareOfDemand": 1,
+        "distributionEfficiency": null
       }
     ],
     "lightingZones": [

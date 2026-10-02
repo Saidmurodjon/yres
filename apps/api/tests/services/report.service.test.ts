@@ -100,6 +100,7 @@ function fullResultFixture(): AuditResult {
   return {
     buildingId: "b1",
     generatedAt: new Date().toISOString(),
+    warnings: [],
     summary: {
       currentEnergyUseKwhPerM2Year: 200,
       potentialEnergyUseKwhPerM2Year: 100,
@@ -348,6 +349,7 @@ function emptyResultFixture(): AuditResult {
   return {
     buildingId: "b1",
     generatedAt: new Date().toISOString(),
+    warnings: [],
     summary: {
       currentEnergyUseKwhPerM2Year: 0,
       potentialEnergyUseKwhPerM2Year: 0,

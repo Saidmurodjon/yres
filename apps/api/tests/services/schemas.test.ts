@@ -8,7 +8,12 @@ import {
   createNonEeMeasureSchema,
   selectMeasuresSchema,
 } from "../../src/schemas/measures";
-import { replaceEquipmentSchema, replaceVentilationSchema } from "../../src/schemas/systems";
+import {
+  replaceCoolingSystemsSchema,
+  replaceEquipmentSchema,
+  replaceGenerationSchema,
+  replaceVentilationSchema,
+} from "../../src/schemas/systems";
 
 const UUID = "123e4567-e89b-42d3-a456-426614174000";
 const many = <T>(n: number, make: (i: number) => T) => Array.from({ length: n }, (_, i) => make(i));
@@ -204,5 +209,40 @@ describe("chat and measures schema bounds (V-3)", () => {
       createNonEeMeasureSchema.safeParse({ description: "x".repeat(10_001), unitCostUsd: 1 })
         .success,
     ).toBe(false);
+  });
+});
+
+describe("distribution efficiency and working-days bounds (F04)", () => {
+  it("accepts η in (0, 1] and rejects 0, >1 and NaN-like values", () => {
+    const source = { endUse: "dhw", sourceType: "electric_boiler", efficiencyOrSeer: 1 };
+    const ok = (eta: unknown) =>
+      replaceGenerationSchema.safeParse({
+        scenario: "before",
+        sources: [{ ...source, distributionEfficiency: eta }],
+      }).success;
+    expect(ok(0.833)).toBe(true);
+    expect(ok(1)).toBe(true);
+    expect(ok(null)).toBe(true);
+    expect(ok(0)).toBe(false);
+    expect(ok(1.01)).toBe(false);
+    const cooling = (eta: unknown) =>
+      replaceCoolingSystemsSchema.safeParse({
+        scenario: "before",
+        systems: [{ seer: 3.2, distributionEfficiency: eta }],
+      }).success;
+    expect(cooling(0.96)).toBe(true);
+    expect(cooling(undefined)).toBe(true); // defaults to 1
+    expect(cooling(null)).toBe(false);
+    expect(cooling(0)).toBe(false);
+  });
+
+  it("workingDaysPerYear is 1..366 or null", () => {
+    const ok = (v: unknown) =>
+      createBuildingSchema.safeParse({ ...validBuilding, workingDaysPerYear: v }).success;
+    expect(ok(250)).toBe(true);
+    expect(ok(null)).toBe(true);
+    expect(ok(0)).toBe(false);
+    expect(ok(367)).toBe(false);
+    expect(ok(250.5)).toBe(false);
   });
 });

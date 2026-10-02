@@ -53,7 +53,10 @@ import {
   type SolarOrientationGroup,
   calculateHeatingEnergyBalance,
 } from "./gain.service";
-import { calculateFinalEnergyConsumptionKwh } from "./generation.service";
+import {
+  calculateFinalEnergyConsumptionKwh,
+  calculateUnpipedDistributionLossKwh,
+} from "./generation.service";
 import {
   type HeatLossBuildingParams,
   type MonthlyClimateInput,
@@ -144,6 +147,19 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
   const heatedVolumeM3 = blockAreas.reduce((sum, b) => sum + b.netVolumeM3, 0);
   const operationHoursDuringHeatingSeason =
     buildingRecord.operationHoursPerDay * buildingRecord.heatingSeasonDurationDays;
+
+  // v7.20 `Lighting!J8 = Building_data!D19 × D14`: lighting runs every working day of the year, not only
+  // the heating season. Without working days the old heating-season figure is used and flagged.
+  const warnings: string[] = [];
+  const lightingOperationHours =
+    buildingRecord.workingDaysPerYear != null
+      ? buildingRecord.workingDaysPerYear * buildingRecord.operationHoursPerDay
+      : operationHoursDuringHeatingSeason;
+  if (buildingRecord.workingDaysPerYear == null) {
+    warnings.push(
+      "workingDaysPerYear is not set: lighting uses heating-season operating hours, which understates annual lighting consumption.",
+    );
+  }
 
   const monthlyClimate: MonthlyClimateInput[] = buildingRecord.climateRegion.monthlyNormals
     .filter((m) => m.isHeatingSeasonMonth)
@@ -407,7 +423,7 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
             }),
           ),
         lampPowerDensity,
-        operationHoursDuringHeatingSeason,
+        lightingOperationHours,
       ),
     );
 
@@ -462,7 +478,8 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
       coolingWindowInputs,
       coolingRadiationByOrientation,
     );
-    const coolingSeer = coolingSystemRows.find((c) => c.scenario === scenario)?.seer ?? 1;
+    const coolingSystemRow = coolingSystemRows.find((c) => c.scenario === scenario);
+    const coolingSeer = coolingSystemRow?.seer ?? 1;
     const mechVentCoolingGainKwh =
       mechanicalSystem?.coolingSeasonHours &&
       buildingRecord.coolingEnthalpyInsideKjKg != null &&
@@ -482,6 +499,7 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
         equipmentResult.coolingSeasonConsumptionKwh,
         mechVentCoolingGainKwh,
         coolingSeer,
+        coolingSystemRow?.distributionEfficiency ?? 1,
       ),
     );
 
@@ -502,16 +520,25 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
           : source.endUse === "dhw"
             ? dhwAnnualNeedKwh
             : 0;
+      // An end-use with pipe segments keeps the pipe calculation; otherwise the source's own
+      // distribution efficiency applies (never both — that would double-count the loss).
+      const hasPipeSegments = distributionSystemRows.some(
+        (d) =>
+          d.scenario === scenario &&
+          d.systemType === (source.endUse === "heating" ? "heating" : "dhw"),
+      );
       const distributionLossForEndUseKwh =
         source.endUse === "heating"
           ? heatingDistributionLossKwh
           : source.endUse === "dhw"
             ? dhwDistributionLossKwh
             : 0;
-      if (source.endUse === "cooling") continue; // cooling's electricity is computed directly via SEER above, not this (2-Eff) transform
+      if (source.endUse === "cooling") continue; // cooling's electricity is computed directly via SEER above
 
       const sourceUsefulNeedKwh = usefulNeedKwh * source.shareOfDemand;
-      const sourceDistributionLossKwh = distributionLossForEndUseKwh * source.shareOfDemand;
+      const sourceDistributionLossKwh = hasPipeSegments
+        ? distributionLossForEndUseKwh * source.shareOfDemand
+        : calculateUnpipedDistributionLossKwh(sourceUsefulNeedKwh, source.distributionEfficiency);
       const finalEnergyConsumptionKwh = calculateFinalEnergyConsumptionKwh(
         sourceUsefulNeedKwh,
         sourceDistributionLossKwh,
@@ -822,6 +849,7 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
   return {
     buildingId,
     generatedAt: options.generatedAt,
+    warnings,
     summary,
     envelopeAreas,
     envelopeHeatLoss,

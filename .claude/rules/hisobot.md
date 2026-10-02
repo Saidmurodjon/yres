@@ -55,6 +55,8 @@ Holat ustuni: ✅ mavjud (`report.service.ts`da hozir bor) · ⚠️ qisman · �
 | Bo'lim | Manba | Holat |
 |---|---|---|
 | Oylik issiqlik/elektr/ISI sarfi grafigi, oxirgi 3 yil + o'rtacha (baseline) — namunaning Table 20-22 | `utilityBill` (`energyCarrier`, `year`, `month`, `consumptionKwh`/`consumptionNative`, `expenseLocal`) | ❌ — hisobotda umuman yo'q, faqat `apps/web`dagi `consumption-comparison-chart.tsx` dashboard'da bor |
+| Sovutish talabi va elektr (yuk, taqsimot yo'qotishi, SEER, elektr) | `result.cooling[]` (`totalCoolingLoadKwh`, `distributionLossKwh`, `seer`, `electricalEnergyForCoolingKwh`) | ✅ (F04) |
+| Kiritma ogohlantirishlari (masalan ish kunlari kiritilmagan) | `result.warnings[]` | ✅ (F04) |
 | Generatsiya/taqsimot samaradorligi jadvali (isitish/ISI/sovutish bo'yicha, namunaning Table 23/40) | `result.generation[]` (`endUse`, `usefulEnergyNeedKwh`, `distributionLossKwh`, `efficiencyOrSeer`, `finalEnergyConsumptionKwh`) | ❌ |
 | Baseline energiya balansi taqsimoti (issiqlik/elektr, maqsad bo'yicha % — namunaning Table 24/41) | `result.energyBalanceBreakdown[]` (`EnergyBalanceRow`, `section: "envelope_ventilation_loss"` va `"final_energy"`) | ❌ — bu maydon `AuditResult`da hisoblangan, lekin hisobotga hali chiqarilmagan |
 
