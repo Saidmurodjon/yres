@@ -1,4 +1,69 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef } from "react";
+
+/**
+ * State machine behind `useSyncedRows`, pure so it can be unit-tested without React (use-synced-rows.test.ts).
+ *
+ * The "server" action is the server data (or the reset key) changing; "clean" is a successful save. A refetch
+ * may land BEFORE `markClean()` (React Query gives no ordering between `await mutateAsync` returning and the
+ * invalidated query finishing): then the rows are dirty when the new server data arrives, so the sync is
+ * skipped and remembered (`missedSync`), and "clean" applies it. If the refetch lands AFTER, the rows are
+ * already clean and the "server" action applies it. Either order ends with the server's rows.
+ */
+export interface SyncedRowsState<T> {
+  rows: T[];
+  dirty: boolean;
+  missedSync: boolean;
+  lastSignature: string;
+  lastResetKey: string;
+}
+
+export type SyncedRowsAction<T> =
+  | { type: "server"; serverRows: T[]; signature: string; resetKey: string }
+  | { type: "edit"; updater: T[] | ((prev: T[]) => T[]) }
+  | { type: "clean"; serverRows: T[] };
+
+export function initialSyncedRowsState<T>(
+  serverRows: T[],
+  signature: string,
+  resetKey: string,
+): SyncedRowsState<T> {
+  return {
+    rows: serverRows,
+    dirty: false,
+    missedSync: false,
+    lastSignature: signature,
+    lastResetKey: resetKey,
+  };
+}
+
+export function syncedRowsReducer<T>(
+  state: SyncedRowsState<T>,
+  action: SyncedRowsAction<T>,
+): SyncedRowsState<T> {
+  switch (action.type) {
+    case "server": {
+      const { serverRows, signature, resetKey } = action;
+      if (resetKey !== state.lastResetKey) {
+        // A different scenario/section view: always show the server's rows (callers confirm discarding first).
+        return initialSyncedRowsState(serverRows, signature, resetKey);
+      }
+      if (signature === state.lastSignature) return state;
+      if (state.dirty) return { ...state, missedSync: true, lastSignature: signature };
+      return { ...state, rows: serverRows, lastSignature: signature };
+    }
+    case "edit": {
+      const rows =
+        typeof action.updater === "function" ? action.updater(state.rows) : action.updater;
+      return { ...state, rows, dirty: true };
+    }
+    case "clean": {
+      if (state.missedSync) {
+        return { ...state, rows: action.serverRows, dirty: false, missedSync: false };
+      }
+      return { ...state, dirty: false };
+    }
+  }
+}
 
 /**
  * Editable rows that follow the server's data WITHOUT trampling the user's edits (forms-and-numbers.md, U2).
@@ -23,37 +88,27 @@ export function useSyncedRows<T>(
   dirty: boolean;
   markClean: () => void;
 } {
-  const [rows, setRowsState] = useState<T[]>(serverRows);
-  const [dirty, setDirty] = useState(false);
-  const dirtyRef = useRef(false);
+  const signature = JSON.stringify(serverRows);
+  const [state, dispatch] = useReducer(
+    syncedRowsReducer as (s: SyncedRowsState<T>, a: SyncedRowsAction<T>) => SyncedRowsState<T>,
+    undefined,
+    () => initialSyncedRowsState(serverRows, signature, resetKey),
+  );
+  // The latest server rows, readable from callbacks without making them depend on a fresh array every render.
   const serverRowsRef = useRef(serverRows);
   serverRowsRef.current = serverRows;
-  const serverSignature = JSON.stringify(serverRows);
-  const lastSignature = useRef(serverSignature);
-  const lastResetKey = useRef(resetKey);
 
   useEffect(() => {
-    const resetChanged = resetKey !== lastResetKey.current;
-    const serverChanged = serverSignature !== lastSignature.current;
-    lastResetKey.current = resetKey;
-    lastSignature.current = serverSignature;
-    if (resetChanged || (serverChanged && !dirtyRef.current)) {
-      setRowsState(serverRowsRef.current);
-      dirtyRef.current = false;
-      setDirty(false);
-    }
-  }, [serverSignature, resetKey]);
+    dispatch({ type: "server", serverRows: serverRowsRef.current, signature, resetKey });
+  }, [signature, resetKey]);
 
   const setRows = useCallback((updater: T[] | ((prev: T[]) => T[])) => {
-    dirtyRef.current = true;
-    setDirty(true);
-    setRowsState(updater);
+    dispatch({ type: "edit", updater });
   }, []);
 
   const markClean = useCallback(() => {
-    dirtyRef.current = false;
-    setDirty(false);
+    dispatch({ type: "clean", serverRows: serverRowsRef.current });
   }, []);
 
-  return { rows, setRows, dirty, markClean };
+  return { rows: state.rows, setRows, dirty: state.dirty, markClean };
 }

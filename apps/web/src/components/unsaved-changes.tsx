@@ -26,8 +26,12 @@ interface UnsavedChangesContextValue {
   register: (key: string, dirty: boolean) => void;
   unregister: (key: string) => void;
   isDirtyRef: { readonly current: boolean };
-  clearAll: () => void;
-  /** Runs `action` at once when nothing is dirty, otherwise after the user confirms discarding. */
+  /**
+   * Runs `action` at once when nothing is dirty, otherwise after the user confirms discarding. The action
+   * MUST unmount or reset every dirty editor (a tab switch unmounts, a scenario switch changes the
+   * `useSyncedRows` reset key, closing a dialog sets its dirty to false): the provider does not clear the
+   * flags itself, because an editor that stayed mounted with unsaved text would then look clean.
+   */
   confirmDiscard: (action: () => void) => void;
 }
 
@@ -35,7 +39,6 @@ const NOOP_CONTEXT: UnsavedChangesContextValue = {
   register: () => {},
   unregister: () => {},
   isDirtyRef: { current: false },
-  clearAll: () => {},
   confirmDiscard: (action) => action(),
 };
 
@@ -69,8 +72,6 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const clearAll = useCallback(() => setDirtyByKey(new Map()), []);
-
   const confirmDiscard = useCallback((action: () => void) => {
     if (!isDirtyRef.current) {
       action();
@@ -89,8 +90,8 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
   const blocked = blocker.status === "blocked";
 
   const value = useMemo(
-    () => ({ register, unregister, isDirtyRef, clearAll, confirmDiscard }),
-    [register, unregister, clearAll, confirmDiscard],
+    () => ({ register, unregister, isDirtyRef, confirmDiscard }),
+    [register, unregister, confirmDiscard],
   );
 
   return (
@@ -104,7 +105,6 @@ export function UnsavedChangesProvider({ children }: { children: ReactNode }) {
         cancelLabel={t("unsaved.stay")}
         destructive
         onConfirm={() => {
-          clearAll();
           if (blocker.status === "blocked") blocker.proceed();
           else pendingAction?.();
           setPendingAction(null);
