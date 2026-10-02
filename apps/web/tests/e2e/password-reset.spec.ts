@@ -19,8 +19,10 @@ test("forgot-password flow is reachable from login and handles invalid tokens", 
   await page.getByRole("link", { name: "Forgot password?" }).click();
   await expect(page).toHaveURL(/\/forgot-password$/);
   const unique = Date.now();
-  // The route hydrates after its chunk loads; an email typed before that is wiped and the submit does
-  // nothing. Retry the whole fill → submit → confirmation step until hydration has settled.
+  // KNOWN OPEN FINDING (PROGRESS.md): inside the full suite the first fill on this freshly navigated
+  // page is sometimes not accepted (input stays empty, submit does nothing). Cause not determined —
+  // no reload, no remount, no console error. Retrying hides it for the suite; do not treat this as
+  // proof that real users cannot hit it.
   await expect(async () => {
     await page.getByLabel("Email").fill(`e2e-reset-${unique}@example.com`);
     await page.getByRole("button", { name: "Send reset link" }).click();
@@ -30,6 +32,7 @@ test("forgot-password flow is reachable from login and handles invalid tokens", 
   // A user opening the reset page without a token (link expired, or typed
   // in directly) sees a clear error and a way back, not a broken form.
   await page.goto("/reset-password");
+  await expect(page.getByText(/Invalid reset link\./)).toBeVisible();
   await expect(page.getByRole("link", { name: "Request a new one" })).toBeVisible();
   await page.getByRole("link", { name: "Request a new one" }).click();
   await expect(page).toHaveURL(/\/forgot-password$/);

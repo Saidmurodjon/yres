@@ -5,6 +5,10 @@ name: Deploy
 # Settings → Environments — see docs/deployment.md). Requires these repo
 # secrets to be set before this workflow can do anything:
 #   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, VITE_API_URL
+# NOT enabled for the working branch on purpose: production still runs the old Neon-era build, while
+# this code needs the production D1 that does not exist until D04 §C (owner) is done. Add a branch to
+# `workflow_run.branches` only after that cutover, by the owner's decision. A manual dispatch stops at
+# the migration step while apps/api/wrangler.toml still holds the placeholder database_id — keep it that way.
 on:
   workflow_run:
     workflows: [CI]

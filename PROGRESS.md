@@ -2127,3 +2127,27 @@ cd ../web && VITE_API_URL=https://yres-api.saidmurod.com bun run build \
 
 **Navbatda:** T01 (CI) — Playwright E2E bo'yicha qaror majburiy (nazoratchi talabi): CI'da E2E qadami bor va spec'lar yiqiladi,
 shuning uchun T01 da yo spec'larni tuzatish, yo E2E'ni aniq izoh bilan CI'dan chiqarish; "yashil" deb e'lon qilmaslik.
+
+## Faza 0 · T01 — CI gigiyenasi (2026-10-02)
+
+- `ci.yml`: `push` trigger'i `[main, "claude/**"]` (avval faqat `main` — u yo'q, CI push'da umuman ishlamagan); Playwright traces
+  `if: failure()` bilan `actions/upload-artifact@v4` ga (`apps/web/test-results/`, 7 kun). Postgres bandlari D03 da olingan.
+- `deploy.yml`: **filtrga ishchi branch QO'SHILMADI** (izoh bilan): production hali eski Neon-davri build'da, bu kod esa D1 talab
+  qiladi — avtomatik deploy faqat D04 §C dan keyin, egasi qarori bilan. Qo'lda `workflow_dispatch` placeholder `database_id` tufayli
+  migratsiya qadamida yiqiladi — bu ataylab saqlangan, soxta ID qo'yilmagan.
+- **Playwright E2E bo'yicha qaror: spec'lar TUZATILDI, CI'dan chiqarilmadi, skip yo'q** (commit 6c8a19a). Sabab: ro'yxatdan o'tish formasida
+  "Confirm password" va "Show password" paydo bo'lgan (`getByLabel("Password")` 3 elementga mos), reset-sahifa matni o'zgargan.
+  7/7 lokal yashil, 3 marta ketma-ket (Miniflare D1 backend bilan — E2E ham haqiqiy D1 yo'lini tekshiradi). E2E serveri har so'rovga
+  sintetik IP beradi (real limiter 10/daq — integratsiya testida qoplangan).
+- **OCHIQ TOPILMA (yashirilmagan):** `password-reset.spec` da `/login` → "Forgot password?" bosilgach `/forgot-password` ning email maydoniga
+  birinchi `fill()` **to'liq to'plamda** (yolg'iz yurganda emas) ba'zan qabul qilinmaydi: maydon bo'sh qoladi, submit hech narsa qilmaydi.
+  Aniqlangan: sahifa qayta yuklanmaydi (`framenavigated`/`load` yo'q), input elementi qayta mount qilinmaydi (`isConnected` true),
+  konsolda xato yo'q, sarlavha allaqachon yangi sahifaniki. **Sababi aniqlanmadi** (taxmin: yangi route'ga o'tishdan keyin React
+  hodisa-ishlovi tayyor bo'lguncha poyga, faqat Vite dev'da). Haqiqiy foydalanuvchida takrorlanishi ehtimoli past, lekin rad etilmagan.
+  Spec'da `toPass` retry bilan aylanib o'tilgan va shu haqda izoh qoldirilgan. Keyingi qadam: T06 (forma himoyasi) atrofida
+  production build (`vite preview`) da takrorlashga urinish; takrorlansa — kod tuzatilib, retry olib tashlanadi.
+- Tekshiruv (CI qadamlari lokal): `bun run lint`, `type-check`, `test` (118 yashil), `build`, `playwright test` (7/7).
+- **Loyiha egasi/nazoratchi uchun:** GitHub Actions natijasini tekshiring (bu sessiyada `gh` yo'q) — birinchi CI ishga tushishi `workerd`
+  binari va `playwright install --with-deps` ni ubuntu-latest da sinaydi; yiqilsa xatoni shu yerga yozing.
+
+**Navbatda:** T02 (S-1 akkauntni oldindan egallash, yo'l (b)).

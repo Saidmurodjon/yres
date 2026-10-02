@@ -56,6 +56,7 @@ await seedReferenceDataWithDb(testDb);
 // Every browser request arrives from the same address, so the real auth rate limiter (10 per minute
 // per IP — covered by tests/integration/rate-limit.test.ts) would throttle the E2E suite's many
 // sign-ups and flake it. Give each request its own synthetic client IP; this server exists only for E2E.
+// (When S-3 makes the limiter read only `cf-connecting-ip`, set that header here instead of x-forwarded-for.)
 let requestCounter = 0;
 
 Bun.serve({

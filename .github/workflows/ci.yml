@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # The working branch is claude/**; `main` does not exist yet, so a main-only trigger meant CI never
+    # ran on push. This only enables CI — deploy.yml deliberately keeps its own `main`-only filter.
+    branches: [main, "claude/**"]
   pull_request:
 
 concurrency:
@@ -41,6 +43,14 @@ jobs:
       - name: E2E test
         run: bunx playwright test
         working-directory: apps/web
+
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: apps/web/test-results/
+          retention-days: 7
 
       - name: Build
         run: bun run build
