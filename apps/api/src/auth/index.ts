@@ -12,7 +12,7 @@ export function createAuth(env: Env, db: Database) {
     // environment (Vite dev server vs API dev server locally; Cloudflare
     // Pages vs Workers in production).
     trustedOrigins: [env.WEB_URL],
-    database: drizzleAdapter(db, { provider: "pg" }),
+    database: drizzleAdapter(db, { provider: "sqlite" }),
     secret: env.BETTER_AUTH_SECRET,
     // `user.username` is NOT NULL with no DB-level default (see
     // packages/db/src/schemas/auth.ts) — every signup must set it, and email

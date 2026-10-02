@@ -7,3 +7,4 @@ export function createDb(d1: D1Database) {
 
 export type Database = ReturnType<typeof createDb>;
 export * from "./schemas";
+export * from "./batch";

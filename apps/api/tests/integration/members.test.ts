@@ -33,7 +33,11 @@ async function createBuilding(cookie: string) {
 async function inviteMember(buildingId: string, cookie: string, email: string, role: string) {
   return authRequest(
     `/api/buildings/${buildingId}/members`,
-    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, role }) },
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, role }),
+    },
     cookie,
   );
 }
@@ -67,7 +71,9 @@ describe("Building sharing (members + role-based access)", () => {
 
     // The editor can now see the building in their own building list...
     const listResponse = await authRequest("/api/buildings", {}, editor.cookie);
-    const { buildings } = (await listResponse.json()) as { buildings: { id: string; role: string }[] };
+    const { buildings } = (await listResponse.json()) as {
+      buildings: { id: string; role: string }[];
+    };
     const shared = buildings.find((b) => b.id === buildingId);
     expect(shared?.role).toBe("editor");
 
@@ -78,7 +84,11 @@ describe("Building sharing (members + role-based access)", () => {
     // ...and can write to it (envelope PUT).
     const putResponse = await authRequest(
       `/api/buildings/${buildingId}/envelope`,
-      { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(MINIMAL_ENVELOPE_PAYLOAD) },
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(MINIMAL_ENVELOPE_PAYLOAD),
+      },
       editor.cookie,
     );
     expect(putResponse.status).toBe(200);
@@ -98,7 +108,11 @@ describe("Building sharing (members + role-based access)", () => {
 
     const putResponse = await authRequest(
       `/api/buildings/${buildingId}/envelope`,
-      { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(MINIMAL_ENVELOPE_PAYLOAD) },
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(MINIMAL_ENVELOPE_PAYLOAD),
+      },
       viewer.cookie,
     );
     expect(putResponse.status).toBe(403);
@@ -163,7 +177,11 @@ describe("Building sharing (members + role-based access)", () => {
 
     const patchResponse = await authRequest(
       `/api/buildings/${buildingId}/members/${created.id}`,
-      { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: "editor" }) },
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "editor" }),
+      },
       owner.cookie,
     );
     expect(patchResponse.status).toBe(200);
@@ -173,7 +191,11 @@ describe("Building sharing (members + role-based access)", () => {
     // Now editor-level access should let them write.
     const putResponse = await authRequest(
       `/api/buildings/${buildingId}/envelope`,
-      { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(MINIMAL_ENVELOPE_PAYLOAD) },
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(MINIMAL_ENVELOPE_PAYLOAD),
+      },
       member.cookie,
     );
     expect(putResponse.status).toBe(200);

@@ -30,7 +30,10 @@ describe("Audit report (PDF)", () => {
 
   it("404s before any completed audit run exists", async () => {
     const { cookie } = await signUpTestUser();
-    const [tashkent] = await testDb.select().from(climateRegion).where(eq(climateRegion.name, "Tashkent"));
+    const [tashkent] = await testDb
+      .select()
+      .from(climateRegion)
+      .where(eq(climateRegion.name, "Tashkent"));
     if (!tashkent) throw new Error("Tashkent region not seeded");
 
     const buildingResponse = await authRequest(
@@ -50,11 +53,16 @@ describe("Audit report (PDF)", () => {
 
   it("returns a downloadable PDF for a building with a completed audit run", async () => {
     const { cookie } = await signUpTestUser();
-    const [tashkent] = await testDb.select().from(climateRegion).where(eq(climateRegion.name, "Tashkent"));
+    const [tashkent] = await testDb
+      .select()
+      .from(climateRegion)
+      .where(eq(climateRegion.name, "Tashkent"));
     if (!tashkent) throw new Error("Tashkent region not seeded");
 
     const materialsResponse = await authRequest("/api/reference/materials", {}, cookie);
-    const { materials } = (await materialsResponse.json()) as { materials: { id: string; name: string }[] };
+    const { materials } = (await materialsResponse.json()) as {
+      materials: { id: string; name: string }[];
+    };
     const bricks = materials.find((m) => m.name === "Bricks");
     if (!bricks) throw new Error("expected seeded material not found");
 
@@ -109,10 +117,18 @@ describe("Audit report (PDF)", () => {
       cookie,
     );
 
-    const runResponse = await authRequest(`/api/buildings/${building.id}/audit/run`, { method: "POST" }, cookie);
+    const runResponse = await authRequest(
+      `/api/buildings/${building.id}/audit/run`,
+      { method: "POST" },
+      cookie,
+    );
     expect(runResponse.status).toBe(201);
 
-    const reportResponse = await authRequest(`/api/buildings/${building.id}/audit/report`, {}, cookie);
+    const reportResponse = await authRequest(
+      `/api/buildings/${building.id}/audit/report`,
+      {},
+      cookie,
+    );
     expect(reportResponse.status).toBe(200);
     expect(reportResponse.headers.get("content-type")).toBe("application/pdf");
     expect(reportResponse.headers.get("content-disposition")).toContain("attachment");
@@ -126,7 +142,10 @@ describe("Audit report (PDF)", () => {
 
   it("404s for a building owned by a different user", async () => {
     const { cookie: ownerCookie } = await signUpTestUser();
-    const [tashkent] = await testDb.select().from(climateRegion).where(eq(climateRegion.name, "Tashkent"));
+    const [tashkent] = await testDb
+      .select()
+      .from(climateRegion)
+      .where(eq(climateRegion.name, "Tashkent"));
     if (!tashkent) throw new Error("Tashkent region not seeded");
 
     const buildingResponse = await authRequest(
@@ -141,7 +160,11 @@ describe("Audit report (PDF)", () => {
     const { building } = (await buildingResponse.json()) as { building: { id: string } };
 
     const { cookie: otherCookie } = await signUpTestUser();
-    const response = await authRequest(`/api/buildings/${building.id}/audit/report`, {}, otherCookie);
+    const response = await authRequest(
+      `/api/buildings/${building.id}/audit/report`,
+      {},
+      otherCookie,
+    );
     expect(response.status).toBe(404);
   });
 });

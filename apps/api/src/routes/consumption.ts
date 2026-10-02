@@ -1,5 +1,5 @@
-import { type energyCarrierEnum, utilityBill } from "@yres/db";
-import { and, eq } from "drizzle-orm";
+import { chunkRowsForInsert, type energyCarrierEnum, insertChunked, utilityBill } from "@yres/db";
+import { and, eq, getTableColumns } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
@@ -17,10 +17,15 @@ type EnergyCarrier = (typeof energyCarrierEnum.enumValues)[number];
  * directly, e.g. a real invoice with extra fees).
  */
 function withDerivedFields<
-  T extends { consumptionNative: number; expenseLocal?: number | null; tariffLocal?: number | null },
+  T extends {
+    consumptionNative: number;
+    expenseLocal?: number | null;
+    tariffLocal?: number | null;
+  },
 >(bill: T, energyCarrier: EnergyCarrier) {
   const expenseLocal =
-    bill.expenseLocal ?? (bill.tariffLocal != null ? bill.consumptionNative * bill.tariffLocal : null);
+    bill.expenseLocal ??
+    (bill.tariffLocal != null ? bill.consumptionNative * bill.tariffLocal : null);
   return {
     ...bill,
     consumptionKwh: computeConsumptionKwh(energyCarrier, bill.consumptionNative),
@@ -88,9 +93,16 @@ consumptionRoutes.post("/:id/consumption", async (c) => {
     buildingId,
   }));
 
-  const inserted = await db.insert(utilityBill).values(rows).returning();
+  // One INSERT ... RETURNING per ≤100-parameter chunk, all in one atomic batch.
+  const chunks = chunkRowsForInsert(rows, Object.keys(getTableColumns(utilityBill)).length);
+  const statements: BatchItem<"sqlite">[] = chunks.map((chunk) =>
+    db.insert(utilityBill).values(chunk).returning(),
+  );
+  const results = (await db.batch(
+    statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]],
+  )) as unknown as (typeof utilityBill.$inferSelect)[][];
 
-  return c.json({ bills: inserted }, 201);
+  return c.json({ bills: results.flat() }, 201);
 });
 
 // PUT /:id/consumption - bulk-replace one carrier's bills for one year (the
@@ -125,7 +137,7 @@ consumptionRoutes.put("/:id/consumption", async (c) => {
     year,
   }));
 
-  const statements: BatchItem<"pg">[] = [
+  const statements: BatchItem<"sqlite">[] = [
     db
       .delete(utilityBill)
       .where(
@@ -137,9 +149,9 @@ consumptionRoutes.put("/:id/consumption", async (c) => {
       ),
   ];
   if (rows.length > 0) {
-    statements.push(db.insert(utilityBill).values(rows));
+    statements.push(...insertChunked(db, utilityBill, rows));
   }
-  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 
   return c.json({ energyCarrier, year, count: rows.length });
 });

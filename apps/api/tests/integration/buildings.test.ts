@@ -1,9 +1,9 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import app from "../../src/index";
+import { seedClimateRegion as seedClimateRegionRow } from "../helpers/seed-helpers";
 import { authRequest, signUpTestUser } from "../helpers/test-auth";
 import { closeTestDb, resetTestDb } from "../helpers/test-db";
 import { testEnv } from "../helpers/test-env";
-import { seedClimateRegion as seedClimateRegionRow } from "../helpers/seed-helpers";
 
 async function seedClimateRegion() {
   const region = await seedClimateRegionRow();
@@ -51,7 +51,9 @@ describe("Buildings API", () => {
     );
 
     expect(createResponse.status).toBe(201);
-    const { building } = (await createResponse.json()) as { building: { id: string; userId: string; name: string } };
+    const { building } = (await createResponse.json()) as {
+      building: { id: string; userId: string; name: string };
+    };
     expect(building.name).toBe("Test Hospital");
     expect(building.userId).toBe(userId);
 
@@ -91,7 +93,11 @@ describe("Buildings API", () => {
     );
     const { building } = (await createResponse.json()) as { building: { id: string } };
 
-    const intruderResponse = await authRequest(`/api/buildings/${building.id}`, {}, intruder.cookie);
+    const intruderResponse = await authRequest(
+      `/api/buildings/${building.id}`,
+      {},
+      intruder.cookie,
+    );
     expect(intruderResponse.status).toBe(404);
   });
 
@@ -123,7 +129,11 @@ describe("Buildings API", () => {
     const { building: updated } = (await updateResponse.json()) as { building: { name: string } };
     expect(updated.name).toBe("Renamed Hospital");
 
-    const deleteResponse = await authRequest(`/api/buildings/${building.id}`, { method: "DELETE" }, cookie);
+    const deleteResponse = await authRequest(
+      `/api/buildings/${building.id}`,
+      { method: "DELETE" },
+      cookie,
+    );
     expect(deleteResponse.status).toBe(204);
 
     const getAfterDelete = await authRequest(`/api/buildings/${building.id}`, {}, cookie);
@@ -148,7 +158,11 @@ describe("Buildings API", () => {
 
     const response = await authRequest("/api/buildings?page=1&pageSize=2", {}, cookie);
     expect(response.status).toBe(200);
-    const body = (await response.json()) as { buildings: unknown[]; page: number; pageSize: number };
+    const body = (await response.json()) as {
+      buildings: unknown[];
+      page: number;
+      pageSize: number;
+    };
     expect(body.buildings).toHaveLength(2);
     expect(body.page).toBe(1);
     expect(body.pageSize).toBe(2);

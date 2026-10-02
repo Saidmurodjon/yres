@@ -15,6 +15,15 @@ API_URL = "http://localhost:3000"
 WEB_URL = "http://localhost:5173"
 EMAIL_FROM = "YRES <onboarding@resend.dev>"
 
+# D1 (ADR-016). `wrangler dev` and `wrangler d1 migrations apply DB --local` use a
+# local Miniflare database, so `database_id` is just a placeholder here. Migrations
+# live in packages/db/drizzle and are applied only through wrangler (database.md).
+[[d1_databases]]
+binding = "DB"
+database_name = "yres-dev"
+database_id = "local-dev"
+migrations_dir = "../../packages/db/drizzle"
+
 [[r2_buckets]]
 binding = "REPORTS_BUCKET"
 bucket_name = "yres-reports-dev"
@@ -29,7 +38,7 @@ bucket_name = "yres-chat-attachments-dev"
 
 # Real-time notifications/chat (docs/social-features.md) — ConversationRoom
 # is one DO instance per chat conversation (fan-out point for that
-# conversation's WebSocket connections, Postgres stays the source of
+# conversation's WebSocket connections, D1 stays the source of
 # truth); UserNotificationChannel is one instance per user (pushes live
 # bell updates). Both classes are exported from src/index.ts — Cloudflare
 # binds `class_name` to whatever the Worker's entry module exports under
@@ -65,7 +74,7 @@ type = "ratelimit"
 namespace_id = "1001"
 simple = { limit = 10, period = 60 }
 
-# Secrets (DATABASE_URL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
+# Secrets (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
 # BETTER_AUTH_SECRET, RESEND_API_KEY, SENTRY_DSN, YANDEX_STATIC_MAPS_API_KEY)
 # are set via `wrangler secret put <NAME>` (add `--env production` for the
 # production environment below) and are never stored in this file. See
@@ -83,6 +92,14 @@ NODE_ENV = "production"
 API_URL = "https://yres-api.saidmurod.com"
 WEB_URL = "https://yres.saidmurod.com"
 EMAIL_FROM = "YRES <noreply@saidmurod.com>"
+
+# `database_id` is a placeholder until the owner creates the production D1 (D04 §C) —
+# do not deploy before then.
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "yres-production"
+database_id = "REPLACE_WITH_PRODUCTION_D1_ID"
+migrations_dir = "../../packages/db/drizzle"
 
 [[env.production.r2_buckets]]
 binding = "REPORTS_BUCKET"

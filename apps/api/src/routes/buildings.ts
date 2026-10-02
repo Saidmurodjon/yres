@@ -1,8 +1,9 @@
 import { type Database, building, buildingMember } from "@yres/db";
 import type { BuildingStatus, BuildingType } from "@yres/types";
-import { and, count, desc, eq, ilike, inArray, or, sum } from "drizzle-orm";
+import { and, count, desc, eq, inArray, or, sum } from "drizzle-orm";
 import { Hono } from "hono";
 import { canWrite, findAccessibleBuilding, findOwnedBuilding } from "../lib/building-access";
+import { buildingSearchText, likeContains, normalizeSearchText } from "../lib/search";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import {
   buildingListQuerySchema,
@@ -32,11 +33,10 @@ function buildingFilterConditions(filters: {
   status?: BuildingStatus;
 }) {
   return [
+    // `search_text` is the app-normalized (Unicode-lowercased) name + location — SQLite LIKE can't
+    // case-fold Cyrillic/Uzbek letters on the raw columns.
     filters.search
-      ? or(
-          ilike(building.name, `%${filters.search}%`),
-          ilike(building.location, `%${filters.search}%`),
-        )
+      ? likeContains(building.searchText, normalizeSearchText(filters.search))
       : undefined,
     filters.type ? eq(building.buildingType, filters.type) : undefined,
     filters.status ? eq(building.status, filters.status) : undefined,
@@ -167,7 +167,11 @@ buildingRoutes.post("/", async (c) => {
 
   const [created] = await db
     .insert(building)
-    .values({ ...parsed.data, userId: user.id })
+    .values({
+      ...parsed.data,
+      userId: user.id,
+      searchText: buildingSearchText(parsed.data.name, parsed.data.location),
+    })
     .returning();
 
   return c.json({ building: created }, 201);
@@ -209,7 +213,14 @@ buildingRoutes.put("/:id", async (c) => {
 
   const [updated] = await db
     .update(building)
-    .set({ ...parsed.data, updatedAt: new Date() })
+    .set({
+      ...parsed.data,
+      searchText: buildingSearchText(
+        parsed.data.name ?? access.building.name,
+        parsed.data.location ?? access.building.location,
+      ),
+      updatedAt: new Date(),
+    })
     .where(eq(building.id, id))
     .returning();
 

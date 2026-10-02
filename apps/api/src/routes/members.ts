@@ -76,7 +76,9 @@ membersRoutes.post("/:id/members", async (c) => {
   const [existingMember] = await db
     .select()
     .from(buildingMember)
-    .where(and(eq(buildingMember.buildingId, buildingId), eq(buildingMember.userId, invitedUser.id)))
+    .where(
+      and(eq(buildingMember.buildingId, buildingId), eq(buildingMember.userId, invitedUser.id)),
+    )
     .limit(1);
   if (existingMember) {
     return c.json({ error: "That user already has access to this building." }, 400);

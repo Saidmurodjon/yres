@@ -37,7 +37,10 @@ describe("Lighting/equipment/renewables end-to-end wiring into AuditEngine", () 
 
   it("folds lighting + equipment consumption into the summary KPIs and offsets 'after' with PV production", async () => {
     const { cookie } = await signUpTestUser();
-    const [tashkent] = await testDb.select().from(climateRegion).where(eq(climateRegion.name, "Tashkent"));
+    const [tashkent] = await testDb
+      .select()
+      .from(climateRegion)
+      .where(eq(climateRegion.name, "Tashkent"));
     if (!tashkent) throw new Error("Tashkent region not seeded");
 
     const buildingResponse = await authRequest(
@@ -45,7 +48,11 @@ describe("Lighting/equipment/renewables end-to-end wiring into AuditEngine", () 
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...BUILDING_INPUT, climateRegionId: tashkent.id, netCooledFloorAreaM2: 500 }),
+        body: JSON.stringify({
+          ...BUILDING_INPUT,
+          climateRegionId: tashkent.id,
+          netCooledFloorAreaM2: 500,
+        }),
       },
       cookie,
     );
@@ -175,7 +182,11 @@ describe("Lighting/equipment/renewables end-to-end wiring into AuditEngine", () 
       proposedForImplementation: true,
     });
 
-    const runResponse = await authRequest(`/api/buildings/${building.id}/audit/run`, { method: "POST" }, cookie);
+    const runResponse = await authRequest(
+      `/api/buildings/${building.id}/audit/run`,
+      { method: "POST" },
+      cookie,
+    );
     expect(runResponse.status).toBe(201);
     const { result } = (await runResponse.json()) as {
       result: {
@@ -187,11 +198,16 @@ describe("Lighting/equipment/renewables end-to-end wiring into AuditEngine", () 
       };
     };
 
-    const lightingBeforeKwh = result.lighting.find((l) => l.scenario === "before")?.annualConsumptionKwh ?? 0;
-    const lightingAfterKwh = result.lighting.find((l) => l.scenario === "after")?.annualConsumptionKwh ?? 0;
-    const equipmentBeforeKwh = result.equipment.find((e) => e.scenario === "before")?.annualConsumptionKwh ?? 0;
-    const equipmentAfterKwh = result.equipment.find((e) => e.scenario === "after")?.annualConsumptionKwh ?? 0;
-    const pvProduction = result.renewableProduction.find((r) => r.systemType === "pv")?.annualProductionKwh ?? 0;
+    const lightingBeforeKwh =
+      result.lighting.find((l) => l.scenario === "before")?.annualConsumptionKwh ?? 0;
+    const lightingAfterKwh =
+      result.lighting.find((l) => l.scenario === "after")?.annualConsumptionKwh ?? 0;
+    const equipmentBeforeKwh =
+      result.equipment.find((e) => e.scenario === "before")?.annualConsumptionKwh ?? 0;
+    const equipmentAfterKwh =
+      result.equipment.find((e) => e.scenario === "after")?.annualConsumptionKwh ?? 0;
+    const pvProduction =
+      result.renewableProduction.find((r) => r.systemType === "pv")?.annualProductionKwh ?? 0;
 
     // 500 m² * 25 W/m² (incandescent) * 1630 h * 0.3 / 1000 = 6112.5 kWh
     expect(lightingBeforeKwh).toBeCloseTo(6112.5, 1);
@@ -214,6 +230,9 @@ describe("Lighting/equipment/renewables end-to-end wiring into AuditEngine", () 
     expect(result.summary.potentialEnergyUseKwhPerM2Year).toBe(0);
 
     const lightingMeasure = result.measures.find((m) => m.category === "lighting");
-    expect(lightingMeasure?.standardizedAnnualSavingsKwh).toBeCloseTo(lightingBeforeKwh - lightingAfterKwh, 1);
+    expect(lightingMeasure?.standardizedAnnualSavingsKwh).toBeCloseTo(
+      lightingBeforeKwh - lightingAfterKwh,
+      1,
+    );
   });
 });

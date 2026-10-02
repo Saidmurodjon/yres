@@ -4,6 +4,7 @@ import {
   constructionType,
   envelopeElement,
   envelopeOpening,
+  insertChunked,
   openingType,
 } from "@yres/db";
 import { and, eq, inArray } from "drizzle-orm";
@@ -57,15 +58,15 @@ envelopeRoutes.get("/:id/envelope", async (c) => {
 // elements/openings/construction types for one scenario. Deletes the
 // existing rows for that building + scenario and inserts the new payload.
 //
-// The neon-http Postgres driver doesn't support interactive transactions
-// (`db.transaction()` throws at runtime), so atomicity here comes from
-// `db.batch()`, which sends a fixed set of prepared statements to Neon in a
-// single HTTP round trip. Because batch statements can't read each other's
-// results, ids for new rows are generated client-side up front so child rows
-// (layers, elements, openings) can reference their parents by id from the
-// start; the payload cross-references construction/opening types by a
-// client-supplied `code` rather than a DB id, since those ids don't exist
-// until this request creates them.
+// D1 has no interactive transactions, so atomicity here comes from `db.batch()`
+// (one SQL transaction: if any statement fails, everything rolls back). Because
+// batch statements can't read each other's results, ids for new rows are
+// generated client-side up front so child rows (layers, elements, openings) can
+// reference their parents by id from the start; the payload cross-references
+// construction/opening types by a client-supplied `code` rather than a DB id,
+// since those ids don't exist until this request creates them. Array bounds in
+// schemas/envelope.ts keep the batch inside the D1 query budget (worst case 33
+// statements + ≤ 5 for session/access/retrofit lookups).
 envelopeRoutes.put("/:id/envelope", async (c) => {
   const buildingId = c.req.param("id");
   const body = await c.req.json().catch(() => null);
@@ -104,9 +105,7 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
 
   const retrofitOfCodes = [
     ...new Set(
-      constructionTypes
-        .map((ct) => ct.retrofitOfCode)
-        .filter((code): code is string => !!code),
+      constructionTypes.map((ct) => ct.retrofitOfCode).filter((code): code is string => !!code),
     ),
   ];
   const beforeConstructionTypeIdByCode = new Map<string, string>();
@@ -125,7 +124,9 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
     const unresolved = retrofitOfCodes.filter((code) => !beforeConstructionTypeIdByCode.has(code));
     if (unresolved.length > 0) {
       return c.json(
-        { error: `constructionTypes reference unknown retrofitOfCode(s): ${unresolved.join(", ")}` },
+        {
+          error: `constructionTypes reference unknown retrofitOfCode(s): ${unresolved.join(", ")}`,
+        },
         400,
       );
     }
@@ -260,7 +261,7 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
       and(eq(constructionType.buildingId, buildingId), eq(constructionType.scenario, scenario)),
     );
 
-  const statements: BatchItem<"pg">[] = [
+  const statements: BatchItem<"sqlite">[] = [
     deleteElements,
     deleteOpeningTypes,
     deleteConstructionTypes,
@@ -269,27 +270,27 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
   if (buildingBlockRows) {
     statements.push(db.delete(buildingBlock).where(eq(buildingBlock.buildingId, buildingId)));
     if (buildingBlockRows.length > 0) {
-      statements.push(db.insert(buildingBlock).values(buildingBlockRows));
+      statements.push(...insertChunked(db, buildingBlock, buildingBlockRows));
     }
   }
 
   if (constructionTypeRows.length > 0) {
-    statements.push(db.insert(constructionType).values(constructionTypeRows));
+    statements.push(...insertChunked(db, constructionType, constructionTypeRows));
   }
   if (constructionLayerRows.length > 0) {
-    statements.push(db.insert(constructionLayer).values(constructionLayerRows));
+    statements.push(...insertChunked(db, constructionLayer, constructionLayerRows));
   }
   if (openingTypeRows.length > 0) {
-    statements.push(db.insert(openingType).values(openingTypeRows));
+    statements.push(...insertChunked(db, openingType, openingTypeRows));
   }
   if (envelopeElementRows.length > 0) {
-    statements.push(db.insert(envelopeElement).values(envelopeElementRows));
+    statements.push(...insertChunked(db, envelopeElement, envelopeElementRows));
   }
   if (envelopeOpeningRows.length > 0) {
-    statements.push(db.insert(envelopeOpening).values(envelopeOpeningRows));
+    statements.push(...insertChunked(db, envelopeOpening, envelopeOpeningRows));
   }
 
-  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 
   return c.json({
     scenario,

@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { seedClimateRegion, seedMaterial } from "../helpers/seed-helpers";
 import { authRequest, signUpTestUser } from "../helpers/test-auth";
 import { closeTestDb, resetTestDb } from "../helpers/test-db";
-import { seedClimateRegion, seedMaterial } from "../helpers/seed-helpers";
 
 const VALID_BUILDING_INPUT = {
   name: "Test Hospital",
@@ -45,7 +45,10 @@ describe("Envelope API", () => {
 
     const response = await authRequest(`/api/buildings/${buildingId}/envelope`, {}, cookie);
     expect(response.status).toBe(200);
-    const body = (await response.json()) as { envelopeElements: unknown[]; constructionTypes: unknown[] };
+    const body = (await response.json()) as {
+      envelopeElements: unknown[];
+      constructionTypes: unknown[];
+    };
     expect(body.envelopeElements).toEqual([]);
     expect(body.constructionTypes).toEqual([]);
   });
@@ -91,7 +94,11 @@ describe("Envelope API", () => {
 
     const putResponse = await authRequest(
       `/api/buildings/${buildingId}/envelope`,
-      { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
       cookie,
     );
     expect(putResponse.status).toBe(200);
@@ -135,7 +142,11 @@ describe("Envelope API", () => {
 
     const response = await authRequest(
       `/api/buildings/${buildingId}/envelope`,
-      { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) },
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
       cookie,
     );
     expect(response.status).toBe(400);

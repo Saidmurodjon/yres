@@ -4,7 +4,10 @@ import { calculateRenewableProduction } from "../../src/services/renewable.servi
 describe("RenewableService", () => {
   it("sums monthly production per system type, matching PV!C25/Solar DHW!I13's annual totals", () => {
     const result = calculateRenewableProduction([
-      { systemType: "pv", monthlyProductionKwh: [910, 1100, 1300, 1450, 1600, 1623, 1600, 1500, 1300, 1100, 950, 910] },
+      {
+        systemType: "pv",
+        monthlyProductionKwh: [910, 1100, 1300, 1450, 1600, 1623, 1600, 1500, 1300, 1100, 950, 910],
+      },
       { systemType: "solar_dhw", monthlyProductionKwh: Array(12).fill(660.65) },
     ]);
 

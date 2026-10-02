@@ -1,3 +1,11 @@
+// Array bounds keep each PUT's single db.batch() inside the D1 query budget (database.md: ≤ 40
+// per request on Workers Free; session + access check take ≤ 4). Worst case = 1 delete + ceil(rows ÷ floor(100 ÷ columns)):
+//   ventilation 20 ÷ 11 (9 cols)  → 3      dhw 20 ÷ 14 (7)           → 3
+//   distribution 50 ÷ 12 (8)      → 6      generation 20 ÷ 14 (7)    → 3
+//   cooling windows 100 ÷ 14 (7)  → 9      cooling systems 50 ÷ 20 (5) → 4
+//   lighting 100 ÷ 14 (7)         → 9      equipment 200 ÷ 9 (11)    → 24
+//   renewables: 1 + 2 (20 ÷ 14) + 10 (240 monthly rows ÷ 25) → 13
+// The heaviest (equipment, 24) + 4 = 28 ≤ 40.
 import {
   distributionSystemTypeEnum,
   endUseEnum,
@@ -20,7 +28,7 @@ const ventilationSystemInputSchema = z.object({
   coolingSeasonHours: z.number().nonnegative().nullable().optional(),
 });
 export const replaceVentilationSchema = scenarioBodySchema.extend({
-  systems: z.array(ventilationSystemInputSchema).default([]),
+  systems: z.array(ventilationSystemInputSchema).max(20).default([]),
 });
 export type ReplaceVentilationInput = z.infer<typeof replaceVentilationSchema>;
 
@@ -31,7 +39,7 @@ const dhwSourceInputSchema = z.object({
   personsServed: z.number().int().nonnegative(),
 });
 export const replaceDhwSchema = scenarioBodySchema.extend({
-  sources: z.array(dhwSourceInputSchema).default([]),
+  sources: z.array(dhwSourceInputSchema).max(20).default([]),
 });
 export type ReplaceDhwInput = z.infer<typeof replaceDhwSchema>;
 
@@ -43,7 +51,7 @@ const distributionSystemInputSchema = z.object({
   meanFluidTempC: z.number(),
 });
 export const replaceDistributionSchema = scenarioBodySchema.extend({
-  systems: z.array(distributionSystemInputSchema).default([]),
+  systems: z.array(distributionSystemInputSchema).max(50).default([]),
 });
 export type ReplaceDistributionInput = z.infer<typeof replaceDistributionSchema>;
 
@@ -54,7 +62,7 @@ const generationSourceInputSchema = z.object({
   shareOfDemand: z.number().min(0).max(1).default(1),
 });
 export const replaceGenerationSchema = scenarioBodySchema.extend({
-  sources: z.array(generationSourceInputSchema).default([]),
+  sources: z.array(generationSourceInputSchema).max(20).default([]),
 });
 export type ReplaceGenerationInput = z.infer<typeof replaceGenerationSchema>;
 
@@ -65,7 +73,7 @@ const coolingWindowInputSchema = z.object({
   shadingFactor: z.number().min(0).max(1).default(1),
 });
 export const replaceCoolingWindowsSchema = scenarioBodySchema.extend({
-  windows: z.array(coolingWindowInputSchema).default([]),
+  windows: z.array(coolingWindowInputSchema).max(100).default([]),
 });
 export type ReplaceCoolingWindowsInput = z.infer<typeof replaceCoolingWindowsSchema>;
 
@@ -74,7 +82,7 @@ const coolingSystemInputSchema = z.object({
   seer: z.number().positive(),
 });
 export const replaceCoolingSystemsSchema = scenarioBodySchema.extend({
-  systems: z.array(coolingSystemInputSchema).default([]),
+  systems: z.array(coolingSystemInputSchema).max(50).default([]),
 });
 export type ReplaceCoolingSystemsInput = z.infer<typeof replaceCoolingSystemsSchema>;
 
@@ -91,7 +99,7 @@ const lightingZoneInputSchema = z.object({
   utilizationFactor: z.number().min(0).max(1),
 });
 export const replaceLightingSchema = scenarioBodySchema.extend({
-  zones: z.array(lightingZoneInputSchema).default([]),
+  zones: z.array(lightingZoneInputSchema).max(100).default([]),
 });
 export type ReplaceLightingInput = z.infer<typeof replaceLightingSchema>;
 
@@ -106,7 +114,7 @@ const equipmentItemInputSchema = z.object({
   coolingUtilizationFactor: z.number().min(0).max(1).default(1),
 });
 export const replaceEquipmentSchema = scenarioBodySchema.extend({
-  items: z.array(equipmentItemInputSchema).default([]),
+  items: z.array(equipmentItemInputSchema).max(200).default([]),
 });
 export type ReplaceEquipmentInput = z.infer<typeof replaceEquipmentSchema>;
 
@@ -126,6 +134,6 @@ const renewableSystemInputSchema = z.object({
   monthlyProductionKwh: z.array(z.number().nonnegative()).length(12),
 });
 export const replaceRenewablesSchema = z.object({
-  systems: z.array(renewableSystemInputSchema).default([]),
+  systems: z.array(renewableSystemInputSchema).max(20).default([]),
 });
 export type ReplaceRenewablesInput = z.infer<typeof replaceRenewablesSchema>;

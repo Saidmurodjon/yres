@@ -7,8 +7,8 @@ import {
   utilityBill,
 } from "@yres/db";
 import {
-  REPORT_ANNOTATION_SECTION_KEYS,
   type EnvelopeElementCategory,
+  REPORT_ANNOTATION_SECTION_KEYS,
   type ReportAnnotationSectionKey,
   type Scenario,
 } from "@yres/types";

@@ -1,7 +1,7 @@
 import type { Database } from "@yres/db";
 import * as schema from "@yres/db/schemas";
-import { drizzle } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
 const TEST_DATABASE_URL =

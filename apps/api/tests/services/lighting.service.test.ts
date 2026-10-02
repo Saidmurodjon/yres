@@ -19,7 +19,12 @@ describe("LightingService", () => {
           utilizationFactor: 0.55,
         },
       ],
-      { incandescent: 25, fluorescentElectromagnetic: 17.8, fluorescentElectronic: 14.81, led: 7.4 },
+      {
+        incandescent: 25,
+        fluorescentElectromagnetic: 17.8,
+        fluorescentElectronic: 14.81,
+        led: 7.4,
+      },
       1630,
     );
 
@@ -73,7 +78,12 @@ describe("LightingService", () => {
     const result = calculateLightingResult(
       "before",
       [],
-      { incandescent: 25, fluorescentElectromagnetic: 17.8, fluorescentElectronic: 14.81, led: 7.4 },
+      {
+        incandescent: 25,
+        fluorescentElectromagnetic: 17.8,
+        fluorescentElectronic: 14.81,
+        led: 7.4,
+      },
       1630,
     );
     expect(result.annualConsumptionKwh).toBe(0);

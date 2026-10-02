@@ -1,7 +1,7 @@
 import { energyMeasure } from "@yres/db";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { authRequest, signUpTestUser } from "../helpers/test-auth";
 import { seedClimateRegion } from "../helpers/seed-helpers";
+import { authRequest, signUpTestUser } from "../helpers/test-auth";
 import { closeTestDb, resetTestDb, testDb } from "../helpers/test-db";
 
 const BUILDING_INPUT = {
@@ -43,9 +43,24 @@ describe("Measures API", () => {
     const [wall, roof, windows] = await testDb
       .insert(energyMeasure)
       .values([
-        { buildingId, name: "Wall insulation", category: "envelope_wall_insulation", investmentCostUsd: 10000 },
-        { buildingId, name: "Roof insulation", category: "envelope_roof_insulation", investmentCostUsd: 5000 },
-        { buildingId, name: "Window replacement", category: "window_replacement", investmentCostUsd: 20000 },
+        {
+          buildingId,
+          name: "Wall insulation",
+          category: "envelope_wall_insulation",
+          investmentCostUsd: 10000,
+        },
+        {
+          buildingId,
+          name: "Roof insulation",
+          category: "envelope_roof_insulation",
+          investmentCostUsd: 5000,
+        },
+        {
+          buildingId,
+          name: "Window replacement",
+          category: "window_replacement",
+          investmentCostUsd: 20000,
+        },
       ])
       .returning();
     if (!wall || !roof || !windows) throw new Error("failed to seed measures");
@@ -82,7 +97,11 @@ describe("Measures API", () => {
     );
     expect(reselectResponse.status).toBe(200);
 
-    const secondListResponse = await authRequest(`/api/buildings/${buildingId}/measures`, {}, cookie);
+    const secondListResponse = await authRequest(
+      `/api/buildings/${buildingId}/measures`,
+      {},
+      cookie,
+    );
     const secondBody = (await secondListResponse.json()) as {
       measures: { id: string; proposedForImplementation: boolean }[];
     };
@@ -129,7 +148,11 @@ describe("Measures API", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Bogus", category: "not-a-real-category", investmentCostUsd: 100 }),
+        body: JSON.stringify({
+          name: "Bogus",
+          category: "not-a-real-category",
+          investmentCostUsd: 100,
+        }),
       },
       cookie,
     );
@@ -145,7 +168,11 @@ describe("Measures API", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Roof insulation", category: "envelope_roof_insulation", investmentCostUsd: 3000 }),
+        body: JSON.stringify({
+          name: "Roof insulation",
+          category: "envelope_roof_insulation",
+          investmentCostUsd: 3000,
+        }),
       },
       cookie,
     );
@@ -173,7 +200,11 @@ describe("Measures API", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: "Wall insulation", category: "envelope_wall_insulation", investmentCostUsd: 3000 }),
+        body: JSON.stringify({
+          name: "Wall insulation",
+          category: "envelope_wall_insulation",
+          investmentCostUsd: 3000,
+        }),
       },
       cookie,
     );
@@ -235,7 +266,9 @@ describe("Consumption API", () => {
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bills: [{ energyCarrier: "gas", year: 2024, month: 13, consumptionNative: 100 }] }),
+        body: JSON.stringify({
+          bills: [{ energyCarrier: "gas", year: 2024, month: 13, consumptionNative: 100 }],
+        }),
       },
       cookie,
     );

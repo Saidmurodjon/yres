@@ -13,7 +13,10 @@ export async function seedClimateRegion(name = "Test Region") {
 
 /** Inserts a construction material directly (global reference data, admin/seed-only). */
 export async function seedMaterial(name: string, thermalConductivityWPerMk: number) {
-  const [row] = await testDb.insert(material).values({ name, thermalConductivityWPerMk }).returning();
+  const [row] = await testDb
+    .insert(material)
+    .values({ name, thermalConductivityWPerMk })
+    .returning();
   if (!row) throw new Error("failed to seed material");
   return row;
 }

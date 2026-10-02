@@ -100,8 +100,12 @@ describe("Systems API (ventilation, DHW, distribution, generation, cooling)", ()
       ventilationSystems: { scenario: string; systemType: string }[];
     };
     expect(body.ventilationSystems).toHaveLength(2);
-    expect(body.ventilationSystems.find((v) => v.scenario === "before")?.systemType).toBe("natural");
-    expect(body.ventilationSystems.find((v) => v.scenario === "after")?.systemType).toBe("mechanical");
+    expect(body.ventilationSystems.find((v) => v.scenario === "before")?.systemType).toBe(
+      "natural",
+    );
+    expect(body.ventilationSystems.find((v) => v.scenario === "after")?.systemType).toBe(
+      "mechanical",
+    );
 
     // Replacing "before" again must not disturb the "after" row.
     const replaceBeforeResponse = await putJson(
@@ -334,7 +338,9 @@ describe("Systems API (ventilation, DHW, distribution, generation, cooling)", ()
             capacityKw: 10,
             availableAreaM2: 100,
             unitCostUsd: 7268,
-            monthlyProductionKwh: [910, 1100, 1300, 1450, 1600, 1623, 1600, 1500, 1300, 1100, 950, 910],
+            monthlyProductionKwh: [
+              910, 1100, 1300, 1450, 1600, 1623, 1600, 1500, 1300, 1100, 950, 910,
+            ],
           },
         ],
       },

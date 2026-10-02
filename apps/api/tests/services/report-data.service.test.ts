@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  type BillRow,
-  groupBillsByCarrierYearMonth,
-} from "../../src/services/report-data.service";
+import { type BillRow, groupBillsByCarrierYearMonth } from "../../src/services/report-data.service";
 
 describe("groupBillsByCarrierYearMonth", () => {
   it("groups bills by carrier, then by month, averaging across years", () => {
@@ -10,7 +7,13 @@ describe("groupBillsByCarrierYearMonth", () => {
       { energyCarrier: "gas", year: 2021, month: 1, consumptionKwh: 1000, expenseLocal: 500 },
       { energyCarrier: "gas", year: 2022, month: 1, consumptionKwh: 1200, expenseLocal: 600 },
       { energyCarrier: "gas", year: 2021, month: 2, consumptionKwh: 900, expenseLocal: 450 },
-      { energyCarrier: "electricity", year: 2021, month: 1, consumptionKwh: 300, expenseLocal: 120 },
+      {
+        energyCarrier: "electricity",
+        year: 2021,
+        month: 1,
+        consumptionKwh: 300,
+        expenseLocal: 120,
+      },
     ];
 
     const result = groupBillsByCarrierYearMonth(bills);

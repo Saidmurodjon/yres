@@ -1,4 +1,9 @@
-import type { LampPowerDensityWPerM2, LightingResult, LightingTechnologyMix, Scenario } from "@yres/types";
+import type {
+  LampPowerDensityWPerM2,
+  LightingResult,
+  LightingTechnologyMix,
+  Scenario,
+} from "@yres/types";
 
 export interface LightingZoneInput {
   areaM2: number;

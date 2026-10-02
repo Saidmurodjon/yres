@@ -1,6 +1,8 @@
-import { conversation, conversationMember, message, user } from "@yres/db";
-import { and, count, desc, eq, gt, ilike, inArray, isNull, ne, or } from "drizzle-orm";
+import { conversation, conversationMember, insertChunked, message, user } from "@yres/db";
+import { and, count, desc, eq, gt, inArray, isNull, max, ne, or } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
+import { likeContains } from "../lib/search";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import {
   createConversationSchema,
@@ -31,10 +33,18 @@ chatRoutes.get("/conversations", async (c) => {
   // instead of 2 queries per conversation — see collaboratorCount in
   // buildings.ts for the same inArray+groupBy idiom.
   const convIds = memberships.map((m) => m.conversationId);
+  // SQLite has no DISTINCT ON: join each message to its conversation's newest createdAt.
+  // (Two messages in the same millisecond would both match; the Map below keeps one.)
+  const latestMessageAt = db
+    .select({ conversationId: message.conversationId, maxAt: max(message.createdAt).as("max_at") })
+    .from(message)
+    .where(inArray(message.conversationId, convIds))
+    .groupBy(message.conversationId)
+    .as("latest_message_at");
   const [lastMessages, unreadCounts] = await Promise.all([
     convIds.length > 0
       ? db
-          .selectDistinctOn([message.conversationId], {
+          .select({
             id: message.id,
             conversationId: message.conversationId,
             body: message.body,
@@ -43,8 +53,13 @@ chatRoutes.get("/conversations", async (c) => {
             createdAt: message.createdAt,
           })
           .from(message)
-          .where(inArray(message.conversationId, convIds))
-          .orderBy(message.conversationId, desc(message.createdAt))
+          .innerJoin(
+            latestMessageAt,
+            and(
+              eq(message.conversationId, latestMessageAt.conversationId),
+              eq(message.createdAt, latestMessageAt.maxAt),
+            ),
+          )
       : [],
     convIds.length > 0
       ? db
@@ -201,7 +216,12 @@ chatRoutes.post("/conversations", async (c) => {
       .filter((m) => m.id !== authUser.id)
       .map((m) => ({ conversationId: conv.id, userId: m.id, role: "member" as const })),
   ];
-  await db.insert(conversationMember).values(memberRows);
+  await db.batch(
+    insertChunked(db, conversationMember, memberRows) as [
+      BatchItem<"sqlite">,
+      ...BatchItem<"sqlite">[],
+    ],
+  );
 
   return c.json({ conversationId: conv.id }, 201);
 });
@@ -353,7 +373,12 @@ chatRoutes.patch("/conversations/:id", async (c) => {
       .filter((candidate) => !currentIds.has(candidate.id))
       .map((candidate) => ({ conversationId, userId: candidate.id, role: "member" as const }));
     if (rowsToAdd.length > 0) {
-      await db.insert(conversationMember).values(rowsToAdd);
+      await db.batch(
+        insertChunked(db, conversationMember, rowsToAdd) as [
+          BatchItem<"sqlite">,
+          ...BatchItem<"sqlite">[],
+        ],
+      );
     }
   }
 
@@ -426,7 +451,8 @@ chatRoutes.get("/users/search", async (c) => {
   const rows = await db
     .select({ id: user.id, name: user.name, username: user.username, image: user.image })
     .from(user)
-    .where(and(ilike(user.username, `%${q}%`), ne(user.id, authUser.id)))
+    // username defaults to the (ASCII) email, and SQLite LIKE is already case-insensitive for ASCII.
+    .where(and(likeContains(user.username, q), ne(user.id, authUser.id)))
     .limit(10);
 
   return c.json({ users: rows });

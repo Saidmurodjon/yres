@@ -140,7 +140,7 @@ measuresRoutes.post("/:id/measures/select", async (c) => {
     return c.json({ selected: [] });
   }
 
-  const statements: BatchItem<"pg">[] = [
+  const statements: BatchItem<"sqlite">[] = [
     db
       .update(energyMeasure)
       .set({ proposedForImplementation: true })
@@ -153,7 +153,7 @@ measuresRoutes.post("/:id/measures/select", async (c) => {
       ),
   ];
 
-  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 
   return c.json({ selected: measureIds });
 });
@@ -174,10 +174,7 @@ measuresRoutes.get("/:id/non-ee-measures", async (c) => {
     return c.json({ error: "Not found" }, 404);
   }
 
-  const rows = await db
-    .select()
-    .from(nonEeMeasure)
-    .where(eq(nonEeMeasure.buildingId, buildingId));
+  const rows = await db.select().from(nonEeMeasure).where(eq(nonEeMeasure.buildingId, buildingId));
 
   return c.json({ nonEeMeasures: rows });
 });

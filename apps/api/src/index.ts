@@ -3,11 +3,11 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { createAuth } from "./auth";
+import { ConversationRoom } from "./durable-objects/conversation-room";
+import { UserNotificationChannel } from "./durable-objects/user-notification-channel";
 import type { AppEnv } from "./middleware/auth";
 import { dbMiddleware } from "./middleware/db";
 import { rateLimit } from "./middleware/rate-limit";
-import { ConversationRoom } from "./durable-objects/conversation-room";
-import { UserNotificationChannel } from "./durable-objects/user-notification-channel";
 import { adminUsersRoutes } from "./routes/admin-users";
 import { auditRoutes } from "./routes/audit";
 import { buildingRoutes } from "./routes/buildings";
@@ -24,7 +24,8 @@ import { usersRoutes } from "./routes/users";
 import { verifyRoutes } from "./routes/verify";
 
 export interface Env {
-  DATABASE_URL: string;
+  /** D1 binding (wrangler.toml `[[d1_databases]]`). Durable Objects receive the same binding. */
+  DB: D1Database;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   BETTER_AUTH_SECRET: string;

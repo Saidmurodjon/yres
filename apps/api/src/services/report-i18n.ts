@@ -158,8 +158,7 @@ const STRINGS = {
     actualSavingsCalibrated: "Actual savings (calibrated against metered bills):",
     totalCo2Reduction: "Total CO2 reduction across all measures: {value} tCO2/yr.",
     emissionFactorsUsed: "Emission factors used: {list}.",
-    discountRateAssumption:
-      "Discount rate: {rate} · Annual fuel-price escalation: {escalation}.",
+    discountRateAssumption: "Discount rate: {rate} · Annual fuel-price escalation: {escalation}.",
     measureLifetime: "{name} — lifetime {years} years",
     envelopeHeatLossMonthly: "Envelope heat loss — monthly, by category",
     ventilationHeatLossMonthly: "Ventilation heat loss — monthly",
@@ -292,7 +291,8 @@ const STRINGS = {
     beforeDistLossToday: "Структура теплопотерь до модернизации (где теряется тепло сегодня):",
     afterDistResidual:
       "Структура теплопотерь после модернизации (остаточные потери после мероприятий):",
-    beforeDistPurchasedToday: "Структура закупаемой энергии до модернизации (что покупается сегодня):",
+    beforeDistPurchasedToday:
+      "Структура закупаемой энергии до модернизации (что покупается сегодня):",
     afterDistPurchased: "Структура закупаемой энергии после модернизации (что будет покупаться):",
     specificConsumptionSummaryNote:
       "кВт·ч/м²/год — фактическое (по счётчикам) и стандартизированное до/после реновации.",
@@ -307,8 +307,7 @@ const STRINGS = {
     envelopeHeatLossMonthly: "Теплопотери ограждений — по месяцам, по категориям",
     ventilationHeatLossMonthly: "Теплопотери вентиляции — по месяцам",
     heatingEnergyBalanceMonthly: "Баланс энергии на отопление — по месяцам",
-    resistanceSummary:
-      "Rint = {rint} м²·К/Вт · Rext = {rext} м²·К/Вт · Общее R = {total} м²·К/Вт",
+    resistanceSummary: "Rint = {rint} м²·К/Вт · Rext = {rext} м²·К/Вт · Общее R = {total} м²·К/Вт",
 
     unitDay: "дн.",
     unitYr: "лет",
@@ -321,7 +320,8 @@ const STRINGS = {
     title: "YRES Energiya audit hisoboti",
     generatedOn: "{name} — {location} — {date} sanasida yaratildi",
     reportGeneratedByPlatform: "Ushbu hisobot YRES platformasida avtomatik yaratilgan.",
-    scanToVerify: "Haqiqiyligini tekshirish uchun yuqoridagi QR kodni skanerlang yoki o'ting: {url}",
+    scanToVerify:
+      "Haqiqiyligini tekshirish uchun yuqoridagi QR kodni skanerlang yoki o'ting: {url}",
 
     headingBuilding: "Bino",
     headingExecutiveSummary: "Qisqa xulosa jadvali — chora-tadbirlar ko'rinishi",
@@ -336,7 +336,8 @@ const STRINGS = {
     headingEnvelopeLossBreakdown:
       "Qobiq va ventilyatsiya orqali issiqlik yo'qotish taqsimoti (oldin va keyin)",
     headingFinalEnergyBreakdown: "Sotib olinadigan yakuniy energiya taqsimoti (oldin va keyin)",
-    headingRecommendedMeasures: "Tavsiya etilgan chora-tadbirlar (amalga oshirishga taklif qilingan)",
+    headingRecommendedMeasures:
+      "Tavsiya etilgan chora-tadbirlar (amalga oshirishga taklif qilingan)",
     headingMeasuresNoneSelected: "Chora-tadbirlar (hozircha amalga oshirish uchun tanlanmagan)",
     headingGhgEmissions: "Issiqxona gazlari chiqindilari (CO2 kamayishi)",
     headingFinancialAssumptions: "Moliyaviy taxminlar",
@@ -436,8 +437,7 @@ const STRINGS = {
     beforeDistLossToday: "Modernizatsiyadan oldingi taqsimot (bugun issiqlik qayerda yo'qolmoqda):",
     afterDistResidual:
       "Modernizatsiyadan keyingi taqsimot (chora-tadbirlardan keyin qolgan yo'qotish):",
-    beforeDistPurchasedToday:
-      "Modernizatsiyadan oldingi taqsimot (bugun nima sotib olinmoqda):",
+    beforeDistPurchasedToday: "Modernizatsiyadan oldingi taqsimot (bugun nima sotib olinmoqda):",
     afterDistPurchased: "Modernizatsiyadan keyingi taqsimot (nima sotib olinadi):",
     specificConsumptionSummaryNote:
       "kVt·soat/m²/yil — haqiqiy (hisob-fakturalar) va standartlashtirilgan oldin/keyin.",
@@ -452,8 +452,7 @@ const STRINGS = {
     envelopeHeatLossMonthly: "Qobiq issiqlik yo'qotishi — oylik, toifa bo'yicha",
     ventilationHeatLossMonthly: "Ventilyatsiya issiqlik yo'qotishi — oylik",
     heatingEnergyBalanceMonthly: "Isitish energiya balansi — oylik",
-    resistanceSummary:
-      "Rint = {rint} m²K/Vt · Rext = {rext} m²K/Vt · Umumiy R = {total} m²K/Vt",
+    resistanceSummary: "Rint = {rint} m²K/Vt · Rext = {rext} m²K/Vt · Umumiy R = {total} m²K/Vt",
 
     unitDay: "kun",
     unitYr: "yil",
@@ -466,7 +465,11 @@ const STRINGS = {
 
 type StringKey = keyof (typeof STRINGS)["en"];
 
-export function t(lang: ReportLang, key: StringKey, vars?: Record<string, string | number>): string {
+export function t(
+  lang: ReportLang,
+  key: StringKey,
+  vars?: Record<string, string | number>,
+): string {
   let value: string = STRINGS[lang][key] ?? STRINGS.en[key];
   if (vars) {
     for (const [name, replacement] of Object.entries(vars)) {
@@ -593,5 +596,9 @@ const ENUM_LABELS = {
 /** Falls back to a spaced-out raw enum value (the old `.replace(/_/g, " ")` behavior) for anything not in the table, so an unrecognized value never disappears from the report. */
 export function enumLabel(lang: ReportLang, rawValue: string): string {
   const table = ENUM_LABELS[lang] as Record<string, string | undefined>;
-  return table[rawValue] ?? ENUM_LABELS.en[rawValue as keyof typeof ENUM_LABELS.en] ?? rawValue.replace(/_/g, " ");
+  return (
+    table[rawValue] ??
+    ENUM_LABELS.en[rawValue as keyof typeof ENUM_LABELS.en] ??
+    rawValue.replace(/_/g, " ")
+  );
 }

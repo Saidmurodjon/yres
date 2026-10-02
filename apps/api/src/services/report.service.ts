@@ -1,18 +1,18 @@
 import fontkit from "@pdf-lib/fontkit";
 import type { building } from "@yres/db";
 import type { AuditResult, GenerationSourceResult, ReportAnnotationSectionKey } from "@yres/types";
-import { type PDFFont, type PDFPage, PDFDocument, rgb } from "pdf-lib";
+import { PDFDocument, type PDFFont, type PDFPage, rgb } from "pdf-lib";
 import qrcode from "qrcode-generator";
 import { PT_SERIF_BOLD_BASE64 } from "../assets/fonts/pt-serif-bold";
 import { PT_SERIF_ITALIC_BASE64 } from "../assets/fonts/pt-serif-italic";
 import { PT_SERIF_REGULAR_BASE64 } from "../assets/fonts/pt-serif-regular";
 import { DEFAULT_DISCOUNT_RATE, ENERGY_ESCALATION_RATES } from "./financial.service";
-import { enumLabel, localeTag, type ReportLang, t } from "./report-i18n";
 import type {
   CarrierConsumptionHistory,
   ConstructionTypeUValueBreakdown,
   LatestTariffRow,
 } from "./report-data.service";
+import { type ReportLang, enumLabel, localeTag, t } from "./report-i18n";
 
 type Building = typeof building.$inferSelect;
 
@@ -159,7 +159,13 @@ class ReportLayout {
     const lines = wrapText(text, this.regular, 10, this.contentWidth());
     this.ensureSpace(17 * lines.length);
     for (const line of lines) {
-      this.page.drawText(line, { x: MARGIN, y: this.y, size: 10, font: this.regular, color: MUTED });
+      this.page.drawText(line, {
+        x: MARGIN,
+        y: this.y,
+        size: 10,
+        font: this.regular,
+        color: MUTED,
+      });
       this.y -= 17;
     }
   }
@@ -473,7 +479,10 @@ class ReportLayout {
 
     const slotWidth = plotWidth / categories.length;
     const barGap = 2;
-    const clusterWidth = Math.min(slotWidth * 0.75, series.length * 14 + (series.length - 1) * barGap);
+    const clusterWidth = Math.min(
+      slotWidth * 0.75,
+      series.length * 14 + (series.length - 1) * barGap,
+    );
     const barWidth = (clusterWidth - (series.length - 1) * barGap) / series.length;
 
     categories.forEach((cat, catIndex) => {
@@ -949,10 +958,7 @@ export async function generateAuditReportPdf(
         t(lang, "labelIndoorTempNonOperation"),
         `${fmt(lang, building.indoorTempNonOperationC, 1)} °C`,
       ],
-      [
-        t(lang, "labelOutdoorAvgTemp"),
-        `${fmt(lang, building.outdoorAvgHeatingSeasonTempC, 1)} °C`,
-      ],
+      [t(lang, "labelOutdoorAvgTemp"), `${fmt(lang, building.outdoorAvgHeatingSeasonTempC, 1)} °C`],
       [t(lang, "labelOutdoorDesignTemp"), `${fmt(lang, building.outdoorDesignTempC, 1)} °C`],
       [
         t(lang, "labelCoolingEnthalpyInside"),
@@ -1088,9 +1094,9 @@ export async function generateAuditReportPdf(
   if (extras.consumptionHistory.length > 0) {
     layout.heading(t(lang, "headingConsumptionHistory"));
     for (const carrier of extras.consumptionHistory) {
-      const years = [
-        ...new Set(carrier.months.flatMap((m) => m.byYear.map((y) => y.year))),
-      ].sort((a, b) => a - b);
+      const years = [...new Set(carrier.months.flatMap((m) => m.byYear.map((y) => y.year)))].sort(
+        (a, b) => a - b,
+      );
       layout.paragraph(enumLabel(lang, carrier.energyCarrier));
       // Grouped, year-by-year bars (matching the platform's own
       // MonthlyComparisonChart) already carry every value the old
@@ -1255,7 +1261,13 @@ export async function generateAuditReportPdf(
     );
     layout.paragraph(t(lang, "actualSavingsCalibrated"));
     layout.table(
-      [t(lang, "thMeasure"), t(lang, "thActualSavings"), t(lang, "thPaybackYr"), t(lang, "thNpv"), t(lang, "thIrr")],
+      [
+        t(lang, "thMeasure"),
+        t(lang, "thActualSavings"),
+        t(lang, "thPaybackYr"),
+        t(lang, "thNpv"),
+        t(lang, "thIrr"),
+      ],
       measuresToList.map((m) => [
         m.name,
         `${fmtUsd(lang, m.actualAnnualSavingsUsd)} (${fmt(lang, m.actualAnnualSavingsKwh, 0)} ${t(lang, "unitKwh")})`,
@@ -1348,7 +1360,12 @@ export async function generateAuditReportPdf(
   if (result.nonEeMeasures.length > 0) {
     layout.heading(t(lang, "headingAncillaryCosts"));
     layout.table(
-      [t(lang, "thDescription"), t(lang, "thQuantity"), t(lang, "thUnitCost"), t(lang, "thTotalCost")],
+      [
+        t(lang, "thDescription"),
+        t(lang, "thQuantity"),
+        t(lang, "thUnitCost"),
+        t(lang, "thTotalCost"),
+      ],
       result.nonEeMeasures.map((m) => [
         m.description,
         `${fmt(lang, m.quantity, 1)}${m.unit ? ` ${m.unit}` : ""}`,

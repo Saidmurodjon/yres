@@ -2,7 +2,7 @@ import type { building } from "@yres/db";
 import type { AuditResult, EnergyMeasureResult } from "@yres/types";
 import { PDFDocument } from "pdf-lib";
 import { describe, expect, it } from "vitest";
-import { generateAuditReportPdf, type ReportExtras } from "../../src/services/report.service";
+import { type ReportExtras, generateAuditReportPdf } from "../../src/services/report.service";
 
 type Building = typeof building.$inferSelect;
 
@@ -242,15 +242,35 @@ function fullResultFixture(): AuditResult {
       { endUse: "heating", scenario: "after", finalEnergyConsumptionKwh: 280000 },
     ],
     energyBalanceBreakdown: [
-      { category: "external_wall", section: "envelope_ventilation_loss", beforeKwh: 100000, afterKwh: 40000 },
+      {
+        category: "external_wall",
+        section: "envelope_ventilation_loss",
+        beforeKwh: 100000,
+        afterKwh: 40000,
+      },
       { category: "roof", section: "envelope_ventilation_loss", beforeKwh: 80000, afterKwh: 30000 },
       { category: "gas", section: "final_energy", beforeKwh: 600000, afterKwh: 280000 },
       { category: "lighting", section: "final_energy", beforeKwh: 50000, afterKwh: 20000 },
     ],
     specificConsumptionSummary: [
-      { endUse: "heating", actualKwhPerM2Year: 320, standardizedBeforeKwhPerM2Year: 300, standardizedAfterKwhPerM2Year: 140 },
-      { endUse: "dhw", actualKwhPerM2Year: 25, standardizedBeforeKwhPerM2Year: 20, standardizedAfterKwhPerM2Year: 15 },
-      { endUse: "electricity", actualKwhPerM2Year: 45, standardizedBeforeKwhPerM2Year: 40, standardizedAfterKwhPerM2Year: 30 },
+      {
+        endUse: "heating",
+        actualKwhPerM2Year: 320,
+        standardizedBeforeKwhPerM2Year: 300,
+        standardizedAfterKwhPerM2Year: 140,
+      },
+      {
+        endUse: "dhw",
+        actualKwhPerM2Year: 25,
+        standardizedBeforeKwhPerM2Year: 20,
+        standardizedAfterKwhPerM2Year: 15,
+      },
+      {
+        endUse: "electricity",
+        actualKwhPerM2Year: 45,
+        standardizedBeforeKwhPerM2Year: 40,
+        standardizedAfterKwhPerM2Year: 30,
+      },
     ],
     measures: [
       measureFixture(),
@@ -262,7 +282,14 @@ function fullResultFixture(): AuditResult {
       }),
     ],
     nonEeMeasures: [
-      { id: "n1", description: "Cable replacement", unit: "m", quantity: 100, unitCostUsd: 10, totalCostUsd: 1000 },
+      {
+        id: "n1",
+        description: "Cable replacement",
+        unit: "m",
+        quantity: 100,
+        unitCostUsd: 10,
+        totalCostUsd: 1000,
+      },
     ],
   };
 }
@@ -276,8 +303,18 @@ function fullExtrasFixture(): ReportExtras {
         scenario: "before",
         description: "Primary facade wall, floors 1-3.",
         layers: [
-          { materialName: "Plaster", thicknessM: 0.02, thermalConductivityWPerMk: 0.7, resistanceM2KPerW: 0.029 },
-          { materialName: "Brick", thicknessM: 0.5, thermalConductivityWPerMk: 0.73, resistanceM2KPerW: 0.68 },
+          {
+            materialName: "Plaster",
+            thicknessM: 0.02,
+            thermalConductivityWPerMk: 0.7,
+            resistanceM2KPerW: 0.029,
+          },
+          {
+            materialName: "Brick",
+            thicknessM: 0.5,
+            thermalConductivityWPerMk: 0.73,
+            resistanceM2KPerW: 0.68,
+          },
         ],
         interiorResistanceM2kPerW: 0.13,
         exteriorResistanceM2kPerW: 0.04,

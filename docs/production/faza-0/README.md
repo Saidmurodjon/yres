@@ -56,7 +56,7 @@ D03 dan oldin yozilgan integratsiya testining lokal yiqilishini "o'tdi" deb da'v
 | # | Topshiriq | Fayl | Commit(lar) | Holat |
 |---|---|---|---|---|
 | D01 | `packages/db` → SQLite/D1: sxema, baseline, ma'lumotnoma seed migratsiyasi | `D01-d1-sxema.md` | 2 (a, b) | ✅ lokal, push D02 bilan |
-| D02 | `apps/api` → D1 binding, Better Auth `sqlite`, 100-parametr bo'laklash, `ilike` | `D02-d1-wiring.md` | 1 | ⬜ |
+| D02 | `apps/api` → D1 binding, Better Auth `sqlite`, 100-parametr bo'laklash, `ilike` | `D02-d1-wiring.md` | 1 | ✅ lokal, push kutilmoqda |
 | D03 | Test harness: lokal D1 (Miniflare), CI'dan Postgres olib tashlanadi | `D03-d1-test-harness.md` | 1 | ⬜ |
 | D04 | Production cutover (loyiha egasi bilan) + Neon'ga oid hujjatlarni yangilash | `D04-d1-cutover.md` | 1 | ⬜ |
 | T01 | CI: branch trigger, artefaktlar | `T01-ci-migratsiyalar.md` | 1 | ⬜ |

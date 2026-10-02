@@ -56,14 +56,6 @@ export async function signUpTestUser(): Promise<{ cookie: string; userId: string
   return { cookie, userId, email };
 }
 
-export function authRequest(
-  path: string,
-  init: RequestInit,
-  cookie: string,
-): Promise<Response> {
-  return app.request(
-    path,
-    { ...init, headers: { ...init.headers, Cookie: cookie } },
-    testEnv,
-  );
+export function authRequest(path: string, init: RequestInit, cookie: string): Promise<Response> {
+  return app.request(path, { ...init, headers: { ...init.headers, Cookie: cookie } }, testEnv);
 }

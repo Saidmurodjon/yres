@@ -1,4 +1,5 @@
 import type { BatchItem } from "drizzle-orm/batch";
+import { insertChunked } from "./batch";
 import type { Database } from "./index";
 import {
   CLIMATE_MONTHLY_NORMALS,
@@ -39,26 +40,40 @@ export async function seedReferenceDataWithDb(db: Database) {
   const regionId = crypto.randomUUID();
 
   const statements: BatchItem<"sqlite">[] = [
-    db
-      .insert(material)
-      .values(MATERIALS.map((r) => ({ ...r })))
-      .onConflictDoNothing({ target: material.name }),
-    db
-      .insert(surfaceResistance)
-      .values(SURFACE_RESISTANCES.map((r) => ({ ...r })))
-      .onConflictDoNothing({ target: surfaceResistance.elementCategory }),
-    db.insert(pipeLossReference).values(PIPE_LOSS_REFERENCES.map((r) => ({ ...r }))),
-    db
-      .insert(lampType)
-      .values(LAMP_TYPES.map((r) => ({ ...r })))
-      .onConflictDoNothing({ target: lampType.name }),
-    db
-      .insert(energyTariff)
-      .values(ENERGY_TARIFFS.map((r) => ({ ...r, effectiveDate: REFERENCE_EFFECTIVE_DATE }))),
+    ...insertChunked(
+      db,
+      material,
+      MATERIALS.map((r) => ({ ...r })),
+      { onConflictDoNothing: material.name },
+    ),
+    ...insertChunked(
+      db,
+      surfaceResistance,
+      SURFACE_RESISTANCES.map((r) => ({ ...r })),
+      { onConflictDoNothing: surfaceResistance.elementCategory },
+    ),
+    ...insertChunked(
+      db,
+      pipeLossReference,
+      PIPE_LOSS_REFERENCES.map((r) => ({ ...r })),
+    ),
+    ...insertChunked(
+      db,
+      lampType,
+      LAMP_TYPES.map((r) => ({ ...r })),
+      { onConflictDoNothing: lampType.name },
+    ),
+    ...insertChunked(
+      db,
+      energyTariff,
+      ENERGY_TARIFFS.map((r) => ({ ...r, effectiveDate: REFERENCE_EFFECTIVE_DATE })),
+    ),
     db.insert(climateRegion).values({ id: regionId, ...CLIMATE_REGION }),
-    db
-      .insert(climateMonthlyNormal)
-      .values(CLIMATE_MONTHLY_NORMALS.map((r) => ({ ...r, climateRegionId: regionId }))),
+    ...insertChunked(
+      db,
+      climateMonthlyNormal,
+      CLIMATE_MONTHLY_NORMALS.map((r) => ({ ...r, climateRegionId: regionId })),
+    ),
   ];
 
   await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);

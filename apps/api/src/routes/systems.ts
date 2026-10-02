@@ -5,6 +5,7 @@ import {
   distributionSystem,
   equipmentItem,
   generationSource,
+  insertChunked,
   lightingZone,
   renewableProductionMonthly,
   renewableSystem,
@@ -109,15 +110,17 @@ systemsRoutes.put("/:id/systems/ventilation", async (c) => {
   const { scenario, systems } = parsed.data;
   const rows = systems.map((s) => ({ ...s, buildingId, scenario }));
 
-  const statements: BatchItem<"pg">[] = [
+  const statements: BatchItem<"sqlite">[] = [
     db
       .delete(ventilationSystem)
-      .where(and(eq(ventilationSystem.buildingId, buildingId), eq(ventilationSystem.scenario, scenario))),
+      .where(
+        and(eq(ventilationSystem.buildingId, buildingId), eq(ventilationSystem.scenario, scenario)),
+      ),
   ];
   if (rows.length > 0) {
-    statements.push(db.insert(ventilationSystem).values(rows));
+    statements.push(...insertChunked(db, ventilationSystem, rows));
   }
-  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 
   return c.json({ scenario, count: rows.length });
 });
@@ -144,13 +147,15 @@ systemsRoutes.put("/:id/systems/dhw", async (c) => {
   const { scenario, sources } = parsed.data;
   const rows = sources.map((s) => ({ ...s, buildingId, scenario }));
 
-  const statements: BatchItem<"pg">[] = [
-    db.delete(dhwSource).where(and(eq(dhwSource.buildingId, buildingId), eq(dhwSource.scenario, scenario))),
+  const statements: BatchItem<"sqlite">[] = [
+    db
+      .delete(dhwSource)
+      .where(and(eq(dhwSource.buildingId, buildingId), eq(dhwSource.scenario, scenario))),
   ];
   if (rows.length > 0) {
-    statements.push(db.insert(dhwSource).values(rows));
+    statements.push(...insertChunked(db, dhwSource, rows));
   }
-  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 
   return c.json({ scenario, count: rows.length });
 });
@@ -178,15 +183,20 @@ systemsRoutes.put("/:id/systems/distribution", async (c) => {
   const { scenario, systems } = parsed.data;
   const rows = systems.map((s) => ({ ...s, buildingId, scenario }));
 
-  const statements: BatchItem<"pg">[] = [
+  const statements: BatchItem<"sqlite">[] = [
     db
       .delete(distributionSystem)
-      .where(and(eq(distributionSystem.buildingId, buildingId), eq(distributionSystem.scenario, scenario))),
+      .where(
+        and(
+          eq(distributionSystem.buildingId, buildingId),
+          eq(distributionSystem.scenario, scenario),
+        ),
+      ),
   ];
   if (rows.length > 0) {
-    statements.push(db.insert(distributionSystem).values(rows));
+    statements.push(...insertChunked(db, distributionSystem, rows));
   }
-  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 
   return c.json({ scenario, count: rows.length });
 });
@@ -215,15 +225,17 @@ systemsRoutes.put("/:id/systems/generation", async (c) => {
   const { scenario, sources } = parsed.data;
   const rows = sources.map((s) => ({ ...s, buildingId, scenario }));
 
-  const statements: BatchItem<"pg">[] = [
+  const statements: BatchItem<"sqlite">[] = [
     db
       .delete(generationSource)
-      .where(and(eq(generationSource.buildingId, buildingId), eq(generationSource.scenario, scenario))),
+      .where(
+        and(eq(generationSource.buildingId, buildingId), eq(generationSource.scenario, scenario)),
+      ),
   ];
   if (rows.length > 0) {
-    statements.push(db.insert(generationSource).values(rows));
+    statements.push(...insertChunked(db, generationSource, rows));
   }
-  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 
   return c.json({ scenario, count: rows.length });
 });
@@ -250,15 +262,15 @@ systemsRoutes.put("/:id/systems/cooling-windows", async (c) => {
   const { scenario, windows } = parsed.data;
   const rows = windows.map((w) => ({ ...w, buildingId, scenario }));
 
-  const statements: BatchItem<"pg">[] = [
+  const statements: BatchItem<"sqlite">[] = [
     db
       .delete(coolingWindow)
       .where(and(eq(coolingWindow.buildingId, buildingId), eq(coolingWindow.scenario, scenario))),
   ];
   if (rows.length > 0) {
-    statements.push(db.insert(coolingWindow).values(rows));
+    statements.push(...insertChunked(db, coolingWindow, rows));
   }
-  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 
   return c.json({ scenario, count: rows.length });
 });
@@ -286,15 +298,15 @@ systemsRoutes.put("/:id/systems/cooling-systems", async (c) => {
   const { scenario, systems } = parsed.data;
   const rows = systems.map((s) => ({ ...s, buildingId, scenario }));
 
-  const statements: BatchItem<"pg">[] = [
+  const statements: BatchItem<"sqlite">[] = [
     db
       .delete(coolingSystem)
       .where(and(eq(coolingSystem.buildingId, buildingId), eq(coolingSystem.scenario, scenario))),
   ];
   if (rows.length > 0) {
-    statements.push(db.insert(coolingSystem).values(rows));
+    statements.push(...insertChunked(db, coolingSystem, rows));
   }
-  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 
   return c.json({ scenario, count: rows.length });
 });
@@ -321,15 +333,15 @@ systemsRoutes.put("/:id/systems/lighting", async (c) => {
   const { scenario, zones } = parsed.data;
   const rows = zones.map((z) => ({ ...z, buildingId, scenario }));
 
-  const statements: BatchItem<"pg">[] = [
+  const statements: BatchItem<"sqlite">[] = [
     db
       .delete(lightingZone)
       .where(and(eq(lightingZone.buildingId, buildingId), eq(lightingZone.scenario, scenario))),
   ];
   if (rows.length > 0) {
-    statements.push(db.insert(lightingZone).values(rows));
+    statements.push(...insertChunked(db, lightingZone, rows));
   }
-  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 
   return c.json({ scenario, count: rows.length });
 });
@@ -356,15 +368,15 @@ systemsRoutes.put("/:id/systems/equipment", async (c) => {
   const { scenario, items } = parsed.data;
   const rows = items.map((i) => ({ ...i, buildingId, scenario }));
 
-  const statements: BatchItem<"pg">[] = [
+  const statements: BatchItem<"sqlite">[] = [
     db
       .delete(equipmentItem)
       .where(and(eq(equipmentItem.buildingId, buildingId), eq(equipmentItem.scenario, scenario))),
   ];
   if (rows.length > 0) {
-    statements.push(db.insert(equipmentItem).values(rows));
+    statements.push(...insertChunked(db, equipmentItem, rows));
   }
-  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 
   return c.json({ scenario, count: rows.length });
 });
@@ -420,16 +432,16 @@ systemsRoutes.put("/:id/systems/renewables", async (c) => {
     });
   }
 
-  const statements: BatchItem<"pg">[] = [
+  const statements: BatchItem<"sqlite">[] = [
     db.delete(renewableSystem).where(eq(renewableSystem.buildingId, buildingId)),
   ];
   if (systemRows.length > 0) {
-    statements.push(db.insert(renewableSystem).values(systemRows));
+    statements.push(...insertChunked(db, renewableSystem, systemRows));
   }
   if (monthlyRows.length > 0) {
-    statements.push(db.insert(renewableProductionMonthly).values(monthlyRows));
+    statements.push(...insertChunked(db, renewableProductionMonthly, monthlyRows));
   }
-  await db.batch(statements as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 
   return c.json({ count: systemRows.length });
 });

@@ -2039,3 +2039,36 @@ D02 uchun eslatma: `seedReferenceDataWithDb` hozir `values(rows)` ni bo'laklamay
 Brauzerda tekshirilmadi (UI o'zgarmadi).
 
 **Navbatda:** D02 (`apps/api` → D1 binding). D01+D02 birga push.
+
+## Faza 0 · D02 — `apps/api` D1 binding'iga ulandi (2026-10-02)
+
+- `Env.DB: D1Database` (`DATABASE_URL` yo'q); `dbMiddleware`, `ConversationRoom`, Better Auth (`provider: "sqlite"`) shu binding'dan.
+- `wrangler.toml`: `[[d1_databases]]` (lokal `local-dev` + `env.production` placeholder `REPLACE_WITH_PRODUCTION_D1_ID` — D04 gacha
+  deploy yo'q). Skriptlar: `db:migrate:local`/`db:migrate:prod` (`npx wrangler`), `predev` lokal migratsiyani qo'llaydi;
+  eski `db:migrate/seed/studio` olib tashlandi.
+- `packages/db/src/batch.ts`: `chunkRowsForInsert`, `insertChunked` (ixtiyoriy `onConflictDoNothing`), `D1_MAX_PARAMS`;
+  envelope/systems/consumption/chat'dagi barcha ko'p qatorli insert shu orqali, har route'da bitta `db.batch()`. Consumption POST
+  endi bo'laklar bo'yicha `returning()` bilan bitta batch.
+- Qidiruv: `lib/search.ts` (`likeContains` — `%`/`_`/`\` escape + `ESCAPE`, `normalizeSearchText`, `buildingSearchText`);
+  `building.searchText` POST/PUT'da yoziladi (PUT'da yo'q maydon mavjud qiymatdan olinadi). Chat username qidiruvi `likeContains`.
+- `chat.ts`: `selectDistinctOn` (Postgres) → har suhbatning oxirgi xabari `max(createdAt)` subquery join bilan.
+- **Zod chegaralari + so'rov byudjeti** (avval umuman yo'q edi; T04c shu chegaralarni kengaytirmasdan, byudjetga moslab qo'llasin):
+  envelope — blocks 22, constructionTypes 15 (×≤8 qatlam), openingTypes 14, elements 100, openings jami 160 → eng yomon batch
+  33 bayonot (+≤5 sessiya/kirish/retrofit) = 38 ≤ 40; systems — ventilation 20, dhw 20, distribution 50, generation 20,
+  cooling windows 100 / systems 50, lighting 100, equipment 200, renewables 20 (eng og'iri equipment: 1+23=24); consumption POST 144.
+  Hisob izohlari `schemas/envelope.ts` va `schemas/systems.ts` boshida. Chegaralar real auditdagi hajmdan keng deb tanlangan,
+  lekin kichik bino uchun mo'ljallangan — real ma'lumotda yetmasa, Paid'ga o'tish triggeri (ADR-016), chetlab o'tish emas.
+- `count()`/`sum()`: `Number(sum ?? 0)` o'rami mavjud — `null` (bino yo'q) → 0. `deadline`/`effectiveDate` avval ham satr — `api-types.ts` mos.
+  Eslatma: `building` javobiga `searchText` ham chiqadi (zararsiz ichki ustun; web turiga qo'shilmagan).
+
+Tekshiruv: ildizdan `bun run type-check` (5/5), `bunx biome lint apps packages`, `bun run --cwd apps/web build` yashil.
+`bun run --cwd apps/api test`: servis unit testlari **68/68 yashil** (yangi `tests/services/batch.test.ts` bilan); integratsiya
+47 test `ECONNREFUSED` (lokal Postgres yo'q — D03 gacha kutilgan, regressiya emas).
+Lokal smoke (haqiqiy `wrangler dev` + lokal D1, curl): migratsiyalar tushdi; `/health`; `/api/reference/materials` seed'ni qaytaradi;
+ro'yxatdan o'tish (sqlite adapter); bino yaratish (`searchText` yozildi); kirill qidiruvi `тошкент` → topildi, `%` → 0;
+eng yomon holat envelope PUT (15 tur×8 qatlam, 100 element) 200; `audit/run` 201 (`completed`); `/stats`; chat ro'yxati
+(oxirgi xabar + o'qilmagan soni). **Tekshirilmadi:** Workers Free'ning haqiqiy 50-so'rov chegarasi (Miniflare qo'llamaydi — D04 smoke);
+WebSocket/DO oqimi; brauzer UI (o'zgarmadi).
+`apps/api/tests/*` hali Postgres'ga tayanadi (`pg`, `test-db.ts`) — D03 da almashtiriladi; `pg` devDependency shu uchun qoldi.
+
+**Navbatda:** D01+D02 push, so'ng D03 (test harness — lokal D1).

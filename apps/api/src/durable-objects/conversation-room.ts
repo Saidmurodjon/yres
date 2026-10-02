@@ -1,5 +1,11 @@
 import { DurableObject } from "cloudflare:workers";
-import { conversationMember, createDb, message as messageTable, notification, user } from "@yres/db";
+import {
+  conversationMember,
+  createDb,
+  message as messageTable,
+  notification,
+  user,
+} from "@yres/db";
 import { and, eq } from "drizzle-orm";
 import type { Env } from "../index";
 
@@ -62,7 +68,7 @@ export class ConversationRoom extends DurableObject<Env> {
       return;
     }
 
-    const db = createDb(this.env.DATABASE_URL);
+    const db = createDb(this.env.DB);
 
     console.log("[chat] frame received", incoming.type, "from", userId);
     try {
@@ -198,7 +204,11 @@ export class ConversationRoom extends DurableObject<Env> {
       .select({ userId: conversationMember.userId })
       .from(conversationMember)
       .where(eq(conversationMember.conversationId, conversationId));
-    const [sender] = await db.select({ name: user.name }).from(user).where(eq(user.id, senderId)).limit(1);
+    const [sender] = await db
+      .select({ name: user.name })
+      .from(user)
+      .where(eq(user.id, senderId))
+      .limit(1);
 
     for (const member of members) {
       if (member.userId === senderId || connectedUserIds.has(member.userId)) continue;

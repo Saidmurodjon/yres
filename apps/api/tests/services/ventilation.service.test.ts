@@ -54,7 +54,13 @@ describe("VentilationService", () => {
 
     it("heat recovery reduces the cooling-season gain the same way it reduces heating loss", () => {
       const noRecovery = calculateMechanicalVentilationCoolingGainKwh(1000, 48.4, 59.5, 500, 0);
-      const withRecovery = calculateMechanicalVentilationCoolingGainKwh(1000, 48.4, 59.5, 500, 0.85);
+      const withRecovery = calculateMechanicalVentilationCoolingGainKwh(
+        1000,
+        48.4,
+        59.5,
+        500,
+        0.85,
+      );
       expect(withRecovery).toBeCloseTo(noRecovery * 0.15, 6);
     });
 

@@ -16,7 +16,8 @@ const utilityBillInputSchema = z.object({
 });
 
 export const createUtilityBillsSchema = z.object({
-  bills: z.array(utilityBillInputSchema).min(1),
+  // 4 carriers × 12 months × 3 years = 144 rows; 9 columns → 11 rows/stmt → 14 chunks (≤ 40 budget).
+  bills: z.array(utilityBillInputSchema).min(1).max(144),
 });
 
 export type CreateUtilityBillsInput = z.infer<typeof createUtilityBillsSchema>;

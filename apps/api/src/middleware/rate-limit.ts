@@ -31,8 +31,7 @@ interface RateLimitOptions {
  */
 export function rateLimit(options: RateLimitOptions) {
   return createMiddleware<AppEnv>(async (c, next) => {
-    const ip =
-      c.req.header("cf-connecting-ip") ?? c.req.header("x-forwarded-for") ?? "unknown";
+    const ip = c.req.header("cf-connecting-ip") ?? c.req.header("x-forwarded-for") ?? "unknown";
     const key = `${options.keyPrefix}:${ip}`;
 
     const binding = c.env.RATE_LIMITER;

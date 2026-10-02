@@ -45,7 +45,10 @@ describe("Audit run (end-to-end through real reference data)", () => {
   });
 
   it("seeds a usable Tashkent climate region with 12 months of normals", async () => {
-    const [region] = await testDb.select().from(climateRegion).where(eq(climateRegion.name, "Tashkent"));
+    const [region] = await testDb
+      .select()
+      .from(climateRegion)
+      .where(eq(climateRegion.name, "Tashkent"));
     expect(region).toBeDefined();
     expect(region?.designOutdoorTempC).toBe(-14);
   });
@@ -53,7 +56,10 @@ describe("Audit run (end-to-end through real reference data)", () => {
   it("runs a full audit for a building with only envelope data and returns a physically sensible result", async () => {
     const { cookie } = await signUpTestUser();
 
-    const [tashkent] = await testDb.select().from(climateRegion).where(eq(climateRegion.name, "Tashkent"));
+    const [tashkent] = await testDb
+      .select()
+      .from(climateRegion)
+      .where(eq(climateRegion.name, "Tashkent"));
     if (!tashkent) throw new Error("Tashkent region not seeded");
 
     const materialsResponse = await authRequest("/api/reference/materials", {}, cookie);
@@ -113,7 +119,11 @@ describe("Audit run (end-to-end through real reference data)", () => {
 
     const envelopeResponse = await authRequest(
       `/api/buildings/${building.id}/envelope`,
-      { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(envelopePayload) },
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(envelopePayload),
+      },
       cookie,
     );
     expect(envelopeResponse.status).toBe(200);
@@ -136,7 +146,11 @@ describe("Audit run (end-to-end through real reference data)", () => {
     );
     expect(generationResponse.status).toBe(200);
 
-    const runResponse = await authRequest(`/api/buildings/${building.id}/audit/run`, { method: "POST" }, cookie);
+    const runResponse = await authRequest(
+      `/api/buildings/${building.id}/audit/run`,
+      { method: "POST" },
+      cookie,
+    );
     expect(runResponse.status).toBe(201);
     const runBody = (await runResponse.json()) as {
       auditRun: { status: string };
@@ -171,15 +185,25 @@ describe("Audit run (end-to-end through real reference data)", () => {
 
     // GET /audit/results recomputes fresh rather than replaying a stored
     // result — confirm it agrees with what /run just returned.
-    const resultsResponse = await authRequest(`/api/buildings/${building.id}/audit/results`, {}, cookie);
+    const resultsResponse = await authRequest(
+      `/api/buildings/${building.id}/audit/results`,
+      {},
+      cookie,
+    );
     expect(resultsResponse.status).toBe(200);
-    const resultsBody = (await resultsResponse.json()) as { result: { summary: { currentEnergyUseKwhPerM2Year: number } } };
+    const resultsBody = (await resultsResponse.json()) as {
+      result: { summary: { currentEnergyUseKwhPerM2Year: number } };
+    };
     expect(resultsBody.result.summary.currentEnergyUseKwhPerM2Year).toBeCloseTo(
       runBody.result.summary.currentEnergyUseKwhPerM2Year,
       6,
     );
 
-    const statusResponse = await authRequest(`/api/buildings/${building.id}/audit/status`, {}, cookie);
+    const statusResponse = await authRequest(
+      `/api/buildings/${building.id}/audit/status`,
+      {},
+      cookie,
+    );
     expect(statusResponse.status).toBe(200);
     const statusBody = (await statusResponse.json()) as { auditRun: { status: string } };
     expect(statusBody.auditRun.status).toBe("completed");
@@ -187,7 +211,10 @@ describe("Audit run (end-to-end through real reference data)", () => {
 
   it("404s on audit results before any run has completed", async () => {
     const { cookie } = await signUpTestUser();
-    const [tashkent] = await testDb.select().from(climateRegion).where(eq(climateRegion.name, "Tashkent"));
+    const [tashkent] = await testDb
+      .select()
+      .from(climateRegion)
+      .where(eq(climateRegion.name, "Tashkent"));
     if (!tashkent) throw new Error("Tashkent region not seeded");
 
     const buildingResponse = await authRequest(
@@ -201,7 +228,11 @@ describe("Audit run (end-to-end through real reference data)", () => {
     );
     const { building } = (await buildingResponse.json()) as { building: { id: string } };
 
-    const resultsResponse = await authRequest(`/api/buildings/${building.id}/audit/results`, {}, cookie);
+    const resultsResponse = await authRequest(
+      `/api/buildings/${building.id}/audit/results`,
+      {},
+      cookie,
+    );
     expect(resultsResponse.status).toBe(404);
   });
 });

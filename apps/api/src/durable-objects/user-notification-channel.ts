@@ -30,7 +30,7 @@ export class UserNotificationChannel extends DurableObject<Env> {
   async webSocketClose(ws: WebSocket, code: number, reason: string): Promise<void> {
     // Phase 8+: also update user.lastSeenAt here (docs/social-features.md's
     // chat presence design) — needs a @yres/db client constructed from
-    // env.DATABASE_URL, not wired yet since this is the infra skeleton only.
+    // env.DB, not wired yet since this is the infra skeleton only.
     //
     // 1004/1005/1006/1015 are reserved "status-only" codes the WebSocket API
     // forbids passing back into close() — echoing them through throws an
