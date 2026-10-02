@@ -1,4 +1,4 @@
-# F04 — Generatsiya `(Q+Qd)/η` (X33) va taqsimot samaradorligi (ISI, sovutish)
+# F04 — Generatsiya `(Q+Qd)/η` (X33), taqsimot samaradorligi (ISI, sovutish), yillik ish soatlari
 
 **Manba:** 01 §1.3 M1, §2.2, P0-1 · X33 · **Commit:** bitta. **Bog'liqlik:** F03 (golden yashil).
 **Yopadi:** X33 qismi (06 §2.5 da alohida D-raqami yo'q — F03b da u qaysi ID olgan bo'lsa), D10.
@@ -30,8 +30,14 @@
    (yorliq: "Taqsimot samaradorligi (quvursiz)", ixtiyoriy). i18n uz/ru/en.
 4. `CoolingResult`/`GenerationSourceResult` ga taqsimot yo'qotishi allaqachon bor maydonlarda ko'rinsin
    (`distributionLossKwh`); cooling uchun yangi `distributionLossKwh` maydoni + `hisobot.md` jadvaliga qator.
-5. `extract_inputs.py` — ikkala yangi maydonni to'ldiradi; `inputs.json` qayta chiqariladi.
-6. Unit testlar (`generation.service.test.ts`, `cooling.service.test.ts`): gaz qozon 0,58 → 496 820,78; COP 3,1109 →
+5. **Yillik ish soatlari (M5, X53 — F03b golden'da topildi):** v7.20 yoritish soatlari `Lighting!J8 = Building_data!D19 × D14`
+   = 250 kun × 10 soat = **2 500** soat/yil; dvigatel `operationHoursPerDay × heatingSeasonDurationDays` = 1 630 ni ishlatadi
+   (`audit.engine.ts` yoritish chaqiruvi). Dvigatelning oldingi yoritish natijasi aynan 1 630/2 500 nisbatda kam (17 045 vs 26 143).
+   `building.working_days_per_year` (integer, nullable; null → eski xatti-harakat + `warnings[]`), zod `1..366`, bino formasida
+   `NumberInput`. Yoritish soatlari = ish kunlari × kunlik ish soati. Uskunalar o'z soatlarini qatordan oladi — tegmang.
+   Golden: `Lighting!L11`, `L16`, `L17`, `Measures_summary!E20`.
+6. `extract_inputs.py` — barcha yangi maydonlarni to'ldiradi; `inputs.json` qayta chiqariladi.
+7. Unit testlar (`generation.service.test.ts`, `cooling.service.test.ts`): gaz qozon 0,58 → 496 820,78; COP 3,1109 →
    11 708,07 (musbat); `η = 0` → `RangeError`; sovutish 63 437,52 → 20 617,19.
 
 ## Golden kutilmasi
