@@ -52,11 +52,19 @@ export async function guardNewAccountLink(
   try {
     await revokeUnverifiedCredentialOnSocialLink(db, linked);
   } catch (error) {
-    await db
-      .delete(account)
-      .where(eq(account.id, linked.id))
-      .catch(() => undefined);
-    console.error(`[auth] revoke on social link failed, link removed userId=${linked.userId}`);
+    let linkRemoved = true;
+    try {
+      await db.delete(account).where(eq(account.id, linked.id));
+    } catch {
+      linkRemoved = false;
+    }
+    // If the database is down for the revoke it may well be down for this too — then the S-1 hole is open
+    // (link kept, password kept) and whoever reads the logs has to know.
+    console.error(
+      linkRemoved
+        ? `[auth] revoke on social link failed, link removed userId=${linked.userId}`
+        : `[auth] revoke failed AND link removal failed — S-1 exposure userId=${linked.userId}`,
+    );
     throw error;
   }
 }

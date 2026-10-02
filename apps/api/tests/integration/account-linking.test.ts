@@ -2,7 +2,10 @@ import { account, session, user } from "@yres/db";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createAuth } from "../../src/auth";
-import { revokeUnverifiedCredentialOnSocialLink } from "../../src/auth/account-linking";
+import {
+  guardNewAccountLink,
+  revokeUnverifiedCredentialOnSocialLink,
+} from "../../src/auth/account-linking";
 import { closeTestDb, resetTestDb, testDb } from "../helpers/test-db";
 import { testEnv } from "../helpers/test-env";
 
@@ -147,5 +150,36 @@ describe("revokeUnverifiedCredentialOnSocialLink (S-1)", () => {
       (a) => a.providerId,
     );
     expect(providers).toEqual(["credential"]);
+  });
+
+  it("logs loudly when the revoke AND the link removal both fail (S-1 left open)", async () => {
+    const id = await seedUser(false);
+    const brokenDb = new Proxy(testDb, {
+      get(target, prop) {
+        if (prop === "batch" || prop === "delete") {
+          return () => {
+            throw new Error("simulated D1 outage");
+          };
+        }
+        const value = Reflect.get(target, prop, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    const errors: string[] = [];
+    const original = console.error;
+    console.error = (message?: unknown) => {
+      errors.push(String(message));
+    };
+    try {
+      await expect(
+        guardNewAccountLink(brokenDb, { id: "link-id", userId: id, providerId: "google" }),
+      ).rejects.toThrow("simulated D1 outage");
+    } finally {
+      console.error = original;
+    }
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain("revoke failed AND link removal failed");
+    expect(errors[0]).toContain(id);
+    expect(errors[0]).not.toContain("@");
   });
 });
