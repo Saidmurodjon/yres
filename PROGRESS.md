@@ -2472,3 +2472,11 @@ T06b — qamrab olinganlar:
 - Qolgan farq faqat yuqori oqimdagi kirishlardan (issiqlik talabi 420 657 vs 251 383 — D3/D9; ISI talabi 32 421 vs 22 212 — DHW modeli ish kunlari/ΔT, README ro'yxatidagi ma'lum bo'shliq): `H7`/`N7`/`H11` formulalari to'g'ri, lekin ularning kirishlari hali farq qiladi, shuning uchun generatsiya id'lari mapping'ga kiritilmagan.
 - Tekshiruv: type-check, build, biome, `bun run test` (api 211, web 68) yashil.
 **Navbatda:** F05 (moliya).
+
+## Faza 1 · F04 qo'shimcha — ISI talabi ish kunlari bo'yicha, generatsiya qatorlari mapping'da (2026-10-02)
+
+- `dhw.service.ts`: `workingDaysPerYear` berilsa `G = round(isitishKunlari·ishKunlari/365)` (163/250 → 112), `I = ishKunlari − G` (138), ΔT 55/45 (`DHW generation!F5:I5`); bo'sh → eski 365 kunlik bo'linish + `warnings[]` (yoritish ogohlantirishi bilan birlashtirilgan). Unit test 112/138, `K16 = 22 212,46264`; golden'da `K16` mos (tafovutda yo'q).
+- Mapping: `Overall gener. & distrib. eff.!H7/N7/H8/N8/H11/N11` (+ D, J, H21, N21, sovutish, COP) — faqat kitobda mavjud qatorlar. Ochiq qolganlari D3 ga (issiqlik talabi 420 657 vs 251 383 — pol, D9) bog'landi; `N12/N13` D22 ga.
+- `Ventilation losses!I50` (7 570,45) expected'da va `ventilation.mechanicalElectricalKwh` ga bog'langan; dvigatel 17 895,84 (nominal kW × 24 soat × kunlar, soat/koeffitsient kirishi yo'q) → **D23** (`Faza 2+`).
+- Eski "per-source generation" notModelled guruhi olib tashlandi. unexplained = 0. type-check, biome, `bun run test` (api 213) yashil.
+**Navbatda:** F05a.

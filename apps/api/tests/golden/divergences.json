@@ -1,6 +1,31 @@
 {
   "divergences": [
     {
+      "id": "D1",
+      "x": ["X85", "X86"],
+      "title": "Financial model: nominal 6.08% discount, compound escalation, 20-year horizon vs engine's 4% linear",
+      "status": "open",
+      "closesIn": "F05",
+      "expectedIds": [
+        "financial.15.irrActual",
+        "financial.15.npvActualUsd",
+        "measures.15.discountedPaybackActualYears",
+        "measures.15.discountedPaybackStandardizedYears",
+        "measures.15.irrStandardized",
+        "measures.15.npvStandardizedUsd"
+      ],
+      "note": "NPV/IRR/discounted payback of every measure. Ids may also differ because the measure's own savings differ (see D13..); when D1 closes, whatever still fails is a savings divergence and must be listed there."
+    },
+    {
+      "id": "D23",
+      "x": ["X98"],
+      "title": "Mechanical ventilation fan electricity: Excel = power x hours x utilisation per line (Equipment!K85+K86 = 7570.45), engine = nameplate kW x 24 h x heating days (17896)",
+      "status": "open",
+      "closesIn": "Faza 2+",
+      "expectedIds": ["ventilation.mechanicalElectricalKwh"],
+      "note": "The workbook uses 1857 h/y and utilisation 0.5/0.8 per line; the ventilation system model has no hours/utilisation input."
+    },
+    {
       "id": "D3",
       "x": ["X75", "X83"],
       "title": "Floor: ground zone method and floor over unheated space (F3, n = 0.4)",
@@ -13,6 +38,16 @@
         "envelope.before.total.floor",
         "financial.5.irrActual",
         "financial.5.npvActualUsd",
+        "generation.finalEnergy.totalAfter",
+        "generation.finalEnergy.totalBefore",
+        "generation.heating.boiler.after.finalEnergyKwh",
+        "generation.heating.boiler.after.usefulNeedKwh",
+        "generation.heating.boiler.before.finalEnergyKwh",
+        "generation.heating.boiler.before.usefulNeedKwh",
+        "generation.heating.total.after.finalEnergyKwh",
+        "generation.heating.total.after.usefulNeedKwh",
+        "generation.heating.total.before.finalEnergyKwh",
+        "generation.heating.total.before.usefulNeedKwh",
         "measures.5.actualSavingsKwh",
         "measures.5.actualSavingsUsd",
         "measures.5.co2ReductionTonnesPerYear",
@@ -24,7 +59,7 @@
         "measures.5.standardizedSavingsKwh",
         "measures.5.standardizedSavingsUsd"
       ],
-      "note": "Floor heat loss (envelope.*.total.floor), measure 5 savings, and envelope.*.total.building (dominated by the floor difference; also carries D9)."
+      "note": "Floor heat loss (envelope.*.total.floor), measure 5 savings, envelope.*.total.building (dominated by the floor difference; also carries D9) and the heating demand rows generation.heating.*/generation.finalEnergy.* that sit downstream of it (before: 420657 vs 251383 kWh)."
     },
     {
       "id": "D5",
@@ -215,22 +250,28 @@
       "note": "Measures 1 and 2 both receive the wall-category total 80302 kWh; 6/7/8 all receive 26369; totals.* aggregate these."
     },
     {
-      "id": "D2",
-      "x": ["X88"],
-      "title": "PV: self-consumption/export tariff (export tariff added to money savings)",
+      "id": "D22",
+      "x": [],
+      "title": "Solar DHW measure: engine takes raw production with the gas tariff; Excel uses Measures_summary!D64 (after distribution/backup) with the electricity tariff",
       "status": "open",
-      "closesIn": "F09",
+      "closesIn": "F06",
       "expectedIds": [
-        "financial.15.irrActual",
-        "financial.15.npvActualUsd",
-        "measures.15.actualSavingsKwh",
-        "measures.15.actualSavingsUsd",
-        "measures.15.discountedPaybackStandardizedYears",
-        "measures.15.irrStandardized",
-        "measures.15.npvStandardizedUsd",
-        "measures.15.simplePaybackActualYears"
+        "financial.14.irrActual",
+        "financial.14.npvActualUsd",
+        "generation.dhw.solar.after.finalEnergyKwh",
+        "generation.dhw.total.after.finalEnergyKwh",
+        "measures.14.actualSavingsKwh",
+        "measures.14.actualSavingsUsd",
+        "measures.14.co2ReductionTonnesPerYear",
+        "measures.14.discountedPaybackStandardizedYears",
+        "measures.14.irrStandardized",
+        "measures.14.npvStandardizedUsd",
+        "measures.14.simplePaybackActualYears",
+        "measures.14.simplePaybackStandardizedYears",
+        "measures.14.standardizedSavingsKwh",
+        "measures.14.standardizedSavingsUsd"
       ],
-      "note": "Measure 15 actual savings and USD/NPV."
+      "note": "kWh 15549 vs 18145; USD 270 vs 1644 (inferCarrierForMeasure('solar_dhw') = gas)."
     },
     {
       "id": "D20",
@@ -274,28 +315,6 @@
         "measures.13.standardizedSavingsUsd"
       ],
       "note": "Useful delta now matches (28166.4 = Heat distr. efficiency!L20, after fixing the pipe-reference input); Excel divides by Overall gener. G7 = 0.58 -> 48562.76."
-    },
-    {
-      "id": "D22",
-      "x": [],
-      "title": "Solar DHW measure: engine takes raw production with the gas tariff; Excel uses Measures_summary!D64 (after distribution/backup) with the electricity tariff",
-      "status": "open",
-      "closesIn": "F06",
-      "expectedIds": [
-        "financial.14.irrActual",
-        "financial.14.npvActualUsd",
-        "measures.14.actualSavingsKwh",
-        "measures.14.actualSavingsUsd",
-        "measures.14.co2ReductionTonnesPerYear",
-        "measures.14.discountedPaybackStandardizedYears",
-        "measures.14.irrStandardized",
-        "measures.14.npvStandardizedUsd",
-        "measures.14.simplePaybackActualYears",
-        "measures.14.simplePaybackStandardizedYears",
-        "measures.14.standardizedSavingsKwh",
-        "measures.14.standardizedSavingsUsd"
-      ],
-      "note": "kWh 15549 vs 18145; USD 270 vs 1644 (inferCarrierForMeasure('solar_dhw') = gas)."
     },
     {
       "id": "D14",
@@ -393,43 +412,6 @@
         "envelope.before.Win3.annualLossKwh",
         "envelope.before.Win3.areaM2",
         "envelope.before.Win3.uValueWPerM2K"
-      ]
-    },
-    {
-      "reason": "Per-source generation/distribution rows: engine returns per-source results without Excel row identity — F04",
-      "expectedIds": [
-        "generation.cooling.split.after.distributionLossKwh",
-        "generation.cooling.split.after.finalEnergyKwh",
-        "generation.cooling.split.after.usefulNeedKwh",
-        "generation.cooling.split.before.distributionLossKwh",
-        "generation.cooling.split.before.finalEnergyKwh",
-        "generation.cooling.split.before.usefulNeedKwh",
-        "generation.dhw.electricHeaters.after.distributionLossKwh",
-        "generation.dhw.electricHeaters.after.finalEnergyKwh",
-        "generation.dhw.electricHeaters.after.usefulNeedKwh",
-        "generation.dhw.electricHeaters.before.distributionLossKwh",
-        "generation.dhw.electricHeaters.before.finalEnergyKwh",
-        "generation.dhw.electricHeaters.before.usefulNeedKwh",
-        "generation.dhw.solar.after.finalEnergyKwh",
-        "generation.dhw.solar.after.usefulNeedKwh",
-        "generation.dhw.total.after.finalEnergyKwh",
-        "generation.dhw.total.after.usefulNeedKwh",
-        "generation.dhw.total.before.finalEnergyKwh",
-        "generation.dhw.total.before.usefulNeedKwh",
-        "generation.finalEnergy.totalAfter",
-        "generation.finalEnergy.totalBefore",
-        "generation.heatPump.copAfter",
-        "generation.heating.boiler.after.distributionLossKwh",
-        "generation.heating.boiler.after.efficiency",
-        "generation.heating.boiler.after.finalEnergyKwh",
-        "generation.heating.boiler.after.usefulNeedKwh",
-        "generation.heating.boiler.before.distributionLossKwh",
-        "generation.heating.boiler.before.finalEnergyKwh",
-        "generation.heating.boiler.before.usefulNeedKwh",
-        "generation.heating.total.after.finalEnergyKwh",
-        "generation.heating.total.after.usefulNeedKwh",
-        "generation.heating.total.before.finalEnergyKwh",
-        "generation.heating.total.before.usefulNeedKwh"
       ]
     },
     {

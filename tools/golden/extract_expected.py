@@ -135,6 +135,7 @@ def g1_other(x: Extractor) -> None:
     x.put("pv.exportedKwh", "PV", "C36", [("B36", "PV electricity exported")], "G1")
     x.put("pv.productionValueUsd", "PV", "C38", [("B38", "Value of the PV production")], "G1")
     x.put("solarDhw.annualKwh", "Solar DHW", "I13", [("B13", "Proposed solar DHW"), ("I11", "DHW generation")], "G1")
+    x.put("ventilation.mechanicalElectricalKwh", "Ventilation losses", "I50", [("C50", "Annual electrical energy consumption for mechanical")], "G1")
     x.put("ems.thermalSavingsKwh", "EMS", "D9", [("B9", "Total annual THERMAL")], "G1")
     x.put("ems.electricalSavingsKwh", "EMS", "D10", [("B10", "Total annual ELECTRICAL")], "G1")
 

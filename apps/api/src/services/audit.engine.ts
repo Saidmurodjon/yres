@@ -157,7 +157,7 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
       : operationHoursDuringHeatingSeason;
   if (buildingRecord.workingDaysPerYear == null) {
     warnings.push(
-      "workingDaysPerYear is not set: lighting uses heating-season operating hours, which understates annual lighting consumption.",
+      "workingDaysPerYear is not set: lighting uses heating-season operating hours (understates annual lighting) and DHW demand uses calendar days instead of working days (overstates it).",
     );
   }
 
@@ -386,6 +386,7 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
         scenario,
         dhwSourceRows.filter((s) => s.scenario === scenario),
         buildingRecord.heatingSeasonDurationDays,
+        buildingRecord.workingDaysPerYear,
       ),
     );
 

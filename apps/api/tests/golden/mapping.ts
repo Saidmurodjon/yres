@@ -51,6 +51,89 @@ export const MAPPING: Record<string, Accessor> = {
     r.renewableProduction.find((p) => p.systemType === "solar_dhw")?.annualProductionKwh ?? null,
 };
 
+// `Overall gener. & distrib. eff.` rows. Excel keeps one row per source; the engine one result per source id.
+type GenRow = AuditResult["generation"][number];
+const genRow = (r: AuditResult, sourceId: string): GenRow | undefined =>
+  r.generation.find((g) => g.sourceId === sourceId);
+const genSum = (r: AuditResult, endUse: string, scenario: string, field: keyof GenRow): number =>
+  sum(
+    r.generation
+      .filter((g) => g.endUse === endUse && g.scenario === scenario)
+      .map((g) => g[field] as number),
+  );
+const genFields = {
+  usefulNeedKwh: "usefulEnergyNeedKwh",
+  distributionLossKwh: "distributionLossKwh",
+  finalEnergyKwh: "finalEnergyConsumptionKwh",
+  efficiency: "efficiencyOrSeer",
+} as const;
+
+const GENERATION_ROW_IDS = new Set([
+  "generation.heating.boiler.before.usefulNeedKwh",
+  "generation.heating.boiler.before.distributionLossKwh",
+  "generation.heating.boiler.before.finalEnergyKwh",
+  "generation.heating.boiler.after.usefulNeedKwh",
+  "generation.heating.boiler.after.distributionLossKwh",
+  "generation.heating.boiler.after.finalEnergyKwh",
+  "generation.heating.boiler.after.efficiency",
+  "generation.dhw.electricHeaters.before.usefulNeedKwh",
+  "generation.dhw.electricHeaters.before.distributionLossKwh",
+  "generation.dhw.electricHeaters.before.finalEnergyKwh",
+  "generation.dhw.electricHeaters.after.usefulNeedKwh",
+  "generation.dhw.electricHeaters.after.distributionLossKwh",
+  "generation.dhw.electricHeaters.after.finalEnergyKwh",
+  "generation.dhw.solar.after.usefulNeedKwh",
+  "generation.dhw.solar.after.finalEnergyKwh",
+]);
+
+for (const [key, sourceId] of [
+  ["heating.boiler.before", "gen-heating-before"],
+  ["heating.boiler.after", "gen-heating-after"],
+  ["dhw.electricHeaters.before", "gen-dhw-before"],
+  ["dhw.electricHeaters.after", "gen-dhw-after"],
+  ["dhw.solar.after", "gen-dhw-solar-after"],
+] as const) {
+  for (const [field, prop] of Object.entries(genFields)) {
+    // Only the rows the workbook actually has (e.g. no efficiency cell for the DHW heaters).
+    if (!GENERATION_ROW_IDS.has(`generation.${key}.${field}`)) continue;
+    MAPPING[`generation.${key}.${field}`] = (r) => genRow(r, sourceId)?.[prop] ?? null;
+  }
+}
+for (const [endUse, key] of [
+  ["heating", "heating.total"],
+  ["dhw", "dhw.total"],
+] as const) {
+  for (const scenario of ["before", "after"] as const) {
+    MAPPING[`generation.${key}.${scenario}.usefulNeedKwh`] = (r) =>
+      genSum(r, endUse, scenario, "usefulEnergyNeedKwh");
+    MAPPING[`generation.${key}.${scenario}.finalEnergyKwh`] = (r) =>
+      genSum(r, endUse, scenario, "finalEnergyConsumptionKwh");
+  }
+}
+// Cooling is not a generation source in the engine: load / distribution loss / electricity come from CoolingResult.
+for (const scenario of ["before", "after"] as const) {
+  const cool = (r: AuditResult) => r.cooling.find((c) => c.scenario === scenario);
+  MAPPING[`generation.cooling.split.${scenario}.usefulNeedKwh`] = (r) =>
+    cool(r)?.totalCoolingLoadKwh ?? null;
+  MAPPING[`generation.cooling.split.${scenario}.distributionLossKwh`] = (r) =>
+    cool(r)?.distributionLossKwh ?? null;
+  MAPPING[`generation.cooling.split.${scenario}.finalEnergyKwh`] = (r) =>
+    cool(r)?.electricalEnergyForCoolingKwh ?? null;
+}
+MAPPING["generation.heatPump.copAfter"] = (r) =>
+  genRow(r, "gen-heating-after")?.efficiencyOrSeer ?? null;
+// H21 = H13 + H8, N21 = N13 + N8: heating + DHW, cooling excluded
+MAPPING["generation.finalEnergy.totalBefore"] = (r) =>
+  genSum(r, "heating", "before", "finalEnergyConsumptionKwh") +
+  genSum(r, "dhw", "before", "finalEnergyConsumptionKwh");
+MAPPING["generation.finalEnergy.totalAfter"] = (r) =>
+  genSum(r, "heating", "after", "finalEnergyConsumptionKwh") +
+  genSum(r, "dhw", "after", "finalEnergyConsumptionKwh");
+
+// `Ventilation losses!I50 = Equipment!K85 + K86`: electricity of the "after" mechanical ventilation.
+MAPPING["ventilation.mechanicalElectricalKwh"] = (r) =>
+  r.ventilationLoss.find((v) => v.scenario === "after")?.mechanicalElectricalKwh ?? null;
+
 type Measure = AuditResult["measures"][number];
 const measureOf = (result: AuditResult, n: number): Measure | undefined =>
   result.measures.find((m) => m.measureId === `measure-${n}`);
