@@ -8,9 +8,10 @@
     "dev": "wrangler dev",
     "build": "tsc --noEmit",
     "deploy": "wrangler deploy --env production",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit && tsc -p tsconfig.test.json",
     "lint": "biome lint .",
     "test": "vitest run",
+    "golden:report": "bun run tests/golden/report.ts",
     "db:migrate:local": "npx wrangler d1 migrations apply DB --local",
     "db:migrate:prod": "npx wrangler d1 migrations apply DB --remote --env production"
   },

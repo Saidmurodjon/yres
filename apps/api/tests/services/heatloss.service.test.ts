@@ -63,7 +63,7 @@ describe("HeatLossService", () => {
 
     expect(result.monthly).toHaveLength(4);
     expect(result.annualTotalKwh).toBeCloseTo(
-      result.annualByCategory.external_wall + result.annualByCategory.window,
+      (result.annualByCategory.external_wall ?? 0) + (result.annualByCategory.window ?? 0),
       6,
     );
   });

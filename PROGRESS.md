@@ -2429,3 +2429,20 @@ T06b — qamrab olinganlar:
 - Tekshiruv: `Envelope!K74` o'z-o'zini tekshirish o'tdi; `computeAudit(inputs)` xatosiz (19 chora-tadbir), devor maydoni 1244,918; **G0**: `Envelope!L95` = 2518,855 va `M95` = 7556,565 — **aynan mos** (`calculateBuildingBlockAreas`).
 - `@LAMP:<key>` → `LAMP_TYPE_NAMES` almashtirish F03b loader'ida (`tests/golden/load-inputs.ts`).
 **Navbatda:** F03b (`tsconfig.test.json` + type-check, `tolerances.ts`, `mapping.ts`, `golden.test.ts`, `divergences.json`, `golden:report`).
+
+## Faza 1 · F03b — golden test, `mapping.ts`, `divergences.json` (2026-10-02)
+
+- Yangi `apps/api/tests/golden/`: `load-inputs.ts` (`@LAMP:` → `LAMP_TYPE_NAMES`), `tolerances.ts` (06 §2.3 "boshlang'ich"), `mapping.ts`, `compare.ts`, `golden.test.ts`, `report.ts` (`bun run --cwd apps/api golden:report`), `divergences.json`.
+- `apps/api/tsconfig.test.json` + `type-check` = `tsc --noEmit && tsc -p tsconfig.test.json` (yres-01 so'rovi). Testlarni qamrab olish ikkita eski strict-index xatosini ochdi (`heatloss.service.test.ts`) — tuzatildi.
+- Natija: `expected.json` 741 id dan **385 tasi mapping'da** (179 tolerans ichida, 206 tashqarida — hammasi `divergences.json` da), **356 tasi `notModelled`** (sabab guruhlari bilan: per-element U/yo'qotish, balans bloklari, pul oqimi qatorlari, tashuvchi bo'yicha USD, `Checks`, `Financial parameters`). Ikki tomonlama qoida testda: yangi tafovut → yiqiladi; o'z-o'zidan yopilgan → yiqiladi; har id mapping yoki notModelled da.
+- Qo'lda sinov: D3 ni ro'yxatdan olib tashlash → "new divergence" yiqildi; mos kelayotgan id ni tafovutga qo'shish → "stale divergence" yiqildi; ikkalasi qaytarilganda yashil.
+- Tekshiruv: type-check, biome, `bun run test` 203 test yashil (golden 5).
+- **`divergences.json` holati:** D2 (FES, F09), D3 (pol, F08), D5 (deraza ta'miri, F07), D6 (issiqlik nasosi + X33, F04), D8 (BEMS, F06), D9 (sokl/grunt ish-vaqti, devor yo'qotishi +7–9 %), D11 (soyabon/sovutish, F07), D12 (chora-tadbir atributsiyasi + jamilar, F06). **D1 (moliya) alohida id olmadi:** har chora-tadbirning moliyaviy ustunlari saqlash tafovuti bilan birga buzilgan, shuning uchun ular saqlash tafovutlariga yozilgan; F05 dan keyin qolganlari yangi tafovut sifatida chiqadi.
+- **`unexplained` (spec D-ro'yxatida yo'q, sababi hali aniqlanmagan) — loyiha egasiga savol:**
+  - D13 — deraza/eshik yo'qotishi: oldin 47 523 vs 27 423 kWh (+73 %), keyin 21 154 vs 22 059; (umumiy bino yo'qotishi ham shu sabab).
+  - D14 — yoritish: oldin 17 045 vs 26 143 kWh, keyin 16 128 vs 15 352; №16.
+  - D15 — uskunalar "keyin" 31 731 vs 24 160 kWh; №17 (Excel +5300 kWh tejash, dvigatel −10 079).
+  - D16 — №13 isitish tizimi: 5 477 vs 48 563 kWh.
+  - D17 — №14 quyosh suv isitgichi: kWh 15 549 vs 18 145, USD 270 vs 1 644 (tarif tashuvchisi?).
+  D13–D15 kirish xaritasi (ekstraktor) xatosi bo'lishi ham mumkin — F04 dan oldin yres-01 bilan tekshirish kerak.
+**Navbatda:** F04 (X33, D10). Avval D13–D17 sabablarini aniqlash tavsiya etiladi.
