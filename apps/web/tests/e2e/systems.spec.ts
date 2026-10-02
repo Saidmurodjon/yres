@@ -18,7 +18,8 @@ test("configuring ventilation + generation via the Systems tab produces nonzero 
   await page.goto("/register");
   await page.getByLabel("Full name").fill("E2E Systems User");
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill("password1234");
+  await page.getByLabel("Password", { exact: true }).fill("password1234");
+  await page.getByLabel("Confirm password").fill("password1234");
   await page.getByRole("button", { name: "Create account" }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 

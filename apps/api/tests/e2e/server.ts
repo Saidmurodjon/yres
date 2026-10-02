@@ -53,9 +53,19 @@ const port = Number(process.env.E2E_API_PORT ?? 3001);
 await resetTestDb();
 await seedReferenceDataWithDb(testDb);
 
+// Every browser request arrives from the same address, so the real auth rate limiter (10 per minute
+// per IP — covered by tests/integration/rate-limit.test.ts) would throttle the E2E suite's many
+// sign-ups and flake it. Give each request its own synthetic client IP; this server exists only for E2E.
+let requestCounter = 0;
+
 Bun.serve({
   port,
-  fetch: (request) => app.fetch(request, testEnv, testExecutionCtx),
+  fetch: (request) => {
+    const headers = new Headers(request.headers);
+    requestCounter += 1;
+    headers.set("x-forwarded-for", `e2e-${requestCounter}`);
+    return app.fetch(new Request(request, { headers }), testEnv, testExecutionCtx);
+  },
 });
 
 console.log(`E2E test API server listening on http://localhost:${port}`);

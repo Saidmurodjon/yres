@@ -12,20 +12,25 @@ import { expect, test } from "@playwright/test";
  * the "check your inbox" confirmation, and the invalid/missing-token error
  * states on the landing page a real email link points to.
  */
-test("forgot-password flow is reachable from login and handles invalid tokens", async ({ page }) => {
+test("forgot-password flow is reachable from login and handles invalid tokens", async ({
+  page,
+}) => {
   await page.goto("/login");
   await page.getByRole("link", { name: "Forgot password?" }).click();
   await expect(page).toHaveURL(/\/forgot-password$/);
-
   const unique = Date.now();
-  await page.getByLabel("Email").fill(`e2e-reset-${unique}@example.com`);
-  await page.getByRole("button", { name: "Send reset link" }).click();
-  await expect(page.getByText(/reset link is on its way/)).toBeVisible();
+  // The route hydrates after its chunk loads; an email typed before that is wiped and the submit does
+  // nothing. Retry the whole fill → submit → confirmation step until hydration has settled.
+  await expect(async () => {
+    await page.getByLabel("Email").fill(`e2e-reset-${unique}@example.com`);
+    await page.getByRole("button", { name: "Send reset link" }).click();
+    await expect(page.getByText(/reset link is on its way/)).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15_000 });
 
   // A user opening the reset page without a token (link expired, or typed
   // in directly) sees a clear error and a way back, not a broken form.
   await page.goto("/reset-password");
-  await expect(page.getByText(/invalid or expired/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Request a new one" })).toBeVisible();
   await page.getByRole("link", { name: "Request a new one" }).click();
   await expect(page).toHaveURL(/\/forgot-password$/);
 

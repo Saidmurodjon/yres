@@ -20,7 +20,8 @@ test("owner invites a viewer, who sees the building read-only", async ({ browser
   await viewerPage.goto("/register");
   await viewerPage.getByLabel("Full name").fill("E2E Share Viewer");
   await viewerPage.getByLabel("Email").fill(viewerEmail);
-  await viewerPage.getByLabel("Password").fill("password1234");
+  await viewerPage.getByLabel("Password", { exact: true }).fill("password1234");
+  await viewerPage.getByLabel("Confirm password").fill("password1234");
   await viewerPage.getByRole("button", { name: "Create account" }).click();
   await expect(viewerPage).toHaveURL(/\/dashboard$/);
 
@@ -28,7 +29,8 @@ test("owner invites a viewer, who sees the building read-only", async ({ browser
   await ownerPage.goto("/register");
   await ownerPage.getByLabel("Full name").fill("E2E Share Owner");
   await ownerPage.getByLabel("Email").fill(ownerEmail);
-  await ownerPage.getByLabel("Password").fill("password1234");
+  await ownerPage.getByLabel("Password", { exact: true }).fill("password1234");
+  await ownerPage.getByLabel("Confirm password").fill("password1234");
   await ownerPage.getByRole("button", { name: "Create account" }).click();
   await expect(ownerPage).toHaveURL(/\/dashboard$/);
 
