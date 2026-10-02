@@ -8,36 +8,20 @@ function buildInputs(): AuditInputs {
   return {
     building: {
       id: "b1",
-      name: "Test building",
-      location: "Toshkent",
-      searchText: "test building",
-      climateRegionId: "cr1",
-      buildingType: "other",
-      yearBuilt: 1980,
-      status: "in_progress",
-      deadline: null,
-      latitude: null,
-      longitude: null,
-      netCooledFloorAreaM2: 0,
       heatingSeasonDurationDays: 180,
       indoorTempNonOperationC: 16,
       indoorTempOperationC: 20,
-      outdoorAvgHeatingSeasonTempC: 4,
-      outdoorDesignTempC: -10,
       nonOperationHoursPerDay: 14,
       operationHoursPerDay: 10,
       occupantCount: 50,
       coolingEnthalpyInsideKjKg: null,
       coolingEnthalpyOutsideKjKg: null,
-      coolingEnthalpyHottestDayKjKg: null,
-    } as AuditInputs["building"],
+    },
     climateRegion: {
       monthlyNormals: Array.from({ length: 12 }, (_, i) => {
         const month = i + 1;
         const heating = HEATING_MONTHS.includes(month);
         return {
-          id: `m${month}`,
-          climateRegionId: "cr1",
           month,
           avgOutdoorTempC: heating ? 2 : 24,
           heatingDaysInMonth: heating ? 25 : null,
@@ -53,9 +37,6 @@ function buildInputs(): AuditInputs {
     },
     blocks: [
       {
-        id: "blk1",
-        buildingId: "b1",
-        name: "A",
         footprintLengthM: 30,
         footprintWidthM: 15,
         numberOfFloors: 3,
@@ -67,36 +48,16 @@ function buildInputs(): AuditInputs {
     envelopeElements: [
       {
         id: "el1",
-        buildingId: "b1",
-        blockName: "A",
         orientation: "south",
-        sideCode: null,
-        description: null,
         constructionTypeId: "ct1",
         lengthM: 30,
         heightEnvContactM: 9.6,
         heightGroundContactM: 0,
         openings: [
           {
-            id: "op1",
-            envelopeElementId: "el1",
             openingTypeId: "ot1",
             count: 6,
-            openingType: {
-              id: "ot1",
-              buildingId: "b1",
-              code: "Win1",
-              category: "window",
-              scenario: "before",
-              retrofitOfId: null,
-              uValueWm2k: 2.8,
-              widthM: 1.5,
-              heightM: 1.5,
-              gValue: 0.6,
-              frameFactor: 0.7,
-              shadingFactor: 1,
-              description: null,
-            },
+            openingType: { category: "window", widthM: 1.5, heightM: 1.5 },
           },
         ],
       },
@@ -104,44 +65,35 @@ function buildInputs(): AuditInputs {
     constructionTypes: [
       {
         id: "ct1",
-        buildingId: "b1",
-        code: "W1",
         elementCategory: "external_wall",
         scenario: "before",
         retrofitOfId: null,
-        description: null,
+        layers: [{ thicknessM: 0.5, material: { thermalConductivityWPerMk: 0.7 } }],
+      },
+      {
+        id: "ct2",
+        elementCategory: "external_wall",
+        scenario: "after",
+        retrofitOfId: "ct1",
         layers: [
-          {
-            id: "l1",
-            constructionTypeId: "ct1",
-            layerOrder: 1,
-            materialId: "mat1",
-            thicknessM: 0.5,
-            material: { id: "mat1", name: "Brick", thermalConductivityWPerMk: 0.7 },
-          },
+          { thicknessM: 0.5, material: { thermalConductivityWPerMk: 0.7 } },
+          { thicknessM: 0.1, material: { thermalConductivityWPerMk: 0.04 } },
         ],
       },
     ],
     openingTypes: [
       {
         id: "ot1",
-        buildingId: "b1",
-        code: "Win1",
         category: "window",
         scenario: "before",
-        retrofitOfId: null,
         uValueWm2k: 2.8,
-        widthM: 1.5,
-        heightM: 1.5,
         gValue: 0.6,
         frameFactor: 0.7,
         shadingFactor: 1,
-        description: null,
       },
     ],
     surfaceResistances: [
       {
-        id: "sr1",
         elementCategory: "external_wall",
         interiorResistanceM2kPerW: 0.13,
         exteriorResistanceM2kPerW: 0.04,
@@ -156,7 +108,6 @@ function buildInputs(): AuditInputs {
     generationSources: [
       {
         id: "g1",
-        buildingId: "b1",
         endUse: "heating",
         scenario: "before",
         sourceType: "gas_boiler",
@@ -172,19 +123,17 @@ function buildInputs(): AuditInputs {
     energyMeasures: [
       {
         id: "me1",
-        buildingId: "b1",
         name: "Wall insulation",
-        category: "wall_insulation",
+        category: "envelope_wall_insulation",
         investmentCostUsd: 10000,
         lifetimeYears: 20,
         maintenanceCostPercent: 0,
         proposedForImplementation: true,
-        sourceSheetRef: null,
       },
     ],
     nonEeMeasures: [],
-    tariffs: [],
-  } as unknown as AuditInputs;
+    tariffs: [{ energyCarrier: "gas", unitCostUsd: 0.04, emissionFactorKgCo2PerKwh: 0.2 }],
+  };
 }
 
 describe("computeAudit", () => {
@@ -199,5 +148,6 @@ describe("computeAudit", () => {
       expect(Number.isFinite(row.annualTotalKwh)).toBe(true);
     }
     expect(result.measures).toHaveLength(1);
+    expect(result.measures[0]?.standardizedAnnualSavingsKwh).toBeGreaterThan(0);
   });
 });

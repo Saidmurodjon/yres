@@ -1,6 +1,9 @@
 import {
   type Database,
   building,
+  type buildingBlock,
+  type climateMonthlyNormal,
+  type constructionLayer,
   constructionType,
   coolingSystem,
   coolingWindow,
@@ -9,27 +12,22 @@ import {
   energyMeasure,
   energyTariff,
   envelopeElement,
+  type envelopeOpening,
   equipmentItem,
   generationSource,
   lampType,
   lightingZone,
+  type material,
   nonEeMeasure,
   openingType,
   pipeLossReference,
+  type renewableProductionMonthly,
   renewableSystem,
   surfaceResistance,
   utilityBill,
   ventilationSystem,
 } from "@yres/db";
 import { desc, eq } from "drizzle-orm";
-
-/** Bookkeeping columns the engine never reads; dropped so fixtures are plain JSON (no `Date`s). */
-type Bookkeeping = "createdAt" | "updatedAt" | "userId";
-type Strip<T> = T extends readonly (infer U)[]
-  ? Strip<U>[]
-  : T extends object
-    ? { [K in keyof T as K extends Bookkeeping ? never : K]: Strip<T[K]> }
-    : T;
 
 function readRaw(db: Database, buildingId: string) {
   return Promise.all([
@@ -69,39 +67,157 @@ function readRaw(db: Database, buildingId: string) {
     db.select().from(energyTariff).orderBy(desc(energyTariff.effectiveDate)),
   ]);
 }
-type Raw = Awaited<ReturnType<typeof readRaw>>;
-type NonNull0 = NonNullable<Raw[0]>;
-type ClimateRegion = NonNull0["climateRegion"];
+type Row<T extends { $inferSelect: unknown }, K extends keyof T["$inferSelect"]> = Pick<
+  T["$inferSelect"],
+  K
+>;
 
 /**
  * Everything `computeAudit` reads — one building's stored state plus the global reference
- * tables. Plain JSON-serializable data (no `Date`s), so the golden test (F03) can feed it
- * from a fixture without a database.
+ * tables — narrowed to the columns the engine actually uses. Plain JSON-serializable data
+ * (no `Date`s, no names/addresses), so the golden test (F03) can feed it from a fixture
+ * without a database. Add a column here only when the engine starts reading it.
  */
 export interface AuditInputs {
-  building: Strip<Omit<NonNull0, "climateRegion" | "blocks">>;
-  climateRegion: Strip<Pick<ClimateRegion, "monthlyNormals">>;
-  blocks: Strip<NonNull0["blocks"]>;
-  envelopeElements: Strip<Raw[1]>;
-  constructionTypes: Strip<Raw[2]>;
-  openingTypes: Strip<Raw[3]>;
-  surfaceResistances: Strip<Raw[4]>;
-  ventilationSystems: Strip<Raw[5]>;
-  coolingWindows: Strip<Raw[6]>;
-  coolingSystems: Strip<Raw[7]>;
-  dhwSources: Strip<Raw[8]>;
-  distributionSystems: Strip<Raw[9]>;
-  pipeLossReferences: Strip<Raw[10]>;
-  generationSources: Strip<Raw[11]>;
-  lightingZones: Strip<Raw[12]>;
-  lampTypes: Strip<Raw[13]>;
-  equipmentItems: Strip<Raw[14]>;
-  renewableSystems: Strip<Raw[15]>;
-  utilityBills: Strip<Raw[16]>;
-  energyMeasures: Strip<Raw[17]>;
-  nonEeMeasures: Strip<Raw[18]>;
-  /** Newest `effectiveDate` first. */
-  tariffs: Strip<Raw[19]>;
+  building: Row<
+    typeof building,
+    | "id"
+    | "heatingSeasonDurationDays"
+    | "indoorTempNonOperationC"
+    | "indoorTempOperationC"
+    | "nonOperationHoursPerDay"
+    | "operationHoursPerDay"
+    | "occupantCount"
+    | "coolingEnthalpyInsideKjKg"
+    | "coolingEnthalpyOutsideKjKg"
+  >;
+  climateRegion: {
+    monthlyNormals: Row<
+      typeof climateMonthlyNormal,
+      | "month"
+      | "avgOutdoorTempC"
+      | "heatingDaysInMonth"
+      | "solarRadiationSouthKwhM2"
+      | "solarRadiationNorthKwhM2"
+      | "solarRadiationEastWestKwhM2"
+      | "solarRadiationSeSwKwhM2"
+      | "solarRadiationNeNwKwhM2"
+      | "solarRadiationHorizontalKwhM2"
+      | "isHeatingSeasonMonth"
+    >[];
+  };
+  blocks: Row<
+    typeof buildingBlock,
+    | "footprintLengthM"
+    | "footprintWidthM"
+    | "numberOfFloors"
+    | "floorToFloorHeightM"
+    | "perimeterM"
+    | "perimeterLossCoefficient"
+  >[];
+  envelopeElements: (Row<
+    typeof envelopeElement,
+    | "id"
+    | "constructionTypeId"
+    | "orientation"
+    | "lengthM"
+    | "heightEnvContactM"
+    | "heightGroundContactM"
+  > & {
+    openings: (Row<typeof envelopeOpening, "openingTypeId" | "count"> & {
+      openingType: Row<typeof openingType, "category" | "widthM" | "heightM">;
+    })[];
+  })[];
+  constructionTypes: (Row<
+    typeof constructionType,
+    "id" | "scenario" | "retrofitOfId" | "elementCategory"
+  > & {
+    layers: (Row<typeof constructionLayer, "thicknessM"> & {
+      material: Row<typeof material, "thermalConductivityWPerMk">;
+    })[];
+  })[];
+  openingTypes: Row<
+    typeof openingType,
+    "id" | "category" | "scenario" | "uValueWm2k" | "gValue" | "frameFactor" | "shadingFactor"
+  >[];
+  surfaceResistances: Row<
+    typeof surfaceResistance,
+    "elementCategory" | "interiorResistanceM2kPerW" | "exteriorResistanceM2kPerW"
+  >[];
+  ventilationSystems: Row<
+    typeof ventilationSystem,
+    | "scenario"
+    | "systemType"
+    | "airChangeRatePerHour"
+    | "freshAirPerPersonM3h"
+    | "heatRecoveryEfficiency"
+    | "fanElectricalPowerKw"
+    | "coolingSeasonHours"
+  >[];
+  coolingWindows: Row<
+    typeof coolingWindow,
+    "scenario" | "orientation" | "areaM2" | "gValue" | "shadingFactor"
+  >[];
+  coolingSystems: Row<typeof coolingSystem, "scenario" | "seer">[];
+  dhwSources: Row<
+    typeof dhwSource,
+    "scenario" | "specificConsumptionLPersonDay" | "personsServed" | "energyCarrier"
+  >[];
+  distributionSystems: Row<
+    typeof distributionSystem,
+    | "scenario"
+    | "systemType"
+    | "pipeDiameterClass"
+    | "lengthM"
+    | "insulatedFraction"
+    | "meanFluidTempC"
+  >[];
+  pipeLossReferences: Row<
+    typeof pipeLossReference,
+    "diameterClass" | "insulated" | "meanFluidTempC" | "maxHeatFluxWPerM"
+  >[];
+  generationSources: Row<
+    typeof generationSource,
+    "id" | "scenario" | "endUse" | "sourceType" | "efficiencyOrSeer" | "shareOfDemand"
+  >[];
+  lightingZones: Row<
+    typeof lightingZone,
+    "scenario" | "areaM2" | "technologyMix" | "utilizationFactor"
+  >[];
+  lampTypes: Row<typeof lampType, "name" | "powerDensityWPerM2">[];
+  equipmentItems: Row<
+    typeof equipmentItem,
+    | "scenario"
+    | "unitPowerKw"
+    | "quantity"
+    | "heatingSeasonHours"
+    | "coolingSeasonHours"
+    | "heatingUtilizationFactor"
+    | "coolingUtilizationFactor"
+  >[];
+  renewableSystems: (Row<typeof renewableSystem, "systemType"> & {
+    monthlyProduction: Row<typeof renewableProductionMonthly, "productionKwh">[];
+  })[];
+  utilityBills: Row<typeof utilityBill, "energyCarrier" | "year" | "consumptionKwh">[];
+  energyMeasures: Row<
+    typeof energyMeasure,
+    | "id"
+    | "name"
+    | "category"
+    | "investmentCostUsd"
+    | "lifetimeYears"
+    | "maintenanceCostPercent"
+    | "proposedForImplementation"
+  >[];
+  nonEeMeasures: Row<
+    typeof nonEeMeasure,
+    "id" | "description" | "unit" | "quantity" | "unitCostUsd"
+  >[];
+  /** Newest `effectiveDate` first (the engine takes the first tariff per carrier). */
+  tariffs: Row<
+    typeof energyTariff,
+    "energyCarrier" | "unitCostUsd" | "emissionFactorKgCo2PerKwh"
+  >[];
 }
 
 /**
@@ -113,11 +229,10 @@ export async function loadAuditInputs(db: Database, buildingId: string): Promise
   const [buildingRecord] = raw;
   if (!buildingRecord) throw new Error(`Building ${buildingId} not found`);
 
-  const { climateRegion, blocks, ...buildingFields } = buildingRecord;
   return {
-    building: buildingFields,
-    climateRegion: { monthlyNormals: climateRegion.monthlyNormals },
-    blocks,
+    building: buildingRecord,
+    climateRegion: buildingRecord.climateRegion,
+    blocks: buildingRecord.blocks,
     envelopeElements: raw[1],
     constructionTypes: raw[2],
     openingTypes: raw[3],

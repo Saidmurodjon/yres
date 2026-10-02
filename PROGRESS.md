@@ -2396,8 +2396,9 @@ T06b — qamrab olinganlar:
 
 ## Faza 1 · F01 — `computeAudit` / `loadAuditInputs` ajratildi (2026-10-02)
 
-- Yangi `apps/api/src/services/audit-inputs.ts`: `AuditInputs` (DB tiplaridan `createdAt`/`updatedAt`/`userId` olib tashlangan — JSON-mos) va `loadAuditInputs(db, buildingId)` (bitta `Promise.all`, 20 o'qish; avvalgi 16+4 bilan bir xil so'rovlar).
+- Yangi `apps/api/src/services/audit-inputs.ts`: `AuditInputs` (faqat dvigatel o'qiydigan ustunlar, `Pick` bilan — JSON-mos) va `loadAuditInputs(db, buildingId)` (bitta `Promise.all`, 20 o'qish; avvalgi 16+4 bilan bir xil so'rovlar).
 - `audit.engine.ts`: `computeAudit(inputs, { generatedAt })` — sinxron, `db` siz; `runFullAudit` = `computeAudit(await loadAuditInputs(...))`. Formulalar o'zgarmadi.
 - Test: `tests/services/compute-audit.test.ts` (bazasiz). Eslatma: fixture `as unknown as AuditInputs` orqali yozilgan (butun DB qator shakli qo'lda to'ldirilmaydi).
 - Tekshiruv: type-check, biome, api 198 test (integratsiya `audit`/`report` o'zgarishsiz yashil).
 **Navbatda:** F02.
+- F01 tuzatish: `AuditInputs` `Strip<>` o'rniga dvigatel o'qiydigan ustunlar bilan `Pick` (nom/manzil kabi keraksiz maydonlar yo'q); test fixture'idagi `as unknown as` cast olib tashlandi (noto'g'ri `wall_insulation` toifasi → `envelope_wall_insulation`), devor chora-tadbiri `standardizedAnnualSavingsKwh > 0` tekshiriladi (after konstruksiya `retrofitOfId` bilan). Eslatma: `apps/api/tsconfig` testlarni qamramaydi — fixture tipi vaqtincha tsconfig bilan tekshirildi.
