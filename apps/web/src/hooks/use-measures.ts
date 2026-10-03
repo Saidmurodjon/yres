@@ -31,6 +31,18 @@ export function useCreateMeasure(buildingId: string) {
   });
 }
 
+export function useUpdateMeasure(buildingId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: CreateMeasureInput }) =>
+      api.measures.update(buildingId, id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["buildings", buildingId, "measures"] });
+      queryClient.invalidateQueries({ queryKey: ["buildings", buildingId, "audit"] });
+    },
+  });
+}
+
 export function useDeleteMeasure(buildingId: string) {
   const queryClient = useQueryClient();
   return useMutation({

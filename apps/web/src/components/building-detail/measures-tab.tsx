@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@yres/ui";
-import { Plus, Trash2, Wrench } from "lucide-react";
+import { Pencil, Plus, Trash2, Wrench } from "lucide-react";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -33,16 +33,17 @@ import {
   useMeasures,
   useNonEeMeasures,
   useSelectMeasures,
+  useUpdateMeasure,
   useUpdateNonEeMeasure,
 } from "../../hooks";
 import { ApiError } from "../../lib/api";
 import type { MeasureCategory, MeasureTarget } from "../../lib/api-types";
 import { MEASURE_CATEGORY_LABELS, formatNumber } from "../../lib/labels";
-import { parseLocaleNumber, toNumberLocale } from "../../lib/number";
+import { formatNumberForInput, parseLocaleNumber, toNumberLocale } from "../../lib/number";
 import { ConfirmDialog } from "../confirm-dialog";
 import { FinancialParametersCard } from "./financial-parameters-card";
 import { NumberInput } from "../number-input";
-import { useRegisterDirty } from "../unsaved-changes";
+import { useConfirmDiscard, useRegisterDirty } from "../unsaved-changes";
 
 const MEASURE_CATEGORIES = Object.keys(MEASURE_CATEGORY_LABELS) as MeasureCategory[];
 
@@ -105,6 +106,12 @@ export function MeasuresTab({
   const { data, isLoading, isError, error } = useMeasures(buildingId, { pageSize: 200 });
   const selectMeasures = useSelectMeasures(buildingId);
   const createMeasure = useCreateMeasure(buildingId);
+  const updateMeasure = useUpdateMeasure(buildingId);
+  const confirmDiscard = useConfirmDiscard();
+  // Editing reuses the "add" form: `editing` is the measure being edited and `baseline` the form as loaded,
+  // so the dirty flag compares against it (a freshly opened edit is not "unsaved").
+  const [editing, setEditing] = useState<string | null>(null);
+  const [baseline, setBaseline] = useState<NewMeasureForm>(emptyForm());
   const deleteMeasure = useDeleteMeasure(buildingId);
 
   const { data: nonEeData } = useNonEeMeasures(buildingId);
@@ -153,6 +160,12 @@ export function MeasuresTab({
         }
       }
     }
+    // Targets saved earlier that no longer exist in the envelope stay listed (checked) so they can be removed.
+    const wantedKind =
+      form.category === "window_replacement" ? "opening_type" : "construction_type";
+    for (const x of form.targets) {
+      if (x.kind === wantedKind) out.set(targetKey(x), x);
+    }
     return [...out.values()];
   })();
   const showTargets =
@@ -192,7 +205,7 @@ export function MeasuresTab({
   useRegisterDirty("measures.selection", selectionTouched);
   useRegisterDirty(
     "measures.newForms",
-    JSON.stringify(form) !== JSON.stringify(emptyForm()) ||
+    JSON.stringify(form) !== JSON.stringify(baseline) ||
       JSON.stringify(nonEeForm) !== JSON.stringify(emptyNonEeForm()),
   );
 
@@ -231,6 +244,29 @@ export function MeasuresTab({
     }
   }
 
+  function startEdit(m: (typeof measures)[number]) {
+    const loaded: NewMeasureForm = {
+      name: m.name,
+      category: m.category,
+      investmentCostUsd: formatNumberForInput(m.investmentCostUsd, locale),
+      lifetimeYears: formatNumberForInput(m.lifetimeYears, locale),
+      maintenanceCostPercent: formatNumberForInput(m.maintenanceCostPercent, locale),
+      targets: m.targets,
+    };
+    setEditing(m.id);
+    setBaseline(loaded);
+    setForm(loaded);
+    setFormError(null);
+    document.getElementById("measure-form")?.scrollIntoView({ block: "start" });
+  }
+
+  function cancelEdit() {
+    setEditing(null);
+    setBaseline(emptyForm());
+    setForm(emptyForm());
+    setFormError(null);
+  }
+
   async function handleCreate(event: FormEvent) {
     event.preventDefault();
     setFormError(null);
@@ -266,7 +302,7 @@ export function MeasuresTab({
     }
 
     try {
-      await createMeasure.mutateAsync({
+      const payload = {
         name: form.name.trim(),
         category: form.category,
         investmentCostUsd,
@@ -276,10 +312,14 @@ export function MeasuresTab({
         targets: showTargets
           ? form.targets.filter((x) => availableTargets.some((a) => targetKey(a) === targetKey(x)))
           : [],
-      });
-      setForm(emptyForm());
+      };
+      if (editing) await updateMeasure.mutateAsync({ id: editing, data: payload });
+      else await createMeasure.mutateAsync(payload);
+      cancelEdit();
     } catch (err) {
-      setFormError(err instanceof ApiError ? err.message : t("ee.failedToAdd"));
+      setFormError(
+        err instanceof ApiError ? err.message : t(editing ? "ee.failedToUpdate" : "ee.failedToAdd"),
+      );
     }
   }
 
@@ -430,7 +470,16 @@ export function MeasuresTab({
                       <TableCell>{measure.lifetimeYears}</TableCell>
                       <TableCell>{formatNumber(measure.maintenanceCostPercent, 2)}</TableCell>
                       {!readOnly && (
-                        <TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => confirmDiscard(() => startEdit(measure))}
+                            aria-label={t("ee.editAria", { name: measure.name })}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
                           <Button
                             type="button"
                             variant="ghost"
@@ -464,10 +513,12 @@ export function MeasuresTab({
       </Card>
 
       {!readOnly && (
-        <form onSubmit={handleCreate}>
+        <form id="measure-form" onSubmit={handleCreate}>
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">{t("ee.addTitle")}</CardTitle>
+              <CardTitle className="text-base">
+                {editing ? t("ee.editTitle") : t("ee.addTitle")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -549,9 +600,18 @@ export function MeasuresTab({
               {formError && <p className="mt-4 text-sm text-destructive">{formError}</p>}
             </CardContent>
             <CardFooter className="justify-end">
-              <Button type="submit" disabled={createMeasure.isPending}>
-                <Plus className="h-4 w-4" />
-                {createMeasure.isPending ? t("ee.adding") : t("ee.addButton")}
+              {editing && (
+                <Button type="button" variant="ghost" onClick={cancelEdit}>
+                  {t("ee.cancelEdit")}
+                </Button>
+              )}
+              <Button type="submit" disabled={createMeasure.isPending || updateMeasure.isPending}>
+                {editing ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                {createMeasure.isPending || updateMeasure.isPending
+                  ? t("ee.adding")
+                  : editing
+                    ? t("ee.saveEdit")
+                    : t("ee.addButton")}
               </Button>
             </CardFooter>
           </Card>

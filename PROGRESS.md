@@ -2528,3 +2528,10 @@ T06b — qamrab olinganlar:
 - Testlar: integratsiya (targets POST/PUT/cascade/cap 41 → 400/begona bino 404), `compute-audit` (ogohlantirishlar, non-EE proposed). type-check, build, biome, `bun run test` (api 225, web 71) yashil.
 - **Brauzerda tekshirilmadi** (mock API ishga tushirilmadi); 375 px — checkbox'lar `flex-wrap`. **Loyiha egasi tekshirsin (ru):** «Какие типы конструкций/проёмов заменяются», «Цели», «Предлагается».
 **Navbatda:** F06b (dvigatel: atributsiya + tashuvchi qismlari).
+
+## Faza 1 · F06a qo'shimcha — mavjud chora-tadbirni tahrirlash (2026-10-03)
+
+- Chora-tadbir qatorida "Tahrirlash" (qalam) tugmasi: "add" formasi (alohida dialog yo'q — forma inline) mavjud qiymatlar va maqsadlar bilan to'ldiriladi (`formatNumberForInput`), saqlash `PUT /measures/:id` (`useUpdateMeasure`, `api.measures.update`), "Bekor qilish" tugmasi. Sarlavha/tugma matni tahrir rejimida almashadi.
+- Dirty holat `baseline` (yuklangan forma) bilan solishtiriladi — yangi ochilgan tahrir "saqlanmagan" emas; tahrirni boshlash `useConfirmDiscard` orqali. Binoda endi yo'q bo'lgan eski maqsad kodlari belgilangan holda ro'yxatda qoladi (olib tashlash mumkin). Maqsadsiz eski chora-tadbir ogohlantirishi endi tahrir orqali yo'qoladi.
+- i18n uz/ru/en: `editTitle`, `saveEdit`, `cancelEdit`, `editAria`, `failedToUpdate`. type-check, build, biome, web testlar yashil. Brauzerda tekshirilmadi. **Ru atamalar loyiha egasi ko'rib chiqishi uchun:** «Редактирование мероприятия», «Сохранить изменения».
+**Navbatda:** F06b.

@@ -266,6 +266,11 @@ export const api = {
         method: "POST",
         body: JSON.stringify(data),
       }),
+    update: (buildingId: string, measureId: string, data: CreateMeasureInput) =>
+      request<{ measure: EnergyMeasure }>(`/api/buildings/${buildingId}/measures/${measureId}`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
     delete: (buildingId: string, measureId: string) =>
       request<void>(`/api/buildings/${buildingId}/measures/${measureId}`, { method: "DELETE" }),
   },

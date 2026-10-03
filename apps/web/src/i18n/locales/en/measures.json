@@ -35,7 +35,12 @@
     "targetsHint": "If nothing is selected the whole category is counted (several measures in one category risk double counting).",
     "targetsEmpty": "No matching type in the current state — enter it on the Envelope tab first.",
     "columnTargets": "Targets",
-    "targetsNone": "no targets selected"
+    "targetsNone": "no targets selected",
+    "editTitle": "Edit measure",
+    "saveEdit": "Save changes",
+    "cancelEdit": "Cancel",
+    "editAria": "Edit {{name}}",
+    "failedToUpdate": "Could not update the measure."
   },
   "ancillary": {
     "title": "Ancillary costs (non-energy-saving)",
