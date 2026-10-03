@@ -35,6 +35,8 @@ export interface ConstructionTypeUValueInput {
 }
 
 export interface OpeningTypeUValueInput {
+  /** The "before" type this after-type replaces (`opening_type.retrofit_of_id`); null/absent = unlinked. */
+  retrofitOfId?: string | null;
   id: string;
   code?: string;
   category: "window" | "door";
@@ -47,10 +49,12 @@ export interface OpeningTypeUValueInput {
 
 /**
  * Resolves which opening type governs a given opening for a scenario.
- * Before-scenario: the opening's own assigned type. After-scenario: the
- * workbook consolidates every opening of a category into one new type
- * (e.g. Win1/Win2/Win3 → Win4) — falls back to the opening's own type if the
- * building has no after-scenario type for that category (unrenovated).
+ * Before-scenario: the opening's own assigned type. After-scenario (F07, same semantics as
+ * construction types): the after-type whose `retrofitOfId` points at the opening's type (matched by
+ * code, so every size of one type code shares the replacement); an opening whose type nothing
+ * replaces keeps its own type. Legacy data — after-types of the category exist but none has
+ * `retrofitOfId` — keeps the old behaviour (the first after-type governs every opening of the
+ * category); `hasUnlinkedAfterOpeningTypes()` lets the engine warn about it.
  */
 export function getEffectiveOpeningType(
   openingTypeId: string,
@@ -58,11 +62,36 @@ export function getEffectiveOpeningType(
   category: "window" | "door",
   scenario: Scenario,
 ): OpeningTypeUValueInput | undefined {
-  if (scenario === "before") {
-    return openingTypes.find((o) => o.id === openingTypeId);
+  const own = openingTypes.find((o) => o.id === openingTypeId);
+  if (scenario === "before") return own;
+
+  const afterTypes = openingTypes.filter((o) => o.scenario === "after" && o.category === category);
+  if (afterTypes.length === 0) return own;
+  if (!afterTypes.some((o) => o.retrofitOfId)) return afterTypes[0] ?? own;
+
+  const codeById = new Map(openingTypes.map((o) => [o.id, o.code]));
+  const ownCode = own?.code;
+  const replacement = afterTypes.find(
+    (o) => o.retrofitOfId && ownCode !== undefined && codeById.get(o.retrofitOfId) === ownCode,
+  );
+  return replacement ?? own;
+}
+
+/** Warnings for after opening types that do not say which before type they replace (F07). */
+export function collectOpeningRetrofitWarnings(openingTypes: OpeningTypeUValueInput[]): string[] {
+  const out: string[] = [];
+  for (const category of ["window", "door"] as const) {
+    const after = openingTypes.filter((o) => o.scenario === "after" && o.category === category);
+    const unlinked = after.filter((o) => !o.retrofitOfId);
+    if (unlinked.length === 0) continue;
+    const codes = unlinked.map((o) => o.code ?? o.id).join(", ");
+    out.push(
+      unlinked.length === after.length
+        ? `Opening type(s) ${codes} (after): it is not specified which ${category} type each replaces — the first one was applied to every ${category}.`
+        : `Opening type(s) ${codes} (after): it is not specified which ${category} type each replaces — not applied.`,
+    );
   }
-  const afterType = openingTypes.find((o) => o.scenario === "after" && o.category === category);
-  return afterType ?? openingTypes.find((o) => o.id === openingTypeId);
+  return out;
 }
 
 export interface BuildingBlockInput {

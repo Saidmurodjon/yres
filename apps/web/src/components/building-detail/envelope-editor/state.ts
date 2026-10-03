@@ -3,8 +3,6 @@ import type { TFunction } from "i18next";
 import type { EnvelopeData, ReplaceEnvelopePayload } from "../../../lib/api-types";
 import { type NumberLocale, formatNumberForInput, parseLocaleNumber } from "../../../lib/number";
 
-export const EDIT_SCENARIO: Scenario = "before";
-
 let uidCounter = 0;
 export function uid() {
   uidCounter += 1;
@@ -34,6 +32,8 @@ export interface ConstructionTypeRow {
   code: string;
   elementCategory: EnvelopeElementCategory;
   description: string;
+  /** "After" scenario only: code of the "before" type this one replaces ("" = not chosen yet). */
+  retrofitOfCode: string;
   layers: LayerRow[];
 }
 
@@ -48,6 +48,8 @@ export interface OpeningTypeRow {
   frameFactor: string;
   shadingFactor: string;
   description: string;
+  /** "After" scenario only: code of the "before" type this one replaces ("" = not chosen yet). */
+  retrofitOfCode: string;
 }
 
 export interface OpeningRefRow {
@@ -95,6 +97,7 @@ export function emptyConstructionType(): ConstructionTypeRow {
     code: "",
     elementCategory: "external_wall",
     description: "",
+    retrofitOfCode: "",
     layers: [],
   };
 }
@@ -111,6 +114,7 @@ export function emptyOpeningType(): OpeningTypeRow {
     frameFactor: "",
     shadingFactor: "1",
     description: "",
+    retrofitOfCode: "",
   };
 }
 
@@ -131,8 +135,44 @@ export function emptyEnvelopeElement(
   };
 }
 
-export function toEditorState(data: EnvelopeData, locale: NumberLocale): EditorState {
-  const buildingBlocks = data.blocks.map((b) => ({
+export interface BeforeTypeOption {
+  code: string;
+  /** Element category (construction types) or "window"/"door" (opening types). */
+  category: string;
+}
+
+/** Distinct "before" type codes the "after" editor can pick from (several sizes of one opening code collapse). */
+export function beforeTypeOptions(data: EnvelopeData): {
+  constructionTypes: BeforeTypeOption[];
+  openingTypes: BeforeTypeOption[];
+} {
+  const distinct = (items: BeforeTypeOption[]) => [
+    ...new Map(items.map((i) => [i.code, i])).values(),
+  ];
+  return {
+    constructionTypes: distinct(
+      data.constructionTypes
+        .filter((ct) => ct.scenario === "before")
+        .map((ct) => ({ code: ct.code, category: ct.elementCategory })),
+    ),
+    openingTypes: distinct(
+      data.openingTypes
+        .filter((ot) => ot.scenario === "before")
+        .map((ot) => ({ code: ot.code, category: ot.category })),
+    ),
+  };
+}
+
+export function toEditorState(
+  data: EnvelopeData,
+  locale: NumberLocale,
+  scenario: Scenario,
+): EditorState {
+  // Blocks and elements belong to the "before" geometry; the "after" editor only changes types.
+  const isBefore = scenario === "before";
+  const codeOf = (types: { id: string; code: string }[], id: string | null) =>
+    (id && types.find((t) => t.id === id)?.code) || "";
+  const buildingBlocks = (isBefore ? data.blocks : []).map((b) => ({
     rowId: uid(),
     name: b.name,
     footprintLengthM: formatNumberForInput(b.footprintLengthM, locale),
@@ -144,12 +184,13 @@ export function toEditorState(data: EnvelopeData, locale: NumberLocale): EditorS
   }));
 
   const constructionTypes = data.constructionTypes
-    .filter((ct) => ct.scenario === EDIT_SCENARIO)
+    .filter((ct) => ct.scenario === scenario)
     .map((ct) => ({
       rowId: uid(),
       code: ct.code,
       elementCategory: ct.elementCategory as EnvelopeElementCategory,
       description: ct.description ?? "",
+      retrofitOfCode: codeOf(data.constructionTypes, ct.retrofitOfId),
       layers: [...ct.layers]
         .sort((a, b) => a.layerOrder - b.layerOrder)
         .map((l) => ({
@@ -161,7 +202,7 @@ export function toEditorState(data: EnvelopeData, locale: NumberLocale): EditorS
     }));
 
   const openingTypes = data.openingTypes
-    .filter((ot) => ot.scenario === EDIT_SCENARIO)
+    .filter((ot) => ot.scenario === scenario)
     .map((ot) => ({
       rowId: uid(),
       code: ot.code,
@@ -173,10 +214,11 @@ export function toEditorState(data: EnvelopeData, locale: NumberLocale): EditorS
       frameFactor: formatNumberForInput(ot.frameFactor, locale),
       shadingFactor: formatNumberForInput(ot.shadingFactor, locale),
       description: ot.description ?? "",
+      retrofitOfCode: codeOf(data.openingTypes, ot.retrofitOfId),
     }));
 
-  const envelopeElements = data.envelopeElements
-    .filter((el) => (el.constructionType?.scenario ?? EDIT_SCENARIO) === EDIT_SCENARIO)
+  const envelopeElements = (isBefore ? data.envelopeElements : [])
+    .filter((el) => (el.constructionType?.scenario ?? "before") === "before")
     .map((el) => ({
       rowId: uid(),
       blockName: el.blockName,
@@ -201,6 +243,8 @@ export function parseEditorState(
   state: EditorState,
   t: TFunction,
   locale: NumberLocale,
+  scenario: Scenario,
+  beforeTypes: { constructionTypes: BeforeTypeOption[]; openingTypes: BeforeTypeOption[] },
 ): {
   payload: ReplaceEnvelopePayload | null;
   errors: string[];
@@ -227,6 +271,7 @@ export function parseEditorState(
     return Number.isFinite(value) && value > 0;
   };
 
+  const isBefore = scenario === "before";
   const blockNames = new Set<string>();
   for (const b of state.buildingBlocks) {
     if (!b.name.trim()) errors.push(t("envelope:editor.errors.buildingBlockNameRequired"));
@@ -254,6 +299,21 @@ export function parseEditorState(
     else if (ctCodes.has(ct.code.trim()))
       errors.push(t("envelope:editor.errors.constructionTypeCodeDuplicate", { code: ct.code }));
     else ctCodes.add(ct.code.trim());
+    if (!isBefore) {
+      const target = beforeTypes.constructionTypes.find((o) => o.code === ct.retrofitOfCode);
+      if (!target)
+        errors.push(t("envelope:editor.errors.retrofitOfRequired", { code: ct.code || "?" }));
+      else if (target.category !== ct.elementCategory)
+        errors.push(t("envelope:editor.errors.retrofitCategoryMismatch", { code: ct.code || "?" }));
+      else if (
+        state.constructionTypes.some(
+          (o) => o.rowId !== ct.rowId && o.retrofitOfCode === ct.retrofitOfCode,
+        )
+      )
+        errors.push(
+          t("envelope:editor.errors.retrofitOfDuplicate", { replaced: ct.retrofitOfCode }),
+        );
+    }
     for (const layer of ct.layers) {
       if (!layer.materialId)
         errors.push(t("envelope:editor.errors.layerMaterialRequired", { code: ct.code || "?" }));
@@ -269,6 +329,21 @@ export function parseEditorState(
     else if (otCodes.has(ot.code.trim()))
       errors.push(t("envelope:editor.errors.openingTypeCodeDuplicate", { code: ot.code }));
     else otCodes.add(ot.code.trim());
+    if (!isBefore) {
+      const target = beforeTypes.openingTypes.find((o) => o.code === ot.retrofitOfCode);
+      if (!target)
+        errors.push(t("envelope:editor.errors.retrofitOfRequired", { code: ot.code || "?" }));
+      else if (target.category !== ot.category)
+        errors.push(t("envelope:editor.errors.retrofitCategoryMismatch", { code: ot.code || "?" }));
+      else if (
+        state.openingTypes.some(
+          (o) => o.rowId !== ot.rowId && o.retrofitOfCode === ot.retrofitOfCode,
+        )
+      )
+        errors.push(
+          t("envelope:editor.errors.retrofitOfDuplicate", { replaced: ot.retrofitOfCode }),
+        );
+    }
     if (!positive(ot.uValueWm2k)) {
       errors.push(t("envelope:editor.errors.openingTypeUValueInvalid", { code: ot.code || "?" }));
     }
@@ -352,20 +427,24 @@ export function parseEditorState(
 
   return {
     payload: {
-      scenario: EDIT_SCENARIO,
-      buildingBlocks: state.buildingBlocks.map((b) => ({
-        name: b.name.trim(),
-        footprintLengthM: read(b.footprintLengthM),
-        footprintWidthM: read(b.footprintWidthM),
-        numberOfFloors: read(b.numberOfFloors, true),
-        floorToFloorHeightM: read(b.floorToFloorHeightM),
-        perimeterM: read(b.perimeterM),
-        perimeterLossCoefficient: optional(b.perimeterLossCoefficient),
-      })),
+      scenario,
+      // "After" never touches the blocks (omitted = left as they are).
+      buildingBlocks: !isBefore
+        ? undefined
+        : state.buildingBlocks.map((b) => ({
+            name: b.name.trim(),
+            footprintLengthM: read(b.footprintLengthM),
+            footprintWidthM: read(b.footprintWidthM),
+            numberOfFloors: read(b.numberOfFloors, true),
+            floorToFloorHeightM: read(b.floorToFloorHeightM),
+            perimeterM: read(b.perimeterM),
+            perimeterLossCoefficient: optional(b.perimeterLossCoefficient),
+          })),
       constructionTypes: state.constructionTypes.map((ct) => ({
         code: ct.code.trim(),
         elementCategory: ct.elementCategory,
         description: ct.description.trim() || null,
+        ...(isBefore ? {} : { retrofitOfCode: ct.retrofitOfCode }),
         layers: ct.layers.map((l, idx) => ({
           layerOrder: idx,
           materialId: l.materialId,
@@ -382,6 +461,7 @@ export function parseEditorState(
         frameFactor: optional(ot.frameFactor) ?? null,
         shadingFactor: optional(ot.shadingFactor),
         description: ot.description.trim() || null,
+        ...(isBefore ? {} : { retrofitOfCode: ot.retrofitOfCode }),
       })),
       envelopeElements: state.envelopeElements.map((el) => ({
         blockName: el.blockName.trim(),

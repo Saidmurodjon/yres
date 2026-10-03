@@ -13,14 +13,18 @@ import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { OPENING_CATEGORY_LABELS } from "../../../lib/labels";
 import { NumberInput } from "../../number-input";
+import { KeptTypes, RetrofitOfSelect } from "./retrofit-select";
 import { RowCard } from "./row-card";
-import { type OpeningTypeRow, emptyOpeningType } from "./state";
+import { type BeforeTypeOption, type OpeningTypeRow, emptyOpeningType } from "./state";
 
 export function OpeningTypesStep({
   rows,
+  retrofitOptions,
   onChange,
 }: {
   rows: OpeningTypeRow[];
+  /** Set in the "after" editor: the "before" types a row can replace. */
+  retrofitOptions?: BeforeTypeOption[];
   onChange: (rows: OpeningTypeRow[]) => void;
 }) {
   const { t } = useTranslation("envelope");
@@ -29,6 +33,8 @@ export function OpeningTypesStep({
   function updateRow(rowId: string, patch: Partial<OpeningTypeRow>) {
     onChange(rows.map((r) => (r.rowId === rowId ? { ...r, ...patch } : r)));
   }
+
+  const chosenCodes = new Set(rows.map((r) => r.retrofitOfCode).filter(Boolean));
 
   return (
     <section className="space-y-3">
@@ -57,6 +63,16 @@ export function OpeningTypesStep({
           onRemove={() => onChange(rows.filter((r) => r.rowId !== row.rowId))}
         >
           <div className="grid gap-3 sm:grid-cols-4">
+            {retrofitOptions && (
+              <RetrofitOfSelect
+                id={`${formId}-${row.rowId}-retrofit`}
+                value={row.retrofitOfCode}
+                category={row.category}
+                options={retrofitOptions}
+                takenCodes={chosenCodes}
+                onChange={(retrofitOfCode) => updateRow(row.rowId, { retrofitOfCode })}
+              />
+            )}
             <div className="space-y-1.5">
               <Label htmlFor={`${formId}-${row.rowId}-code`}>{t("editor.openingTypes.code")}</Label>
               <Input
@@ -159,6 +175,13 @@ export function OpeningTypesStep({
           </div>
         </RowCard>
       ))}
+      {retrofitOptions && (
+        <KeptTypes
+          codes={retrofitOptions
+            .map((o) => o.code)
+            .filter((code) => !rows.some((r) => r.retrofitOfCode === code))}
+        />
+      )}
     </section>
   );
 }

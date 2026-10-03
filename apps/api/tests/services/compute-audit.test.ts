@@ -89,6 +89,7 @@ function buildInputs(): AuditInputs {
       {
         id: "ot1",
         code: "Win1",
+        retrofitOfId: null,
         category: "window",
         scenario: "before",
         uValueWm2k: 2.8,

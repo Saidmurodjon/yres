@@ -44,6 +44,7 @@ import {
   type OpeningTypeUValueInput,
   calculateBuildingBlockAreas,
   calculateEnvelopeAreas,
+  collectOpeningRetrofitWarnings,
   getEffectiveOpeningType,
   resolveHeatLossGroups,
 } from "./envelope.service";
@@ -230,6 +231,7 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
   const openingTypeUValues: OpeningTypeUValueInput[] = openingTypeRows.map((ot) => ({
     id: ot.id,
     code: ot.code,
+    retrofitOfId: ot.retrofitOfId,
     category: ot.category,
     scenario: ot.scenario,
     uValueWPerM2K: ot.uValueWm2k,
@@ -793,6 +795,7 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
   const financialAssumptions = deriveFinancialAssumptions(inputs.financialParameters);
 
   warnings.push(...collectMeasureTargetWarnings(measureRows, inputs));
+  warnings.push(...collectOpeningRetrofitWarnings(openingTypeUValues));
 
   const generationRows: GenerationRow[] = generation.map((g) => {
     const sourceType = generationSourceById.get(g.sourceId)?.sourceType;

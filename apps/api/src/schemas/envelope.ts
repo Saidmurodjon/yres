@@ -42,6 +42,9 @@ const openingTypeInputSchema = z.object({
   frameFactor: z.number().finite().min(0).max(1).nullable().optional(),
   shadingFactor: z.number().finite().min(0).max(1).optional(),
   description: z.string().max(10_000).nullable().optional(),
+  // Same rule as constructionTypes: only for scenario "after" — the `code` of the "before" opening
+  // type this one replaces (an opening type nothing replaces keeps its own U-value).
+  retrofitOfCode: z.string().min(1).max(100).nullable().optional(),
 });
 
 const envelopeOpeningInputSchema = z.object({
@@ -81,7 +84,7 @@ const buildingBlockInputSchema = z.object({
 //   envelopeElements   100 rows ÷ 10/stmt    10  (10 columns)
 //   envelopeOpenings   160 rows ÷ 25/stmt     7  (4 columns; total across elements, see superRefine)
 //                                            -- 33
-// + session lookup (≤ 2) + findAccessibleBuilding (≤ 2) + the retrofit lookup (1) = 38 ≤ 40.
+// + session lookup (≤ 2) + findAccessibleBuilding (≤ 2) + the retrofit lookups (2: construction + opening types) = 39 ≤ 40.
 export const MAX_ENVELOPE_OPENINGS_TOTAL = 160;
 
 export const replaceEnvelopeSchema = z

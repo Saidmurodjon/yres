@@ -66,7 +66,7 @@ envelopeRoutes.get("/:id/envelope", async (c) => {
 // construction/opening types by a client-supplied `code` rather than a DB id,
 // since those ids don't exist until this request creates them. Array bounds in
 // schemas/envelope.ts keep the batch inside the D1 query budget (worst case 33
-// statements + ≤ 5 for session/access/retrofit lookups).
+// statements + ≤ 6 for session/access/retrofit lookups).
 envelopeRoutes.put("/:id/envelope", async (c) => {
   const buildingId = c.req.param("id");
   const body = await c.req.json().catch(() => null);
@@ -132,6 +132,39 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
     }
   }
 
+  const openingRetrofitOfCodes = [
+    ...new Set(
+      openingTypes.map((ot) => ot.retrofitOfCode).filter((code): code is string => !!code),
+    ),
+  ];
+  const beforeOpeningTypeIdByCode = new Map<string, string>();
+  if (openingRetrofitOfCodes.length > 0) {
+    // Several before types can share a code (one per size); any of them identifies the code —
+    // the engine matches the replacement by code.
+    const beforeRows = await db
+      .select({ id: openingType.id, code: openingType.code })
+      .from(openingType)
+      .where(
+        and(
+          eq(openingType.buildingId, buildingId),
+          eq(openingType.scenario, "before"),
+          inArray(openingType.code, openingRetrofitOfCodes),
+        ),
+      );
+    for (const row of beforeRows) {
+      if (!beforeOpeningTypeIdByCode.has(row.code)) beforeOpeningTypeIdByCode.set(row.code, row.id);
+    }
+    const unresolved = openingRetrofitOfCodes.filter(
+      (code) => !beforeOpeningTypeIdByCode.has(code),
+    );
+    if (unresolved.length > 0) {
+      return c.json(
+        { error: `openingTypes reference unknown retrofitOfCode(s): ${unresolved.join(", ")}` },
+        400,
+      );
+    }
+  }
+
   const constructionTypeIdByCode = new Map<string, string>();
   const constructionTypeRows: (typeof constructionType.$inferInsert)[] = constructionTypes.map(
     (ct) => {
@@ -176,6 +209,9 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
       code: ot.code,
       category: ot.category,
       scenario,
+      retrofitOfId: ot.retrofitOfCode
+        ? (beforeOpeningTypeIdByCode.get(ot.retrofitOfCode) ?? null)
+        : null,
       uValueWm2k: ot.uValueWm2k,
       widthM: ot.widthM ?? null,
       heightM: ot.heightM ?? null,
@@ -261,11 +297,24 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
       and(eq(constructionType.buildingId, buildingId), eq(constructionType.scenario, scenario)),
     );
 
-  const statements: BatchItem<"sqlite">[] = [
-    deleteElements,
-    deleteOpeningTypes,
-    deleteConstructionTypes,
-  ];
+  const statements: BatchItem<"sqlite">[] = [];
+  if (scenario === "before") {
+    // The "before" types are re-created with new ids below, and "after" types point at them
+    // (retrofit_of_id FK) — unlink first or the deletes fail. The after-editor re-links on its next save.
+    statements.push(
+      db
+        .update(constructionType)
+        .set({ retrofitOfId: null })
+        .where(
+          and(eq(constructionType.buildingId, buildingId), eq(constructionType.scenario, "after")),
+        ),
+      db
+        .update(openingType)
+        .set({ retrofitOfId: null })
+        .where(and(eq(openingType.buildingId, buildingId), eq(openingType.scenario, "after"))),
+    );
+  }
+  statements.push(deleteElements, deleteOpeningTypes, deleteConstructionTypes);
 
   if (buildingBlockRows) {
     statements.push(db.delete(buildingBlock).where(eq(buildingBlock.buildingId, buildingId)));

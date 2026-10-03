@@ -249,4 +249,86 @@ describe("Envelope API", () => {
     );
     expect(response.status).toBe(400);
   });
+  describe("after scenario (F07)", () => {
+    const put = (buildingId: string, cookie: string, body: unknown) =>
+      authRequest(
+        `/api/buildings/${buildingId}/envelope`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        },
+        cookie,
+      );
+    const beforeBody = {
+      scenario: "before",
+      constructionTypes: [{ code: "W1", elementCategory: "external_wall" }],
+      openingTypes: [
+        { code: "Win1", category: "window", uValueWm2k: 2.6, widthM: 1, heightM: 1 },
+        { code: "Win2", category: "window", uValueWm2k: 3.5, widthM: 1, heightM: 1 },
+      ],
+      envelopeElements: [
+        {
+          blockName: "A",
+          orientation: "north",
+          constructionTypeCode: "W1",
+          lengthM: 10,
+          openings: [
+            { openingTypeCode: "Win1", count: 1 },
+            { openingTypeCode: "Win2", count: 1 },
+          ],
+        },
+      ],
+    };
+
+    async function getEnvelope(buildingId: string, cookie: string) {
+      const res = await authRequest(`/api/buildings/${buildingId}/envelope`, {}, cookie);
+      return (await res.json()) as {
+        envelopeElements: unknown[];
+        openingTypes: { id: string; code: string; scenario: string; retrofitOfId: string | null }[];
+      };
+    }
+
+    it("saves after types with retrofitOfCode without touching the before elements", async () => {
+      const { cookie } = await signUpTestUser();
+      const buildingId = await createBuilding(cookie);
+      expect((await put(buildingId, cookie, beforeBody)).status).toBe(200);
+
+      const res = await put(buildingId, cookie, {
+        scenario: "after",
+        openingTypes: [{ code: "V4", category: "window", uValueWm2k: 1.4, retrofitOfCode: "Win2" }],
+      });
+      expect(res.status).toBe(200);
+
+      const env = await getEnvelope(buildingId, cookie);
+      expect(env.envelopeElements).toHaveLength(1);
+      const win2 = env.openingTypes.find((o) => o.code === "Win2" && o.scenario === "before");
+      const v4 = env.openingTypes.find((o) => o.code === "V4");
+      expect(v4?.retrofitOfId).toBe(win2?.id);
+    });
+
+    it("rejects an unknown opening retrofitOfCode", async () => {
+      const { cookie } = await signUpTestUser();
+      const buildingId = await createBuilding(cookie);
+      await put(buildingId, cookie, beforeBody);
+      const res = await put(buildingId, cookie, {
+        scenario: "after",
+        openingTypes: [{ code: "V4", category: "window", uValueWm2k: 1.4, retrofitOfCode: "Nope" }],
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("re-saving the before envelope after saving an after one does not fail on the FK", async () => {
+      const { cookie } = await signUpTestUser();
+      const buildingId = await createBuilding(cookie);
+      await put(buildingId, cookie, beforeBody);
+      await put(buildingId, cookie, {
+        scenario: "after",
+        openingTypes: [{ code: "V4", category: "window", uValueWm2k: 1.4, retrofitOfCode: "Win2" }],
+      });
+      expect((await put(buildingId, cookie, beforeBody)).status).toBe(200);
+      const env = await getEnvelope(buildingId, cookie);
+      expect(env.openingTypes.find((o) => o.code === "V4")?.retrofitOfId).toBeNull();
+    });
+  });
 });

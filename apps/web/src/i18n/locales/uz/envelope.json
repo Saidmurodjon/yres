@@ -147,7 +147,24 @@
       "elementLengthInvalid": "\"{{blockName}}\" qobiq elementi uchun musbat uzunlik kerak.",
       "elementOpeningTypeRequired": "\"{{blockName}}\" qobiq elementida turi tanlanmagan ochilma bor.",
       "elementOpeningTypeUnknown": "\"{{blockName}}\" qobiq elementi noma'lum \"{{code}}\" ochilma turiga bog'langan.",
-      "elementOpeningCountInvalid": "\"{{blockName}}\" qobiq elementida noto'g'ri sonli ochilma bor."
+      "elementOpeningCountInvalid": "\"{{blockName}}\" qobiq elementida noto'g'ri sonli ochilma bor.",
+      "retrofitOfRequired": "\"{{code}}\" turi: qaysi \"Oldin\" turini almashtirishini tanlang.",
+      "retrofitCategoryMismatch": "\"{{code}}\" turi: u shu toifadagi turni almashtirishi kerak.",
+      "retrofitOfDuplicate": "\"Oldin\" turi \"{{replaced}}\" bir nechta tur bilan almashtirilgan."
+    },
+    "titleAfter": "Qobiqni tahrirlash — \"Keyin\" stsenariysi",
+    "descriptionAfter": "Rekonstruksiyadan keyingi turlarni kiriting. Geometriya (bloklar, elementlar) \"Oldin\" holatidan olinadi. Har bir yangi tur \"Oldin\"gi qaysi turni almashtirishini ko'rsatishi shart; hech narsa almashtirmagan turlar o'zgarishsiz qoladi. Saqlash barcha \"Keyin\" turlarini almashtiradi.",
+    "linksReset": "\"Oldin\" qobig'ini saqlash har bir \"Keyin\" turi qaysi \"Oldin\" turini almashtirishi tanlovini bekor qiladi — \"Keyin\" rejimida qaytadan tanlang.",
+    "scenario": {
+      "label": "Stsenariy",
+      "before": "Oldin",
+      "after": "Keyin"
+    },
+    "retrofit": {
+      "replaces": "Almashtiradi",
+      "choose": "Turni tanlang…",
+      "noCandidates": "Bu toifadagi \"Oldin\" turi yo'q — avval \"Oldin\" rejimida qo'shing.",
+      "kept": "O'zgarishsiz saqlanadi: {{codes}}"
     }
   }
 }

@@ -273,6 +273,8 @@ export interface ReplaceEnvelopePayload {
     code: string;
     elementCategory: string;
     description?: string | null;
+    /** Only for scenario "after": code of the "before" type this one replaces. */
+    retrofitOfCode?: string | null;
     layers: { layerOrder: number; materialId: string; thicknessM: number }[];
   }[];
   openingTypes: {
@@ -285,6 +287,8 @@ export interface ReplaceEnvelopePayload {
     frameFactor?: number | null;
     shadingFactor?: number;
     description?: string | null;
+    /** Only for scenario "after": code of the "before" type this one replaces. */
+    retrofitOfCode?: string | null;
   }[];
   envelopeElements: {
     blockName: string;

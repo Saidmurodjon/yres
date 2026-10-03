@@ -330,7 +330,10 @@ function AuditResultsPage() {
                 </ResponsiveContainer>
                 <ChartLegend
                   items={[
-                    { label: t("results.endUseChart.beforeRetrofit"), color: SCENARIO_COLORS.before },
+                    {
+                      label: t("results.endUseChart.beforeRetrofit"),
+                      color: SCENARIO_COLORS.before,
+                    },
                     { label: t("results.endUseChart.afterRetrofit"), color: SCENARIO_COLORS.after },
                   ]}
                 />
@@ -530,7 +533,9 @@ function AuditResultsPage() {
                   <TableHead className="text-right">
                     {t("results.measures.columnSavingsUsd")}
                   </TableHead>
-                  <TableHead className="text-right">{t("results.measures.columnPayback")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("results.measures.columnPayback")}
+                  </TableHead>
                   <TableHead className="text-right">{t("results.measures.columnNpv")}</TableHead>
                   <TableHead className="text-right">{t("results.measures.columnCo2")}</TableHead>
                   <TableHead>{t("results.measures.columnStatus")}</TableHead>

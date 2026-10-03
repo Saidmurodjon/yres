@@ -23,19 +23,28 @@ import { toNumberLocale } from "../../../lib/number";
 import { NumberInput } from "../../number-input";
 import { computeUValuePreview } from "./calculations";
 import { RowCard } from "./row-card";
-import { type ConstructionTypeRow, emptyConstructionType, uid } from "./state";
+import { KeptTypes, RetrofitOfSelect } from "./retrofit-select";
+import {
+  type BeforeTypeOption,
+  type ConstructionTypeRow,
+  emptyConstructionType,
+  uid,
+} from "./state";
 
 export function ConstructionTypesStep({
   rows,
   materials,
   materialsLoading,
   surfaceResistances,
+  retrofitOptions,
   onChange,
 }: {
   rows: ConstructionTypeRow[];
   materials: Material[];
   materialsLoading: boolean;
   surfaceResistances: SurfaceResistance[];
+  /** Set in the "after" editor: the "before" types a row can replace. */
+  retrofitOptions?: BeforeTypeOption[];
   onChange: (rows: ConstructionTypeRow[]) => void;
 }) {
   const { t, i18n } = useTranslation("envelope");
@@ -84,6 +93,8 @@ export function ConstructionTypesStep({
     );
   }
 
+  const chosenCodes = new Set(rows.map((r) => r.retrofitOfCode).filter(Boolean));
+
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
@@ -122,6 +133,16 @@ export function ConstructionTypesStep({
             }
           >
             <div className="grid gap-3 sm:grid-cols-3">
+              {retrofitOptions && (
+                <RetrofitOfSelect
+                  id={`${formId}-${row.rowId}-retrofit`}
+                  value={row.retrofitOfCode}
+                  category={row.elementCategory}
+                  options={retrofitOptions}
+                  takenCodes={chosenCodes}
+                  onChange={(retrofitOfCode) => updateRow(row.rowId, { retrofitOfCode })}
+                />
+              )}
               <div className="space-y-1.5">
                 <Label htmlFor={`${formId}-${row.rowId}-code`}>
                   {t("editor.constructionTypes.code")}
@@ -231,6 +252,13 @@ export function ConstructionTypesStep({
           </RowCard>
         );
       })}
+      {retrofitOptions && (
+        <KeptTypes
+          codes={retrofitOptions
+            .map((o) => o.code)
+            .filter((code) => !rows.some((r) => r.retrofitOfCode === code))}
+        />
+      )}
     </section>
   );
 }

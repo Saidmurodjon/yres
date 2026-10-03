@@ -307,6 +307,9 @@ def opening_types(r: Reader, wall_openings: dict) -> list[dict]:
             "frameFactor": fw_b if is_window else None, "shadingFactor": sh_b if is_window else 1,
             "widthM": w, "heightM": h,
         })
+    retrofit_of = {}
+    for after_code, before_code in (("V4", "Win2"), ("D4", "D1")):
+        retrofit_of[after_code] = next(t["id"] for t in types if t["code"] == before_code)
     for row, category in ((98, "window"), (99, "window"), (100, "door")):
         code = r.text(s, f"AG{row}", ("AG96", "Type"))
         types.append({
@@ -316,6 +319,9 @@ def opening_types(r: Reader, wall_openings: dict) -> list[dict]:
             "frameFactor": fw_a if category == "window" else None,
             "shadingFactor": sh_a if category == "window" else 1,
             "widthM": None, "heightM": None,
+            # F07: V4 replaces Win2 and D4 replaces D1; Win4 replaces nothing (the workbook's U for Win3 stays
+            # 2.94 — `Losses env. after!F25`). The engine matches by code, so any size of the code identifies it.
+            "retrofitOfId": retrofit_of.get(code),
         })
     return types
 
@@ -677,7 +683,7 @@ MODEL_GAPS = [
     "Envelope!I51 (-27.692 m2 link-corridor deduction) is a negative-length W1 element; the engine clamps each element to >= 0.",
     "Parapet (Envelope row 56-58) is excluded: v7.20 has no heat-loss row for it (Envelope!AI105).",
     "Window shading is an area-weighted average of gains!H (orientation-specific Fhor*Fov*Ffin); the engine has one shadingFactor per opening type.",
-    "Opening types are one per (code, width, height); after-scenario types are the three new codes with retrofitOfId = null (F07).",
+    "Opening types are one per (code, width, height); after-scenario types are the three new codes; V4 → Win2 and D4 → D1 via retrofitOfId, Win4 unlinked (F07).",
     "Mechanical ventilation: the exhaust-only 4070 m3/h line (Ventilation losses row 46) has no representation; fan power is the Equipment nameplate sum (rows 85-86).",
     "Lighting operation hours (Lighting!J = 2500 h/y) have no input; the engine uses operation hours x heating-season days.",
     "DHW: v7.20 uses working days (112/138) and DeltaT 55/45; the engine uses heating-season days with fixed DeltaT.",

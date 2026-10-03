@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calculateBuildingBlockAreas,
   calculateEnvelopeAreas,
+  collectOpeningRetrofitWarnings,
   getEffectiveOpeningType,
   resolveHeatLossGroups,
 } from "../../src/services/envelope.service";
@@ -79,14 +80,41 @@ describe("EnvelopeService", () => {
       expect(getEffectiveOpeningType("win1", openingTypes, "window", "before")?.id).toBe("win1");
     });
 
-    it("consolidates to the building's single after-scenario type of that category", () => {
+    it("legacy data (no retrofitOfId on any after type): first after type governs every opening + warning", () => {
       expect(getEffectiveOpeningType("win1", openingTypes, "window", "after")?.id).toBe("win4");
+      expect(collectOpeningRetrofitWarnings(openingTypes)).toHaveLength(1);
     });
 
     it("falls back to the opening's own type if no after-scenario type exists for that category", () => {
       expect(getEffectiveOpeningType("win1", [beforeWindowType], "window", "after")?.id).toBe(
         "win1",
       );
+    });
+
+    describe("with retrofitOfId links", () => {
+      const win2 = { ...beforeWindowType, id: "win2", code: "Win2", uValueWPerM2K: 3.5 };
+      const win2Big = { ...win2, id: "win2-big" };
+      const win1 = { ...beforeWindowType, code: "Win1" };
+      const v4 = { ...afterWindowType, id: "v4", code: "V4", retrofitOfId: "win2" };
+      const types = [win1, win2, win2Big, v4];
+
+      it("replaces only the linked type — every size of its code", () => {
+        expect(getEffectiveOpeningType("win2", types, "window", "after")?.id).toBe("v4");
+        expect(getEffectiveOpeningType("win2-big", types, "window", "after")?.id).toBe("v4");
+      });
+
+      it("keeps the U-value of a type nothing replaces", () => {
+        const eff = getEffectiveOpeningType("win1", types, "window", "after");
+        expect(eff?.id).toBe("win1");
+        expect(eff?.uValueWPerM2K).toBe(2.6);
+      });
+
+      it("does not apply an unlinked after type, and warns", () => {
+        const win4 = { ...afterWindowType, code: "Win4" };
+        const all = [...types, win4];
+        expect(getEffectiveOpeningType("win1", all, "window", "after")?.id).toBe("win1");
+        expect(collectOpeningRetrofitWarnings(all)).toEqual([expect.stringContaining("Win4")]);
+      });
     });
   });
 

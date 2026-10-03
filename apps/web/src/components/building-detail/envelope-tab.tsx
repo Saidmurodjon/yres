@@ -110,7 +110,8 @@ export function EnvelopeTab({
                       <TableRow key={block.id}>
                         <TableCell className="font-medium">{block.name}</TableCell>
                         <TableCell>
-                          {formatNumber(block.footprintLengthM)} × {formatNumber(block.footprintWidthM)}
+                          {formatNumber(block.footprintLengthM)} ×{" "}
+                          {formatNumber(block.footprintWidthM)}
                         </TableCell>
                         <TableCell>{block.numberOfFloors}</TableCell>
                         <TableCell>{formatNumber(block.floorToFloorHeightM)}</TableCell>

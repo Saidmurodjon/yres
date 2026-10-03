@@ -149,7 +149,24 @@
       "elementLengthInvalid": "Envelope element \"{{blockName}}\" needs a positive length.",
       "elementOpeningTypeRequired": "Envelope element \"{{blockName}}\" has an opening with no type selected.",
       "elementOpeningTypeUnknown": "Envelope element \"{{blockName}}\" references unknown opening type \"{{code}}\".",
-      "elementOpeningCountInvalid": "Envelope element \"{{blockName}}\" has an opening with an invalid count."
+      "elementOpeningCountInvalid": "Envelope element \"{{blockName}}\" has an opening with an invalid count.",
+      "retrofitOfRequired": "Type \"{{code}}\": choose which \"before\" type it replaces.",
+      "retrofitCategoryMismatch": "Type \"{{code}}\": it must replace a type of the same category.",
+      "retrofitOfDuplicate": "\"Before\" type \"{{replaced}}\" is replaced by more than one type."
+    },
+    "titleAfter": "Edit envelope — \"After\" scenario",
+    "descriptionAfter": "Define the types after renovation. Geometry (blocks, elements) is taken from the \"before\" state. Each new type must say which \"before\" type it replaces; types that nothing replaces stay as they are. Saving replaces all \"after\" types.",
+    "linksReset": "Saving the \"before\" envelope resets which \"before\" type each \"after\" type replaces — choose them again in the \"After\" mode.",
+    "scenario": {
+      "label": "Scenario",
+      "before": "Before",
+      "after": "After"
+    },
+    "retrofit": {
+      "replaces": "Replaces",
+      "choose": "Choose a type…",
+      "noCandidates": "No \"before\" type of this category — add it in \"Before\" mode first.",
+      "kept": "Stay unchanged: {{codes}}"
     }
   }
 }

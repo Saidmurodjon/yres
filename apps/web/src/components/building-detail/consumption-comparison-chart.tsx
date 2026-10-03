@@ -89,7 +89,9 @@ export function MonthlyComparisonChart({
                 />
                 <Tooltip
                   cursor={{ fill: "hsl(var(--muted))" }}
-                  content={<ChartTooltip formatValue={(v) => `${formatNumber(v, 0)} ${unitLabel}`} />}
+                  content={
+                    <ChartTooltip formatValue={(v) => `${formatNumber(v, 0)} ${unitLabel}`} />
+                  }
                 />
                 {compareYears.map((year, i) => (
                   <Bar

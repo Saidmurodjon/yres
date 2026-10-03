@@ -4,7 +4,7 @@
     "sha256": "187d19962269d25ff6b241b97374ba868b9b38c94a9b9d27f5ac78ddf6dc5f6a",
     "version": "v7.20",
     "lastDecision": "X98",
-    "extractedAt": "2026-10-03T02:07:19+00:00",
+    "extractedAt": "2026-10-03T17:00:10+00:00",
     "extractor": "tools/golden/extract_inputs.py",
     "lampTypeNote": "lampTypes[].name '@LAMP:<key>' is replaced by LAMP_TYPE_NAMES[<key>] when the test loads the fixture"
   },
@@ -14,7 +14,7 @@
     "Envelope!I51 (-27.692 m2 link-corridor deduction) is a negative-length W1 element; the engine clamps each element to >= 0.",
     "Parapet (Envelope row 56-58) is excluded: v7.20 has no heat-loss row for it (Envelope!AI105).",
     "Window shading is an area-weighted average of gains!H (orientation-specific Fhor*Fov*Ffin); the engine has one shadingFactor per opening type.",
-    "Opening types are one per (code, width, height); after-scenario types are the three new codes with retrofitOfId = null (F07).",
+    "Opening types are one per (code, width, height); after-scenario types are the three new codes; V4 → Win2 and D4 → D1 via retrofitOfId, Win4 unlinked (F07).",
     "Mechanical ventilation: the exhaust-only 4070 m3/h line (Ventilation losses row 46) has no representation; fan power is the Equipment nameplate sum (rows 85-86).",
     "Lighting operation hours (Lighting!J = 2500 h/y) have no input; the engine uses operation hours x heating-season days.",
     "DHW: v7.20 uses working days (112/138) and DeltaT 55/45; the engine uses heating-season days with fixed DeltaT.",
@@ -1164,7 +1164,8 @@
         "frameFactor": 0.9,
         "shadingFactor": 0.76784150714544,
         "widthM": null,
-        "heightM": null
+        "heightM": null,
+        "retrofitOfId": null
       },
       {
         "id": "ot-V4",
@@ -1176,7 +1177,8 @@
         "frameFactor": 0.9,
         "shadingFactor": 0.76784150714544,
         "widthM": null,
-        "heightM": null
+        "heightM": null,
+        "retrofitOfId": "ot-Win2-1.63333x2.7"
       },
       {
         "id": "ot-D4",
@@ -1188,7 +1190,8 @@
         "frameFactor": null,
         "shadingFactor": 1,
         "widthM": null,
-        "heightM": null
+        "heightM": null,
+        "retrofitOfId": "ot-D1-0.9x2.7"
       }
     ],
     "surfaceResistances": [

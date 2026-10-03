@@ -156,6 +156,7 @@ export interface AuditInputs {
     typeof openingType,
     | "id"
     | "code"
+    | "retrofitOfId"
     | "category"
     | "scenario"
     | "uValueWm2k"
