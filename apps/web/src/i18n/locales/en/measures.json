@@ -54,5 +54,58 @@
     "unitCostLabel": "Unit cost (USD)",
     "adding": "Adding...",
     "addButton": "Add cost"
+  },
+  "financial": {
+    "title": "Financial parameters",
+    "defaultBadge": "Default values (v7.20)",
+    "unsaved": "Unsaved changes",
+    "description": "Discount rate, price escalation and energy tariffs used for NPV, IRR and payback. Rates are real (before inflation); nominal values are derived below.",
+    "descriptionReadOnly": "Financial assumptions used for this building's calculations (view only).",
+    "groups": {
+      "period": "Analysis period",
+      "rates": "Rates (real, %)",
+      "tariffs": "Tariffs and exchange rate"
+    },
+    "pvExportHint": "Count exported PV electricity as income",
+    "derived": {
+      "title": "Derived values (read-only)",
+      "hint": "Calculated from the saved parameters; recalculated after saving.",
+      "nominalDiscount": "Nominal discount rate",
+      "nominalGas": "Nominal escalation: gas",
+      "nominalElectricity": "Nominal escalation: electricity",
+      "nominalHeat": "Nominal escalation: heat / coal",
+      "maintenanceEscalation": "Maintenance cost escalation",
+      "usdGas": "Gas, USD/kWh",
+      "usdElectricity": "Electricity, USD/kWh",
+      "usdHeat": "District heat, USD/kWh",
+      "usdCoal": "Coal, USD/kWh"
+    },
+    "save": "Save financial parameters",
+    "saved": "Financial parameters saved.",
+    "failedToLoad": "Failed to load financial parameters:",
+    "failedToSave": "Failed to save financial parameters.",
+    "invalidFields": "Some fields are empty or invalid — fix the highlighted fields and save again.",
+    "fieldInvalid": "Enter a valid value in the allowed range",
+    "fields": {
+      "baseYear": "Base year",
+      "periodYears": "Calculation period (years)",
+      "inflationRate": "Inflation",
+      "realDiscountRate": "Real discount rate",
+      "realEscalationGas": "Real escalation: gas",
+      "realEscalationElectricity": "Real escalation: electricity",
+      "realEscalationHeat": "Real escalation: district heat / coal",
+      "irrInitialGuess": "IRR initial guess",
+      "exchangeRateUzsPerUsd": "Exchange rate",
+      "gasTariffUzsPerM3": "Gas tariff (UZS/m³)",
+      "gasNcvKwhPerM3": "Gas net calorific value (kWh/m³)",
+      "electricityTariffUzsPerKwh": "Electricity tariff (UZS/kWh)",
+      "heatTariffUzsPerGcal": "District heat tariff (UZS/Gcal)",
+      "coalPriceUzsPerT": "Coal price (UZS/t)",
+      "coalNcvKwhPerKg": "Coal net calorific value (kWh/kg)",
+      "pvExportTariffUzsPerKwh": "PV export tariff (UZS/kWh)",
+      "pvExportEnabled": "PV export to grid",
+      "tariffSource": "Tariff source",
+      "tariffEffectiveDate": "Tariff effective date"
+    }
   }
 }

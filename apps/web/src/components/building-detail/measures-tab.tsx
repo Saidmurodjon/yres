@@ -38,6 +38,7 @@ import type { MeasureCategory } from "../../lib/api-types";
 import { MEASURE_CATEGORY_LABELS, formatNumber } from "../../lib/labels";
 import { parseLocaleNumber, toNumberLocale } from "../../lib/number";
 import { ConfirmDialog } from "../confirm-dialog";
+import { FinancialParametersCard } from "./financial-parameters-card";
 import { NumberInput } from "../number-input";
 import { useRegisterDirty } from "../unsaved-changes";
 
@@ -287,6 +288,7 @@ export function MeasuresTab({
 
   return (
     <div className="space-y-4">
+      <FinancialParametersCard buildingId={buildingId} readOnly={readOnly} />
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">{t("ee.title")}</CardTitle>

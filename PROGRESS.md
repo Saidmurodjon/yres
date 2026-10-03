@@ -2506,3 +2506,13 @@ T06b — qamrab olinganlar:
 - `faza-1/README.md` §4: F03, F04 ✅, F05 a, b ✅.
 - type-check, biome, `bun run test` (221) yashil.
 **Navbatda:** F05c (UI).
+
+## Faza 1 · F05c — moliyaviy parametrlar UI (2026-10-03)
+
+- `FinancialParametersCard` (`components/building-detail/financial-parameters-card.tsx`) — "Chora-tadbirlar" tab'i tepasida. Barcha raqam maydonlari `NumberInput`; foizlar `lib/percent.ts`dagi bitta juftlik (`fractionToPercentText` / `parsePercentAsFraction`, 0,028 ↔ 2,8 %) orqali; noto'g'ri/bo'sh majburiy maydon → inline xato va saqlash to'xtaydi (jim `0`/default yo'q), bo'sh ko'mir narxi/NCV → `null`. `isDefault` → "⚠ Sukut qiymatlar (v7.20)" belgisi; `useSyncedRows` + `useRegisterDirty("measures.financial")`; viewer'da maydonlar `disabled`, saqlash tugmasi yo'q.
+- Nominal diskont/o'sish va USD/kWh tariflar **faqat o'qish**: formulani frontendda takrorlamaslik uchun GET/PUT javobiga `assumptions` (`deriveFinancialAssumptions`) qo'shildi; saqlangandan keyin yangilanadi (yozayotganda jonli qayta hisoblanmaydi).
+- Saqlangach audit natijasi keshi (`["buildings", id, "audit"]`) bekor qilinadi. i18n: `measures.json` → `financial.*` (uz/ru/en). Testlar: `percent.test.ts`, integratsiya testiga `assumptions` tekshiruvi.
+- **Brauzerda tekshirilmadi** (lokal baza/mock API ishga tushirilmadi): 375 px'da gorizontal scroll yo'qligi faqat kod bo'yicha (maydonlar `grid-cols-1 sm:grid-cols-2`, `Derived` qatorlar `justify-between`) — qo'lda ko'rib chiqish kerak. Build CSS'da `sm:grid-cols-2` bor.
+- Tekshiruv: type-check, build, biome, `bun run test` (api 221, web 71) yashil.
+- **Loyiha egasi tekshirsin — moliyaviy atamalar (uz/ru/en):** Bazaviy yil / Базовый год / Base year · Hisob davri / Расчётный период / Calculation period · Inflyatsiya / Инфляция · Real diskont stavkasi / Реальная ставка дисконтирования / Real discount rate · Real narx o'sishi / Реальный рост цен / Real escalation · Nominal diskont stavkasi / Номинальная ставка дисконтирования · IRR boshlang'ich taxmini / Начальное приближение IRR · Quyi yonish issiqligi / Низшая теплота сгорания / Net calorific value · QES eksport tarifi / Тариф на экспорт ФЭС / PV export tariff · Markaziy issiqlik / Центральное теплоснабжение / District heat · Tarif manbasi, amal qilish sanasi / Источник и дата действия тарифов.
+**Navbatda:** F06 (chora-tadbir darajasida tejash).

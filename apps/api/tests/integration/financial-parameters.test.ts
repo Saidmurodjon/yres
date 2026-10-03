@@ -54,10 +54,15 @@ describe("/financial-parameters", () => {
     const { owner, path } = await setup();
     const res = await authRequest(path, { method: "GET" }, owner.cookie);
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { parameters: Record<string, unknown>; isDefault: boolean };
+    const body = (await res.json()) as {
+      parameters: Record<string, unknown>;
+      assumptions: { nominalDiscountRate: number };
+      isDefault: boolean;
+    };
     expect(body.isDefault).toBe(true);
     expect(body.parameters.periodYears).toBe(20);
     expect(body.parameters.pvExportEnabled).toBe(false);
+    expect(body.assumptions.nominalDiscountRate).toBeCloseTo(0.0608, 6);
     expect(await testDb.select().from(buildingFinancialParameters)).toHaveLength(0);
   });
 

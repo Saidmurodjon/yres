@@ -54,5 +54,58 @@
     "unitCostLabel": "Birlik narxi (USD)",
     "adding": "Qo'shilmoqda...",
     "addButton": "Xarajat qo'shish"
+  },
+  "financial": {
+    "title": "Moliyaviy parametrlar",
+    "defaultBadge": "Sukut qiymatlar (v7.20)",
+    "unsaved": "Saqlanmagan o'zgarishlar",
+    "description": "NPV, IRR va qoplanish muddatini hisoblash uchun diskont stavkasi, narxlar o'sishi va energiya tariflari. Stavkalar real (inflyatsiyasiz); nominal qiymatlar quyida hisoblanadi.",
+    "descriptionReadOnly": "Ushbu bino hisob-kitobida ishlatilgan moliyaviy taxminlar (faqat ko'rish).",
+    "groups": {
+      "period": "Tahlil davri",
+      "rates": "Stavkalar (real, %)",
+      "tariffs": "Tariflar va valyuta kursi"
+    },
+    "pvExportHint": "Eksport qilingan QES elektrini daromad sifatida hisobga olish",
+    "derived": {
+      "title": "Hisoblangan qiymatlar (faqat o'qish)",
+      "hint": "Saqlangan parametrlardan hisoblanadi; saqlangandan keyin yangilanadi.",
+      "nominalDiscount": "Nominal diskont stavkasi",
+      "nominalGas": "Nominal narx o'sishi: gaz",
+      "nominalElectricity": "Nominal narx o'sishi: elektr",
+      "nominalHeat": "Nominal narx o'sishi: issiqlik / ko'mir",
+      "maintenanceEscalation": "Xizmat ko'rsatish xarajatlari o'sishi",
+      "usdGas": "Gaz, USD/kVt·soat",
+      "usdElectricity": "Elektr, USD/kVt·soat",
+      "usdHeat": "Markaziy issiqlik, USD/kVt·soat",
+      "usdCoal": "Ko'mir, USD/kVt·soat"
+    },
+    "save": "Moliyaviy parametrlarni saqlash",
+    "saved": "Moliyaviy parametrlar saqlandi.",
+    "failedToLoad": "Moliyaviy parametrlarni yuklab bo'lmadi:",
+    "failedToSave": "Moliyaviy parametrlarni saqlab bo'lmadi.",
+    "invalidFields": "Ba'zi maydonlar bo'sh yoki noto'g'ri — belgilangan maydonlarni tuzatib, qayta saqlang.",
+    "fieldInvalid": "Ruxsat etilgan oraliqda to'g'ri qiymat kiriting",
+    "fields": {
+      "baseYear": "Bazaviy yil",
+      "periodYears": "Hisob davri (yil)",
+      "inflationRate": "Inflyatsiya",
+      "realDiscountRate": "Real diskont stavkasi",
+      "realEscalationGas": "Real narx o'sishi: gaz",
+      "realEscalationElectricity": "Real narx o'sishi: elektr energiyasi",
+      "realEscalationHeat": "Real narx o'sishi: markaziy issiqlik / ko'mir",
+      "irrInitialGuess": "IRR boshlang'ich taxmini",
+      "exchangeRateUzsPerUsd": "Valyuta kursi",
+      "gasTariffUzsPerM3": "Gaz tarifi (so'm/m³)",
+      "gasNcvKwhPerM3": "Gazning quyi yonish issiqligi (kVt·soat/m³)",
+      "electricityTariffUzsPerKwh": "Elektr tarifi (so'm/kVt·soat)",
+      "heatTariffUzsPerGcal": "Issiqlik tarifi (so'm/Gkal)",
+      "coalPriceUzsPerT": "Ko'mir narxi (so'm/t)",
+      "coalNcvKwhPerKg": "Ko'mirning quyi yonish issiqligi (kVt·soat/kg)",
+      "pvExportTariffUzsPerKwh": "QES eksport tarifi (so'm/kVt·soat)",
+      "pvExportEnabled": "QES elektrini tarmoqqa eksport qilish",
+      "tariffSource": "Tarif manbasi",
+      "tariffEffectiveDate": "Tarif amal qilish sanasi"
+    }
   }
 }

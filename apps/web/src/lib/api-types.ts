@@ -1,4 +1,10 @@
-import type { BuildingStatus, BuildingType, Orientation, Scenario } from "@yres/types";
+import type {
+  BuildingStatus,
+  BuildingType,
+  FinancialAssumptions,
+  Orientation,
+  Scenario,
+} from "@yres/types";
 import type { UserRole } from "./auth-types";
 
 export interface UserProfile {
@@ -685,4 +691,34 @@ export interface ApiErrorBody {
   /** Stable machine-readable code some endpoints add next to `error` (e.g. ATTACHMENT_TYPE_NOT_ALLOWED). */
   code?: string;
   details?: unknown;
+}
+
+/** `GET/PUT /api/buildings/:id/financial-parameters` — rates are fractions (0.04 = 4 %), as stored. */
+export interface FinancialParameters {
+  baseYear: number;
+  periodYears: number;
+  inflationRate: number;
+  realDiscountRate: number;
+  realEscalationGas: number;
+  realEscalationElectricity: number;
+  realEscalationHeat: number;
+  exchangeRateUzsPerUsd: number;
+  gasTariffUzsPerM3: number;
+  gasNcvKwhPerM3: number;
+  electricityTariffUzsPerKwh: number;
+  heatTariffUzsPerGcal: number;
+  coalPriceUzsPerT: number | null;
+  coalNcvKwhPerKg: number | null;
+  pvExportEnabled: boolean;
+  pvExportTariffUzsPerKwh: number;
+  irrInitialGuess: number;
+  tariffSource: string | null;
+  tariffEffectiveDate: string | null;
+}
+
+export interface FinancialParametersResponse {
+  parameters: FinancialParameters;
+  /** Nominal rates and USD/kWh tariffs derived on the server from the saved (or default) parameters. */
+  assumptions: FinancialAssumptions;
+  isDefault: boolean;
 }

@@ -5,12 +5,13 @@ import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { defaultFinancialParameters } from "../lib/financial-defaults";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import { financialParametersSchema } from "../schemas/financial";
+import { deriveFinancialAssumptions } from "../services/financial.service";
 
 export const financialRoutes = new Hono<AppEnv>();
 
 financialRoutes.use("*", authMiddleware);
 
-// GET /:id/financial-parameters - saved row, or the v7.20 defaults + isDefault (GET writes nothing)
+// GET /:id/financial-parameters - saved row, or the v7.20 defaults + isDefault + derived nominal `assumptions` (GET writes nothing)
 financialRoutes.get("/:id/financial-parameters", async (c) => {
   const buildingId = c.req.param("id");
   const db = c.get("db");
@@ -22,10 +23,21 @@ financialRoutes.get("/:id/financial-parameters", async (c) => {
     .from(buildingFinancialParameters)
     .where(eq(buildingFinancialParameters.buildingId, buildingId))
     .limit(1);
-  if (!row) return c.json({ parameters: defaultFinancialParameters(), isDefault: true });
+  if (!row) {
+    const parameters = defaultFinancialParameters();
+    return c.json({
+      parameters,
+      assumptions: deriveFinancialAssumptions(parameters),
+      isDefault: true,
+    });
+  }
 
   const { buildingId: _id, updatedAt: _updatedAt, ...parameters } = row;
-  return c.json({ parameters, isDefault: false });
+  return c.json({
+    parameters,
+    assumptions: deriveFinancialAssumptions(parameters),
+    isDefault: false,
+  });
 });
 
 // PUT /:id/financial-parameters - upsert (3 D1 queries incl. access check)
@@ -50,5 +62,9 @@ financialRoutes.put("/:id/financial-parameters", async (c) => {
     .values({ buildingId, ...values })
     .onConflictDoUpdate({ target: buildingFinancialParameters.buildingId, set: values });
 
-  return c.json({ parameters: parsed.data, isDefault: false });
+  return c.json({
+    parameters: parsed.data,
+    assumptions: deriveFinancialAssumptions(parsed.data),
+    isDefault: false,
+  });
 });

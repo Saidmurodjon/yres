@@ -6,6 +6,7 @@ export * from "./use-climate";
 export * from "./use-consumption";
 export * from "./use-debounced-value";
 export * from "./use-envelope";
+export * from "./use-financial-parameters";
 export * from "./use-measures";
 export * from "./use-members";
 export * from "./use-notifications";

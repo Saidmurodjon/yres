@@ -15,6 +15,8 @@ import type {
   BuildingWithRole,
   BulkReplaceYearInput,
   ChatAttachmentUploadResult,
+  FinancialParameters,
+  FinancialParametersResponse,
   ChatMessage,
   ChatUserSearchResult,
   ClimateRegion,
@@ -237,6 +239,16 @@ export const api = {
         openingTypeIds: string[];
         envelopeElementIds: string[];
       }>(`/api/buildings/${buildingId}/envelope`, { method: "PUT", body: JSON.stringify(payload) }),
+  },
+
+  financialParameters: {
+    get: (buildingId: string) =>
+      request<FinancialParametersResponse>(`/api/buildings/${buildingId}/financial-parameters`),
+    put: (buildingId: string, data: FinancialParameters) =>
+      request<FinancialParametersResponse>(`/api/buildings/${buildingId}/financial-parameters`, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      }),
   },
 
   measures: {
