@@ -30,7 +30,12 @@
     "nameRequired": "Nomi to'ldirilishi shart.",
     "investmentInvalid": "Investitsiya xarajati manfiy bo'lmagan raqam bo'lishi kerak.",
     "lifetimeInvalid": "Xizmat muddati 0 dan katta butun yil bo'lishi kerak.",
-    "maintenanceInvalid": "Texnik xizmat xarajati manfiy bo'lmagan raqam bo'lishi kerak, masalan 0,01."
+    "maintenanceInvalid": "Texnik xizmat xarajati manfiy bo'lmagan raqam bo'lishi kerak, masalan 0,01.",
+    "targets": "Qaysi konstruksiya/ochiq joy turlari almashtiriladi",
+    "targetsHint": "Hech narsa tanlanmasa, butun toifa hisoblanadi (bir toifada bir nechta chora-tadbir bo'lsa — ikki marta hisoblash xavfi).",
+    "targetsEmpty": "Oldingi holatda mos tur yo'q — avval \"Qobiq\" tabida kiriting.",
+    "columnTargets": "Maqsadlar",
+    "targetsNone": "maqsad tanlanmagan"
   },
   "ancillary": {
     "title": "Yordamchi xarajatlar (energiya tejamaydigan)",
@@ -53,7 +58,11 @@
     "unitPlaceholder": "m, dona, ...",
     "unitCostLabel": "Birlik narxi (USD)",
     "adding": "Qo'shilmoqda...",
-    "addButton": "Xarajat qo'shish"
+    "addButton": "Xarajat qo'shish",
+    "columnProposed": "Taklif etiladi",
+    "proposeAria": "{{description}}ni taklif etish",
+    "proposedLabel": "Taklif etiladi",
+    "failedToUpdate": "Yordamchi xarajatni yangilab bo'lmadi."
   },
   "financial": {
     "title": "Moliyaviy parametrlar",

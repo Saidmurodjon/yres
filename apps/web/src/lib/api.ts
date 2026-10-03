@@ -278,6 +278,11 @@ export const api = {
         method: "POST",
         body: JSON.stringify(data),
       }),
+    update: (buildingId: string, measureId: string, data: CreateNonEeMeasureInput) =>
+      request<{ nonEeMeasure: NonEeMeasure }>(
+        `/api/buildings/${buildingId}/non-ee-measures/${measureId}`,
+        { method: "PUT", body: JSON.stringify(data) },
+      ),
     delete: (buildingId: string, measureId: string) =>
       request<void>(`/api/buildings/${buildingId}/non-ee-measures/${measureId}`, {
         method: "DELETE",

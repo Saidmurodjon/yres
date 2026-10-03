@@ -30,7 +30,12 @@
     "nameRequired": "Name is required.",
     "investmentInvalid": "Investment cost must be a non-negative number.",
     "lifetimeInvalid": "Lifetime must be a whole number of years greater than 0.",
-    "maintenanceInvalid": "Maintenance cost must be a non-negative number, for example 0.01."
+    "maintenanceInvalid": "Maintenance cost must be a non-negative number, for example 0.01.",
+    "targets": "Which construction/opening types it replaces",
+    "targetsHint": "If nothing is selected the whole category is counted (several measures in one category risk double counting).",
+    "targetsEmpty": "No matching type in the current state — enter it on the Envelope tab first.",
+    "columnTargets": "Targets",
+    "targetsNone": "no targets selected"
   },
   "ancillary": {
     "title": "Ancillary costs (non-energy-saving)",
@@ -53,7 +58,11 @@
     "unitPlaceholder": "m, pcs, ...",
     "unitCostLabel": "Unit cost (USD)",
     "adding": "Adding...",
-    "addButton": "Add cost"
+    "addButton": "Add cost",
+    "columnProposed": "Proposed",
+    "proposeAria": "Propose {{description}}",
+    "proposedLabel": "Proposed",
+    "failedToUpdate": "Could not update the cost."
   },
   "financial": {
     "title": "Financial parameters",

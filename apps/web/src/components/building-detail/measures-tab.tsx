@@ -29,12 +29,14 @@ import {
   useCreateNonEeMeasure,
   useDeleteMeasure,
   useDeleteNonEeMeasure,
+  useEnvelope,
   useMeasures,
   useNonEeMeasures,
   useSelectMeasures,
+  useUpdateNonEeMeasure,
 } from "../../hooks";
 import { ApiError } from "../../lib/api";
-import type { MeasureCategory } from "../../lib/api-types";
+import type { MeasureCategory, MeasureTarget } from "../../lib/api-types";
 import { MEASURE_CATEGORY_LABELS, formatNumber } from "../../lib/labels";
 import { parseLocaleNumber, toNumberLocale } from "../../lib/number";
 import { ConfirmDialog } from "../confirm-dialog";
@@ -50,7 +52,17 @@ interface NewMeasureForm {
   investmentCostUsd: string;
   lifetimeYears: string;
   maintenanceCostPercent: string;
+  targets: MeasureTarget[];
 }
+
+/** Envelope categories pick which "before" types they replace (F06a); the rest have no targets. */
+const TARGET_ELEMENT_CATEGORIES: Partial<Record<MeasureCategory, readonly string[]>> = {
+  envelope_wall_insulation: ["external_wall", "socle_heated", "socle_unheated", "socle_ground"],
+  envelope_roof_insulation: ["roof"],
+  envelope_floor_insulation: ["floor"],
+};
+
+const targetKey = (t: MeasureTarget) => `${t.kind}:${t.code}`;
 
 /** Applied only when the lifetime field is left empty (a business rule, not a fallback for bad input). */
 const DEFAULT_LIFETIME_YEARS = 20;
@@ -62,6 +74,7 @@ function emptyForm(): NewMeasureForm {
     investmentCostUsd: "",
     lifetimeYears: "20",
     maintenanceCostPercent: "0",
+    targets: [],
   };
 }
 
@@ -70,10 +83,17 @@ interface NewNonEeMeasureForm {
   unit: string;
   quantity: string;
   unitCostUsd: string;
+  proposedForImplementation: boolean;
 }
 
 function emptyNonEeForm(): NewNonEeMeasureForm {
-  return { description: "", unit: "", quantity: "1", unitCostUsd: "" };
+  return {
+    description: "",
+    unit: "",
+    quantity: "1",
+    unitCostUsd: "",
+    proposedForImplementation: true,
+  };
 }
 
 export function MeasuresTab({
@@ -90,6 +110,8 @@ export function MeasuresTab({
   const { data: nonEeData } = useNonEeMeasures(buildingId);
   const createNonEeMeasure = useCreateNonEeMeasure(buildingId);
   const deleteNonEeMeasure = useDeleteNonEeMeasure(buildingId);
+  const updateNonEeMeasure = useUpdateNonEeMeasure(buildingId);
+  const { data: envelope } = useEnvelope(buildingId);
   const [nonEeForm, setNonEeForm] = useState<NewNonEeMeasureForm>(emptyNonEeForm());
   const [nonEeFormError, setNonEeFormError] = useState<string | null>(null);
   const [nonEeDeleteError, setNonEeDeleteError] = useState<string | null>(null);
@@ -110,6 +132,58 @@ export function MeasuresTab({
 
   const measures = data?.measures ?? [];
   const nonEeMeasures = nonEeData?.nonEeMeasures ?? [];
+
+  // Selectable targets: the "before" types of the saved envelope, de-duplicated by code (opening types
+  // exist once per width x height but the code is what the measure stores).
+  const availableTargets: MeasureTarget[] = (() => {
+    const out = new Map<string, MeasureTarget>();
+    const allowed = TARGET_ELEMENT_CATEGORIES[form.category];
+    if (allowed) {
+      for (const ct of envelope?.constructionTypes ?? []) {
+        if (ct.scenario === "before" && allowed.includes(ct.elementCategory)) {
+          const target: MeasureTarget = { kind: "construction_type", code: ct.code };
+          out.set(targetKey(target), target);
+        }
+      }
+    } else if (form.category === "window_replacement") {
+      for (const ot of envelope?.openingTypes ?? []) {
+        if (ot.scenario === "before") {
+          const target: MeasureTarget = { kind: "opening_type", code: ot.code };
+          out.set(targetKey(target), target);
+        }
+      }
+    }
+    return [...out.values()];
+  })();
+  const showTargets =
+    form.category in TARGET_ELEMENT_CATEGORIES || form.category === "window_replacement";
+
+  function toggleTarget(target: MeasureTarget) {
+    setForm((f) => ({
+      ...f,
+      targets: f.targets.some((x) => targetKey(x) === targetKey(target))
+        ? f.targets.filter((x) => targetKey(x) !== targetKey(target))
+        : [...f.targets, target],
+    }));
+  }
+
+  async function handleToggleNonEeProposed(m: (typeof nonEeMeasures)[number]) {
+    setNonEeDeleteError(null);
+    try {
+      await updateNonEeMeasure.mutateAsync({
+        id: m.id,
+        data: {
+          description: m.description,
+          unit: m.unit,
+          quantity: m.quantity,
+          unitCostUsd: m.unitCostUsd,
+          proposedForImplementation: !m.proposedForImplementation,
+        },
+      });
+    } catch (err) {
+      setNonEeDeleteError(err instanceof ApiError ? err.message : t("ancillary.failedToUpdate"));
+    }
+  }
 
   // Unsaved edits: ticked/unticked boxes since the last save, and the two "add" forms once typed into.
   const [selectionTouched, setSelectionTouched] = useState(false);
@@ -198,6 +272,10 @@ export function MeasuresTab({
         investmentCostUsd,
         lifetimeYears: lifetime.ok ? lifetime.value : DEFAULT_LIFETIME_YEARS,
         maintenanceCostPercent: maintenance.ok ? maintenance.value : 0,
+        // only targets that are still offered for this category (the user may have switched category)
+        targets: showTargets
+          ? form.targets.filter((x) => availableTargets.some((a) => targetKey(a) === targetKey(x)))
+          : [],
       });
       setForm(emptyForm());
     } catch (err) {
@@ -247,6 +325,7 @@ export function MeasuresTab({
         unit: nonEeForm.unit.trim() || null,
         quantity,
         unitCostUsd,
+        proposedForImplementation: nonEeForm.proposedForImplementation,
       });
       setNonEeForm(emptyNonEeForm());
     } catch (err) {
@@ -334,7 +413,14 @@ export function MeasuresTab({
                           aria-label={t("ee.proposeAria", { name: measure.name })}
                         />
                       </TableCell>
-                      <TableCell className="font-medium">{measure.name}</TableCell>
+                      <TableCell className="font-medium">
+                        {measure.name}
+                        {measure.targets.length > 0 && (
+                          <span className="block text-xs font-normal text-muted-foreground">
+                            {measure.targets.map((x) => x.code).join(", ")}
+                          </span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Badge variant="secondary">
                           {MEASURE_CATEGORY_LABELS[measure.category]}
@@ -437,6 +523,29 @@ export function MeasuresTab({
                   />
                 </div>
               </div>
+              {showTargets && (
+                <fieldset className="mt-4 space-y-2">
+                  <legend className="text-sm font-medium">{t("ee.targets")}</legend>
+                  {availableTargets.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">{t("ee.targetsEmpty")}</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-x-4 gap-y-2">
+                      {availableTargets.map((target) => (
+                        <label key={targetKey(target)} className="flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-input"
+                            checked={form.targets.some((x) => targetKey(x) === targetKey(target))}
+                            onChange={() => toggleTarget(target)}
+                          />
+                          {target.code}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">{t("ee.targetsHint")}</p>
+                </fieldset>
+              )}
               {formError && <p className="mt-4 text-sm text-destructive">{formError}</p>}
             </CardContent>
             <CardFooter className="justify-end">
@@ -461,6 +570,7 @@ export function MeasuresTab({
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">{t("ancillary.columnProposed")}</TableHead>
                   <TableHead>{t("ancillary.columnDescription")}</TableHead>
                   <TableHead>{t("ancillary.columnQuantity")}</TableHead>
                   <TableHead>{t("ancillary.columnUnitCost")}</TableHead>
@@ -471,6 +581,16 @@ export function MeasuresTab({
               <TableBody>
                 {nonEeMeasures.map((m) => (
                   <TableRow key={m.id}>
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-input"
+                        checked={m.proposedForImplementation}
+                        onChange={() => handleToggleNonEeProposed(m)}
+                        disabled={readOnly || updateNonEeMeasure.isPending}
+                        aria-label={t("ancillary.proposeAria", { description: m.description })}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{m.description}</TableCell>
                     <TableCell>
                       {formatNumber(m.quantity, 1)}
@@ -545,6 +665,15 @@ export function MeasuresTab({
                   />
                 </div>
               </div>
+              <label className="mt-4 flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-input"
+                  checked={nonEeForm.proposedForImplementation}
+                  onChange={(e) => setNonEe("proposedForImplementation", e.target.checked)}
+                />
+                {t("ancillary.proposedLabel")}
+              </label>
               {nonEeFormError && <p className="mt-4 text-sm text-destructive">{nonEeFormError}</p>}
             </CardContent>
             <CardFooter className="justify-end">

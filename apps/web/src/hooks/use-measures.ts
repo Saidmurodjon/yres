@@ -59,6 +59,18 @@ export function useCreateNonEeMeasure(buildingId: string) {
   });
 }
 
+export function useUpdateNonEeMeasure(buildingId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: CreateNonEeMeasureInput }) =>
+      api.nonEeMeasures.update(buildingId, id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["buildings", buildingId, "non-ee-measures"] });
+      queryClient.invalidateQueries({ queryKey: ["buildings", buildingId, "audit"] });
+    },
+  });
+}
+
 export function useDeleteNonEeMeasure(buildingId: string) {
   const queryClient = useQueryClient();
   return useMutation({

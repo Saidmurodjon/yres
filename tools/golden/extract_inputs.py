@@ -256,9 +256,9 @@ def constructions(r: Reader) -> tuple[list[dict], list[dict]]:
         before, after = parse_block(r, title_row, "before"), parse_block(r, title_row, "after")
         if not before["layers"] or not after["layers"]:
             fail(f"U-values block {ident}: no layers found (before {len(before['layers'])}, after {len(after['layers'])})")
-        types.append({"id": f"ct-{ident}", "scenario": "before", "retrofitOfId": None,
+        types.append({"id": f"ct-{ident}", "code": code, "scenario": "before", "retrofitOfId": None,
                       "elementCategory": category, "layers": before["layers"]})
-        types.append({"id": f"ct-{ident}-after", "scenario": "after", "retrofitOfId": f"ct-{ident}",
+        types.append({"id": f"ct-{ident}-after", "code": code, "scenario": "after", "retrofitOfId": f"ct-{ident}",
                       "elementCategory": category, "layers": after["layers"]})
         resistances.append({"elementCategory": category,
                             "interiorResistanceM2kPerW": before["interior"],
@@ -271,8 +271,8 @@ def constructions(r: Reader) -> tuple[list[dict], list[dict]]:
         for target, col in ((f3_before, 20), (f3_after, 21)):
             if (ws.cell(row, col).value or 0) > 0:
                 target.append({"thicknessM": ws.cell(row, 18).value, "material": {"thermalConductivityWPerMk": lam}})
-    types.append({"id": "ct-F3", "scenario": "before", "retrofitOfId": None, "elementCategory": "floor", "layers": f3_before})
-    types.append({"id": "ct-F3-after", "scenario": "after", "retrofitOfId": "ct-F3", "elementCategory": "floor", "layers": f3_after})
+    types.append({"id": "ct-F3", "code": "F3", "scenario": "before", "retrofitOfId": None, "elementCategory": "floor", "layers": f3_before})
+    types.append({"id": "ct-F3-after", "code": "F3", "scenario": "after", "retrofitOfId": "ct-F3", "elementCategory": "floor", "layers": f3_after})
     return types, resistances
 
 
@@ -302,7 +302,7 @@ def opening_types(r: Reader, wall_openings: dict) -> list[dict]:
     for (code, w, h), category in sorted(wall_openings.items(), key=lambda kv: (kv[0][0], kv[0][1], kv[0][2])):
         is_window = category == "window"
         types.append({
-            "id": f"ot-{slug(code)}-{w:g}x{h:g}", "category": category, "scenario": "before",
+            "id": f"ot-{slug(code)}-{w:g}x{h:g}", "code": code, "category": category, "scenario": "before",
             "uValueWm2k": u_before[code], "gValue": g_b if is_window else None,
             "frameFactor": fw_b if is_window else None, "shadingFactor": sh_b if is_window else 1,
             "widthM": w, "heightM": h,
@@ -310,7 +310,7 @@ def opening_types(r: Reader, wall_openings: dict) -> list[dict]:
     for row, category in ((98, "window"), (99, "window"), (100, "door")):
         code = r.text(s, f"AG{row}", ("AG96", "Type"))
         types.append({
-            "id": f"ot-{code}", "category": category, "scenario": "after",
+            "id": f"ot-{code}", "code": code, "category": category, "scenario": "after",
             "uValueWm2k": r.num(s, f"AH{row}", ("AH96", "Uvalue")),
             "gValue": g_a if category == "window" else None,
             "frameFactor": fw_a if category == "window" else None,
@@ -587,6 +587,19 @@ MEASURE_CATEGORY = {
 }
 
 
+# Which "before" construction/opening types each measure replaces (F06a) — the workbook's attribution is
+# hard-wired per measure row (`Measures_summary` E/T/U formulas), so it is spelled out here.
+MEASURE_TARGETS = {
+    1: [("construction_type", "W1"), ("construction_type", "Socle 1. (heated space)")],
+    2: [("construction_type", "Socle 2")],
+    4: [("construction_type", "R1")],
+    5: [("construction_type", "F1"), ("construction_type", "F3")],
+    6: [("opening_type", "Win3")],
+    7: [("opening_type", "Win2")],
+    8: [("opening_type", "D1")],
+}
+
+
 def measures(r: Reader) -> tuple[list[dict], list[dict]]:
     s = "Measures_summary"
     energy = []
@@ -598,6 +611,7 @@ def measures(r: Reader) -> tuple[list[dict], list[dict]]:
             "investmentCostUsd": r.num(s, f"D{row}"), "lifetimeYears": int(r.num(s, f"M{row}")),
             "maintenanceCostPercent": r.num(s, f"R{row}"),
             "proposedForImplementation": r.text(s, f"Q{row}") == "Yes",
+            "targets": [{"kind": k, "code": c} for k, c in MEASURE_TARGETS.get(n, [])],
         })
     non_ee = []
     n_s = "Non-EE measures"
@@ -606,8 +620,12 @@ def measures(r: Reader) -> tuple[list[dict], list[dict]]:
         row = 3 + n
         r.x.check_label(n_s, f"B{row}", str(n))
         unit = r.wb[n_s][f"E{row}"].value
+        # the "proposed" flag lives on Measures_summary rows 25..37 (`D39 = SUMIF(Q5:Q37, "Yes", D5:D37)`)
+        summary_row = 24 + n
+        r.x.check_label(s, f"B{summary_row}", str(n))
         non_ee.append({"id": f"non-ee-{n}", "description": r.text(n_s, f"C{row}"),
-                       "unit": unit, "quantity": r.num(n_s, f"F{row}"), "unitCostUsd": r.num(n_s, f"G{row}")})
+                       "unit": unit, "quantity": r.num(n_s, f"F{row}"), "unitCostUsd": r.num(n_s, f"G{row}"),
+                       "proposedForImplementation": r.text(s, f"Q{summary_row}") == "Yes"})
     return energy, non_ee
 
 

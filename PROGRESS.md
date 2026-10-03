@@ -2516,3 +2516,15 @@ T06b — qamrab olinganlar:
 - Tekshiruv: type-check, build, biome, `bun run test` (api 221, web 71) yashil.
 - **Loyiha egasi tekshirsin — moliyaviy atamalar (uz/ru/en):** Bazaviy yil / Базовый год / Base year · Hisob davri / Расчётный период / Calculation period · Inflyatsiya / Инфляция · Real diskont stavkasi / Реальная ставка дисконтирования / Real discount rate · Real narx o'sishi / Реальный рост цен / Real escalation · Nominal diskont stavkasi / Номинальная ставка дисконтирования · IRR boshlang'ich taxmini / Начальное приближение IRR · Quyi yonish issiqligi / Низшая теплота сгорания / Net calorific value · QES eksport tarifi / Тариф на экспорт ФЭС / PV export tariff · Markaziy issiqlik / Центральное теплоснабжение / District heat · Tarif manbasi, amal qilish sanasi / Источник и дата действия тарифов.
 **Navbatda:** F06 (chora-tadbir darajasida tejash).
+
+## Faza 1 · F06a — chora-tadbir maqsadlari (2026-10-03)
+
+- `energy_measure_target` (`measure_id` cascade, `kind`, `code`) + `non_ee_measure.proposed_for_implementation` (default `true`) — migratsiya `0004_chunky_dracula.sql` (faqat qo'shuvchi, lokal D1'ga qo'llandi). Maqsad **kod** bo'yicha (`PUT /envelope` turlarni yangi UUID bilan yaratadi).
+- API: `POST /measures` endi `targets` (`.max(40)`, kod `.max(100)`) qabul qiladi; yangi `PUT /measures/:id` (maqsadlar to'plam sifatida almashadi); yangi `PUT /non-ee-measures/:id`. Bitta `db.batch()`: POST = 1 + ceil(40/25) = 3 bayonot, PUT = 2 + 2 = 4. GET javobida `targets`.
+- `loadAuditInputs` hamon **21** so'rov (`with: { targets }` bitta SQL ichiga qo'shiladi). `AuditInputs`: `energyMeasures[].targets`, `constructionTypes/openingTypes[].code`.
+- Dvigatel: `collectMeasureTargetWarnings` — maqsadsiz qobiq chora-tadbiri (kategoriya deltasi hamon butun; bir kategoriyada ≥ 2 bo'lsa "double counting" bilan) va "oldingi" holatda topilmagan kod uchun `warnings[]`. Non-EE: paket yig'indisiga faqat `proposedForImplementation` qatorlar (v7.20 `D39 = SUMIF(Q5:Q37,"Yes",D5:D37)`; `Non-EE measures` varag'ida Q yo'q, bayroq `Measures_summary!Q25:Q37` da).
+- Ekstraktor: konstruksiya/ochiq joy `code`, `MEASURE_TARGETS` (№1: W1 + Socle 1.; №2: Socle 2; №4: R1; №5: F1, F3; №6: Win3; №7: Win2; №8: D1), non-EE `Q`. `inputs.json` qayta chiqarildi (v7.20, sha256 mos). Golden yashil, unexplained = 0; hech bir tafovut yopilmadi (D12/D21/D22/D23 F06b–c da).
+- UI (`measures-tab.tsx`): qobiq kategoriyalari uchun "oldingi" turlar checkbox'lari (devor/tom/pol → konstruksiya, deraza → ochiq joy; kod bo'yicha takrorlanmaydi), jadvalda kodlar; non-EE jadvalda "Taklif etiladi" checkbox (serverga darhol PUT) va qo'shish formasida belgi. i18n uz/ru/en.
+- Testlar: integratsiya (targets POST/PUT/cascade/cap 41 → 400/begona bino 404), `compute-audit` (ogohlantirishlar, non-EE proposed). type-check, build, biome, `bun run test` (api 225, web 71) yashil.
+- **Brauzerda tekshirilmadi** (mock API ishga tushirilmadi); 375 px — checkbox'lar `flex-wrap`. **Loyiha egasi tekshirsin (ru):** «Какие типы конструкций/проёмов заменяются», «Цели», «Предлагается».
+**Navbatda:** F06b (dvigatel: atributsiya + tashuvchi qismlari).

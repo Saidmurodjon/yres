@@ -28,6 +28,8 @@ export interface NonEeMeasureResult {
   quantity: number;
   unitCostUsd: number;
   totalCostUsd: number;
+  /** v7.20 `Non-EE measures` "Q" column: only proposed rows enter the package totals. */
+  proposedForImplementation: boolean;
 }
 
 export interface EnergyMeasureResult {

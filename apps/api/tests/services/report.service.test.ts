@@ -293,6 +293,7 @@ function fullResultFixture(): AuditResult {
         quantity: 100,
         unitCostUsd: 10,
         totalCostUsd: 1000,
+        proposedForImplementation: true,
       },
     ],
   };

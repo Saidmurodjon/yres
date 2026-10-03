@@ -1,4 +1,4 @@
-import { energyMeasure, nonEeMeasure } from "@yres/db";
+import { energyMeasure, energyMeasureTarget, insertChunked, nonEeMeasure } from "@yres/db";
 import { and, eq, inArray } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
@@ -35,12 +35,13 @@ measuresRoutes.get("/:id/measures", async (c) => {
     return c.json({ error: "Not found" }, 404);
   }
 
-  const measures = await db
-    .select()
-    .from(energyMeasure)
-    .where(eq(energyMeasure.buildingId, buildingId))
-    .limit(limit)
-    .offset(offset);
+  // `with: { targets }` is folded into the same SQL statement (json subquery) — one D1 query.
+  const measures = await db.query.energyMeasure.findMany({
+    where: eq(energyMeasure.buildingId, buildingId),
+    with: { targets: { columns: { kind: true, code: true } } },
+    limit,
+    offset,
+  });
 
   return c.json({
     measures,
@@ -74,12 +75,79 @@ measuresRoutes.post("/:id/measures", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const [measure] = await db
-    .insert(energyMeasure)
-    .values({ ...parsed.data, buildingId })
-    .returning();
+  // One atomic batch: the measure row + its targets. Budget: 1 + ceil(40 / 25) = 3 statements
+  // (targets are capped at 40 in the schema; the target table has 4 columns -> 25 rows per insert).
+  const { targets, ...measureFields } = parsed.data;
+  const measureId = crypto.randomUUID();
+  const statements: BatchItem<"sqlite">[] = [
+    db.insert(energyMeasure).values({ ...measureFields, id: measureId, buildingId }),
+    ...insertChunked(
+      db,
+      energyMeasureTarget,
+      targets.map((t) => ({ measureId, kind: t.kind, code: t.code })),
+    ),
+  ];
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+
+  const measure = await db.query.energyMeasure.findFirst({
+    where: eq(energyMeasure.id, measureId),
+    with: { targets: { columns: { kind: true, code: true } } },
+  });
 
   return c.json({ measure }, 201);
+});
+
+// PUT /:id/measures/:measureId - edit a measure; its targets are replaced as a set. One atomic batch:
+// update + delete old targets + chunked insert = 2 + ceil(40 / 25) <= 4 statements.
+measuresRoutes.put("/:id/measures/:measureId", async (c) => {
+  const buildingId = c.req.param("id");
+  const measureId = c.req.param("measureId");
+  const body = await c.req.json().catch(() => null);
+  const parsed = createMeasureSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid body", details: parsed.error.flatten() }, 400);
+  }
+
+  const db = c.get("db");
+  const user = c.get("user");
+
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
+    return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
+  }
+
+  const existing = await db.query.energyMeasure.findFirst({
+    where: and(eq(energyMeasure.id, measureId), eq(energyMeasure.buildingId, buildingId)),
+    columns: { id: true },
+  });
+  if (!existing) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  const { targets, ...measureFields } = parsed.data;
+  const statements: BatchItem<"sqlite">[] = [
+    db
+      .update(energyMeasure)
+      .set(measureFields)
+      .where(and(eq(energyMeasure.id, measureId), eq(energyMeasure.buildingId, buildingId))),
+    db.delete(energyMeasureTarget).where(eq(energyMeasureTarget.measureId, measureId)),
+    ...insertChunked(
+      db,
+      energyMeasureTarget,
+      targets.map((t) => ({ measureId, kind: t.kind, code: t.code })),
+    ),
+  ];
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+
+  const measure = await db.query.energyMeasure.findFirst({
+    where: eq(energyMeasure.id, measureId),
+    with: { targets: { columns: { kind: true, code: true } } },
+  });
+
+  return c.json({ measure });
 });
 
 // DELETE /:id/measures/:measureId
@@ -172,11 +240,9 @@ measuresRoutes.post("/:id/measures/select", async (c) => {
 });
 
 // GET /:id/non-ee-measures - list a building's non_ee_measure rows (ancillary
-// renovation costs — cable replacement, re-plastering, etc.). Unlike
-// energy_measure, these have no "proposed for implementation" flag: they're
-// necessary side-effect work, not an optional energy-saving choice, so they
-// unconditionally count toward AuditSummary.totalInvestmentUsd (see
-// audit.engine.ts's buildAuditSummary).
+// renovation costs — cable replacement, re-plastering, etc.). Only rows with
+// proposedForImplementation (v7.20 "Q" column, default true) count toward
+// AuditSummary.totalInvestmentUsd (see audit.engine.ts's buildAuditSummary).
 measuresRoutes.get("/:id/non-ee-measures", async (c) => {
   const buildingId = c.req.param("id");
   const db = c.get("db");
@@ -218,6 +284,39 @@ measuresRoutes.post("/:id/non-ee-measures", async (c) => {
     .returning();
 
   return c.json({ nonEeMeasure: row }, 201);
+});
+
+// PUT /:id/non-ee-measures/:measureId
+measuresRoutes.put("/:id/non-ee-measures/:measureId", async (c) => {
+  const buildingId = c.req.param("id");
+  const measureId = c.req.param("measureId");
+  const body = await c.req.json().catch(() => null);
+  const parsed = createNonEeMeasureSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: "Invalid body", details: parsed.error.flatten() }, 400);
+  }
+
+  const db = c.get("db");
+  const user = c.get("user");
+
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
+    return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
+  }
+
+  const [row] = await db
+    .update(nonEeMeasure)
+    .set(parsed.data)
+    .where(and(eq(nonEeMeasure.id, measureId), eq(nonEeMeasure.buildingId, buildingId)))
+    .returning();
+  if (!row) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  return c.json({ nonEeMeasure: row });
 });
 
 // DELETE /:id/non-ee-measures/:measureId

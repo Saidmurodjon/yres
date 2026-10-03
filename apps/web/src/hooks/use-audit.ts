@@ -47,7 +47,9 @@ export function useUpsertReportAnnotation(buildingId: string) {
     mutationFn: ({ sectionKey, note }: { sectionKey: ReportAnnotationSectionKey; note: string }) =>
       api.audit.upsertAnnotation(buildingId, sectionKey, note),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["buildings", buildingId, "audit", "annotations"] });
+      queryClient.invalidateQueries({
+        queryKey: ["buildings", buildingId, "audit", "annotations"],
+      });
     },
   });
 }

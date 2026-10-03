@@ -314,6 +314,12 @@ export type MeasureCategory =
   | "ems"
   | "other";
 
+export interface MeasureTarget {
+  kind: "construction_type" | "opening_type";
+  /** Code of a "before" construction/opening type (stable across envelope saves, unlike its id). */
+  code: string;
+}
+
 export interface EnergyMeasure {
   id: string;
   buildingId: string;
@@ -325,6 +331,7 @@ export interface EnergyMeasure {
   proposedForImplementation: boolean;
   sourceSheetRef: string | null;
   createdAt: string;
+  targets: MeasureTarget[];
 }
 
 export interface CreateMeasureInput {
@@ -333,6 +340,7 @@ export interface CreateMeasureInput {
   investmentCostUsd: number;
   lifetimeYears?: number;
   maintenanceCostPercent?: number;
+  targets?: MeasureTarget[];
 }
 
 export interface NonEeMeasure {
@@ -342,6 +350,7 @@ export interface NonEeMeasure {
   unit: string | null;
   quantity: number;
   unitCostUsd: number;
+  proposedForImplementation: boolean;
 }
 
 export interface CreateNonEeMeasureInput {
@@ -349,6 +358,7 @@ export interface CreateNonEeMeasureInput {
   unit?: string | null;
   quantity?: number;
   unitCostUsd: number;
+  proposedForImplementation?: boolean;
 }
 
 export type EnergyCarrier = "gas" | "electricity" | "district_heat" | "coal";

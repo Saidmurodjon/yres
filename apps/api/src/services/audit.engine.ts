@@ -14,6 +14,7 @@ import type {
   HeatingEnergyBalanceResult,
   LampPowerDensityWPerM2,
   LightingResult,
+  MeasureCategory,
   NonEeMeasureResult,
   RenewableProductionResult,
   Scenario,
@@ -765,6 +766,7 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
     quantity: row.quantity,
     unitCostUsd: row.unitCostUsd,
     totalCostUsd: row.quantity * row.unitCostUsd,
+    proposedForImplementation: row.proposedForImplementation,
   }));
   // CO2 factors still come from the reference tariff table; money comes from the building's
   // financial parameters (v7.20 `Financial parameters`).
@@ -775,6 +777,8 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
     }
   }
   const financialAssumptions = deriveFinancialAssumptions(inputs.financialParameters);
+
+  warnings.push(...collectMeasureTargetWarnings(measureRows, inputs));
 
   const measures: EnergyMeasureResult[] = measureRows.map((measure) => {
     const savingsKwh = resolveMeasureStandardizedSavingsKwh(measure.category, {
@@ -1102,10 +1106,11 @@ function buildAuditSummary(
   );
 
   // `Measures_summary!D31`: total investment for the proposed package
-  // includes every non-EE (ancillary) cost unconditionally — those rows have
-  // no "proposed for implementation" flag in the source sheet, they're
-  // simply necessary side-effect work, not an optional energy-saving choice.
-  const totalNonEeMeasureCostUsd = nonEeMeasures.reduce((sum, m) => sum + m.totalCostUsd, 0);
+  // includes the non-EE (ancillary) costs marked proposed — v7.20 `D39` sums only the "Yes" rows of
+  // the `Non-EE measures` "Q" column (the column defaults to true for rows saved before F06).
+  const totalNonEeMeasureCostUsd = nonEeMeasures
+    .filter((m) => m.proposedForImplementation)
+    .reduce((sum, m) => sum + m.totalCostUsd, 0);
   const totalInvestmentUsd =
     measures
       .filter((m) => m.proposedForImplementation)
@@ -1130,4 +1135,55 @@ function buildAuditSummary(
     simplePaybackYears:
       totalAnnualSavingsUsd > 0 ? totalInvestmentUsd / totalAnnualSavingsUsd : null,
   };
+}
+
+const ENVELOPE_MEASURE_CATEGORIES: ReadonlySet<MeasureCategory> = new Set([
+  "envelope_wall_insulation",
+  "envelope_roof_insulation",
+  "envelope_floor_insulation",
+  "window_replacement",
+]);
+
+/**
+ * F06a: envelope measures say which "before" construction/opening types they replace. A measure with no
+ * targets (legacy data) still gets the whole category delta, so two of them in one category count that delta
+ * twice — flag every one. A target code that no longer exists in the "before" state is flagged, never a silent 0.
+ */
+function collectMeasureTargetWarnings(
+  measureRows: AuditInputs["energyMeasures"],
+  inputs: AuditInputs,
+): string[] {
+  const out: string[] = [];
+  const beforeCodes = {
+    construction_type: new Set(
+      inputs.constructionTypes.filter((t) => t.scenario === "before").map((t) => t.code),
+    ),
+    opening_type: new Set(
+      inputs.openingTypes.filter((t) => t.scenario === "before").map((t) => t.code),
+    ),
+  };
+  const untargetedPerCategory = new Map<string, number>();
+  for (const m of measureRows) {
+    if (ENVELOPE_MEASURE_CATEGORIES.has(m.category) && m.targets.length === 0) {
+      untargetedPerCategory.set(m.category, (untargetedPerCategory.get(m.category) ?? 0) + 1);
+    }
+  }
+  for (const m of measureRows) {
+    if (!ENVELOPE_MEASURE_CATEGORIES.has(m.category)) continue;
+    if (m.targets.length === 0) {
+      const duplicates = (untargetedPerCategory.get(m.category) ?? 0) > 1;
+      out.push(
+        `Measure "${m.name}": no construction/opening types selected — the whole ${m.category} category was counted${duplicates ? ", and another measure in the same category has no targets either (double counting risk)" : ""}.`,
+      );
+      continue;
+    }
+    for (const t of m.targets) {
+      if (!beforeCodes[t.kind].has(t.code)) {
+        out.push(
+          `Measure "${m.name}": target ${t.kind} "${t.code}" does not exist in the current ("before") envelope.`,
+        );
+      }
+    }
+  }
+  return out;
 }

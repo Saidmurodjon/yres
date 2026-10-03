@@ -1,4 +1,4 @@
-import { energyMeasure } from "@yres/db";
+import { energyMeasure, energyMeasureTarget } from "@yres/db";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { seedClimateRegion } from "../helpers/seed-helpers";
 import { authRequest, signUpTestUser } from "../helpers/test-auth";
@@ -188,6 +188,113 @@ describe("Measures API", () => {
     const listResponse = await authRequest(`/api/buildings/${buildingId}/measures`, {}, cookie);
     const { measures } = (await listResponse.json()) as { measures: { id: string }[] };
     expect(measures.map((m) => m.id)).not.toContain(measure.id);
+  });
+
+  it("stores targets with POST, replaces them as a set with PUT, and cascades on delete", async () => {
+    const { cookie } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+    const json = { "Content-Type": "application/json" };
+    const base = { name: "Wall", category: "envelope_wall_insulation", investmentCostUsd: 1000 };
+
+    const created = await authRequest(
+      `/api/buildings/${buildingId}/measures`,
+      {
+        method: "POST",
+        headers: json,
+        body: JSON.stringify({
+          ...base,
+          targets: [
+            { kind: "construction_type", code: "W1" },
+            { kind: "construction_type", code: "Socle 1." },
+          ],
+        }),
+      },
+      cookie,
+    );
+    expect(created.status).toBe(201);
+    const { measure } = (await created.json()) as {
+      measure: { id: string; targets: { kind: string; code: string }[] };
+    };
+    expect(measure.targets.map((t) => t.code).sort()).toEqual(["Socle 1.", "W1"]);
+
+    const updated = await authRequest(
+      `/api/buildings/${buildingId}/measures/${measure.id}`,
+      {
+        method: "PUT",
+        headers: json,
+        body: JSON.stringify({
+          ...base,
+          name: "Wall 2",
+          targets: [{ kind: "opening_type", code: "Win3" }],
+        }),
+      },
+      cookie,
+    );
+    expect(updated.status).toBe(200);
+    const body = (await updated.json()) as {
+      measure: { name: string; targets: { kind: string; code: string }[] };
+    };
+    expect(body.measure.name).toBe("Wall 2");
+    expect(body.measure.targets).toEqual([{ kind: "opening_type", code: "Win3" }]);
+
+    // targets are capped (V-3)
+    const tooMany = await authRequest(
+      `/api/buildings/${buildingId}/measures`,
+      {
+        method: "POST",
+        headers: json,
+        body: JSON.stringify({
+          ...base,
+          targets: Array.from({ length: 41 }, (_, i) => ({
+            kind: "construction_type",
+            code: `W${i}`,
+          })),
+        }),
+      },
+      cookie,
+    );
+    expect(tooMany.status).toBe(400);
+
+    await authRequest(
+      `/api/buildings/${buildingId}/measures/${measure.id}`,
+      { method: "DELETE" },
+      cookie,
+    );
+    expect(await testDb.select().from(energyMeasureTarget)).toHaveLength(0);
+  });
+
+  it("404s a PUT for a measure of another building", async () => {
+    const { cookie } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+    const otherBuildingId = await createBuilding(cookie);
+    const created = await authRequest(
+      `/api/buildings/${otherBuildingId}/measures`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "Wall",
+          category: "envelope_wall_insulation",
+          investmentCostUsd: 1,
+        }),
+      },
+      cookie,
+    );
+    const { measure } = (await created.json()) as { measure: { id: string } };
+    const response = await authRequest(
+      `/api/buildings/${buildingId}/measures/${measure.id}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: "x",
+          category: "envelope_wall_insulation",
+          investmentCostUsd: 1,
+        }),
+      },
+      cookie,
+    );
+    expect(response.status).toBe(404);
   });
 
   it("404s deleting a measure that doesn't belong to the building", async () => {

@@ -11,6 +11,7 @@ import {
   dhwSource,
   distributionSystem,
   energyMeasure,
+  type energyMeasureTarget,
   energyTariff,
   envelopeElement,
   type envelopeOpening,
@@ -67,7 +68,12 @@ function readRaw(db: Database, buildingId: string) {
       with: { monthlyProduction: true },
     }),
     db.select().from(utilityBill).where(eq(utilityBill.buildingId, buildingId)),
-    db.query.energyMeasure.findMany({ where: eq(energyMeasure.buildingId, buildingId) }),
+    // `with: { targets }` is one SQL statement (drizzle folds relations into json subqueries), so the
+    // D1 query count stays at 21.
+    db.query.energyMeasure.findMany({
+      where: eq(energyMeasure.buildingId, buildingId),
+      with: { targets: true },
+    }),
     db.query.nonEeMeasure.findMany({ where: eq(nonEeMeasure.buildingId, buildingId) }),
     db.select().from(energyTariff).orderBy(desc(energyTariff.effectiveDate)),
     db
@@ -140,7 +146,7 @@ export interface AuditInputs {
   })[];
   constructionTypes: (Row<
     typeof constructionType,
-    "id" | "scenario" | "retrofitOfId" | "elementCategory"
+    "id" | "code" | "scenario" | "retrofitOfId" | "elementCategory"
   > & {
     layers: (Row<typeof constructionLayer, "thicknessM"> & {
       material: Row<typeof material, "thermalConductivityWPerMk">;
@@ -148,7 +154,14 @@ export interface AuditInputs {
   })[];
   openingTypes: Row<
     typeof openingType,
-    "id" | "category" | "scenario" | "uValueWm2k" | "gValue" | "frameFactor" | "shadingFactor"
+    | "id"
+    | "code"
+    | "category"
+    | "scenario"
+    | "uValueWm2k"
+    | "gValue"
+    | "frameFactor"
+    | "shadingFactor"
   >[];
   surfaceResistances: Row<
     typeof surfaceResistance,
@@ -215,7 +228,7 @@ export interface AuditInputs {
     monthlyProduction: Row<typeof renewableProductionMonthly, "productionKwh">[];
   })[];
   utilityBills: Row<typeof utilityBill, "energyCarrier" | "year" | "consumptionKwh">[];
-  energyMeasures: Row<
+  energyMeasures: (Row<
     typeof energyMeasure,
     | "id"
     | "name"
@@ -224,10 +237,13 @@ export interface AuditInputs {
     | "lifetimeYears"
     | "maintenanceCostPercent"
     | "proposedForImplementation"
-  >[];
+  > & {
+    /** Construction/opening types (by code) this measure replaces; empty = legacy whole-category measure. */
+    targets: Row<typeof energyMeasureTarget, "kind" | "code">[];
+  })[];
   nonEeMeasures: Row<
     typeof nonEeMeasure,
-    "id" | "description" | "unit" | "quantity" | "unitCostUsd"
+    "id" | "description" | "unit" | "quantity" | "unitCostUsd" | "proposedForImplementation"
   >[];
   /** Newest `effectiveDate` first (the engine takes the first tariff per carrier). */
   tariffs: Row<

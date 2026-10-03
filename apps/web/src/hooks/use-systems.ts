@@ -81,7 +81,8 @@ export function useReplaceCoolingSystems(buildingId: string) {
 export function useReplaceLighting(buildingId: string) {
   const invalidate = useInvalidateSystems(buildingId);
   return useMutation({
-    mutationFn: (payload: ReplaceLightingPayload) => api.systems.replaceLighting(buildingId, payload),
+    mutationFn: (payload: ReplaceLightingPayload) =>
+      api.systems.replaceLighting(buildingId, payload),
     onSuccess: invalidate,
   });
 }

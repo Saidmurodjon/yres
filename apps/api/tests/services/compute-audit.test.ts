@@ -67,6 +67,7 @@ function buildInputs(): AuditInputs {
     constructionTypes: [
       {
         id: "ct1",
+        code: "W1",
         elementCategory: "external_wall",
         scenario: "before",
         retrofitOfId: null,
@@ -74,6 +75,7 @@ function buildInputs(): AuditInputs {
       },
       {
         id: "ct2",
+        code: "W1",
         elementCategory: "external_wall",
         scenario: "after",
         retrofitOfId: "ct1",
@@ -86,6 +88,7 @@ function buildInputs(): AuditInputs {
     openingTypes: [
       {
         id: "ot1",
+        code: "Win1",
         category: "window",
         scenario: "before",
         uValueWm2k: 2.8,
@@ -132,6 +135,7 @@ function buildInputs(): AuditInputs {
         lifetimeYears: 20,
         maintenanceCostPercent: 0,
         proposedForImplementation: true,
+        targets: [{ kind: "construction_type", code: "W1" }],
       },
     ],
     nonEeMeasures: [],
@@ -176,5 +180,49 @@ describe("computeAudit", () => {
       ((source?.usefulEnergyNeedKwh ?? 0) * 1.2) / 0.8,
       6,
     );
+  });
+
+  it("warns for envelope measures without targets (double-counting risk) and for unknown target codes", () => {
+    const at = { generatedAt: "2026-01-01T00:00:00.000Z" };
+    const inputs = buildInputs();
+    const base = inputs.energyMeasures[0];
+    if (!base) throw new Error("fixture has no measure");
+
+    // a measure with a resolvable target: silent
+    expect(computeAudit(inputs, at).warnings).toEqual([]);
+
+    // two legacy measures in one category: each is flagged, and the text names the other one
+    inputs.energyMeasures = [
+      { ...base, id: "m1", name: "A", targets: [] },
+      { ...base, id: "m2", name: "B", targets: [] },
+    ];
+    const legacy = computeAudit(inputs, at).warnings;
+    expect(legacy).toHaveLength(2);
+    expect(legacy.every((w) => w.includes("double counting"))).toBe(true);
+
+    // a single untargeted measure is flagged without the double-counting remark
+    inputs.energyMeasures = [{ ...base, targets: [] }];
+    const single = computeAudit(inputs, at).warnings;
+    expect(single).toHaveLength(1);
+    expect(single[0]).not.toContain("double counting");
+
+    // a code that is not in the "before" envelope
+    inputs.energyMeasures = [{ ...base, targets: [{ kind: "construction_type", code: "W9" }] }];
+    const missing = computeAudit(inputs, at).warnings;
+    expect(missing).toHaveLength(1);
+    expect(missing[0]).toContain("W9");
+  });
+
+  it("counts only proposed non-EE rows in the package investment", () => {
+    const at = { generatedAt: "2026-01-01T00:00:00.000Z" };
+    const inputs = buildInputs();
+    const row = { id: "n", description: "x", unit: null, quantity: 2, unitCostUsd: 100 };
+    inputs.nonEeMeasures = [
+      { ...row, id: "n1", proposedForImplementation: true },
+      { ...row, id: "n2", proposedForImplementation: false },
+    ];
+    const result = computeAudit(inputs, at);
+    expect(result.nonEeMeasures).toHaveLength(2);
+    expect(result.summary.totalNonEeMeasureCostUsd).toBe(200);
   });
 });

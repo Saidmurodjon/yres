@@ -52,6 +52,10 @@
   Fisher bilan `deriveFinancialAssumptions()`da hisoblanadi; pul oqimi gorizonti — hisob davri (`periodYears`), chora-tadbir umri emas;
   tashuvchi qismlari alohida (murakkab) o'sadi; IRR — `Σ net <= 0` yoki CAPEX 0 bo'lsa `null`. Diskontlangan qoplanish kitobda 1 yilga
   ortiq (K21) — dvigatel to'g'ri, golden'da D13. Tarifi hisoblab bo'lmagan tashuvchi (ko'mir NCV yo'q) → USD 0 + `warnings[]`.
+- **Chora-tadbir maqsadlari (F06a):** qobiq chora-tadbirlari `energy_measure_target` orqali qaysi *oldingi* konstruksiya/ochiq joy
+  turini almashtirishini aytadi — **kod** bo'yicha (`PUT /envelope` turlarni yangi UUID bilan qayta yaratadi). Maqsadsiz (eski)
+  qobiq chora-tadbiri hamon butun kategoriya deltasini oladi, lekin `warnings[]` ga tushadi; topilmagan kod ham. Non-EE qatorlarda
+  `proposed_for_implementation` (default `true`) — paket yig'indisiga faqat taklif etilganlar kiradi (v7.20 `D39` = `SUMIF(Q, "Yes")`).
 - Moliyaviy ko'rsatkichlar (NPV/IRR/qoplanish muddati) `financial.service.ts`ning
   `calculateFinancialIndicators()`idan keladi — uni ikki marta chaqiring (bir marta
   standartlashtirilgan tejamkorlik bilan, bir marta kalibrlangan haqiqiy tejamkorlik bilan),

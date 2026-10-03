@@ -4,7 +4,7 @@
     "sha256": "187d19962269d25ff6b241b97374ba868b9b38c94a9b9d27f5ac78ddf6dc5f6a",
     "version": "v7.20",
     "lastDecision": "X98",
-    "extractedAt": "2026-10-03T01:37:56+00:00",
+    "extractedAt": "2026-10-03T02:07:19+00:00",
     "extractor": "tools/golden/extract_inputs.py",
     "lampTypeNote": "lampTypes[].name '@LAMP:<key>' is replaced by LAMP_TYPE_NAMES[<key>] when the test loads the fixture"
   },
@@ -674,6 +674,7 @@
     "constructionTypes": [
       {
         "id": "ct-W1",
+        "code": "W1",
         "scenario": "before",
         "retrofitOfId": null,
         "elementCategory": "external_wall",
@@ -706,6 +707,7 @@
       },
       {
         "id": "ct-W1-after",
+        "code": "W1",
         "scenario": "after",
         "retrofitOfId": "ct-W1",
         "elementCategory": "external_wall",
@@ -750,6 +752,7 @@
       },
       {
         "id": "ct-Socle1",
+        "code": "Socle 1. (heated space)",
         "scenario": "before",
         "retrofitOfId": null,
         "elementCategory": "socle_heated",
@@ -776,6 +779,7 @@
       },
       {
         "id": "ct-Socle1-after",
+        "code": "Socle 1. (heated space)",
         "scenario": "after",
         "retrofitOfId": "ct-Socle1",
         "elementCategory": "socle_heated",
@@ -808,6 +812,7 @@
       },
       {
         "id": "ct-Socle2",
+        "code": "Socle 2",
         "scenario": "before",
         "retrofitOfId": null,
         "elementCategory": "socle_ground",
@@ -834,6 +839,7 @@
       },
       {
         "id": "ct-Socle2-after",
+        "code": "Socle 2",
         "scenario": "after",
         "retrofitOfId": "ct-Socle2",
         "elementCategory": "socle_ground",
@@ -872,6 +878,7 @@
       },
       {
         "id": "ct-R1",
+        "code": "R1",
         "scenario": "before",
         "retrofitOfId": null,
         "elementCategory": "roof",
@@ -904,6 +911,7 @@
       },
       {
         "id": "ct-R1-after",
+        "code": "R1",
         "scenario": "after",
         "retrofitOfId": "ct-R1",
         "elementCategory": "roof",
@@ -936,6 +944,7 @@
       },
       {
         "id": "ct-F1",
+        "code": "F1",
         "scenario": "before",
         "retrofitOfId": null,
         "elementCategory": "floor",
@@ -956,6 +965,7 @@
       },
       {
         "id": "ct-F1-after",
+        "code": "F1",
         "scenario": "after",
         "retrofitOfId": "ct-F1",
         "elementCategory": "floor",
@@ -988,6 +998,7 @@
       },
       {
         "id": "ct-F3",
+        "code": "F3",
         "scenario": "before",
         "retrofitOfId": null,
         "elementCategory": "floor",
@@ -1008,6 +1019,7 @@
       },
       {
         "id": "ct-F3-after",
+        "code": "F3",
         "scenario": "after",
         "retrofitOfId": "ct-F3",
         "elementCategory": "floor",
@@ -1036,6 +1048,7 @@
     "openingTypes": [
       {
         "id": "ot-D1-0.9x2.7",
+        "code": "D1",
         "category": "door",
         "scenario": "before",
         "uValueWm2k": 3.5,
@@ -1047,6 +1060,7 @@
       },
       {
         "id": "ot-D1-1.1x1.8",
+        "code": "D1",
         "category": "door",
         "scenario": "before",
         "uValueWm2k": 3.5,
@@ -1058,6 +1072,7 @@
       },
       {
         "id": "ot-D1-1.1x3",
+        "code": "D1",
         "category": "door",
         "scenario": "before",
         "uValueWm2k": 3.5,
@@ -1069,6 +1084,7 @@
       },
       {
         "id": "ot-Win2-1.63333x2.7",
+        "code": "Win2",
         "category": "window",
         "scenario": "before",
         "uValueWm2k": 3.5,
@@ -1080,6 +1096,7 @@
       },
       {
         "id": "ot-Win2-2x2.7",
+        "code": "Win2",
         "category": "window",
         "scenario": "before",
         "uValueWm2k": 3.5,
@@ -1091,6 +1108,7 @@
       },
       {
         "id": "ot-Win2-2.2x2.7",
+        "code": "Win2",
         "category": "window",
         "scenario": "before",
         "uValueWm2k": 3.5,
@@ -1102,6 +1120,7 @@
       },
       {
         "id": "ot-Win3-0.9x0.9",
+        "code": "Win3",
         "category": "window",
         "scenario": "before",
         "uValueWm2k": 2.94,
@@ -1113,6 +1132,7 @@
       },
       {
         "id": "ot-Win3-0.9x1.8",
+        "code": "Win3",
         "category": "window",
         "scenario": "before",
         "uValueWm2k": 2.94,
@@ -1124,6 +1144,7 @@
       },
       {
         "id": "ot-Win3-1.2x1.8",
+        "code": "Win3",
         "category": "window",
         "scenario": "before",
         "uValueWm2k": 2.94,
@@ -1135,6 +1156,7 @@
       },
       {
         "id": "ot-Win4",
+        "code": "Win4",
         "category": "window",
         "scenario": "after",
         "uValueWm2k": 1.38,
@@ -1146,6 +1168,7 @@
       },
       {
         "id": "ot-V4",
+        "code": "V4",
         "category": "window",
         "scenario": "after",
         "uValueWm2k": 1.38,
@@ -1157,6 +1180,7 @@
       },
       {
         "id": "ot-D4",
+        "code": "D4",
         "category": "door",
         "scenario": "after",
         "uValueWm2k": 1.38,
@@ -2157,7 +2181,17 @@
         "investmentCostUsd": 229201.98000000004,
         "lifetimeYears": 30,
         "maintenanceCostPercent": 0,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": [
+          {
+            "kind": "construction_type",
+            "code": "W1"
+          },
+          {
+            "kind": "construction_type",
+            "code": "Socle 1. (heated space)"
+          }
+        ]
       },
       {
         "id": "measure-2",
@@ -2166,7 +2200,13 @@
         "investmentCostUsd": 9806.45,
         "lifetimeYears": 30,
         "maintenanceCostPercent": 0,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": [
+          {
+            "kind": "construction_type",
+            "code": "Socle 2"
+          }
+        ]
       },
       {
         "id": "measure-3",
@@ -2175,7 +2215,8 @@
         "investmentCostUsd": 0,
         "lifetimeYears": 30,
         "maintenanceCostPercent": 0,
-        "proposedForImplementation": false
+        "proposedForImplementation": false,
+        "targets": []
       },
       {
         "id": "measure-4",
@@ -2184,7 +2225,13 @@
         "investmentCostUsd": 81346.29000000001,
         "lifetimeYears": 30,
         "maintenanceCostPercent": 0,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": [
+          {
+            "kind": "construction_type",
+            "code": "R1"
+          }
+        ]
       },
       {
         "id": "measure-5",
@@ -2193,7 +2240,17 @@
         "investmentCostUsd": 25159.52,
         "lifetimeYears": 30,
         "maintenanceCostPercent": 0,
-        "proposedForImplementation": false
+        "proposedForImplementation": false,
+        "targets": [
+          {
+            "kind": "construction_type",
+            "code": "F1"
+          },
+          {
+            "kind": "construction_type",
+            "code": "F3"
+          }
+        ]
       },
       {
         "id": "measure-6",
@@ -2202,7 +2259,13 @@
         "investmentCostUsd": 15858.57,
         "lifetimeYears": 25,
         "maintenanceCostPercent": 0,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": [
+          {
+            "kind": "opening_type",
+            "code": "Win3"
+          }
+        ]
       },
       {
         "id": "measure-7",
@@ -2211,7 +2274,13 @@
         "investmentCostUsd": 12311.2,
         "lifetimeYears": 25,
         "maintenanceCostPercent": 0,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": [
+          {
+            "kind": "opening_type",
+            "code": "Win2"
+          }
+        ]
       },
       {
         "id": "measure-8",
@@ -2220,7 +2289,13 @@
         "investmentCostUsd": 5933.229999999998,
         "lifetimeYears": 25,
         "maintenanceCostPercent": 0,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": [
+          {
+            "kind": "opening_type",
+            "code": "D1"
+          }
+        ]
       },
       {
         "id": "measure-9",
@@ -2229,7 +2304,8 @@
         "investmentCostUsd": 9963.67,
         "lifetimeYears": 20,
         "maintenanceCostPercent": 0.005,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": []
       },
       {
         "id": "measure-10",
@@ -2238,7 +2314,8 @@
         "investmentCostUsd": 58253.96,
         "lifetimeYears": 20,
         "maintenanceCostPercent": 0.02,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": []
       },
       {
         "id": "measure-11",
@@ -2247,7 +2324,8 @@
         "investmentCostUsd": 40431.6,
         "lifetimeYears": 20,
         "maintenanceCostPercent": 0.02,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": []
       },
       {
         "id": "measure-12",
@@ -2256,7 +2334,8 @@
         "investmentCostUsd": 10650.51,
         "lifetimeYears": 20,
         "maintenanceCostPercent": 0.02,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": []
       },
       {
         "id": "measure-13",
@@ -2265,7 +2344,8 @@
         "investmentCostUsd": 109935.68,
         "lifetimeYears": 20,
         "maintenanceCostPercent": 0.01,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": []
       },
       {
         "id": "measure-14",
@@ -2274,7 +2354,8 @@
         "investmentCostUsd": 20705.280000000002,
         "lifetimeYears": 20,
         "maintenanceCostPercent": 0.01,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": []
       },
       {
         "id": "measure-15",
@@ -2283,7 +2364,8 @@
         "investmentCostUsd": 50331.60999999999,
         "lifetimeYears": 25,
         "maintenanceCostPercent": 0.01,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": []
       },
       {
         "id": "measure-16",
@@ -2292,7 +2374,8 @@
         "investmentCostUsd": 5139.53,
         "lifetimeYears": 15,
         "maintenanceCostPercent": 0.005,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": []
       },
       {
         "id": "measure-17",
@@ -2301,7 +2384,8 @@
         "investmentCostUsd": 2926.31,
         "lifetimeYears": 10,
         "maintenanceCostPercent": 0.01,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": []
       },
       {
         "id": "measure-18",
@@ -2310,7 +2394,8 @@
         "investmentCostUsd": 37782.825,
         "lifetimeYears": 15,
         "maintenanceCostPercent": 0.02,
-        "proposedForImplementation": false
+        "proposedForImplementation": false,
+        "targets": []
       },
       {
         "id": "measure-19",
@@ -2319,7 +2404,8 @@
         "investmentCostUsd": 0,
         "lifetimeYears": 20,
         "maintenanceCostPercent": 0.02,
-        "proposedForImplementation": true
+        "proposedForImplementation": true,
+        "targets": []
       }
     ],
     "nonEeMeasures": [
@@ -2328,91 +2414,104 @@
         "description": "Electrical network: cabling, distribution boards, sockets/switches, earthing, dismantling",
         "unit": "lump sum",
         "quantity": 1,
-        "unitCostUsd": 39700.21
+        "unitCostUsd": 39700.21,
+        "proposedForImplementation": true
       },
       {
         "id": "non-ee-2",
         "description": "Floors: rebuilding of floor layers and finishes (excl. insulation and dismantling)",
         "unit": "lump sum",
         "quantity": 1,
-        "unitCostUsd": 85333.36
+        "unitCostUsd": 85333.36,
+        "proposedForImplementation": false
       },
       {
         "id": "non-ee-3",
         "description": "External heating network",
         "unit": "lump sum",
         "quantity": 1,
-        "unitCostUsd": 3628.1799999999994
+        "unitCostUsd": 3628.1799999999994,
+        "proposedForImplementation": true
       },
       {
         "id": "non-ee-4",
         "description": "Parapet insulation (basalt wool + moisture-resistant gypsum board)",
         "unit": "m2",
         "quantity": 280.8,
-        "unitCostUsd": 46.17638888888889
+        "unitCostUsd": 46.17638888888889,
+        "proposedForImplementation": false
       },
       {
         "id": "non-ee-5",
         "description": "Parapet masonry (brick/concrete)",
         "unit": "lump sum",
         "quantity": 1,
-        "unitCostUsd": 10374.88
+        "unitCostUsd": 10374.88,
+        "proposedForImplementation": false
       },
       {
         "id": "non-ee-6",
         "description": "Dismantling of the old brick parapet",
         "unit": "lump sum",
         "quantity": 1,
-        "unitCostUsd": 12012.54
+        "unitCostUsd": 12012.54,
+        "proposedForImplementation": false
       },
       {
         "id": "non-ee-7",
         "description": "Windows: repair of frames, new fittings - MOVED to EE measure 6 (X81)",
         "unit": "lump sum",
         "quantity": 1,
-        "unitCostUsd": 0
+        "unitCostUsd": 0,
+        "proposedForImplementation": false
       },
       {
         "id": "non-ee-8",
         "description": "Foundations: strengthening (reinforced-concrete jacketing), FM-2, porch dismantling",
         "unit": "lump sum",
         "quantity": 1,
-        "unitCostUsd": 22162.04
+        "unitCostUsd": 22162.04,
+        "proposedForImplementation": false
       },
       {
         "id": "non-ee-9",
         "description": "Radiator and riser screens",
         "unit": "lump sum",
         "quantity": 1,
-        "unitCostUsd": 23220.85
+        "unitCostUsd": 23220.85,
+        "proposedForImplementation": false
       },
       {
         "id": "non-ee-10",
         "description": "Electric water heaters 30 l (16 units)",
         "unit": "lump sum",
         "quantity": 1,
-        "unitCostUsd": 2124.82
+        "unitCostUsd": 2124.82,
+        "proposedForImplementation": false
       },
       {
         "id": "non-ee-11",
         "description": "Porches, canopies, bridges, walls, external stairs, fire escape",
         "unit": "lump sum",
         "quantity": 1,
-        "unitCostUsd": 25690.780000000002
+        "unitCostUsd": 25690.780000000002,
+        "proposedForImplementation": false
       },
       {
         "id": "non-ee-12",
         "description": "Removal of construction waste",
         "unit": "lump sum",
         "quantity": 1,
-        "unitCostUsd": 9133.4
+        "unitCostUsd": 9133.4,
+        "proposedForImplementation": false
       },
       {
         "id": "non-ee-13",
         "description": "Internal aluminium glazed partitions (vitraj), 2 x 13.23 m2",
         "unit": "lump sum",
         "quantity": 1,
-        "unitCostUsd": 3027.76
+        "unitCostUsd": 3027.76,
+        "proposedForImplementation": false
       }
     ],
     "tariffs": [

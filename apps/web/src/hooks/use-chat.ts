@@ -2,7 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { API_URL } from "../lib/api";
 import { api } from "../lib/api";
-import type { ChatMessage, CreateConversationInput, UpdateConversationInput } from "../lib/api-types";
+import type {
+  ChatMessage,
+  CreateConversationInput,
+  UpdateConversationInput,
+} from "../lib/api-types";
 
 const CONVERSATIONS_KEY = ["chat", "conversations"];
 
@@ -27,7 +31,8 @@ export function useCreateConversation() {
 export function useUpdateConversation(conversationId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: UpdateConversationInput) => api.chat.updateConversation(conversationId, data),
+    mutationFn: (data: UpdateConversationInput) =>
+      api.chat.updateConversation(conversationId, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: CONVERSATIONS_KEY }),
   });
 }
@@ -116,7 +121,10 @@ export function useConversationSocket(conversationId: string | undefined) {
       } else if (data.type === "message_edited") {
         queryClient.setQueryData<MessagesPage | undefined>(messagesKey(conversationId), (old) =>
           old
-            ? { ...old, messages: old.messages.map((m) => (m.id === data.message.id ? data.message : m)) }
+            ? {
+                ...old,
+                messages: old.messages.map((m) => (m.id === data.message.id ? data.message : m)),
+              }
             : old,
         );
       } else if (data.type === "message_deleted") {
