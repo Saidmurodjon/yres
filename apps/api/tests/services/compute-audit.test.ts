@@ -225,4 +225,29 @@ describe("computeAudit", () => {
     expect(result.nonEeMeasures).toHaveLength(2);
     expect(result.summary.totalNonEeMeasureCostUsd).toBe(200);
   });
+
+  it("reports all vs proposed totals (non-EE by its own flag) and a per-carrier measure balance", () => {
+    const at = { generatedAt: "2026-01-01T00:00:00.000Z" };
+    const inputs = buildInputs();
+    const row = { id: "n", description: "x", unit: null, quantity: 2, unitCostUsd: 100 };
+    inputs.nonEeMeasures = [
+      { ...row, id: "n1", proposedForImplementation: true },
+      { ...row, id: "n2", proposedForImplementation: false },
+    ];
+    const { summary, measureBalance } = computeAudit(inputs, at);
+    expect(summary.all.nonEeCostUsd).toBe(400);
+    expect(summary.proposed.nonEeCostUsd).toBe(200);
+    expect(summary.all.investmentUsd - summary.proposed.investmentUsd).toBeCloseTo(200, 6);
+    expect(summary.totalInvestmentUsd).toBe(summary.proposed.investmentUsd);
+    expect(measureBalance.map((b) => b.carrier)).toEqual([
+      "gas",
+      "electricity",
+      "district_heat",
+      "coal",
+    ]);
+    for (const b of measureBalance) {
+      expect(["ok", "check"]).toContain(b.status);
+      expect(Number.isFinite(b.diffPct)).toBe(true);
+    }
+  });
 });

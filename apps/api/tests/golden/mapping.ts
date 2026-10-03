@@ -222,30 +222,27 @@ for (let n = 1; n <= 13; n++) {
   MAPPING[`nonEe.${n}.costUsd`] = (r) => r.nonEeMeasures[n - 1]?.totalCostUsd ?? null;
 }
 
-// Totals row 38 (all) and 39 (proposed): energy measures + the non-EE rows (they carry cost, no saving).
-for (const [key, onlyProposed] of [
-  ["all", false],
-  ["proposed", true],
-] as const) {
-  const pick = (r: AuditResult) =>
-    r.measures.filter((m) => !onlyProposed || m.proposedForImplementation);
-  const nonEeCost = (r: AuditResult) => sum(r.nonEeMeasures.map((m) => m.totalCostUsd));
-  const capex = (r: AuditResult) => sum(pick(r).map((m) => m.investmentCostUsd)) + nonEeCost(r);
-  const savingsUsd = (r: AuditResult) => sum(pick(r).map((m) => m.standardizedAnnualSavingsUsd));
-  const actualUsd = (r: AuditResult) => sum(pick(r).map((m) => m.actualAnnualSavingsUsd));
+// Totals row 38 (all) and 39 (proposed): taken straight from `summary.all` / `summary.proposed`.
+for (const key of ["all", "proposed"] as const) {
   const t = `totals.${key}`;
-  MAPPING[`${t}.investmentUsd`] = capex;
-  MAPPING[`${t}.standardizedSavingsKwh`] = (r) =>
-    sum(pick(r).map((m) => m.standardizedAnnualSavingsKwh));
-  MAPPING[`${t}.standardizedSavingsUsd`] = savingsUsd;
-  MAPPING[`${t}.actualSavingsKwh`] = (r) => sum(pick(r).map((m) => m.actualAnnualSavingsKwh));
-  MAPPING[`${t}.actualSavingsUsd`] = actualUsd;
-  MAPPING[`${t}.simplePaybackStandardizedYears`] = (r) =>
-    savingsUsd(r) > 0 ? capex(r) / savingsUsd(r) : null;
-  MAPPING[`${t}.simplePaybackActualYears`] = (r) =>
-    actualUsd(r) > 0 ? capex(r) / actualUsd(r) : null;
-  MAPPING[`${t}.npvStandardizedUsd`] = (r) =>
-    sum(pick(r).map((m) => m.standardized.npv)) - nonEeCost(r);
-  MAPPING[`${t}.co2ReductionTonnesPerYear`] = (r) =>
-    sum(pick(r).map((m) => m.co2ReductionTonnesPerYear));
+  const pkg = (r: AuditResult) => r.summary[key];
+  MAPPING[`${t}.investmentUsd`] = (r) => pkg(r).investmentUsd;
+  MAPPING[`${t}.standardizedSavingsKwh`] = (r) => pkg(r).standardizedSavingsKwh;
+  MAPPING[`${t}.standardizedSavingsUsd`] = (r) => pkg(r).standardizedSavingsUsd;
+  MAPPING[`${t}.actualSavingsKwh`] = (r) => pkg(r).actualSavingsKwh;
+  MAPPING[`${t}.actualSavingsUsd`] = (r) => pkg(r).actualSavingsUsd;
+  MAPPING[`${t}.simplePaybackStandardizedYears`] = (r) => pkg(r).simplePaybackStandardizedYears;
+  MAPPING[`${t}.simplePaybackActualYears`] = (r) => pkg(r).simplePaybackActualYears;
+  MAPPING[`${t}.npvStandardizedUsd`] = (r) => pkg(r).npvStandardizedUsd;
+  MAPPING[`${t}.co2ReductionTonnesPerYear`] = (r) => pkg(r).co2ReductionTonnesPerYear;
 }
+
+// `Measures_summary!D67:E68`: the measures' per-carrier sum (D) vs the before − after scenario (E).
+const balanceOf = (r: AuditResult, carrier: string) =>
+  r.measureBalance.find((b) => b.carrier === carrier);
+MAPPING["balanceCheck.gasSavingsKwh"] = (r) => balanceOf(r, "gas")?.sumOfMeasuresKwh ?? null;
+MAPPING["balanceCheck.gasBreakdownKwh"] = (r) => balanceOf(r, "gas")?.scenarioDeltaKwh ?? null;
+MAPPING["balanceCheck.electricitySavingsKwh"] = (r) =>
+  balanceOf(r, "electricity")?.sumOfMeasuresKwh ?? null;
+MAPPING["balanceCheck.electricityBreakdownKwh"] = (r) =>
+  balanceOf(r, "electricity")?.scenarioDeltaKwh ?? null;

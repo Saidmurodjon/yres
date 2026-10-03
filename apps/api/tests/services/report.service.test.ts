@@ -1,5 +1,5 @@
 import type { building } from "@yres/db";
-import type { AuditResult, EnergyMeasureResult } from "@yres/types";
+import type { AuditResult, EnergyMeasureResult, MeasurePackageTotals } from "@yres/types";
 import { PDFDocument } from "pdf-lib";
 import { describe, expect, it } from "vitest";
 import { defaultFinancialParameters } from "../../src/lib/financial-defaults";
@@ -16,6 +16,22 @@ type Building = typeof building.$inferSelect;
  * tests exist specifically to keep exercising the actual PDF generation
  * path, not just its types.
  */
+
+const PACKAGE_TOTALS: MeasurePackageTotals = {
+  investmentUsd: 0,
+  nonEeCostUsd: 0,
+  standardizedSavingsKwh: 0,
+  standardizedSavingsUsd: 0,
+  actualSavingsKwh: 0,
+  actualSavingsUsd: 0,
+  simplePaybackStandardizedYears: null,
+  simplePaybackActualYears: null,
+  co2ReductionTonnesPerYear: 0,
+  npvStandardizedUsd: 0,
+  npvActualUsd: 0,
+  irrStandardized: null,
+  irrActual: null,
+};
 
 function buildingFixture(overrides: Partial<Building> = {}): Building {
   return {
@@ -107,6 +123,7 @@ function fullResultFixture(): AuditResult {
     gainsUtilizationCorrection: 1,
     warnings: [],
     financialAssumptions: deriveFinancialAssumptions(defaultFinancialParameters()),
+    measureBalance: [],
     summary: {
       currentEnergyUseKwhPerM2Year: 200,
       potentialEnergyUseKwhPerM2Year: 100,
@@ -116,6 +133,8 @@ function fullResultFixture(): AuditResult {
       totalNonEeMeasureCostUsd: 5000,
       totalAnnualSavingsUsd: 8000,
       simplePaybackYears: 6.25,
+      all: PACKAGE_TOTALS,
+      proposed: PACKAGE_TOTALS,
     },
     envelopeAreas: {
       externalWallAreaM2: 1200,
@@ -361,6 +380,7 @@ function emptyResultFixture(): AuditResult {
     gainsUtilizationCorrection: 1,
     warnings: [],
     financialAssumptions: deriveFinancialAssumptions(defaultFinancialParameters()),
+    measureBalance: [],
     summary: {
       currentEnergyUseKwhPerM2Year: 0,
       potentialEnergyUseKwhPerM2Year: 0,
@@ -370,6 +390,8 @@ function emptyResultFixture(): AuditResult {
       totalNonEeMeasureCostUsd: 0,
       totalAnnualSavingsUsd: 0,
       simplePaybackYears: null,
+      all: PACKAGE_TOTALS,
+      proposed: PACKAGE_TOTALS,
     },
     envelopeAreas: {
       externalWallAreaM2: 0,

@@ -2545,3 +2545,11 @@ T06b — qamrab olinganlar:
 - Qilinmadi (spetsifikatsiya bo'yicha): G16 infiltratsiya ulushi (D5), D65 nasoslarini №11→№17 ko'chirish (D14 ochiq), BEMS EN ISO 52120 (D8).
 - Testlar: `measure-savings.service.test.ts` (qo'shni ikki devor — yig'indi = kategoriya deltasi; issiqlik nasosi gaz +/elektr −; ventilyatsiya fan −; D71 = 1). `calculation-engine.md`, `hisobot.md` yangilandi. type-check, build, biome, `bun run test` (api 232, web 71) yashil.
 **Navbatda:** F06c (balans nazorati `measureBalance` + `all`/`proposed` jamilar).
+
+## Faza 1 · F06c — balans nazorati va jamilar (2026-10-03)
+
+- `AuditResult.measureBalance[]` (`audit.engine.ts` `buildMeasureBalance`): har tashuvchi uchun Σ barcha chora-tadbirlar vs oldin−keyin yakuniy energiya (generatsiya, yoritish, uskuna, sovutish, FES/gelio ishlab chiqarishi va EMS qismlari qo'shiladi, chunki ular "keyin" end-use modelida yo'q); `ok` — `|farq| < 1 %` (elektr: yoki `< 10 kWh`).
+- `AuditSummary.all` / `.proposed` (`MeasurePackageTotals`, v7.20 38/39-qatorlar): capex (non-EE o'z `proposed` bayrog'i bo'yicha), kWh/USD (std/actual), oddiy qoplanish, CO₂, NPV (Σ NPV − non-EE), IRR (yig'ilgan pul oqimidan; kitobda tekshirilmagan). Eski `summary.total*` = `proposed`. Golden `totals.*` endi to'g'ridan-to'g'ri `summary.all/proposed` dan; `totals.proposed.investmentUsd` D12 dan o'zi yopildi (non-EE endi faqat taklif etilganlar).
+- Golden: `balanceCheck.*` (D67/E67/D68/E68) ulandi, lekin tolerans tashqarisida (gaz 738 661 vs 496 821; elektr 137 923 vs 167 433) — yuqoridan kelgan D3 (pol) va D5/D9/D22 farqlari; D3 ga yozildi, unexplained = 0. **Qabul mezoni "3-DMTT da ikkala tashuvchi `ok`" hali bajarilmadi** — F08 (D3) dan keyin qayta tekshirish kerak. Ekstraktor (maqsad kodlari, non-EE `Q`) F06a da bajarilgan edi.
+- Testlar: `compute-audit.test.ts` (all/proposed, balans shakli). `calculation-engine.md`, `hisobot.md` yangilandi. type-check, build, biome, `bun run test` (api 233, web 71) yashil.
+**Navbatda:** F07 (ochiq joy turi bo'yicha "keyin" + qobiq muharriri).

@@ -37,6 +37,7 @@
   yo'q). Moliya hamon ikki marta, qismlar bo'yicha alohida pul oqimi (F05). **`inferCarrierForMeasure` olib tashlandi** — tashuvchi
   chora-tadbir toifasidan emas, `carrierForGenerationSourceType()` orqali manbadan keladi; yangi chora-tadbir toifasi qo'shsangiz,
   `resolveMeasureSavings()`ga tarmoq qo'shing (aks holda `default` — 0 tejash).
+- **Balans nazorati va jamilar (F06c):** `AuditResult.measureBalance[]` — har tashuvchi uchun Σ(barcha chora-tadbirlar `savingsByCarrier`) vs oldin−keyin yakuniy energiya (generatsiya, yoritish, uskuna, sovutish + FES/gelio ishlab chiqarishi + EMS qismlari); `ok` agar `|farq| < 1 %` (elektr: yoki `< 10 kWh`). `summary.all` (v7.20 38-qator) va `summary.proposed` (39-qator; non-EE ham o'z `proposed` bayrog'i bo'yicha); eski `summary.total*` maydonlari `proposed` ga teng. Paket NPV = Σ NPV − non-EE xarajat; paket IRR — yig'ilgan pul oqimidan (kitobda tekshirilmagan).
 - **`carrierForGenerationSourceType()`** `generationSource.sourceType`ni u qaysi sotib olingan
   energiya tashuvchisi bo'yicha hisob-fakturalanishiga moslaydi (gaz/elektr/markazlashgan
   issiqlik/ko'mir), umuman hisob-fakturalanmaydigan turlar uchun `null` qaytaradi (`solar_dhw` —

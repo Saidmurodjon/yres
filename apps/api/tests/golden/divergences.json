@@ -28,6 +28,10 @@
       "status": "open",
       "closesIn": "F08",
       "expectedIds": [
+        "balanceCheck.electricityBreakdownKwh",
+        "balanceCheck.electricitySavingsKwh",
+        "balanceCheck.gasBreakdownKwh",
+        "balanceCheck.gasSavingsKwh",
         "envelope.after.total.building",
         "envelope.after.total.floor",
         "envelope.before.total.building",
@@ -55,7 +59,7 @@
         "measures.5.standardizedSavingsKwh",
         "measures.5.standardizedSavingsUsd"
       ],
-      "note": "Floor heat loss (envelope.*.total.floor), measure 5 savings, envelope.*.total.building (dominated by the floor difference; also carries D9) and the heating demand rows generation.heating.*/generation.finalEnergy.* that sit downstream of it (before: 420657 vs 251383 kWh)."
+      "note": "Floor heat loss (envelope.*.total.floor), measure 5 savings, envelope.*.total.building (dominated by the floor difference; also carries D9) and the heating demand rows generation.heating.*/generation.finalEnergy.* that sit downstream of it (before: 420657 vs 251383 kWh). F06c: measureBalance (D67/D68) uses those same rows, so its scenario side (E67/E68) inherits this gap; the measure sums (D67/D68) also carry D5/D9/D22."
     },
     {
       "id": "D5",
@@ -222,7 +226,6 @@
         "totals.proposed.actualSavingsKwh",
         "totals.proposed.actualSavingsUsd",
         "totals.proposed.co2ReductionTonnesPerYear",
-        "totals.proposed.investmentUsd",
         "totals.proposed.npvStandardizedUsd",
         "totals.proposed.simplePaybackActualYears",
         "totals.proposed.simplePaybackStandardizedYears",
@@ -476,10 +479,6 @@
         "balance.thermal.windowsDoors.afterKwh",
         "balance.thermal.windowsDoors.theoreticalBeforeKwh",
         "balance.thermal.windowsDoors.theoreticalSavingsKwh",
-        "balanceCheck.electricityBreakdownKwh",
-        "balanceCheck.electricitySavingsKwh",
-        "balanceCheck.gasBreakdownKwh",
-        "balanceCheck.gasSavingsKwh",
         "calibration.electricityRatio",
         "calibration.heatRatio",
         "class.afterWithoutPv",

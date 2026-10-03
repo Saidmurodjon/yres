@@ -66,7 +66,7 @@ branch'ga; deploy va production bazaga tegilmaydi). Qo'shimcha:
 | F03 | Golden ekstraktor: `inputs.json` + `golden.test.ts` + `divergences.json` | `F03-golden-inputs-test.md` | 2 (a, b) | ✅ |
 | F04 | X33 generatsiya `(Q+Qd)/η` (COP), sovutish/ISI taqsimot yo'qotishi | `F04-generatsiya.md` | 1 | ✅ |
 | F05 | Bino darajasidagi moliyaviy parametrlar + v7.20 pul oqimi modeli | `F05-moliya.md` | 3 (a–c) | ✅ |
-| F06 | Chora-tadbir darajasida tejash, tashuvchi bo'yicha bo'lish, D71, balans nazorati | `F06-chora-tadbir-tejash.md` | 3 (a–c) | ⬜ |
+| F06 | Chora-tadbir darajasida tejash, tashuvchi bo'yicha bo'lish, D71, balans nazorati | `F06-chora-tadbir-tejash.md` | 3 (a–c) | ✅ |
 | F07 | Ochiq joy turi bo'yicha "keyin" holati + qobiq "keyin" muharriri (UI) | `F07-ochiq-joy.md` | 1 | ⬜ |
 | F08 | Pol: grunt zona usuli va isitilmaydigan bo'shliq `n`-faktori | `F08-pol.md` | 2 (a, b) | ⬜ |
 | F09 | FES: o'z iste'moli / eksport, summary 0 ga qirqilmaydi | `F09-fes.md` | 1 | ⬜ |

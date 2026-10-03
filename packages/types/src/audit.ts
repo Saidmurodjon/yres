@@ -13,6 +13,37 @@ import type { LightingResult } from "./lighting";
 import type { EnergyMeasureResult, NonEeMeasureResult } from "./measures";
 import type { RenewableProductionResult } from "./renewable";
 
+/** One `Measures_summary` totals row: row 38 (`all` — every measure) or row 39 (`proposed` — only those marked for implementation). */
+export interface MeasurePackageTotals {
+  /** EE measures' investment plus the non-EE costs that fall in the same set (`all` → every row, `proposed` → proposed rows). */
+  investmentUsd: number;
+  nonEeCostUsd: number;
+  standardizedSavingsKwh: number;
+  standardizedSavingsUsd: number;
+  actualSavingsKwh: number;
+  actualSavingsUsd: number;
+  /** `capex / savings`; null when there are no savings. */
+  simplePaybackStandardizedYears: number | null;
+  simplePaybackActualYears: number | null;
+  co2ReductionTonnesPerYear: number;
+  /** Σ measure NPV − non-EE cost (non-EE costs are year-0 outflows with no savings). */
+  npvStandardizedUsd: number;
+  npvActualUsd: number;
+  /** IRR of the summed package cashflow (non-EE cost added to year 0); null if it never repays. */
+  irrStandardized: number | null;
+  irrActual: number | null;
+}
+
+/** v7.20 `Measures_summary!D67:F68`: do the measures' per-carrier savings add up to the scenario's before − after final energy? */
+export interface MeasureBalanceRow {
+  carrier: "gas" | "electricity" | "district_heat" | "coal";
+  sumOfMeasuresKwh: number;
+  scenarioDeltaKwh: number;
+  /** `(sum − delta) / delta · 100`; 0 when both are 0. */
+  diffPct: number;
+  status: "ok" | "check";
+}
+
 export interface AuditSummary {
   currentEnergyUseKwhPerM2Year: number;
   potentialEnergyUseKwhPerM2Year: number;
@@ -24,6 +55,10 @@ export interface AuditSummary {
   totalNonEeMeasureCostUsd: number;
   totalAnnualSavingsUsd: number;
   simplePaybackYears: number | null;
+  /** v7.20 `Measures_summary!38`: every measure. */
+  all: MeasurePackageTotals;
+  /** v7.20 `Measures_summary!39`: proposed measures only; the legacy fields above equal this. */
+  proposed: MeasurePackageTotals;
 }
 
 /**
@@ -78,6 +113,8 @@ export interface AuditResult {
   /** v7.20 `Measures_summary!D71`: share of envelope/ventilation savings that survives the lost useful gains (1 = none lost). */
   gainsUtilizationCorrection: number;
   summary: AuditSummary;
+  /** Balance check of the measures against the before/after scenario, per carrier (all measures, not only proposed). */
+  measureBalance: MeasureBalanceRow[];
   envelopeAreas: EnvelopeAreaBreakdown;
   envelopeHeatLoss: EnvelopeHeatLossResult[];
   ventilationLoss: VentilationLossResult[];

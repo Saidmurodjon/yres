@@ -2,6 +2,7 @@ import { type Database, LAMP_TYPE_NAMES } from "@yres/db";
 import type {
   AuditResult,
   AuditSummary,
+  CashflowYear,
   CoolingResult,
   DhwDemandResult,
   DistributionLossResult,
@@ -15,7 +16,9 @@ import type {
   HeatingEnergyBalanceResult,
   LampPowerDensityWPerM2,
   LightingResult,
+  MeasureBalanceRow,
   MeasureCategory,
+  MeasurePackageTotals,
   NonEeMeasureResult,
   RenewableProductionResult,
   Scenario,
@@ -48,6 +51,7 @@ import { type EquipmentItemInput, calculateEquipmentResult } from "./equipment.s
 import {
   calculateCo2ReductionTonnesPerYear,
   calculateFinancialIndicators,
+  calculateIrr,
   deriveFinancialAssumptions,
 } from "./financial.service";
 import {
@@ -917,6 +921,16 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
     financialAssumptions,
     gainsUtilizationCorrection,
     summary,
+    measureBalance: buildMeasureBalance(
+      measures,
+      measureRows,
+      generationRows,
+      lighting,
+      equipment,
+      cooling,
+      renewableProduction,
+      baselineHeating.shares,
+    ),
     envelopeAreas,
     envelopeHeatLoss,
     ventilationLoss,
@@ -1032,22 +1046,13 @@ function buildAuditSummary(
       renewableOffsetKwh,
   );
 
-  // `Measures_summary!D31`: total investment for the proposed package
-  // includes the non-EE (ancillary) costs marked proposed — v7.20 `D39` sums only the "Yes" rows of
-  // the `Non-EE measures` "Q" column (the column defaults to true for rows saved before F06).
-  const totalNonEeMeasureCostUsd = nonEeMeasures
-    .filter((m) => m.proposedForImplementation)
-    .reduce((sum, m) => sum + m.totalCostUsd, 0);
-  const totalInvestmentUsd =
-    measures
-      .filter((m) => m.proposedForImplementation)
-      .reduce((sum, m) => sum + m.investmentCostUsd, 0) + totalNonEeMeasureCostUsd;
-  const totalAnnualSavingsUsd = measures
-    .filter((m) => m.proposedForImplementation)
-    .reduce((sum, m) => sum + m.standardizedAnnualSavingsUsd, 0);
-  const co2ReductionTonnesPerYear = measures
-    .filter((m) => m.proposedForImplementation)
-    .reduce((sum, m) => sum + m.co2ReductionTonnesPerYear, 0);
+  // `Measures_summary!38/39`: v7.20 `D39` sums only the "Yes" rows of the `Non-EE measures` "Q" column
+  // (the column defaults to true for rows saved before F06).
+  const all = buildPackageTotals(measures, nonEeMeasures);
+  const proposed = buildPackageTotals(
+    measures.filter((m) => m.proposedForImplementation),
+    nonEeMeasures.filter((m) => m.proposedForImplementation),
+  );
 
   return {
     currentEnergyUseKwhPerM2Year: heatedFloorAreaM2 > 0 ? currentTotalKwh / heatedFloorAreaM2 : 0,
@@ -1055,13 +1060,155 @@ function buildAuditSummary(
       heatedFloorAreaM2 > 0 ? potentialTotalKwh / heatedFloorAreaM2 : 0,
     potentialSavingsKwhPerM2Year:
       heatedFloorAreaM2 > 0 ? (currentTotalKwh - potentialTotalKwh) / heatedFloorAreaM2 : 0,
-    co2ReductionTonnesPerYear,
-    totalInvestmentUsd,
-    totalNonEeMeasureCostUsd,
-    totalAnnualSavingsUsd,
-    simplePaybackYears:
-      totalAnnualSavingsUsd > 0 ? totalInvestmentUsd / totalAnnualSavingsUsd : null,
+    co2ReductionTonnesPerYear: proposed.co2ReductionTonnesPerYear,
+    totalInvestmentUsd: proposed.investmentUsd,
+    totalNonEeMeasureCostUsd: proposed.nonEeCostUsd,
+    totalAnnualSavingsUsd: proposed.standardizedSavingsUsd,
+    simplePaybackYears: proposed.simplePaybackStandardizedYears,
+    all,
+    proposed,
   };
+}
+
+/**
+ * One totals row. Non-EE costs are year-0 outflows without savings, so the package NPV is Σ measure NPV − cost
+ * (`Measures_summary!N38`), and the package IRR comes from the summed net flows with that cost added to year 0.
+ * The IRR is not checked against the workbook (v7.20 has no package IRR in the golden fixture).
+ */
+function buildPackageTotals(
+  measures: EnergyMeasureResult[],
+  nonEeMeasures: NonEeMeasureResult[],
+): MeasurePackageTotals {
+  const sum = (pick: (m: EnergyMeasureResult) => number) =>
+    measures.reduce((total, m) => total + pick(m), 0);
+  const nonEeCostUsd = nonEeMeasures.reduce((total, m) => total + m.totalCostUsd, 0);
+  const investmentUsd = sum((m) => m.investmentCostUsd) + nonEeCostUsd;
+  const standardizedSavingsUsd = sum((m) => m.standardizedAnnualSavingsUsd);
+  const actualSavingsUsd = sum((m) => m.actualAnnualSavingsUsd);
+
+  const packageIrr = (pick: (m: EnergyMeasureResult) => CashflowYear[]): number | null => {
+    const flows = measures.map(pick);
+    const years = Math.max(0, ...flows.map((f) => f.length));
+    if (years === 0 || investmentUsd <= 0) return null;
+    const net = Array.from({ length: years }, (_, t) =>
+      flows.reduce((total, f) => total + (f[t]?.netCashflow ?? 0), t === 0 ? -nonEeCostUsd : 0),
+    );
+    return calculateIrr(
+      net.map((netCashflow, year) => ({
+        year,
+        capex: 0,
+        grossSavings: 0,
+        maintenanceCost: 0,
+        netCashflow,
+        discountedNetCashflow: 0,
+        cumulativeDiscountedCashflow: 0,
+      })),
+    );
+  };
+
+  return {
+    investmentUsd,
+    nonEeCostUsd,
+    standardizedSavingsKwh: sum((m) => m.standardizedAnnualSavingsKwh),
+    standardizedSavingsUsd,
+    actualSavingsKwh: sum((m) => m.actualAnnualSavingsKwh),
+    actualSavingsUsd,
+    simplePaybackStandardizedYears:
+      standardizedSavingsUsd > 0 ? investmentUsd / standardizedSavingsUsd : null,
+    simplePaybackActualYears: actualSavingsUsd > 0 ? investmentUsd / actualSavingsUsd : null,
+    co2ReductionTonnesPerYear: sum((m) => m.co2ReductionTonnesPerYear),
+    npvStandardizedUsd: sum((m) => m.standardized.npv) - nonEeCostUsd,
+    npvActualUsd: sum((m) => m.actual.npv) - nonEeCostUsd,
+    irrStandardized: packageIrr((m) => m.standardizedCashflow),
+    irrActual: packageIrr((m) => m.actualCashflow),
+  };
+}
+
+/**
+ * v7.20 `D67:F68`: Σ over ALL measures (not only proposed) of the per-carrier savings vs the scenario's
+ * before − after final energy. The scenario delta counts what the "after" state saves (generation, lighting,
+ * equipment, cooling), plus PV/solar-DHW production and the EMS measures' own savings — neither is part of
+ * the "after" end-use model. `ok` when |diff| < 1 %, or < 10 kWh for electricity (`F68`).
+ */
+function buildMeasureBalance(
+  measures: EnergyMeasureResult[],
+  measureRows: AuditInputs["energyMeasures"],
+  generation: GenerationRow[],
+  lighting: LightingResult[],
+  equipment: EquipmentResult[],
+  cooling: CoolingResult[],
+  renewableProduction: RenewableProductionResult[],
+  baselineShares: { carrier: EnergyCarrier; share: number }[],
+): MeasureBalanceRow[] {
+  const carriers: EnergyCarrier[] = ["gas", "electricity", "district_heat", "coal"];
+  const delta = new Map<EnergyCarrier, number>();
+  const add = (carrier: EnergyCarrier, kwh: number) =>
+    delta.set(carrier, (delta.get(carrier) ?? 0) + kwh);
+
+  for (const g of generation) {
+    if (!g.carrier || g.endUse === "cooling") continue;
+    add(g.carrier, (g.scenario === "before" ? 1 : -1) * g.finalEnergyConsumptionKwh);
+  }
+  const electric = (rows: { scenario: Scenario }[], pick: (row: never) => number) =>
+    rows.reduce(
+      (total, row) => total + (row.scenario === "before" ? 1 : -1) * pick(row as never),
+      0,
+    );
+  add(
+    "electricity",
+    electric(lighting, (r: LightingResult) => r.annualConsumptionKwh),
+  );
+  add(
+    "electricity",
+    electric(equipment, (r: EquipmentResult) => r.annualConsumptionKwh),
+  );
+  add(
+    "electricity",
+    electric(cooling, (r: CoolingResult) => r.electricalEnergyForCoolingKwh),
+  );
+  for (const production of renewableProduction) {
+    if (production.systemType === "pv") add("electricity", production.annualProductionKwh);
+    else {
+      const dhwBefore = generation.filter(
+        (g) => g.scenario === "before" && g.endUse === "dhw" && g.carrier != null,
+      );
+      const total = dhwBefore.reduce((s, g) => s + g.finalEnergyConsumptionKwh, 0);
+      if (total > 0) {
+        for (const g of dhwBefore) {
+          if (g.carrier)
+            add(g.carrier, (production.annualProductionKwh * g.finalEnergyConsumptionKwh) / total);
+        }
+      } else {
+        for (const s of baselineShares) add(s.carrier, production.annualProductionKwh * s.share);
+      }
+    }
+  }
+  measureRows.forEach((row, i) => {
+    if (row.category !== "ems") return;
+    for (const part of measures[i]?.savingsByCarrier ?? []) add(part.carrier, part.standardizedKwh);
+  });
+
+  return carriers.map((carrier) => {
+    const sumOfMeasuresKwh = measures.reduce(
+      (total, m) =>
+        total +
+        m.savingsByCarrier
+          .filter((p) => p.carrier === carrier)
+          .reduce((s, p) => s + p.standardizedKwh, 0),
+      0,
+    );
+    const scenarioDeltaKwh = delta.get(carrier) ?? 0;
+    const diff = sumOfMeasuresKwh - scenarioDeltaKwh;
+    const diffPct = scenarioDeltaKwh !== 0 ? (diff / scenarioDeltaKwh) * 100 : diff === 0 ? 0 : 100;
+    const ok = Math.abs(diffPct) < 1 || (carrier === "electricity" && Math.abs(diff) < 10);
+    return {
+      carrier,
+      sumOfMeasuresKwh,
+      scenarioDeltaKwh,
+      diffPct,
+      status: ok ? "ok" : "check",
+    };
+  });
 }
 
 const ENVELOPE_MEASURE_CATEGORIES: ReadonlySet<MeasureCategory> = new Set([

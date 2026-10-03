@@ -38,7 +38,8 @@ Holat ustuni: ✅ mavjud (`report.service.ts`da hozir bor) · ⚠️ qisman · �
 |---|---|---|
 | Sarlavha, bino nomi/manzili, hisobot sanasi | `building.name`, `building.location`, `result.generatedAt` | ✅ |
 | Qisqa xulosa jadvali (namunaning Table 1) — har bir chora-tadbir uchun investitsiya, to'lov muddati (nazariy/haqiqiy), CO2 kamayishi, amalga oshirishga tavsiya | `result.measures[]` (`investmentCostUsd`, `standardized.simplePaybackYears`/`actual.simplePaybackYears`, `co2ReductionTonnesPerYear`, `proposedForImplementation`) + `result.nonEeMeasures[]` | ⚠️ — hozir faqat oddiy jadval bor, nazariy/haqiqiy to'lov muddati juftligi yo'q |
-| Umumiy xulosa KPI'lari (joriy/potensial solishtirma sarf, CO2, investitsiya, jamlangan to'lov muddati) | `result.summary` (`AuditSummary`) | ✅ |
+| Umumiy xulosa KPI'lari (joriy/potensial solishtirma sarf, CO2, investitsiya, jamlangan to'lov muddati) | `result.summary` (`AuditSummary`; F06c: `summary.all`/`summary.proposed` — NPV/IRR, nazariy/haqiqiy to'lov muddati ham) | ✅ — `all`/`proposed` hisobotga hali chiqmagan |
+| Chora-tadbirlar balans nazorati (har tashuvchi: Σ chora-tadbir vs oldin−keyin, `ok`/`check`) | `result.measureBalance[]` (F06c) | ❌ — hisoblangan, hisobotga chiqarilmagan |
 
 ### B. Bino tavsifi
 
