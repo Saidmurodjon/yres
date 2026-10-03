@@ -1,9 +1,9 @@
-import type { AuditResult } from "@yres/types";
+import type { AuditResult, CashflowYear } from "@yres/types";
 import type { AuditInputs } from "../../src/services/audit-inputs";
 import { calculateBuildingBlockAreas } from "../../src/services/envelope.service";
 
 /** What an accessor may return; `null` ↔ expected `kind: "none"`, strings ↔ `kind: "text"`. */
-export type Actual = number | string | null;
+export type Actual = number | string | null | (number | null)[];
 export type Accessor = (result: AuditResult, inputs: AuditInputs) => Actual;
 
 const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
@@ -166,6 +166,53 @@ for (let n = 1; n <= 19; n++) {
   MAPPING[`financial.${n}.npvActualUsd`] = (r) => measureOf(r, n)?.actual.npv ?? null;
   MAPPING[`financial.${n}.irrActual`] = (r) => measureOf(r, n)?.actual.irr ?? null;
 }
+
+// Financial indicators rows 3-17: one column per year, year 0 (= base year) is the investment year.
+const cashflowRows: Record<string, (c: CashflowYear[], baseYear: number) => (number | null)[]> = {
+  years: (c, base) => c.map((y) => base + y.year),
+  maintenanceUsd: (c) => c.map((y) => (y.year === 0 ? null : y.maintenanceCost)),
+  grossStandardSavingsUsd: (c) => c.map((y) => y.grossSavings),
+  netStandardSavingsUsd: (c) => c.map((y) => y.netCashflow),
+  discountedStandardNetUsd: (c) => c.map((y) => y.discountedNetCashflow),
+  accumulatedDiscountedStandardUsd: (c) => c.map((y) => y.cumulativeDiscountedCashflow),
+};
+for (const n of [1, 15]) {
+  for (const [field, row] of Object.entries(cashflowRows)) {
+    MAPPING[`financial.${n}.cashflow.${field}`] = (r) => {
+      const m = measureOf(r, n);
+      return m ? row(m.standardizedCashflow, r.financialAssumptions.baseYear) : null;
+    };
+  }
+  MAPPING[`financial.${n}.cashflow.grossActualSavingsUsd`] = (r) => {
+    const m = measureOf(r, n);
+    return m ? m.actualCashflow.map((y) => y.grossSavings) : null;
+  };
+}
+
+// Financial parameters sheet: derived values from `financialAssumptions`, the rest are inputs echoed back.
+const fa = (r: AuditResult) => r.financialAssumptions;
+const fp = (_r: AuditResult, i: AuditInputs) => i.financialParameters;
+Object.assign(MAPPING, {
+  "financialParameters.baseYear": (r) => fa(r).baseYear,
+  "financialParameters.calculationPeriodYears": (r) => fa(r).periodYears,
+  "financialParameters.inflation": (r) => fa(r).inflationRate,
+  "financialParameters.realDiscountRate": (r) => fa(r).realDiscountRate,
+  "financialParameters.nominalDiscountRate": (r) => fa(r).nominalDiscountRate,
+  "financialParameters.nominalEscalationGas": (r) => fa(r).nominalEscalation.gas,
+  "financialParameters.nominalEscalationElectricity": (r) => fa(r).nominalEscalation.electricity,
+  "financialParameters.maintenanceEscalation": (r) => fa(r).maintenanceEscalation,
+  "financialParameters.exchangeRateUzsPerUsd": (r) => fa(r).exchangeRateUzsPerUsd,
+  "financialParameters.irrInitialGuess": (r) => fa(r).irrInitialGuess,
+  "financialParameters.realEscalationGas": (r, i) => fp(r, i).realEscalationGas,
+  "financialParameters.realEscalationElectricity": (r, i) => fp(r, i).realEscalationElectricity,
+  "financialParameters.realEscalationCoalHeat": (r, i) => fp(r, i).realEscalationHeat,
+  "financialParameters.gasTariffUzsPerM3": (r, i) => fp(r, i).gasTariffUzsPerM3,
+  "financialParameters.electricityTariffUzsPerKwh": (r, i) => fp(r, i).electricityTariffUzsPerKwh,
+  "financialParameters.pvExportTariffUzsPerKwh": (r, i) => fp(r, i).pvExportTariffUzsPerKwh,
+  "financialParameters.thermalTariffUzsPerGcal": (r, i) => fp(r, i).heatTariffUzsPerGcal,
+  "financialParameters.coalPriceUzsPerTonne": (r, i) => fp(r, i).coalPriceUzsPerT,
+  "financialParameters.gasNetCalorificValueKwhPerM3": (r, i) => fp(r, i).gasNcvKwhPerM3,
+} satisfies Record<string, Accessor>);
 
 for (let n = 1; n <= 13; n++) {
   MAPPING[`nonEe.${n}.description`] = (r) => r.nonEeMeasures[n - 1]?.description ?? null;

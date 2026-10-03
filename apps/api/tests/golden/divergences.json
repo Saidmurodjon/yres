@@ -1,17 +1,10 @@
 {
   "divergences": [
     {
-      "id": "D1",
-      "x": ["X85", "X86"],
-      "title": "Financial model: nominal 6.08% discount, compound escalation, 20-year horizon vs engine's 4% linear",
-      "status": "open",
-      "closesIn": "F05",
-      "expectedIds": [],
-      "note": "NPV/IRR/discounted payback of every measure. Ids may also differ because the measure's own savings differ (see D13..); when D1 closes, whatever still fails is a savings divergence and must be listed there."
-    },
-    {
       "id": "D13",
-      "x": ["X86"],
+      "x": [
+        "X86"
+      ],
       "title": "Discounted payback: workbook formula (Financial indicators!D19, MATCH) is exactly 1 year too high — workbook error, engine is correct (K21)",
       "status": "open",
       "closesIn": "v7.21 (K21: project owner decides; then accepted)",
@@ -23,16 +16,23 @@
     },
     {
       "id": "D23",
-      "x": ["X98"],
+      "x": [
+        "X98"
+      ],
       "title": "Mechanical ventilation fan electricity: Excel = power x hours x utilisation per line (Equipment!K85+K86 = 7570.45), engine = nameplate kW x 24 h x heating days (17896)",
       "status": "open",
       "closesIn": "F06",
-      "expectedIds": ["ventilation.mechanicalElectricalKwh"],
+      "expectedIds": [
+        "ventilation.mechanicalElectricalKwh"
+      ],
       "note": "The workbook uses 1857 h/y and utilisation 0.5/0.8 per line; the ventilation system model has no hours/utilisation input."
     },
     {
       "id": "D3",
-      "x": ["X75", "X83"],
+      "x": [
+        "X75",
+        "X83"
+      ],
       "title": "Floor: ground zone method and floor over unheated space (F3, n = 0.4)",
       "status": "open",
       "closesIn": "F08",
@@ -68,7 +68,9 @@
     },
     {
       "id": "D5",
-      "x": ["X81"],
+      "x": [
+        "X81"
+      ],
       "title": "Window repair: infiltration share reallocated from ventilation to window",
       "status": "open",
       "closesIn": "P1 (Faza 2+)",
@@ -92,7 +94,11 @@
     },
     {
       "id": "D6",
-      "x": ["X84", "X96", "X33"],
+      "x": [
+        "X84",
+        "X96",
+        "X33"
+      ],
       "title": "Heat pump SCOP 3.11 + backup MTB; fuel-free 'after' heat",
       "status": "open",
       "closesIn": "P2",
@@ -115,7 +121,10 @@
     },
     {
       "id": "D8",
-      "x": ["X65", "X66"],
+      "x": [
+        "X65",
+        "X66"
+      ],
       "title": "BEMS: Excel's 15 USD/m² estimate vs engine EMS_SAVINGS_RATE = 0.03",
       "status": "open",
       "closesIn": "P1",
@@ -148,7 +157,9 @@
     },
     {
       "id": "D11",
-      "x": ["X55"],
+      "x": [
+        "X55"
+      ],
       "title": "Shading (measure 9) and cooling-demand reduction (measure 19) have no engine category",
       "status": "open",
       "closesIn": "P1",
@@ -174,11 +185,20 @@
     },
     {
       "id": "D12",
-      "x": ["X93", "X94", "X95"],
+      "x": [
+        "X93",
+        "X94",
+        "X95"
+      ],
       "title": "Per-measure savings attribution: engine gives one saving per category, Excel per element",
       "status": "open",
       "closesIn": "F06",
       "expectedIds": [
+        "financial.1.cashflow.accumulatedDiscountedStandardUsd",
+        "financial.1.cashflow.discountedStandardNetUsd",
+        "financial.1.cashflow.grossActualSavingsUsd",
+        "financial.1.cashflow.grossStandardSavingsUsd",
+        "financial.1.cashflow.netStandardSavingsUsd",
         "financial.1.npvActualUsd",
         "financial.10.npvActualUsd",
         "financial.2.irrActual",
@@ -278,7 +298,9 @@
     },
     {
       "id": "D20",
-      "x": ["X98"],
+      "x": [
+        "X98"
+      ],
       "title": "Lighting 'after': Excel takes the installed BoQ power (Lighting!I13 = sum(W x qty)/area = 4.59 W/m2); the engine uses the LED density (7.4 W/m2)",
       "status": "open",
       "closesIn": "Faza 2+",
@@ -652,49 +674,6 @@
         "nonEe.7.proposedForImplementation",
         "nonEe.8.proposedForImplementation",
         "nonEe.9.proposedForImplementation"
-      ]
-    },
-    {
-      "reason": "Financial parameters sheet: engine has no such configuration until F05",
-      "expectedIds": [
-        "financialParameters.baseYear",
-        "financialParameters.calculationPeriodYears",
-        "financialParameters.coalPriceUzsPerTonne",
-        "financialParameters.electricityTariffUzsPerKwh",
-        "financialParameters.exchangeRateUzsPerUsd",
-        "financialParameters.gasNetCalorificValueKwhPerM3",
-        "financialParameters.gasTariffUzsPerM3",
-        "financialParameters.inflation",
-        "financialParameters.irrInitialGuess",
-        "financialParameters.maintenanceEscalation",
-        "financialParameters.nominalDiscountRate",
-        "financialParameters.nominalEscalationElectricity",
-        "financialParameters.nominalEscalationGas",
-        "financialParameters.pvExportTariffUzsPerKwh",
-        "financialParameters.realDiscountRate",
-        "financialParameters.realEscalationCoalHeat",
-        "financialParameters.realEscalationElectricity",
-        "financialParameters.realEscalationGas",
-        "financialParameters.thermalTariffUzsPerGcal"
-      ]
-    },
-    {
-      "reason": "Cash-flow table rows: AuditResult has no per-year cash-flow equivalent of these Excel rows until F05",
-      "expectedIds": [
-        "financial.1.cashflow.accumulatedDiscountedStandardUsd",
-        "financial.1.cashflow.discountedStandardNetUsd",
-        "financial.1.cashflow.grossActualSavingsUsd",
-        "financial.1.cashflow.grossStandardSavingsUsd",
-        "financial.1.cashflow.maintenanceUsd",
-        "financial.1.cashflow.netStandardSavingsUsd",
-        "financial.1.cashflow.years",
-        "financial.15.cashflow.accumulatedDiscountedStandardUsd",
-        "financial.15.cashflow.discountedStandardNetUsd",
-        "financial.15.cashflow.grossActualSavingsUsd",
-        "financial.15.cashflow.grossStandardSavingsUsd",
-        "financial.15.cashflow.maintenanceUsd",
-        "financial.15.cashflow.netStandardSavingsUsd",
-        "financial.15.cashflow.years"
       ]
     },
     {

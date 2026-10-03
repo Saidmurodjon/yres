@@ -3,7 +3,7 @@ import type { AuditInputs } from "../../src/services/audit-inputs";
 import { computeAudit } from "../../src/services/audit.engine";
 import expectedJson from "./fixtures/3-dmtt/v7.20/expected.json";
 import { loadGoldenInputs } from "./load-inputs";
-import { MAPPING } from "./mapping";
+import { type Actual, MAPPING } from "./mapping";
 import { type Tolerance, toleranceFor, withinTolerance } from "./tolerances";
 
 export interface ExpectedEntry {
@@ -21,8 +21,8 @@ export const EXPECTED = (expectedJson as unknown as { entries: ExpectedEntry[] }
 export interface Mismatch {
   id: string;
   excel: string;
-  actual: number | string | null;
-  expected: number | string | null;
+  actual: Actual;
+  expected: Actual;
   deltaPct: number | null;
   tolerance: Tolerance;
 }
@@ -50,10 +50,22 @@ export function runGolden(): GoldenRun {
         ? null
         : entry.kind === "text"
           ? (entry.text ?? "")
-          : (entry.value ?? null);
+          : entry.values
+            ? (entry.values as unknown as null)
+            : (entry.value ?? null);
     const tol = toleranceFor(entry.id, entry.class);
     let ok: boolean;
-    if (typeof expected === "number" && typeof actual === "number")
+    if (Array.isArray(actual)) {
+      // a row of the workbook (`values`): every cell within tolerance, null ↔ null (blank cell)
+      ok =
+        actual.length === (entry.values?.length ?? -1) &&
+        actual.every((a, k) => {
+          const e = entry.values?.[k] ?? null;
+          return typeof a === "number" && typeof e === "number"
+            ? withinTolerance(a, e, tol)
+            : (a ?? null) === e;
+        });
+    } else if (typeof expected === "number" && typeof actual === "number")
       ok = withinTolerance(actual, expected, tol);
     else ok = actual === expected; // null ↔ "none" and text are exact
     if (ok) matched.push(entry.id);

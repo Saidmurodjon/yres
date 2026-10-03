@@ -2498,3 +2498,11 @@ T06b — qamrab olinganlar:
 - Golden: №15 NPV 158 731,35 / IRR 29,977 % aynan; №1 NPV −192 678,70 unit testda (dvigatel savings farqi D12). **D1 yopildi** (№15, №6/№7/№8 IRR ham); **yangi D13** — diskontlangan qoplanish +1 yil (kitob xatosi, №15: 4,18 vs 5,18; K21); `financial.10.npvActualUsd` D12 ga (F06 gacha). unexplained = 0.
 - `hisobot.md`/`calculation-engine.md` yangilandi. type-check, build, biome, `bun run test` (api 221) yashil.
 **Navbatda:** F05c (UI).
+
+## Faza 1 · F05b qo'shimcha — golden'da moliya qatorlari ulandi (2026-10-03)
+
+- `divergences.json`: D1 olib tashlandi (yopilgan). `notModelled`dan "Financial parameters" va "Cash-flow" guruhlari olib tashlandi.
+- `mapping.ts`/`compare.ts`: vektor (`values`) qatorlari qo'llab-quvvatlanadi; `financial.1/15.cashflow.*` (yillar, yalpi std/actual, xizmat, sof, diskontlangan, jamlangan) `standardizedCashflow`/`actualCashflow` ga ulandi; №15 tolerans ichida, №1 farqi (yalpi tejamkorlik) → D12 (jamlangan diskontlangan ham D12, D13 emas). `financialParameters.*` — hosilalar `financialAssumptions`dan, qolganlari kirish sifatida.
+- `faza-1/README.md` §4: F03, F04 ✅, F05 a, b ✅.
+- type-check, biome, `bun run test` (221) yashil.
+**Navbatda:** F05c (UI).
