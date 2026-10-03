@@ -2,6 +2,7 @@ import {
   type Database,
   building,
   type buildingBlock,
+  buildingFinancialParameters,
   type climateMonthlyNormal,
   type constructionLayer,
   constructionType,
@@ -28,6 +29,10 @@ import {
   ventilationSystem,
 } from "@yres/db";
 import { desc, eq } from "drizzle-orm";
+import {
+  type FinancialParametersValues,
+  defaultFinancialParameters,
+} from "../lib/financial-defaults";
 
 function readRaw(db: Database, buildingId: string) {
   return Promise.all([
@@ -65,6 +70,10 @@ function readRaw(db: Database, buildingId: string) {
     db.query.energyMeasure.findMany({ where: eq(energyMeasure.buildingId, buildingId) }),
     db.query.nonEeMeasure.findMany({ where: eq(nonEeMeasure.buildingId, buildingId) }),
     db.select().from(energyTariff).orderBy(desc(energyTariff.effectiveDate)),
+    db
+      .select()
+      .from(buildingFinancialParameters)
+      .where(eq(buildingFinancialParameters.buildingId, buildingId)),
   ]);
 }
 type Row<T extends { $inferSelect: unknown }, K extends keyof T["$inferSelect"]> = Pick<
@@ -225,10 +234,12 @@ export interface AuditInputs {
     typeof energyTariff,
     "energyCarrier" | "unitCostUsd" | "emissionFactorKgCo2PerKwh"
   >[];
+  /** Saved parameters or the v7.20 defaults (F05); `unitCostUsd` of `tariffs` is no longer used for money. */
+  financialParameters: FinancialParametersValues;
 }
 
 /**
- * All of the audit's database reads in one `Promise.all` (20 queries — within the
+ * All of the audit's database reads in one `Promise.all` (21 queries — within the
  * `database.md` budget). Throws if the building does not exist.
  */
 export async function loadAuditInputs(db: Database, buildingId: string): Promise<AuditInputs> {
@@ -259,5 +270,6 @@ export async function loadAuditInputs(db: Database, buildingId: string): Promise
     energyMeasures: raw[17],
     nonEeMeasures: raw[18],
     tariffs: raw[19],
+    financialParameters: raw[20][0] ?? defaultFinancialParameters(),
   };
 }

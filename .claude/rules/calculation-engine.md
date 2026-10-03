@@ -48,6 +48,10 @@
   `renewable_offset`da faqat "keyingi" qiymat bor (hech qanday "oldingi" holat yo'q — buning sababi
   uchun `renewable.service.ts`ning izohiga qarang). Yangi taqsimot toifasi qo'shsangiz, qaysi
   bo'limga halol tegishli ekanligini hal qiling, summani to'g'ri chiqaradigan bo'limni tanlamang.
+- **Moliya modeli v7.20 (F05b):** parametrlar `AuditInputs.financialParameters` (bino qatori yoki sukut) dan; nominal diskont/o'sish
+  Fisher bilan `deriveFinancialAssumptions()`da hisoblanadi; pul oqimi gorizonti — hisob davri (`periodYears`), chora-tadbir umri emas;
+  tashuvchi qismlari alohida (murakkab) o'sadi; IRR — `Σ net <= 0` yoki CAPEX 0 bo'lsa `null`. Diskontlangan qoplanish kitobda 1 yilga
+  ortiq (K21) — dvigatel to'g'ri, golden'da D13. Tarifi hisoblab bo'lmagan tashuvchi (ko'mir NCV yo'q) → USD 0 + `warnings[]`.
 - Moliyaviy ko'rsatkichlar (NPV/IRR/qoplanish muddati) `financial.service.ts`ning
   `calculateFinancialIndicators()`idan keladi — uni ikki marta chaqiring (bir marta
   standartlashtirilgan tejamkorlik bilan, bir marta kalibrlangan haqiqiy tejamkorlik bilan),

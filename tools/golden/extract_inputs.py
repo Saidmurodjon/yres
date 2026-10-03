@@ -621,6 +621,38 @@ def tariffs(r: Reader) -> list[dict]:
     return out
 
 
+def financial_parameters(r: Reader) -> dict:
+    s = "Financial parameters"
+
+    def num(row: int, label: str) -> float:
+        return r.num(s, f"D{row}", (f"B{row}", label))
+
+    # D9/D13/D14/D15 are formulas of D7/D8/D10..D12 (nominal values are derived by the engine)
+    check_formula(s, "D9", "=(1+D8)*(1+D7)-1")
+    check_formula(s, "D15", "=D7")
+    return {
+        "baseYear": int(num(5, "Base year")),
+        "periodYears": int(num(6, "Calculation period")),
+        "inflationRate": num(7, "Inflation"),
+        "realDiscountRate": num(8, "Real discount rate"),
+        "realEscalationGas": num(10, "Real escalation of the natural gas"),
+        "realEscalationElectricity": num(11, "Real escalation of the electricity"),
+        "realEscalationHeat": num(12, "Real escalation of the coal"),
+        "exchangeRateUzsPerUsd": num(16, "Exchange rate"),
+        "gasTariffUzsPerM3": num(17, "Natural gas tariff"),
+        "gasNcvKwhPerM3": num(22, "Natural gas net calorific"),
+        "electricityTariffUzsPerKwh": num(18, "Electricity tariff"),
+        "heatTariffUzsPerGcal": num(20, "Thermal energy tariff"),
+        "coalPriceUzsPerT": num(21, "Coal price"),
+        "coalNcvKwhPerKg": None,  # no source cell
+        "pvExportEnabled": True,  # the workbook counts exported PV electricity (D19, PV!C38)
+        "pvExportTariffUzsPerKwh": num(19, "PV export"),
+        "irrInitialGuess": num(23, "IRR - initial guess"),
+        "tariffSource": None,
+        "tariffEffectiveDate": None,
+    }
+
+
 MODEL_GAPS = [
     "Floors F1/F3: the zone method and the unheated-space temperature factor n are not modelled (F08); layers are given, U comes out as a plain layer sum.",
     "Surface resistances are one record per element category (first construction of that category); v7.20 sets Rint/Rext per construction block.",
@@ -678,6 +710,7 @@ def main() -> None:
         "energyMeasures": energy_measures,
         "nonEeMeasures": non_ee,
         "tariffs": tariffs(r),
+        "financialParameters": financial_parameters(r),
     }
     document = {
         "meta": {

@@ -2,6 +2,8 @@ import type { building } from "@yres/db";
 import type { AuditResult, EnergyMeasureResult } from "@yres/types";
 import { PDFDocument } from "pdf-lib";
 import { describe, expect, it } from "vitest";
+import { defaultFinancialParameters } from "../../src/lib/financial-defaults";
+import { deriveFinancialAssumptions } from "../../src/services/financial.service";
 import { type ReportExtras, generateAuditReportPdf } from "../../src/services/report.service";
 
 type Building = typeof building.$inferSelect;
@@ -101,6 +103,7 @@ function fullResultFixture(): AuditResult {
     buildingId: "b1",
     generatedAt: new Date().toISOString(),
     warnings: [],
+    financialAssumptions: deriveFinancialAssumptions(defaultFinancialParameters()),
     summary: {
       currentEnergyUseKwhPerM2Year: 200,
       potentialEnergyUseKwhPerM2Year: 100,
@@ -350,6 +353,7 @@ function emptyResultFixture(): AuditResult {
     buildingId: "b1",
     generatedAt: new Date().toISOString(),
     warnings: [],
+    financialAssumptions: deriveFinancialAssumptions(defaultFinancialParameters()),
     summary: {
       currentEnergyUseKwhPerM2Year: 0,
       potentialEnergyUseKwhPerM2Year: 0,

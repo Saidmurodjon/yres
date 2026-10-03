@@ -2489,3 +2489,12 @@ T06b — qamrab olinganlar:
 - D23 `closesIn` → F06 (yres-01 so'rovi).
 - Tekshiruv: type-check, biome, `bun run test` (api 217) yashil. Web'ga tegilmadi.
 **Navbatda:** F05b (dvigatel).
+
+## Faza 1 · F05b — v7.20 moliya modeli dvigatelda (2026-10-03)
+
+- `financial.service.ts`: `deriveFinancialAssumptions()` (nominal diskont 6,08 %, nominal o'sish gaz 4,856 % / elektr 4,04 %, USD/kWh tariflar), `buildCashflow` — yil 0 capex, `Σ s_c(1+g_c)^(t-1)`, xizmat `R·I·(1+m)^(t-1)`, gorizont = `periodYears`; chiziqli o'sish, `DEFAULT_DISCOUNT_RATE`, `ENERGY_ESCALATION_RATES` olib tashlandi. IRR `null`: `Σ net <= 0` yoki CAPEX 0; boshlang'ich taxmin `D23`.
+- `audit.engine.ts`: pul qiymati parametrlardan (`energy_tariff` faqat CO₂ omili uchun qoldi); `AuditResult.financialAssumptions` (yangi, PDF'dagi diskont/o'sish qatori undan o'qiydi). `loadAuditInputs` 21 so'rov. Ko'mir NCV yo'q → `warnings[]`, jim 0 emas.
+- Ekstraktor: `Financial parameters!D5:D23` → `inputs.financialParameters` (formulalar `D9`, `D15` tekshiriladi), `pvExportEnabled = true`; `inputs.json` qayta chiqarildi.
+- Golden: №15 NPV 158 731,35 / IRR 29,977 % aynan; №1 NPV −192 678,70 unit testda (dvigatel savings farqi D12). **D1 yopildi** (№15, №6/№7/№8 IRR ham); **yangi D13** — diskontlangan qoplanish +1 yil (kitob xatosi, №15: 4,18 vs 5,18; K21); `financial.10.npvActualUsd` D12 ga (F06 gacha). unexplained = 0.
+- `hisobot.md`/`calculation-engine.md` yangilandi. type-check, build, biome, `bun run test` (api 221) yashil.
+**Navbatda:** F05c (UI).

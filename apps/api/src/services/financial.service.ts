@@ -1,53 +1,90 @@
-import type { CashflowYear, FinancialIndicators } from "@yres/types";
+import type {
+  CashflowYear,
+  EnergyCarrier,
+  FinancialAssumptions,
+  FinancialIndicators,
+} from "@yres/types";
+import type { FinancialParametersValues } from "../lib/financial-defaults";
 
-export const DEFAULT_DISCOUNT_RATE = 0.04;
-export const DEFAULT_LIFETIME_YEARS = 20;
+const KWH_PER_GCAL = 1163;
 
 /**
- * Annual fuel-price escalation rate by energy carrier, per the `Financial
- * indicators` sheet's own footnotes (footnote #4: 2.8% gas / 2%
- * electricity). The workbook's walls/heating-adjacent block actually uses
- * an anomalous 8% that matches none of its own footnotes (see
- * docs/data-dictionary.md, Ambiguities #7) — treated as a copy-paste error
- * and NOT replicated here; these documented rates are used for every
- * carrier instead. Revisit with the domain expert if 8% was intentional.
+ * v7.20 `Financial parameters` sheet: nominal rates are Fisher-derived from the real inputs
+ * (`D9 = (1+D8)(1+D7)-1`, `D13 = (1+D10)(1+D7)-1`, `D14`), and USD/kWh tariffs follow
+ * `Measures_summary!D45:F45`. A carrier whose tariff cannot be computed (coal without NCV) gets
+ * `null` — never a silent 0.
  */
-export const ENERGY_ESCALATION_RATES: Record<string, number> = {
-  gas: 0.028,
-  electricity: 0.02,
-  district_heat: 0.028,
-  coal: 0.028,
-};
+export function deriveFinancialAssumptions(p: FinancialParametersValues): FinancialAssumptions {
+  const nominal = (real: number) => (1 + real) * (1 + p.inflationRate) - 1;
+  const rate = p.exchangeRateUzsPerUsd;
+  return {
+    baseYear: p.baseYear,
+    periodYears: p.periodYears,
+    inflationRate: p.inflationRate,
+    realDiscountRate: p.realDiscountRate,
+    nominalDiscountRate: nominal(p.realDiscountRate),
+    nominalEscalation: {
+      gas: nominal(p.realEscalationGas),
+      electricity: nominal(p.realEscalationElectricity),
+      district_heat: nominal(p.realEscalationHeat),
+      coal: nominal(p.realEscalationHeat),
+    },
+    maintenanceEscalation: p.inflationRate,
+    exchangeRateUzsPerUsd: rate,
+    usdPerKwh: {
+      gas: p.gasTariffUzsPerM3 / (p.gasNcvKwhPerM3 * rate),
+      electricity: p.electricityTariffUzsPerKwh / rate,
+      district_heat: p.heatTariffUzsPerGcal / KWH_PER_GCAL / rate,
+      coal:
+        p.coalPriceUzsPerT != null && p.coalNcvKwhPerKg != null
+          ? p.coalPriceUzsPerT / (p.coalNcvKwhPerKg * 1000) / rate
+          : null,
+    },
+    irrInitialGuess: p.irrInitialGuess,
+    pvExportEnabled: p.pvExportEnabled,
+    pvExportUsdPerKwh: p.pvExportTariffUzsPerKwh / rate,
+  };
+}
 
 export interface CashflowInput {
   investmentCostUsd: number;
-  /** Annual maintenance cost as a fraction of *this measure's own* investment — the workbook's later blocks bug-reference the first block's investment cell (docs/data-dictionary.md, Ambiguities #8); not replicated here. */
-  maintenanceCostPercent: number;
-  /** Annual savings in the first year they occur (year index 1). */
-  firstYearAnnualSavingsUsd: number;
-  annualEscalationRate: number;
-  lifetimeYears: number;
+  /** `Measures_summary!R`: annual maintenance as a share of *this measure's* investment. */
+  maintenanceRate: number;
+  /** First-year gross savings per carrier; each part escalates at its own rate. */
+  savingsUsdByCarrier: Partial<Record<EnergyCarrier, number>>;
+  /** Nominal escalation per carrier (a carrier missing here does not escalate). */
+  escalationByCarrier: Partial<Record<EnergyCarrier, number>>;
+  maintenanceEscalation: number;
+  /** v7.20 `D6`: the horizon is the calculation period, not the measure's lifetime. */
+  periodYears: number;
+  /** Nominal discount rate. */
   discountRate: number;
+  irrInitialGuess?: number;
 }
 
 /**
- * Year 0 = investment year (capex only). Years 1..lifetime = operating
- * years with linearly escalating gross savings (`Financial indicators`
- * sheet: `savings(year) = base * (1 + rate*(year-1))` — additive, not
- * compound, per the workbook's own formula pattern).
+ * v7.20 model: year 0 = capex; year t = 1..N: gross savings `Σ s_c·(1+g_c)^(t-1)`, maintenance
+ * `R·I·(1+m)^(t-1)`, net = gross − maintenance, discounted at the nominal rate.
  */
 export function buildCashflow(input: CashflowInput): CashflowYear[] {
   const years: CashflowYear[] = [];
   let cumulativeDiscountedCashflow = 0;
 
-  for (let yearIndex = 0; yearIndex <= input.lifetimeYears; yearIndex++) {
+  for (let yearIndex = 0; yearIndex <= input.periodYears; yearIndex++) {
     const capex = yearIndex === 0 ? input.investmentCostUsd : 0;
-    const grossSavings =
+    let grossSavings = 0;
+    if (yearIndex > 0) {
+      for (const [carrier, firstYear] of Object.entries(input.savingsUsdByCarrier)) {
+        const growth = input.escalationByCarrier[carrier as EnergyCarrier] ?? 0;
+        grossSavings += (firstYear ?? 0) * (1 + growth) ** (yearIndex - 1);
+      }
+    }
+    const maintenanceCost =
       yearIndex === 0
         ? 0
-        : input.firstYearAnnualSavingsUsd * (1 + input.annualEscalationRate * (yearIndex - 1));
-    const maintenanceCost =
-      yearIndex === 0 ? 0 : input.investmentCostUsd * input.maintenanceCostPercent;
+        : input.investmentCostUsd *
+          input.maintenanceRate *
+          (1 + input.maintenanceEscalation) ** (yearIndex - 1);
     const netCashflow = grossSavings - maintenanceCost - capex;
     const discountedNetCashflow = netCashflow / (1 + input.discountRate) ** yearIndex;
     cumulativeDiscountedCashflow += discountedNetCashflow;
@@ -71,9 +108,10 @@ export function calculateNpv(cashflow: CashflowYear[]): number {
 }
 
 /** Newton-Raphson solve for the discount rate that zeroes NPV; null if it doesn't converge. */
-export function calculateIrr(cashflow: CashflowYear[], initialGuess = 0.1): number | null {
+export function calculateIrr(cashflow: CashflowYear[], initialGuess = 0.05): number | null {
   const flows = cashflow.map((y) => y.netCashflow);
-  if (flows.every((flow) => flow === 0)) return null;
+  // v7.20: no IRR when the undiscounted net flows do not even repay the investment ("n/a (<0)").
+  if (flows.every((flow) => flow === 0) || flows.reduce((a, b) => a + b, 0) <= 0) return null;
 
   let rate = initialGuess;
   for (let iteration = 0; iteration < 100; iteration++) {
@@ -124,19 +162,20 @@ export function calculateFinancialIndicators(input: CashflowInput): {
   indicators: FinancialIndicators;
 } {
   const cashflow = buildCashflow(input);
+  const firstYearSavingsUsd = Object.values(input.savingsUsdByCarrier).reduce<number>(
+    (sum, v) => sum + (v ?? 0),
+    0,
+  );
 
   return {
     cashflow,
     indicators: {
       npv: calculateNpv(cashflow),
-      irr: calculateIrr(cashflow),
-      simplePaybackYears: calculateSimplePaybackYears(
-        input.investmentCostUsd,
-        input.firstYearAnnualSavingsUsd,
-      ),
+      irr: input.investmentCostUsd > 0 ? calculateIrr(cashflow, input.irrInitialGuess) : null,
+      simplePaybackYears: calculateSimplePaybackYears(input.investmentCostUsd, firstYearSavingsUsd),
       discountedPaybackYears: calculateDiscountedPaybackYears(cashflow),
       discountRate: input.discountRate,
-      analysisHorizonYears: input.lifetimeYears,
+      analysisHorizonYears: input.periodYears,
     },
   };
 }

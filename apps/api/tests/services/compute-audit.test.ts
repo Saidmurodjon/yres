@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { defaultFinancialParameters } from "../../src/lib/financial-defaults";
 import type { AuditInputs } from "../../src/services/audit-inputs";
 import { computeAudit } from "../../src/services/audit.engine";
 
@@ -135,6 +136,7 @@ function buildInputs(): AuditInputs {
     ],
     nonEeMeasures: [],
     tariffs: [{ energyCarrier: "gas", unitCostUsd: 0.04, emissionFactorKgCo2PerKwh: 0.2 }],
+    financialParameters: defaultFinancialParameters(),
   };
 }
 

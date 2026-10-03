@@ -1,4 +1,4 @@
-import { LAMP_TYPE_NAMES, type Database } from "@yres/db";
+import { type Database, LAMP_TYPE_NAMES } from "@yres/db";
 import type {
   AuditResult,
   AuditSummary,
@@ -20,6 +20,7 @@ import type {
   SpecificConsumptionRow,
   VentilationLossResult,
 } from "@yres/types";
+import { type AuditInputs, loadAuditInputs } from "./audit-inputs";
 import {
   type CoolingWindowInput,
   calculateCoolingResult,
@@ -41,12 +42,11 @@ import {
   getEffectiveOpeningType,
   resolveHeatLossGroups,
 } from "./envelope.service";
-import { type AuditInputs, loadAuditInputs } from "./audit-inputs";
 import { type EquipmentItemInput, calculateEquipmentResult } from "./equipment.service";
 import {
-  ENERGY_ESCALATION_RATES,
   calculateCo2ReductionTonnesPerYear,
   calculateFinancialIndicators,
+  deriveFinancialAssumptions,
 } from "./financial.service";
 import {
   type SolarApertureInput,
@@ -766,12 +766,15 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
     unitCostUsd: row.unitCostUsd,
     totalCostUsd: row.quantity * row.unitCostUsd,
   }));
+  // CO2 factors still come from the reference tariff table; money comes from the building's
+  // financial parameters (v7.20 `Financial parameters`).
   const latestTariffByCarrier = new Map<string, (typeof tariffRows)[number]>();
   for (const tariff of tariffRows) {
     if (!latestTariffByCarrier.has(tariff.energyCarrier)) {
       latestTariffByCarrier.set(tariff.energyCarrier, tariff);
     }
   }
+  const financialAssumptions = deriveFinancialAssumptions(inputs.financialParameters);
 
   const measures: EnergyMeasureResult[] = measureRows.map((measure) => {
     const savingsKwh = resolveMeasureStandardizedSavingsKwh(measure.category, {
@@ -792,27 +795,32 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
       unitCostUsd: 0.05,
       emissionFactorKgCo2PerKwh: 0.3,
     };
+    const usdPerKwh = financialAssumptions.usdPerKwh[carrier];
+    if (usdPerKwh == null) {
+      warnings.push(
+        `Measure "${measure.name}": no ${carrier} tariff could be derived (missing price or calorific value) — its savings are not valued in USD.`,
+      );
+    }
+    const valueUsdPerKwh = usdPerKwh ?? 0;
+    const cashflowInput = (savingsKwhForCase: number) => ({
+      investmentCostUsd: measure.investmentCostUsd,
+      maintenanceRate: measure.maintenanceCostPercent,
+      savingsUsdByCarrier: { [carrier]: savingsKwhForCase * valueUsdPerKwh },
+      escalationByCarrier: financialAssumptions.nominalEscalation,
+      maintenanceEscalation: financialAssumptions.maintenanceEscalation,
+      periodYears: financialAssumptions.periodYears,
+      discountRate: financialAssumptions.nominalDiscountRate,
+      irrInitialGuess: financialAssumptions.irrInitialGuess,
+    });
 
     const { indicators: standardized, cashflow: standardizedCashflow } =
-      calculateFinancialIndicators({
-        investmentCostUsd: measure.investmentCostUsd,
-        maintenanceCostPercent: measure.maintenanceCostPercent,
-        firstYearAnnualSavingsUsd: savingsKwh * tariff.unitCostUsd,
-        annualEscalationRate: ENERGY_ESCALATION_RATES[carrier] ?? 0.02,
-        lifetimeYears: measure.lifetimeYears,
-        discountRate: 0.04,
-      });
+      calculateFinancialIndicators(cashflowInput(savingsKwh));
 
     const baselineRatio = baselineRatioByCarrier.get(carrier) ?? 1;
     const actualSavingsKwh = savingsKwh * baselineRatio;
-    const { indicators: actual, cashflow: actualCashflow } = calculateFinancialIndicators({
-      investmentCostUsd: measure.investmentCostUsd,
-      maintenanceCostPercent: measure.maintenanceCostPercent,
-      firstYearAnnualSavingsUsd: actualSavingsKwh * tariff.unitCostUsd,
-      annualEscalationRate: ENERGY_ESCALATION_RATES[carrier] ?? 0.02,
-      lifetimeYears: measure.lifetimeYears,
-      discountRate: 0.04,
-    });
+    const { indicators: actual, cashflow: actualCashflow } = calculateFinancialIndicators(
+      cashflowInput(actualSavingsKwh),
+    );
 
     return {
       measureId: measure.id,
@@ -820,9 +828,9 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
       category: measure.category,
       investmentCostUsd: measure.investmentCostUsd,
       standardizedAnnualSavingsKwh: savingsKwh,
-      standardizedAnnualSavingsUsd: savingsKwh * tariff.unitCostUsd,
+      standardizedAnnualSavingsUsd: savingsKwh * valueUsdPerKwh,
       actualAnnualSavingsKwh: actualSavingsKwh,
-      actualAnnualSavingsUsd: actualSavingsKwh * tariff.unitCostUsd,
+      actualAnnualSavingsUsd: actualSavingsKwh * valueUsdPerKwh,
       simplePaybackYears: standardized.simplePaybackYears,
       lifetimeYears: measure.lifetimeYears,
       co2ReductionTonnesPerYear: calculateCo2ReductionTonnesPerYear(
@@ -851,6 +859,7 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
     buildingId,
     generatedAt: options.generatedAt,
     warnings,
+    financialAssumptions,
     summary,
     envelopeAreas,
     envelopeHeatLoss,

@@ -1,7 +1,8 @@
 import type { CoolingResult } from "./cooling";
 import type { DhwDemandResult, DistributionLossResult } from "./dhw";
-import type { EquipmentResult } from "./equipment";
 import type { EnvelopeAreaBreakdown } from "./envelope";
+import type { EquipmentResult } from "./equipment";
+import type { FinancialAssumptions } from "./financial";
 import type { EndUseEnergyTotals, GenerationSourceResult } from "./generation";
 import type {
   EnvelopeHeatLossResult,
@@ -36,7 +37,10 @@ export interface AuditSummary {
  * "renewable_offset" nets out of the final_energy total for "after" only —
  * see `renewable.service.ts` for why it has no "before" state.
  */
-export type EnergyBalanceSection = "envelope_ventilation_loss" | "final_energy" | "renewable_offset";
+export type EnergyBalanceSection =
+  | "envelope_ventilation_loss"
+  | "final_energy"
+  | "renewable_offset";
 
 export interface EnergyBalanceRow {
   /** Stable key — an `EnvelopeElementCategory`, `"window"`/`"door"`, or one of the fixed final-energy/offset categories below. */
@@ -70,6 +74,7 @@ export interface AuditResult {
   generatedAt: string;
   /** Non-fatal input gaps that bias the result (e.g. missing working days → lighting hours understated). */
   warnings: string[];
+  financialAssumptions: FinancialAssumptions;
   summary: AuditSummary;
   envelopeAreas: EnvelopeAreaBreakdown;
   envelopeHeatLoss: EnvelopeHeatLossResult[];

@@ -6,7 +6,6 @@ import qrcode from "qrcode-generator";
 import { PT_SERIF_BOLD_BASE64 } from "../assets/fonts/pt-serif-bold";
 import { PT_SERIF_ITALIC_BASE64 } from "../assets/fonts/pt-serif-italic";
 import { PT_SERIF_REGULAR_BASE64 } from "../assets/fonts/pt-serif-regular";
-import { DEFAULT_DISCOUNT_RATE, ENERGY_ESCALATION_RATES } from "./financial.service";
 import type {
   CarrierConsumptionHistory,
   ConstructionTypeUValueBreakdown,
@@ -1334,8 +1333,8 @@ export async function generateAuditReportPdf(
   layout.heading(t(lang, "headingFinancialAssumptions"));
   layout.paragraph(
     t(lang, "discountRateAssumption", {
-      rate: fmtPct(lang, DEFAULT_DISCOUNT_RATE),
-      escalation: Object.entries(ENERGY_ESCALATION_RATES)
+      rate: fmtPct(lang, result.financialAssumptions.nominalDiscountRate),
+      escalation: Object.entries(result.financialAssumptions.nominalEscalation)
         .map(([carrier, rate]) => `${enumLabel(lang, carrier)} ${fmtPct(lang, rate)}`)
         .join(", "),
     }),
