@@ -7,6 +7,7 @@ import type {
   DistributionLossResult,
   EndUseEnergyTotals,
   EnergyBalanceRow,
+  EnergyCarrier,
   EnergyMeasureResult,
   EnvelopeHeatLossResult,
   EquipmentResult,
@@ -64,6 +65,13 @@ import {
   calculateEnvelopeHeatLoss,
 } from "./heatloss.service";
 import { type LightingZoneInput, calculateLightingResult } from "./lighting.service";
+import {
+  type GenerationRow,
+  type SavingsContext,
+  calculateGainsUtilizationCorrection,
+  deriveBaselineHeating,
+  resolveMeasureSavings,
+} from "./measure-savings.service";
 import { type RenewableSystemInput, calculateRenewableProduction } from "./renewable.service";
 import {
   calculateMechanicalAirFlowM3h,
@@ -208,6 +216,7 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
       layerResistance + resistance.interiorResistanceM2kPerW + resistance.exteriorResistanceM2kPerW;
     return {
       id: ct.id,
+      code: ct.code,
       scenario: ct.scenario,
       retrofitOfId: ct.retrofitOfId,
       uValueWPerM2K: totalResistance > 0 ? 1 / totalResistance : 0,
@@ -216,6 +225,7 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
 
   const openingTypeUValues: OpeningTypeUValueInput[] = openingTypeRows.map((ot) => ({
     id: ot.id,
+    code: ot.code,
     category: ot.category,
     scenario: ot.scenario,
     uValueWPerM2K: ot.uValueWm2k,
@@ -780,36 +790,73 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
 
   warnings.push(...collectMeasureTargetWarnings(measureRows, inputs));
 
-  const measures: EnergyMeasureResult[] = measureRows.map((measure) => {
-    const savingsKwh = resolveMeasureStandardizedSavingsKwh(measure.category, {
-      envelopeHeatLoss,
-      ventilationLoss,
-      distributionLoss,
-      generation,
-      lighting,
-      equipment,
-      renewableProduction,
-      heatingEnergyBalance,
-      dhwDemand,
-      cooling,
-    });
+  const generationRows: GenerationRow[] = generation.map((g) => {
+    const sourceType = generationSourceById.get(g.sourceId)?.sourceType;
+    return { ...g, carrier: (sourceType && carrierForGenerationSourceType(sourceType)) || null };
+  });
+  const baselineHeating = deriveBaselineHeating(generationRows);
+  const gainsUtilizationCorrection = calculateGainsUtilizationCorrection(
+    heatingEnergyBalance,
+    envelopeHeatLoss,
+    ventilationLoss,
+  );
+  const savingsContext: SavingsContext = {
+    envelopeHeatLoss,
+    ventilationLoss,
+    distributionLoss,
+    generation: generationRows,
+    lighting,
+    equipment,
+    renewableProduction,
+    heatingEnergyBalance,
+    dhwDemand,
+    cooling,
+    baselineHeating,
+    gainsUtilizationCorrection,
+    emsSavingsRate: EMS_SAVINGS_RATE,
+  };
 
-    const carrier = inferCarrierForMeasure(measure.category);
-    const tariff = latestTariffByCarrier.get(carrier) ?? {
-      unitCostUsd: 0.05,
-      emissionFactorKgCo2PerKwh: 0.3,
-    };
-    const usdPerKwh = financialAssumptions.usdPerKwh[carrier];
-    if (usdPerKwh == null) {
+  const measures: EnergyMeasureResult[] = measureRows.map((measure) => {
+    const savings = resolveMeasureSavings(measure.category, measure.targets, savingsContext);
+    if (
+      !baselineHeating.derived &&
+      savings.parts.length > 0 &&
+      (ENVELOPE_MEASURE_CATEGORIES.has(measure.category) ||
+        measure.category === "heating_system" ||
+        measure.category === "mechanical_ventilation_heat_recovery")
+    ) {
+      warnings.push(
+        `Measure "${measure.name}": no heating source with a billed carrier in the "before" state — useful heat was priced as gas at 100 % efficiency.`,
+      );
+    }
+
+    const unpriced = new Set<string>();
+    const priced = savings.parts.map((part) => {
+      const usdPerKwh = financialAssumptions.usdPerKwh[part.carrier];
+      if (usdPerKwh == null) unpriced.add(part.carrier);
+      const ratio = baselineRatioByCarrier.get(part.carrier) ?? 1;
+      const valuePerKwh = usdPerKwh ?? 0;
+      return {
+        carrier: part.carrier,
+        standardizedKwh: part.kwh,
+        standardizedUsd: part.kwh * valuePerKwh,
+        actualKwh: part.kwh * ratio,
+        actualUsd: part.kwh * ratio * valuePerKwh,
+      };
+    });
+    for (const carrier of unpriced) {
       warnings.push(
         `Measure "${measure.name}": no ${carrier} tariff could be derived (missing price or calorific value) — its savings are not valued in USD.`,
       );
     }
-    const valueUsdPerKwh = usdPerKwh ?? 0;
-    const cashflowInput = (savingsKwhForCase: number) => ({
+
+    const cashflowInput = (usdOf: (p: (typeof priced)[number]) => number) => ({
       investmentCostUsd: measure.investmentCostUsd,
       maintenanceRate: measure.maintenanceCostPercent,
-      savingsUsdByCarrier: { [carrier]: savingsKwhForCase * valueUsdPerKwh },
+      savingsUsdByCarrier: priced.reduce<Partial<Record<EnergyCarrier, number>>>((acc, p) => {
+        acc[p.carrier] = (acc[p.carrier] ?? 0) + usdOf(p);
+        return acc;
+      }, {}),
       escalationByCarrier: financialAssumptions.nominalEscalation,
       maintenanceEscalation: financialAssumptions.maintenanceEscalation,
       periodYears: financialAssumptions.periodYears,
@@ -817,30 +864,34 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
       irrInitialGuess: financialAssumptions.irrInitialGuess,
     });
 
+    // NPV/IRR are not linear in savings: standardized and actual each get their own cashflow.
     const { indicators: standardized, cashflow: standardizedCashflow } =
-      calculateFinancialIndicators(cashflowInput(savingsKwh));
-
-    const baselineRatio = baselineRatioByCarrier.get(carrier) ?? 1;
-    const actualSavingsKwh = savingsKwh * baselineRatio;
+      calculateFinancialIndicators(cashflowInput((p) => p.standardizedUsd));
     const { indicators: actual, cashflow: actualCashflow } = calculateFinancialIndicators(
-      cashflowInput(actualSavingsKwh),
+      cashflowInput((p) => p.actualUsd),
     );
+
+    const sum = (pick: (p: (typeof priced)[number]) => number) =>
+      priced.reduce((total, p) => total + pick(p), 0);
+    const co2Tonnes = priced.reduce((total, p) => {
+      const factor = latestTariffByCarrier.get(p.carrier)?.emissionFactorKgCo2PerKwh ?? 0.3;
+      return total + calculateCo2ReductionTonnesPerYear(p.standardizedKwh, factor);
+    }, 0);
 
     return {
       measureId: measure.id,
       name: measure.name,
       category: measure.category,
       investmentCostUsd: measure.investmentCostUsd,
-      standardizedAnnualSavingsKwh: savingsKwh,
-      standardizedAnnualSavingsUsd: savingsKwh * valueUsdPerKwh,
-      actualAnnualSavingsKwh: actualSavingsKwh,
-      actualAnnualSavingsUsd: actualSavingsKwh * valueUsdPerKwh,
+      usefulSavingsKwh: savings.usefulKwh,
+      savingsByCarrier: priced,
+      standardizedAnnualSavingsKwh: sum((p) => p.standardizedKwh),
+      standardizedAnnualSavingsUsd: sum((p) => p.standardizedUsd),
+      actualAnnualSavingsKwh: sum((p) => p.actualKwh),
+      actualAnnualSavingsUsd: sum((p) => p.actualUsd),
       simplePaybackYears: standardized.simplePaybackYears,
       lifetimeYears: measure.lifetimeYears,
-      co2ReductionTonnesPerYear: calculateCo2ReductionTonnesPerYear(
-        savingsKwh,
-        tariff.emissionFactorKgCo2PerKwh,
-      ),
+      co2ReductionTonnesPerYear: co2Tonnes,
       proposedForImplementation: measure.proposedForImplementation,
       standardized,
       actual,
@@ -864,6 +915,7 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
     generatedAt: options.generatedAt,
     warnings,
     financialAssumptions,
+    gainsUtilizationCorrection,
     summary,
     envelopeAreas,
     envelopeHeatLoss,
@@ -888,21 +940,6 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
 function daysInMonth(month: number): number {
   const days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
   return days[month - 1] ?? 30;
-}
-
-function inferCarrierForMeasure(
-  category: string,
-): "gas" | "electricity" | "district_heat" | "coal" {
-  if (category === "gas_boiler_replacement" || category === "heating_system") return "gas";
-  if (category === "lighting" || category === "equipment_replacement" || category === "pv")
-    return "electricity";
-  // "solar_dhw" and "ems" default to "gas": Solar DHW displaces whatever
-  // heats the building's water (usually gas in this workbook's examples),
-  // and EMS savings are genuinely a thermal+electrical mix (see the EMS
-  // sheet's separate D9/D10 totals) that this single-tariff-per-measure
-  // model can't represent precisely — "gas" is the same approximation
-  // already used for every other unlisted category here.
-  return "gas";
 }
 
 /**
@@ -957,116 +994,6 @@ function sumGenerationByCarrier(
       const carrier = sourceType && carrierForGenerationSourceType(sourceType);
       return carrier && carrierFilter(carrier) ? sum + g.finalEnergyConsumptionKwh : sum;
     }, 0);
-}
-
-function resolveMeasureStandardizedSavingsKwh(
-  category: string,
-  context: {
-    envelopeHeatLoss: EnvelopeHeatLossResult[];
-    ventilationLoss: VentilationLossResult[];
-    distributionLoss: DistributionLossResult[];
-    generation: GenerationSourceResult[];
-    lighting: LightingResult[];
-    equipment: EquipmentResult[];
-    renewableProduction: RenewableProductionResult[];
-    heatingEnergyBalance: HeatingEnergyBalanceResult[];
-    dhwDemand: DhwDemandResult[];
-    cooling: CoolingResult[];
-  },
-): number {
-  const before = context.envelopeHeatLoss.find((r) => r.scenario === "before");
-  const after = context.envelopeHeatLoss.find((r) => r.scenario === "after");
-  const categoryDelta = (key: string) =>
-    (before?.annualByCategory[key] ?? 0) - (after?.annualByCategory[key] ?? 0);
-
-  switch (category) {
-    case "envelope_wall_insulation":
-      return (
-        categoryDelta("external_wall") +
-        categoryDelta("socle_heated") +
-        categoryDelta("socle_unheated") +
-        categoryDelta("socle_ground")
-      );
-    case "envelope_roof_insulation":
-      return categoryDelta("roof");
-    case "envelope_floor_insulation":
-      return categoryDelta("floor");
-    case "window_replacement":
-      return categoryDelta("window") + categoryDelta("door");
-    case "mechanical_ventilation_heat_recovery": {
-      const beforeVent = context.ventilationLoss.find((r) => r.scenario === "before");
-      const afterVent = context.ventilationLoss.find((r) => r.scenario === "after");
-      return (beforeVent?.mechanicalAnnualKwh ?? 0) - (afterVent?.mechanicalAnnualKwh ?? 0);
-    }
-    case "heating_system": {
-      const beforeDist = context.distributionLoss.find(
-        (r) => r.scenario === "before" && r.systemType === "heating",
-      );
-      const afterDist = context.distributionLoss.find(
-        (r) => r.scenario === "after" && r.systemType === "heating",
-      );
-      return (beforeDist?.annualLossKwh ?? 0) - (afterDist?.annualLossKwh ?? 0);
-    }
-    case "gas_boiler_replacement": {
-      const beforeGen = context.generation.filter(
-        (g) => g.scenario === "before" && g.endUse === "heating",
-      );
-      const afterGen = context.generation.filter(
-        (g) => g.scenario === "after" && g.endUse === "heating",
-      );
-      const sum = (rows: GenerationSourceResult[]) =>
-        rows.reduce((s, r) => s + r.finalEnergyConsumptionKwh, 0);
-      return sum(beforeGen) - sum(afterGen);
-    }
-    // `Lighting` sheet: `Measures_summary!E11=Lighting!L17` — the before/after
-    // delta of the sheet's own total, same pattern as every envelope/
-    // generation category above.
-    case "lighting": {
-      const beforeL =
-        context.lighting.find((l) => l.scenario === "before")?.annualConsumptionKwh ?? 0;
-      const afterL =
-        context.lighting.find((l) => l.scenario === "after")?.annualConsumptionKwh ?? 0;
-      return beforeL - afterL;
-    }
-    // `Equipment` sheet: `Measures_summary!E12=Equipment!K102` (before/after total delta).
-    case "equipment_replacement": {
-      const beforeE =
-        context.equipment.find((e) => e.scenario === "before")?.annualConsumptionKwh ?? 0;
-      const afterE =
-        context.equipment.find((e) => e.scenario === "after")?.annualConsumptionKwh ?? 0;
-      return beforeE - afterE;
-    }
-    // `PV`/`Solar DHW` sheets: there's no "before" state — installing the
-    // system simply displaces that much purchased energy, so annual
-    // production itself *is* the standardized saving (`Measures_summary!E13
-    // =PV!C25`, `E14`-equivalent for Solar DHW).
-    case "pv":
-      return (
-        context.renewableProduction.find((r) => r.systemType === "pv")?.annualProductionKwh ?? 0
-      );
-    case "solar_dhw":
-      return (
-        context.renewableProduction.find((r) => r.systemType === "solar_dhw")
-          ?.annualProductionKwh ?? 0
-      );
-    // `EMS` sheet: flat 3% of each "after" (i.e. after every other proposed
-    // measure) end-use need — heating, DHW, cooling, and lighting.
-    case "ems": {
-      const afterHeatingKwh =
-        context.heatingEnergyBalance.find((h) => h.scenario === "after")?.annualNetEnergyNeedKwh ??
-        0;
-      const afterDhwKwh = context.dhwDemand.find((d) => d.scenario === "after")?.totalKwh ?? 0;
-      const afterCoolingKwh =
-        context.cooling.find((c) => c.scenario === "after")?.electricalEnergyForCoolingKwh ?? 0;
-      const afterLightingKwh =
-        context.lighting.find((l) => l.scenario === "after")?.annualConsumptionKwh ?? 0;
-      return (
-        (afterHeatingKwh + afterDhwKwh + afterCoolingKwh + afterLightingKwh) * EMS_SAVINGS_RATE
-      );
-    }
-    default:
-      return 0;
-  }
 }
 
 function buildAuditSummary(

@@ -24,15 +24,19 @@
   holat qatoridan tashqari hech narsa saqlanmaydi.** Buni tushunmasdan ichiga keshlash/memoizatsiya
   qo'shmang (binolarning kirishlari tahrirlash paytida doimo o'zgaradi; eskirgan keshlangan natija
   qayta hisoblashdan yomonroq bo'lardi).
-- **`EnergyMeasureResult`dagi `standardized` va `actual`**: `standardized` — nazariy model natijasi
-  (nominal U-qiymatlar, reytingli samaradorliklar). `actual` — o'sha raqamning binoning haqiqiy
-  kommunal to'lovlariga nisbatan kalibrlangan holati, har bir energiya-tashuvchi bo'yicha nisbat
-  orqali (o'lchangan bazaviy o'rtacha ÷ o'sha tashuvchi uchun nazariy "oldingi" ehtiyoj — audit
-  bir marta hisoblanadi, o'sha tashuvchining har bir chora-tadbiriga qo'llaniladi). Tashuvchida hali
-  hisob-fakturalar yo'q yoki nazariy hamkori yo'q bo'lsa, nisbat sukut bo'yicha `1` bo'ladi (ya'ni
-  `actual == standardized`) — hech qachon qiymatni taxmin qilmang yoki nolga bo'lmang. Yangi
-  chora-tadbir toifasi qo'shsangiz, `inferCarrierForMeasure()` uni haqiqiy tashuvchiga moslashtirsin,
-  shunda u sezdirmasdan sukut holatga tushib qolmasdan haqiqatan ham kalibrlanadi.
+- **`EnergyMeasureResult`: tashuvchi qismlari (F06b).** Har chora-tadbirning tejashi *yakuniy* energiyada, tashuvchi bo'yicha
+  `savingsByCarrier[]` (qism manfiy bo'lishi mumkin: issiqlik nasosi gaz +, elektr −; ventilyatsiya issiqlik +, fan −);
+  `standardizedAnnualSavingsKwh/Usd` va `actual*` — qismlar yig'indisi, `usefulSavingsKwh` — foydali (generatsiyagacha) energiya (K3).
+  Atributsiya `measure-savings.service.ts`da (v7.20 `Measures_summary`): qobiq chora-tadbiri **maqsad kodi** bo'yicha
+  (`annualByTypeCode`, kalit `kategoriya:oldingi-tur-kodi`) foydali yo'qotish deltasi ÷ `η_b` × `D71`, bazaviy isitish tashuvchilari
+  yakuniy energiya ulushiga mutanosib; maqsadsiz (eski) chora-tadbir — butun kategoriya deltasi. `η_b` — "oldingi" isitish
+  manbalarining `Σ(Q+Qd)/Σ yakuniy`; `D71` (`AuditResult.gainsUtilizationCorrection`) — foydalanilgan tushumlar kamayishi tuzatmasi
+  (yo'qotish kamaymasa 1). Isitish tizimi (quvur) — ÷`η_b`, D71 siz. Bazaviy isitish manbai yo'q bo'lsa — gaz, η = 1 va `warnings[]`.
+  `standardized` — nazariy model; `actual` — har **qism** o'z tashuvchisining nisbati bilan (o'lchangan bazaviy o'rtacha ÷ shu
+  tashuvchining nazariy "oldingi" ehtiyoji; hisob-faktura yoki nazariy hamkor yo'q bo'lsa nisbat `1`, hech qachon taxmin/nolga bo'lish
+  yo'q). Moliya hamon ikki marta, qismlar bo'yicha alohida pul oqimi (F05). **`inferCarrierForMeasure` olib tashlandi** — tashuvchi
+  chora-tadbir toifasidan emas, `carrierForGenerationSourceType()` orqali manbadan keladi; yangi chora-tadbir toifasi qo'shsangiz,
+  `resolveMeasureSavings()`ga tarmoq qo'shing (aks holda `default` — 0 tejash).
 - **`carrierForGenerationSourceType()`** `generationSource.sourceType`ni u qaysi sotib olingan
   energiya tashuvchisi bo'yicha hisob-fakturalanishiga moslaydi (gaz/elektr/markazlashgan
   issiqlik/ko'mir), umuman hisob-fakturalanmaydigan turlar uchun `null` qaytaradi (`solar_dhw` —

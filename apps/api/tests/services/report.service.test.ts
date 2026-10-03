@@ -65,6 +65,8 @@ function measureFixture(overrides: Partial<EnergyMeasureResult> = {}): EnergyMea
     name: "Wall insulation",
     category: "envelope_wall_insulation",
     investmentCostUsd: 30000,
+    usefulSavingsKwh: 100000,
+    savingsByCarrier: [],
     standardizedAnnualSavingsKwh: 100000,
     standardizedAnnualSavingsUsd: 4000,
     actualAnnualSavingsKwh: 90000,
@@ -102,6 +104,7 @@ function fullResultFixture(): AuditResult {
   return {
     buildingId: "b1",
     generatedAt: new Date().toISOString(),
+    gainsUtilizationCorrection: 1,
     warnings: [],
     financialAssumptions: deriveFinancialAssumptions(defaultFinancialParameters()),
     summary: {
@@ -134,6 +137,7 @@ function fullResultFixture(): AuditResult {
           totalKwh: 150 * month,
         })),
         annualByCategory: { external_wall: 1000 },
+        annualByTypeCode: {},
         annualTotalKwh: 1000,
       },
       {
@@ -146,6 +150,7 @@ function fullResultFixture(): AuditResult {
           totalKwh: 75 * month,
         })),
         annualByCategory: { external_wall: 500 },
+        annualByTypeCode: {},
         annualTotalKwh: 500,
       },
     ],
@@ -353,6 +358,7 @@ function emptyResultFixture(): AuditResult {
   return {
     buildingId: "b1",
     generatedAt: new Date().toISOString(),
+    gainsUtilizationCorrection: 1,
     warnings: [],
     financialAssumptions: deriveFinancialAssumptions(defaultFinancialParameters()),
     summary: {

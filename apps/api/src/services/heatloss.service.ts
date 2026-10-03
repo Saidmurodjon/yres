@@ -18,6 +18,11 @@ export interface HeatLossBuildingParams {
   nonOperationHoursPerDay: number;
 }
 
+/** Key of `EnvelopeHeatLossResult.annualByTypeCode`. */
+export function heatLossTypeKey(category: string, typeCode: string): string {
+  return `${category}:${typeCode}`;
+}
+
 /**
  * Degree-hour method (`Q = U·A·Δt·t`), applied separately for operation and
  * non-operation indoor set-points, matching `Losses env. before/after`'s
@@ -32,6 +37,7 @@ export function calculateEnvelopeHeatLoss(
 ): EnvelopeHeatLossResult {
   const monthly: EnvelopeHeatLossMonth[] = [];
   const annualByCategory: Record<string, number> = {};
+  const annualByTypeCode: Record<string, number> = {};
 
   for (const climate of monthlyClimate) {
     const deltaTOperation = Math.max(
@@ -71,10 +77,14 @@ export function calculateEnvelopeHeatLoss(
       });
 
       annualByCategory[group.category] = (annualByCategory[group.category] ?? 0) + totalKwh;
+      if (group.typeCode !== undefined) {
+        const key = heatLossTypeKey(group.category, group.typeCode);
+        annualByTypeCode[key] = (annualByTypeCode[key] ?? 0) + totalKwh;
+      }
     }
   }
 
   const annualTotalKwh = Object.values(annualByCategory).reduce((sum, v) => sum + v, 0);
 
-  return { scenario, monthly, annualByCategory, annualTotalKwh };
+  return { scenario, monthly, annualByCategory, annualByTypeCode, annualTotalKwh };
 }

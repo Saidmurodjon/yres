@@ -134,6 +134,9 @@ MAPPING["generation.finalEnergy.totalAfter"] = (r) =>
 MAPPING["ventilation.mechanicalElectricalKwh"] = (r) =>
   r.ventilationLoss.find((v) => v.scenario === "after")?.mechanicalElectricalKwh ?? null;
 
+// `Measures_summary!D71`: gains-utilisation correction applied to every envelope/ventilation measure.
+MAPPING["balanceCheck.gainsUtilisationCorrection"] = (r) => r.gainsUtilizationCorrection;
+
 type Measure = AuditResult["measures"][number];
 const measureOf = (result: AuditResult, n: number): Measure | undefined =>
   result.measures.find((m) => m.measureId === `measure-${n}`);

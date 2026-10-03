@@ -1,4 +1,4 @@
-import type { CashflowYear, FinancialIndicators } from "./financial";
+import type { CashflowYear, EnergyCarrier, FinancialIndicators } from "./financial";
 
 export type MeasureCategory =
   | "envelope_wall_insulation"
@@ -32,12 +32,28 @@ export interface NonEeMeasureResult {
   proposedForImplementation: boolean;
 }
 
+/**
+ * One carrier's share of a measure's saving (v7.20 `Measures_summary` T/U columns). A part may be
+ * negative: a heat pump saves gas but spends electricity, ventilation saves heat but runs a fan.
+ */
+export interface MeasureCarrierSaving {
+  carrier: EnergyCarrier;
+  standardizedKwh: number;
+  standardizedUsd: number;
+  actualKwh: number;
+  actualUsd: number;
+}
+
 export interface EnergyMeasureResult {
   measureId: string;
   name: string;
   category: MeasureCategory;
   investmentCostUsd: number;
-  /** Savings computed from standardized (normative) inputs. */
+  /** Useful (pre-generation) energy the measure changes, kWh/y — K3: shown beside the final-energy figures. */
+  usefulSavingsKwh: number;
+  /** Per-carrier split of the final-energy saving; the totals below are the sums of its parts. */
+  savingsByCarrier: MeasureCarrierSaving[];
+  /** Final-energy savings computed from standardized (normative) inputs (Σ `savingsByCarrier`). */
   standardizedAnnualSavingsKwh: number;
   standardizedAnnualSavingsUsd: number;
   /** Savings reconciled against actual metered bills (Breakdown Baseline & Balance). */

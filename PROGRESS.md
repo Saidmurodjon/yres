@@ -2535,3 +2535,13 @@ T06b — qamrab olinganlar:
 - Dirty holat `baseline` (yuklangan forma) bilan solishtiriladi — yangi ochilgan tahrir "saqlanmagan" emas; tahrirni boshlash `useConfirmDiscard` orqali. Binoda endi yo'q bo'lgan eski maqsad kodlari belgilangan holda ro'yxatda qoladi (olib tashlash mumkin). Maqsadsiz eski chora-tadbir ogohlantirishi endi tahrir orqali yo'qoladi.
 - i18n uz/ru/en: `editTitle`, `saveEdit`, `cancelEdit`, `editAria`, `failedToUpdate`. type-check, build, biome, web testlar yashil. Brauzerda tekshirilmadi. **Ru atamalar loyiha egasi ko'rib chiqishi uchun:** «Редактирование мероприятия», «Сохранить изменения».
 **Navbatda:** F06b.
+
+## Faza 1 · F06b — chora-tadbir atributsiyasi va tashuvchi qismlari (2026-10-03)
+
+- `heatloss`/`envelope`: issiqlik yo'qotish guruhi kaliti `(kategoriya, oldingi tur kodi)`; yangi `EnvelopeHeatLossResult.annualByTypeCode` (`kategoriya:kod`), `annualByCategory` o'zgarishsiz (yig'indi bir xil).
+- Yangi `measure-savings.service.ts`: `deriveBaselineHeating` (`η_b = Σ(Q+Qd)/Σ yakuniy`, tashuvchi ulushlari), `calculateGainsUtilizationCorrection` (D71 = 1 + H12/Σ(H4:H8)), `resolveMeasureSavings` — qobiq (maqsad kodi bo'yicha ÷η_b×D71), ventilyatsiya (issiqlik + / fan −), isitish tizimi (÷η_b, D71 siz), qozon/issiqlik nasosi (`(Q+Qd)_keyin/η_b − yakuniy_keyin` tashuvchi bo'yicha), yoritish/uskuna/FES, gelio (ISI tashuvchilari bo'yicha), EMS (keyingi tashuvchilar bo'yicha). `inferCarrierForMeasure` va eski `resolveMeasureStandardizedSavingsKwh` olib tashlandi.
+- `EnergyMeasureResult`: `usefulSavingsKwh`, `savingsByCarrier[]` (std/actual kWh va USD), mavjud jami maydonlar = qismlar yig'indisi; CO₂ = Σ qism × tashuvchi omili; kalibrlash har qism o'z tashuvchisi nisbati bilan; pul oqimi qismlar bo'yicha. `AuditResult.gainsUtilizationCorrection`.
+- Golden: yopildi — №1/№2/№4/№7/№8 (D12 qatorlari), №13 (D21), №11 qator-qator (D6); `balanceCheck.gainsUtilisationCorrection` (D71 = 0,974225) ulandi va mos. D5 ga №6/№10 ning ikki yangi qatori (infiltratsiya ulushi, P1). Fresh/unexplained = 0.
+- Qilinmadi (spetsifikatsiya bo'yicha): G16 infiltratsiya ulushi (D5), D65 nasoslarini №11→№17 ko'chirish (D14 ochiq), BEMS EN ISO 52120 (D8).
+- Testlar: `measure-savings.service.test.ts` (qo'shni ikki devor — yig'indi = kategoriya deltasi; issiqlik nasosi gaz +/elektr −; ventilyatsiya fan −; D71 = 1). `calculation-engine.md`, `hisobot.md` yangilandi. type-check, build, biome, `bun run test` (api 232, web 71) yashil.
+**Navbatda:** F06c (balans nazorati `measureBalance` + `all`/`proposed` jamilar).

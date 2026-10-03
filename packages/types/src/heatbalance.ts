@@ -12,6 +12,8 @@ export interface EnvelopeHeatLossResult {
   scenario: Scenario;
   monthly: EnvelopeHeatLossMonth[];
   annualByCategory: Record<string, number>;
+  /** Annual loss per `"<category>:<before type code>"` — what a measure replacing that type changes (F06b). */
+  annualByTypeCode: Record<string, number>;
   annualTotalKwh: number;
 }
 

@@ -75,6 +75,8 @@ export interface AuditResult {
   /** Non-fatal input gaps that bias the result (e.g. missing working days → lighting hours understated). */
   warnings: string[];
   financialAssumptions: FinancialAssumptions;
+  /** v7.20 `Measures_summary!D71`: share of envelope/ventilation savings that survives the lost useful gains (1 = none lost). */
+  gainsUtilizationCorrection: number;
   summary: AuditSummary;
   envelopeAreas: EnvelopeAreaBreakdown;
   envelopeHeatLoss: EnvelopeHeatLossResult[];

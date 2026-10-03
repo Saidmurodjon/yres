@@ -2,9 +2,7 @@
   "divergences": [
     {
       "id": "D13",
-      "x": [
-        "X86"
-      ],
+      "x": ["X86"],
       "title": "Discounted payback: workbook formula (Financial indicators!D19, MATCH) is exactly 1 year too high — workbook error, engine is correct (K21)",
       "status": "open",
       "closesIn": "v7.21 (K21: project owner decides; then accepted)",
@@ -16,23 +14,16 @@
     },
     {
       "id": "D23",
-      "x": [
-        "X98"
-      ],
+      "x": ["X98"],
       "title": "Mechanical ventilation fan electricity: Excel = power x hours x utilisation per line (Equipment!K85+K86 = 7570.45), engine = nameplate kW x 24 h x heating days (17896)",
       "status": "open",
       "closesIn": "F06",
-      "expectedIds": [
-        "ventilation.mechanicalElectricalKwh"
-      ],
+      "expectedIds": ["ventilation.mechanicalElectricalKwh"],
       "note": "The workbook uses 1857 h/y and utilisation 0.5/0.8 per line; the ventilation system model has no hours/utilisation input."
     },
     {
       "id": "D3",
-      "x": [
-        "X75",
-        "X83"
-      ],
+      "x": ["X75", "X83"],
       "title": "Floor: ground zone method and floor over unheated space (F3, n = 0.4)",
       "status": "open",
       "closesIn": "F08",
@@ -68,9 +59,7 @@
     },
     {
       "id": "D5",
-      "x": [
-        "X81"
-      ],
+      "x": ["X81"],
       "title": "Window repair: infiltration share reallocated from ventilation to window",
       "status": "open",
       "closesIn": "P1 (Faza 2+)",
@@ -79,11 +68,13 @@
         "measures.10.actualSavingsKwh",
         "measures.10.actualSavingsUsd",
         "measures.10.co2ReductionTonnesPerYear",
+        "measures.10.npvStandardizedUsd",
         "measures.10.standardizedSavingsKwh",
         "measures.10.standardizedSavingsUsd",
         "measures.6.actualSavingsKwh",
         "measures.6.actualSavingsUsd",
         "measures.6.co2ReductionTonnesPerYear",
+        "measures.6.irrStandardized",
         "measures.6.npvStandardizedUsd",
         "measures.6.simplePaybackActualYears",
         "measures.6.simplePaybackStandardizedYears",
@@ -94,25 +85,16 @@
     },
     {
       "id": "D6",
-      "x": [
-        "X84",
-        "X96",
-        "X33"
-      ],
+      "x": ["X84", "X96", "X33"],
       "title": "Heat pump SCOP 3.11 + backup MTB; fuel-free 'after' heat",
       "status": "open",
       "closesIn": "P2",
       "expectedIds": [
-        "financial.11.irrActual",
         "financial.11.npvActualUsd",
         "measures.11.actualSavingsKwh",
         "measures.11.actualSavingsUsd",
         "measures.11.co2ReductionTonnesPerYear",
-        "measures.11.discountedPaybackActualYears",
-        "measures.11.discountedPaybackStandardizedYears",
-        "measures.11.irrStandardized",
         "measures.11.npvStandardizedUsd",
-        "measures.11.simplePaybackActualYears",
         "measures.11.simplePaybackStandardizedYears",
         "measures.11.standardizedSavingsKwh",
         "measures.11.standardizedSavingsUsd"
@@ -121,10 +103,7 @@
     },
     {
       "id": "D8",
-      "x": [
-        "X65",
-        "X66"
-      ],
+      "x": ["X65", "X66"],
       "title": "BEMS: Excel's 15 USD/m² estimate vs engine EMS_SAVINGS_RATE = 0.03",
       "status": "open",
       "closesIn": "P1",
@@ -157,9 +136,7 @@
     },
     {
       "id": "D11",
-      "x": [
-        "X55"
-      ],
+      "x": ["X55"],
       "title": "Shading (measure 9) and cooling-demand reduction (measure 19) have no engine category",
       "status": "open",
       "closesIn": "P1",
@@ -185,11 +162,7 @@
     },
     {
       "id": "D12",
-      "x": [
-        "X93",
-        "X94",
-        "X95"
-      ],
+      "x": ["X93", "X94", "X95"],
       "title": "Per-measure savings attribution: engine gives one saving per category, Excel per element",
       "status": "open",
       "closesIn": "F06",
@@ -201,15 +174,10 @@
         "financial.1.cashflow.netStandardSavingsUsd",
         "financial.1.npvActualUsd",
         "financial.10.npvActualUsd",
-        "financial.2.irrActual",
-        "financial.2.npvActualUsd",
         "financial.4.npvActualUsd",
-        "financial.7.npvActualUsd",
-        "financial.8.npvActualUsd",
         "measures.1.actualSavingsKwh",
         "measures.1.actualSavingsUsd",
         "measures.1.co2ReductionTonnesPerYear",
-        "measures.1.npvStandardizedUsd",
         "measures.1.simplePaybackActualYears",
         "measures.1.simplePaybackStandardizedYears",
         "measures.1.standardizedSavingsKwh",
@@ -217,8 +185,6 @@
         "measures.2.actualSavingsKwh",
         "measures.2.actualSavingsUsd",
         "measures.2.co2ReductionTonnesPerYear",
-        "measures.2.discountedPaybackStandardizedYears",
-        "measures.2.irrStandardized",
         "measures.2.npvStandardizedUsd",
         "measures.2.simplePaybackActualYears",
         "measures.2.simplePaybackStandardizedYears",
@@ -226,17 +192,12 @@
         "measures.2.standardizedSavingsUsd",
         "measures.4.actualSavingsKwh",
         "measures.4.actualSavingsUsd",
-        "measures.4.co2ReductionTonnesPerYear",
-        "measures.4.irrStandardized",
         "measures.4.npvStandardizedUsd",
         "measures.4.simplePaybackActualYears",
         "measures.4.simplePaybackStandardizedYears",
-        "measures.4.standardizedSavingsKwh",
-        "measures.4.standardizedSavingsUsd",
         "measures.7.actualSavingsKwh",
         "measures.7.actualSavingsUsd",
         "measures.7.co2ReductionTonnesPerYear",
-        "measures.7.irrStandardized",
         "measures.7.npvStandardizedUsd",
         "measures.7.simplePaybackActualYears",
         "measures.7.simplePaybackStandardizedYears",
@@ -245,8 +206,6 @@
         "measures.8.actualSavingsKwh",
         "measures.8.actualSavingsUsd",
         "measures.8.co2ReductionTonnesPerYear",
-        "measures.8.discountedPaybackStandardizedYears",
-        "measures.8.irrStandardized",
         "measures.8.npvStandardizedUsd",
         "measures.8.simplePaybackActualYears",
         "measures.8.simplePaybackStandardizedYears",
@@ -270,7 +229,7 @@
         "totals.proposed.standardizedSavingsKwh",
         "totals.proposed.standardizedSavingsUsd"
       ],
-      "note": "Measures 1 and 2 both receive the wall-category total 80302 kWh; 6/7/8 all receive 26369; totals.* aggregate these."
+      "note": "F06b: atributsiya maqsad kodi bo'yicha (№1/№2, №6–№8 ajratildi, yig'indi = kategoriya deltasi). Qolgan qatorlar boshqa tafovutlar (D3 pol, D9 ish soatlari, D5, D22…) bilan birga turadi."
     },
     {
       "id": "D22",
@@ -298,9 +257,7 @@
     },
     {
       "id": "D20",
-      "x": [
-        "X98"
-      ],
+      "x": ["X98"],
       "title": "Lighting 'after': Excel takes the installed BoQ power (Lighting!I13 = sum(W x qty)/area = 4.59 W/m2); the engine uses the LED density (7.4 W/m2)",
       "status": "open",
       "closesIn": "Faza 2+",
@@ -332,14 +289,9 @@
         "financial.13.npvActualUsd",
         "measures.13.actualSavingsKwh",
         "measures.13.actualSavingsUsd",
-        "measures.13.co2ReductionTonnesPerYear",
-        "measures.13.npvStandardizedUsd",
-        "measures.13.simplePaybackActualYears",
-        "measures.13.simplePaybackStandardizedYears",
-        "measures.13.standardizedSavingsKwh",
-        "measures.13.standardizedSavingsUsd"
+        "measures.13.simplePaybackActualYears"
       ],
-      "note": "Useful delta now matches (28166.4 = Heat distr. efficiency!L20, after fixing the pipe-reference input); Excel divides by Overall gener. G7 = 0.58 -> 48562.76."
+      "note": "F06b: /η_b qo'shildi (E17 = ΔL_quvur/G7). Qolgan qatorlar quvur yo'qotishining kirish farqi."
     },
     {
       "id": "D14",
@@ -526,7 +478,6 @@
         "balance.thermal.windowsDoors.theoreticalSavingsKwh",
         "balanceCheck.electricityBreakdownKwh",
         "balanceCheck.electricitySavingsKwh",
-        "balanceCheck.gainsUtilisationCorrection",
         "balanceCheck.gasBreakdownKwh",
         "balanceCheck.gasSavingsKwh",
         "calibration.electricityRatio",

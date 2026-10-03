@@ -27,6 +27,8 @@ export interface EnvelopeElementInput {
 
 export interface ConstructionTypeUValueInput {
   id: string;
+  /** Stable code (`Wall 1`…) — survives `PUT /envelope`'s re-creation of the type rows. */
+  code?: string;
   scenario: Scenario;
   retrofitOfId: string | null;
   uValueWPerM2K: number;
@@ -34,6 +36,7 @@ export interface ConstructionTypeUValueInput {
 
 export interface OpeningTypeUValueInput {
   id: string;
+  code?: string;
   category: "window" | "door";
   scenario: Scenario;
   uValueWPerM2K: number;
@@ -174,7 +177,17 @@ export function resolveHeatLossGroups(
     constructionTypes.filter((c) => c.retrofitOfId).map((c) => [c.retrofitOfId as string, c]),
   );
 
-  const opaqueGroups = new Map<string, { areaM2: number; areaWeightedUValue: number }>();
+  // Groups are keyed by (category, *before* type code): the after scenario keeps the same groups so a
+  // measure that replaces one type can be priced from that type's own before/after loss (F06b).
+  type Accumulator = {
+    category: string;
+    typeCode?: string;
+    areaM2: number;
+    areaWeightedUValue: number;
+  };
+  const groupKey = (category: string, typeCode: string | undefined) =>
+    `${category}\u0000${typeCode ?? ""}`;
+  const opaqueGroups = new Map<string, Accumulator>();
 
   for (const element of elements) {
     const beforeType = constructionTypeById.get(element.constructionTypeId);
@@ -186,14 +199,19 @@ export function resolveHeatLossGroups(
         : (retrofitTargetByBeforeId.get(beforeType.id) ?? beforeType);
 
     const netAreaM2 = netElementAreaM2(element);
-    const key = element.elementCategory;
-    const existing = opaqueGroups.get(key) ?? { areaM2: 0, areaWeightedUValue: 0 };
+    const key = groupKey(element.elementCategory, beforeType.code);
+    const existing = opaqueGroups.get(key) ?? {
+      category: element.elementCategory,
+      typeCode: beforeType.code,
+      areaM2: 0,
+      areaWeightedUValue: 0,
+    };
     existing.areaM2 += netAreaM2;
     existing.areaWeightedUValue += netAreaM2 * effectiveType.uValueWPerM2K;
     opaqueGroups.set(key, existing);
   }
 
-  const openingGroups = new Map<string, { areaM2: number; areaWeightedUValue: number }>();
+  const openingGroups = new Map<string, Accumulator>();
 
   for (const element of elements) {
     for (const opening of element.openings) {
@@ -207,20 +225,26 @@ export function resolveHeatLossGroups(
       );
       const uValueWPerM2K = effectiveType?.uValueWPerM2K ?? 0;
 
-      const existing = openingGroups.get(category) ?? { areaM2: 0, areaWeightedUValue: 0 };
+      const beforeCode = openingTypes.find((o) => o.id === opening.openingTypeId)?.code;
+      const key = groupKey(category, beforeCode);
+      const existing = openingGroups.get(key) ?? {
+        category,
+        typeCode: beforeCode,
+        areaM2: 0,
+        areaWeightedUValue: 0,
+      };
       existing.areaM2 += areaM2;
       existing.areaWeightedUValue += areaM2 * uValueWPerM2K;
-      openingGroups.set(category, existing);
+      openingGroups.set(key, existing);
     }
   }
 
-  const toGroups = (
-    map: Map<string, { areaM2: number; areaWeightedUValue: number }>,
-  ): HeatLossGroup[] =>
-    Array.from(map.entries())
-      .filter(([, v]) => v.areaM2 > 0)
-      .map(([category, v]) => ({
-        category: category as HeatLossGroup["category"],
+  const toGroups = (map: Map<string, Accumulator>): HeatLossGroup[] =>
+    Array.from(map.values())
+      .filter((v) => v.areaM2 > 0)
+      .map((v) => ({
+        category: v.category as HeatLossGroup["category"],
+        ...(v.typeCode !== undefined ? { typeCode: v.typeCode } : {}),
         areaM2: v.areaM2,
         uValueWPerM2K: v.areaWeightedUValue / v.areaM2,
       }));

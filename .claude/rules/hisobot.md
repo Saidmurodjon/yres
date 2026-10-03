@@ -79,6 +79,8 @@ Holat ustuni: ✅ mavjud (`report.service.ts`da hozir bor) · ⚠️ qisman · �
 | Bo'lim | Manba | Holat |
 |---|---|---|
 | Taxminlar (chegirma stavkasi, tarif, tahlil gorizonti) — namunaning "Assumptions" | `result.financialAssumptions` (`FinancialAssumptions`: nominal diskont/o'sish, kurs, USD/kWh tariflar, davr) | ⚠️ — maydon natijada bor, hisobotda faqat diskont + o'sish qatori (F05b); to'liq jadval hali yo'q |
+| Chora-tadbir tejashining tashuvchi bo'yicha qismlari (gaz +, elektr − …) va foydali energiya | `result.measures[].savingsByCarrier`, `.usefulSavingsKwh` (F06b) | ❌ — hisoblangan, hisobotga chiqarilmagan |
+| `D71` (tushumlar kamayishi tuzatmasi) — qobiq tejashi izohi | `result.gainsUtilizationCorrection` (F06b) | ❌ |
 | Har bir chora-tadbir uchun moliyaviy tahlil (NPV, IRR, oddiy/diskontlangan to'lov muddati — nazariy va haqiqiy, namunaning Table 39) | `result.measures[].standardized`/`.actual` (`FinancialIndicators`) | ❌ — `EnergyMeasureResult`da hisoblangan, hisobotda ko'rsatilmaydi |
 | Yillik pul oqimi jadvali (cashflow, namunaning Table 39 satrlari) | `financial.service.ts`ning `CashflowYear[]` — **`AuditResult`ga hali chiqarilmagan**, faqat `FinancialIndicators` (yakuniy natija) bor | ❌ — bu ilova darajasida ham yetishmayotgan ma'lumot, avval `EnergyMeasureResult`ga (yoki alohida endpoint'ga) `cashflow: CashflowYear[]` qo'shish kerak |
 

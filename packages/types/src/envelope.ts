@@ -47,6 +47,8 @@ export interface EnvelopeAreaBreakdown {
 
 export interface HeatLossGroup {
   category: EnvelopeElementCategory | "window" | "door";
+  /** Code of the *before* construction/opening type this group aggregates (absent for legacy callers). */
+  typeCode?: string;
   areaM2: number;
   uValueWPerM2K: number;
 }
