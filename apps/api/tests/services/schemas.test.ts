@@ -149,10 +149,10 @@ describe("envelope schema bounds (V-3 + D1 query budget)", () => {
       openings: many(20, () => ({ openingTypeCode: "Win", count: 1 })),
     };
     expect(
-      replaceEnvelopeSchema.safeParse({ envelopeElements: many(9, () => element) }).success,
+      replaceEnvelopeSchema.safeParse({ envelopeElements: many(8, () => element) }).success,
     ).toBe(false);
     expect(
-      replaceEnvelopeSchema.safeParse({ envelopeElements: many(8, () => element) }).success,
+      replaceEnvelopeSchema.safeParse({ envelopeElements: many(7, () => element) }).success,
     ).toBe(true);
   });
 });

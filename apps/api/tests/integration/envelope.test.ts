@@ -157,7 +157,7 @@ describe("Envelope API", () => {
     const buildingId = await createBuilding(cookie);
     const brick = await seedMaterial("Bricks", 0.7);
 
-    // Limits from schemas/envelope.ts: 15 types × 8 layers, 14 opening types, 100 elements, 160 openings in total.
+    // Limits from schemas/envelope.ts: 15 types × 8 layers, 14 opening types, 100 elements, 150 openings in total.
     const constructionTypes = Array.from({ length: 15 }, (_, i) => ({
       code: `W${i}`,
       elementCategory: "external_wall" as const,
@@ -178,7 +178,7 @@ describe("Envelope API", () => {
       constructionTypeCode: `W${i % 15}`,
       lengthM: 10,
       openings:
-        i < 80
+        i < 75
           ? [
               { openingTypeCode: `Win${i % 14}`, count: 1 },
               { openingTypeCode: "Win0", count: 2 },
@@ -221,7 +221,7 @@ describe("Envelope API", () => {
     expect(body.constructionTypes).toHaveLength(15);
     expect(body.constructionTypes.every((t) => t.layers.length === 8)).toBe(true);
     expect(body.blocks).toHaveLength(22);
-    expect(body.envelopeElements.reduce((sum, el) => sum + el.openings.length, 0)).toBe(160);
+    expect(body.envelopeElements.reduce((sum, el) => sum + el.openings.length, 0)).toBe(150);
   });
 
   it("rejects more openings in total than the query budget allows", async () => {
@@ -318,7 +318,7 @@ describe("Envelope API", () => {
       expect(res.status).toBe(400);
     });
 
-    it("re-saving the before envelope after saving an after one does not fail on the FK", async () => {
+    it("re-saving the before envelope with unchanged codes keeps the retrofit links", async () => {
       const { cookie } = await signUpTestUser();
       const buildingId = await createBuilding(cookie);
       await put(buildingId, cookie, beforeBody);
@@ -328,7 +328,35 @@ describe("Envelope API", () => {
       });
       expect((await put(buildingId, cookie, beforeBody)).status).toBe(200);
       const env = await getEnvelope(buildingId, cookie);
+      const win2 = env.openingTypes.find((o) => o.code === "Win2" && o.scenario === "before");
+      expect(win2).toBeDefined();
+      expect(env.openingTypes.find((o) => o.code === "V4")?.retrofitOfId).toBe(win2?.id);
+    });
+
+    it("re-saving the before envelope without the replaced code unlinks only that type", async () => {
+      const { cookie } = await signUpTestUser();
+      const buildingId = await createBuilding(cookie);
+      await put(buildingId, cookie, beforeBody);
+      await put(buildingId, cookie, {
+        scenario: "after",
+        openingTypes: [
+          { code: "V4", category: "window", uValueWm2k: 1.4, retrofitOfCode: "Win2" },
+          { code: "V5", category: "window", uValueWm2k: 1.4, retrofitOfCode: "Win1" },
+        ],
+      });
+      const withoutWin2 = {
+        ...beforeBody,
+        openingTypes: beforeBody.openingTypes.filter((o) => o.code !== "Win2"),
+        envelopeElements: beforeBody.envelopeElements.map((el) => ({
+          ...el,
+          openings: el.openings.filter((o) => o.openingTypeCode !== "Win2"),
+        })),
+      };
+      expect((await put(buildingId, cookie, withoutWin2)).status).toBe(200);
+      const env = await getEnvelope(buildingId, cookie);
+      const win1 = env.openingTypes.find((o) => o.code === "Win1" && o.scenario === "before");
       expect(env.openingTypes.find((o) => o.code === "V4")?.retrofitOfId).toBeNull();
+      expect(env.openingTypes.find((o) => o.code === "V5")?.retrofitOfId).toBe(win1?.id);
     });
   });
 });

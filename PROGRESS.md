@@ -2563,3 +2563,11 @@ T06b — qamrab olinganlar:
 - Testlar: unit (bir tur almashtiriladi, ikkinchisi o'zgarmaydi; eski ma'lumot + ogohlantirish; bog'lanmagan tur), integratsiya (retrofitOfCode, 400, before qayta saqlash FK). type-check, build, biome, `bun run test` (api 239, web 71) yashil.
 - **Brauzerda tekshirilmadi** (mock API ishga tushirilmadi). Qo'lda tekshirish: qobiq tab'i → Tahrirlash → "Keyin" → tur qo'shish, "Almashtiradi" tanlash → saqlash → Natijalarda qobiq chora-tadbiri tejashi paydo bo'ladi; 375 px'da `sm:grid-cols-*` bir ustunga tushishi, scenariy tugmalari sig'ishi. **Ru atamalar loyiha egasi ko'rib chiqishi uchun:** «Заменяет», «Остаются без изменений», «сценарий «После»».
 **Navbatda:** F08 (pol: grunt zona usuli).
+
+## Faza 1 · F07 tuzatish — "oldin" qayta saqlanganda almashtirishlar saqlanadi (2026-10-03)
+
+- Muammo: `PUT /envelope` `scenario: "before"` barcha "keyin" turlarining `retrofit_of_id`sini `NULL` qilardi — auditor "oldin"da bitta maydonni tuzatsa almashtirishlar jimgina yo'qolardi (forms-and-numbers.md bilan zid).
+- Tuzatish (`routes/envelope.ts`): batch'dan oldin bitta `union all` select bilan joriy after→before **kodlar** o'qiladi; batch ichida `PRAGMA defer_foreign_keys = on` → odatdagi delete/insert → har jadval uchun bitta `CASE` UPDATE har "keyin" turini yangi "oldin" turiga (shu kod bo'yicha) qayta bog'laydi. Kod endi yo'q bo'lsa — `NULL` (dvigatel "almashtirish ko'rsatilmagan" ogohlantirishini beradi). UI'dagi "bog'lanishlar tiklanadi" ogohlantirishi olib tashlandi.
+- **Byudjet:** "oldin" PUT: 32 (massivlar) + 1 o'qish + PRAGMA + ≤ 2 UPDATE + sessiya/kirish 4 = 40. Shunga `MAX_ENVELOPE_OPENINGS_TOTAL` **160 → 150** qilindi (−1 bayonot); izoh va `schemas.test.ts` yangilandi. Shubha: real bino 150 tadan ortiq ochiq joy qatoriga ega bo'lsa, chegara oshiriladi (yoki Paid'ga o'tish).
+- Testlar: o'zgarmagan kodlar bilan qayta saqlash → `retrofitOfId` yangi "oldin" turiga ko'rsatadi; kod olib tashlansa faqat shu tur `NULL`, qolgani saqlanadi. type-check, build, biome, `bun run test` (api 240, web 71) yashil.
+**Navbatda:** F08.

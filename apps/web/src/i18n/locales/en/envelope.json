@@ -156,7 +156,6 @@
     },
     "titleAfter": "Edit envelope — \"After\" scenario",
     "descriptionAfter": "Define the types after renovation. Geometry (blocks, elements) is taken from the \"before\" state. Each new type must say which \"before\" type it replaces; types that nothing replaces stay as they are. Saving replaces all \"after\" types.",
-    "linksReset": "Saving the \"before\" envelope resets which \"before\" type each \"after\" type replaces — choose them again in the \"After\" mode.",
     "scenario": {
       "label": "Scenario",
       "before": "Before",

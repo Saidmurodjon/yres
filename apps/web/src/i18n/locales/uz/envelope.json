@@ -154,7 +154,6 @@
     },
     "titleAfter": "Qobiqni tahrirlash — \"Keyin\" stsenariysi",
     "descriptionAfter": "Rekonstruksiyadan keyingi turlarni kiriting. Geometriya (bloklar, elementlar) \"Oldin\" holatidan olinadi. Har bir yangi tur \"Oldin\"gi qaysi turni almashtirishini ko'rsatishi shart; hech narsa almashtirmagan turlar o'zgarishsiz qoladi. Saqlash barcha \"Keyin\" turlarini almashtiradi.",
-    "linksReset": "\"Oldin\" qobig'ini saqlash har bir \"Keyin\" turi qaysi \"Oldin\" turini almashtirishi tanlovini bekor qiladi — \"Keyin\" rejimida qaytadan tanlang.",
     "scenario": {
       "label": "Stsenariy",
       "before": "Oldin",

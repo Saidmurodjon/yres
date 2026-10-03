@@ -159,10 +159,6 @@ export function EnvelopeEditorDialog({
           <p className="text-sm text-muted-foreground">
             {scenario === "before" ? t("editor.description") : t("editor.descriptionAfter")}
           </p>
-          {scenario === "before" &&
-            envelope.constructionTypes.some((c) => c.scenario === "after") && (
-              <p className="text-sm text-muted-foreground">⚠ {t("editor.linksReset")}</p>
-            )}
 
           <ol className="flex flex-wrap items-center gap-2 text-sm">
             {steps.map((s, i) => (

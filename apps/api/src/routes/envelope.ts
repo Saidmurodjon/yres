@@ -7,7 +7,7 @@ import {
   insertChunked,
   openingType,
 } from "@yres/db";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
@@ -297,22 +297,26 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
       and(eq(constructionType.buildingId, buildingId), eq(constructionType.scenario, scenario)),
     );
 
+  // Current after→before links (as before-type codes), read once; see the "before" branch below.
+  let oldAfterLinks: { kind: "c" | "o"; afterId: string; code: string }[] = [];
+  if (scenario === "before") {
+    oldAfterLinks = await db.all<{ kind: "c" | "o"; afterId: string; code: string }>(sql`
+      select 'c' as kind, a.id as afterId, b.code as code from construction_type a
+        join construction_type b on a.retrofit_of_id = b.id
+        where a.building_id = ${buildingId} and a.scenario = 'after'
+      union all
+      select 'o', a.id, b.code from opening_type a
+        join opening_type b on a.retrofit_of_id = b.id
+        where a.building_id = ${buildingId} and a.scenario = 'after'`);
+  }
+
   const statements: BatchItem<"sqlite">[] = [];
   if (scenario === "before") {
-    // The "before" types are re-created with new ids below, and "after" types point at them
-    // (retrofit_of_id FK) — unlink first or the deletes fail. The after-editor re-links on its next save.
-    statements.push(
-      db
-        .update(constructionType)
-        .set({ retrofitOfId: null })
-        .where(
-          and(eq(constructionType.buildingId, buildingId), eq(constructionType.scenario, "after")),
-        ),
-      db
-        .update(openingType)
-        .set({ retrofitOfId: null })
-        .where(and(eq(openingType.buildingId, buildingId), eq(openingType.scenario, "after"))),
-    );
+    // The "before" types are re-created with new ids and "after" types point at them (retrofit_of_id FK).
+    // The link is by code, so: deferred FK check (1) → delete/insert as usual → after the inserts re-point
+    // each after type at the new before type of the same code (one CASE UPDATE per table); a code that no
+    // longer exists becomes NULL (the engine then warns that the replacement is unspecified).
+    statements.push(db.run(sql`PRAGMA defer_foreign_keys = on`));
   }
   statements.push(deleteElements, deleteOpeningTypes, deleteConstructionTypes);
 
@@ -337,6 +341,33 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
   }
   if (envelopeOpeningRows.length > 0) {
     statements.push(...insertChunked(db, envelopeOpening, envelopeOpeningRows));
+  }
+
+  if (scenario === "before" && oldAfterLinks.length > 0) {
+    const relink = (
+      table: typeof constructionType | typeof openingType,
+      kind: "c" | "o",
+      newIdByCode: Map<string, string>,
+    ) => {
+      const links = oldAfterLinks.filter((l) => l.kind === kind);
+      if (links.length === 0) return;
+      const cases = links.map(
+        (l) => sql`when ${l.afterId} then ${newIdByCode.get(l.code) ?? null}`,
+      );
+      statements.push(
+        db
+          .update(table)
+          .set({ retrofitOfId: sql`case ${table.id} ${sql.join(cases, sql` `)} else null end` })
+          .where(
+            inArray(
+              table.id,
+              links.map((l) => l.afterId),
+            ),
+          ),
+      );
+    };
+    relink(constructionType, "c", constructionTypeIdByCode);
+    relink(openingType, "o", openingTypeIdByCode);
   }
 
   await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
