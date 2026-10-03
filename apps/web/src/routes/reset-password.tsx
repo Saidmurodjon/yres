@@ -56,19 +56,14 @@ function ResetPasswordPage() {
     <main className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>
-            {token ? t("resetPassword.chooseNewPassword") : t("resetPassword.invalidLink")}
-          </CardTitle>
+          <CardTitle>{token ? t("resetPassword.chooseNewPassword") : t("resetPassword.invalidLink")}</CardTitle>
           {token && <CardDescription>{t("resetPassword.verified")}</CardDescription>}
         </CardHeader>
         <CardContent>
           {!token ? (
             <p className="text-sm text-destructive">
               {t("resetPassword.invalidLink")}.{" "}
-              <Link
-                to="/forgot-password"
-                className="font-medium underline-offset-4 hover:underline"
-              >
+              <Link to="/forgot-password" className="font-medium underline-offset-4 hover:underline">
                 {t("resetPassword.requestNewOne")}
               </Link>
               .

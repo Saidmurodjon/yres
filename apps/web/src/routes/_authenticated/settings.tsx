@@ -75,7 +75,10 @@ function SettingsPage() {
         </CardHeader>
         <CardContent>
           <p className="mb-3 text-sm text-muted-foreground">{t("languageDescription")}</p>
-          <Select value={i18n.language} onValueChange={(value) => i18n.changeLanguage(value)}>
+          <Select
+            value={i18n.language}
+            onValueChange={(value) => i18n.changeLanguage(value)}
+          >
             <SelectTrigger className="w-48">
               <SelectValue />
             </SelectTrigger>

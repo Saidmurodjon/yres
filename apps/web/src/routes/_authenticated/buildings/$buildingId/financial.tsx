@@ -244,12 +244,8 @@ function FinancialAnalysisPage() {
                   <TableHead className="text-right">
                     {t("financial.comparison.columnInvestment")}
                   </TableHead>
-                  <TableHead className="text-right">
-                    {t("financial.comparison.columnNpv")}
-                  </TableHead>
-                  <TableHead className="text-right">
-                    {t("financial.comparison.columnIrr")}
-                  </TableHead>
+                  <TableHead className="text-right">{t("financial.comparison.columnNpv")}</TableHead>
+                  <TableHead className="text-right">{t("financial.comparison.columnIrr")}</TableHead>
                   <TableHead className="text-right">
                     {t("financial.comparison.columnSimplePayback")}
                   </TableHead>
@@ -393,8 +389,7 @@ function FinancialAnalysisPage() {
                 <TableRow>
                   <TableCell>{t("financial.detail.analysisHorizon")}</TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {selectedMeasure.standardized.analysisHorizonYears}{" "}
-                    {t("financial.detail.yearsShort")}
+                    {selectedMeasure.standardized.analysisHorizonYears} {t("financial.detail.yearsShort")}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {selectedMeasure.actual.analysisHorizonYears} {t("financial.detail.yearsShort")}

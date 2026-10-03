@@ -74,10 +74,7 @@ function ForgotPasswordPage() {
             </form>
           )}
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            <Link
-              to="/login"
-              className="font-medium text-primary underline-offset-4 hover:underline"
-            >
+            <Link to="/login" className="font-medium text-primary underline-offset-4 hover:underline">
               {t("forgotPassword.backToSignIn")}
             </Link>
           </p>
