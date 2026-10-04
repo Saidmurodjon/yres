@@ -241,7 +241,7 @@ CONSTRUCTIONS = [
     ("Socle1", "Socle 1. (heated space)", "socle_heated", 33),
     ("Socle2", "Socle 2", "socle_ground", 63),
     ("R1", "R1", "roof", 78),
-    ("F1", "F1", "floor", 108),
+    ("F1", "F1", "floor_ground", 108),
 ]
 
 
@@ -256,10 +256,15 @@ def constructions(r: Reader) -> tuple[list[dict], list[dict]]:
         before, after = parse_block(r, title_row, "before"), parse_block(r, title_row, "after")
         if not before["layers"] or not after["layers"]:
             fail(f"U-values block {ident}: no layers found (before {len(before['layers'])}, after {len(after['layers'])})")
+        ground = {}
+        if category == "floor_ground":  # F08: zone-method sample block, U-values!S110:S111 (same for before/after)
+            r.x.check_label("U-values", "Q110", "Block length")
+            r.x.check_label("U-values", "Q111", "Block width")
+            ground = {"groundLengthM": r.num("U-values", "S110"), "groundWidthM": r.num("U-values", "S111")}
         types.append({"id": f"ct-{ident}", "code": code, "scenario": "before", "retrofitOfId": None,
-                      "elementCategory": category, "layers": before["layers"]})
+                      "elementCategory": category, "layers": before["layers"], **ground})
         types.append({"id": f"ct-{ident}-after", "code": code, "scenario": "after", "retrofitOfId": f"ct-{ident}",
-                      "elementCategory": category, "layers": after["layers"]})
+                      "elementCategory": category, "layers": after["layers"], **ground})
         resistances.append({"elementCategory": category,
                             "interiorResistanceM2kPerW": before["interior"],
                             "exteriorResistanceM2kPerW": before["exterior"]})
@@ -271,8 +276,18 @@ def constructions(r: Reader) -> tuple[list[dict], list[dict]]:
         for target, col in ((f3_before, 20), (f3_after, 21)):
             if (ws.cell(row, col).value or 0) > 0:
                 target.append({"thicknessM": ws.cell(row, 18).value, "material": {"thermalConductivityWPerMk": lam}})
-    types.append({"id": "ct-F3", "code": "F3", "scenario": "before", "retrofitOfId": None, "elementCategory": "floor", "layers": f3_before})
-    types.append({"id": "ct-F3-after", "code": "F3", "scenario": "after", "retrofitOfId": "ct-F3", "elementCategory": "floor", "layers": f3_after})
+    # n = temperature factor, U-values!T134 (before) / U134 (after); Rsi/Rse = T131:T132
+    r.x.check_label("U-values", "Q134", "Temperature factor")
+    n_before, n_after = r.num("U-values", "T134"), r.num("U-values", "U134")
+    types.append({"id": "ct-F3", "code": "F3", "scenario": "before", "retrofitOfId": None, "elementCategory": "floor_over_unheated",
+                  "temperatureReductionFactor": n_before, "layers": f3_before})
+    types.append({"id": "ct-F3-after", "code": "F3", "scenario": "after", "retrofitOfId": "ct-F3", "elementCategory": "floor_over_unheated",
+                  "temperatureReductionFactor": n_after, "layers": f3_after})
+    r.x.check_label("U-values", "Q131", "Rsi")
+    r.x.check_label("U-values", "Q132", "Rse")
+    resistances.append({"elementCategory": "floor_over_unheated",
+                        "interiorResistanceM2kPerW": r.num("U-values", "T131"),
+                        "exteriorResistanceM2kPerW": r.num("U-values", "T132")})
     return types, resistances
 
 
@@ -678,7 +693,7 @@ def financial_parameters(r: Reader) -> dict:
 
 
 MODEL_GAPS = [
-    "Floors F1/F3: the zone method and the unheated-space temperature factor n are not modelled (F08); layers are given, U comes out as a plain layer sum.",
+    "Floors: F1 = floor_ground (zone method, block 50.3 x 12.8, U-values!S110:S111), F3 = floor_over_unheated (U·n, n = U-values!T134) — F08.",
     "Surface resistances are one record per element category (first construction of that category); v7.20 sets Rint/Rext per construction block.",
     "Envelope!I51 (-27.692 m2 link-corridor deduction) is a negative-length W1 element; the engine clamps each element to >= 0.",
     "Parapet (Envelope row 56-58) is excluded: v7.20 has no heat-loss row for it (Envelope!AI105).",

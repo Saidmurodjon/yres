@@ -1,6 +1,6 @@
 import type { CoolingResult } from "./cooling";
 import type { DhwDemandResult, DistributionLossResult } from "./dhw";
-import type { EnvelopeAreaBreakdown } from "./envelope";
+import type { EnvelopeAreaBreakdown, GroundFloorZonesResult } from "./envelope";
 import type { EquipmentResult } from "./equipment";
 import type { FinancialAssumptions } from "./financial";
 import type { EndUseEnergyTotals, GenerationSourceResult } from "./generation";
@@ -109,6 +109,8 @@ export interface AuditResult {
   generatedAt: string;
   /** Non-fatal input gaps that bias the result (e.g. missing working days → lighting hours understated). */
   warnings: string[];
+  /** F08: ground-zone breakdown of every `floor_ground` construction type, before and after (Annex 2). */
+  groundFloorZones: GroundFloorZonesResult[];
   financialAssumptions: FinancialAssumptions;
   /** v7.20 `Measures_summary!D71`: share of envelope/ventilation savings that survives the lost useful gains (1 = none lost). */
   gainsUtilizationCorrection: number;

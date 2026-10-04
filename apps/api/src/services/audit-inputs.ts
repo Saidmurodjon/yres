@@ -146,7 +146,14 @@ export interface AuditInputs {
   })[];
   constructionTypes: (Row<
     typeof constructionType,
-    "id" | "code" | "scenario" | "retrofitOfId" | "elementCategory"
+    "id"
+    | "code"
+    | "scenario"
+    | "retrofitOfId"
+    | "elementCategory"
+    | "temperatureReductionFactor"
+    | "groundLengthM"
+    | "groundWidthM"
   > & {
     layers: (Row<typeof constructionLayer, "thicknessM"> & {
       material: Row<typeof material, "thermalConductivityWPerMk">;

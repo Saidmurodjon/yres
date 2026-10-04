@@ -13,7 +13,7 @@ import {
   type Scenario,
 } from "@yres/types";
 import { desc, eq } from "drizzle-orm";
-import { calculateLayerResistance, calculateUValue } from "./uvalue.service";
+import { calculateConstructionTypeU, calculateLayerResistance } from "./uvalue.service";
 
 /**
  * Raw, presentation-only data the report needs but `AuditResult` doesn't
@@ -83,14 +83,17 @@ export async function getUValueBreakdown(
           thermalConductivityWPerMk: layer.material.thermalConductivityWPerMk,
         }),
       }));
-    const { totalThermalResistanceM2KPerW, uValueWPerM2K } = calculateUValue(
-      ct.id,
-      layers.map((l) => ({
+    const { totalThermalResistanceM2KPerW, uValueWPerM2K } = calculateConstructionTypeU(ct.id, {
+      elementCategory: ct.elementCategory,
+      layers: layers.map((l) => ({
         thicknessM: l.thicknessM,
         thermalConductivityWPerMk: l.thermalConductivityWPerMk,
       })),
       resistance,
-    );
+      temperatureReductionFactor: ct.temperatureReductionFactor,
+      groundLengthM: ct.groundLengthM,
+      groundWidthM: ct.groundWidthM,
+    });
 
     return {
       code: ct.code,

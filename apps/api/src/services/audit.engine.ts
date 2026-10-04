@@ -13,6 +13,7 @@ import type {
   EnvelopeHeatLossResult,
   EquipmentResult,
   GenerationSourceResult,
+  GroundFloorZonesResult,
   HeatingEnergyBalanceResult,
   LampPowerDensityWPerM2,
   LightingResult,
@@ -48,6 +49,7 @@ import {
   getEffectiveOpeningType,
   resolveHeatLossGroups,
 } from "./envelope.service";
+import { calculateConstructionTypeU } from "./uvalue.service";
 import { type EquipmentItemInput, calculateEquipmentResult } from "./equipment.service";
 import {
   calculateCo2ReductionTonnesPerYear,
@@ -208,23 +210,37 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
     ]),
   );
 
+  const groundFloorZones: GroundFloorZonesResult[] = [];
   const constructionTypeUValues: ConstructionTypeUValueInput[] = constructionTypeRows.map((ct) => {
     const resistance = surfaceResistanceByCategory.get(ct.elementCategory) ?? {
       interiorResistanceM2kPerW: 0.13,
       exteriorResistanceM2kPerW: 0.04,
     };
-    const layerResistance = ct.layers.reduce(
-      (sum, layer) => sum + layer.thicknessM / (layer.material.thermalConductivityWPerMk || 1),
-      0,
-    );
-    const totalResistance =
-      layerResistance + resistance.interiorResistanceM2kPerW + resistance.exteriorResistanceM2kPerW;
+    // Layers without conductivity count as λ = 1 (unchanged); category-specific U (zone method, n) lives in uvalue.service.
+    const u = calculateConstructionTypeU(ct.id, {
+      elementCategory: ct.elementCategory,
+      layers: ct.layers.map((layer) => ({
+        thicknessM: layer.thicknessM,
+        thermalConductivityWPerMk: layer.material.thermalConductivityWPerMk || 1,
+      })),
+      resistance,
+      temperatureReductionFactor: ct.temperatureReductionFactor,
+      groundLengthM: ct.groundLengthM,
+      groundWidthM: ct.groundWidthM,
+    });
+    if (u.ground) {
+      groundFloorZones.push({ constructionTypeCode: ct.code, scenario: ct.scenario, ...u.ground });
+    } else if (ct.elementCategory === "floor_ground") {
+      warnings.push(
+        `Construction type "${ct.code}" (floor on ground) has no block length/width — calculated as a plain layer sum, not by the zone method.`,
+      );
+    }
     return {
       id: ct.id,
       code: ct.code,
       scenario: ct.scenario,
       retrofitOfId: ct.retrofitOfId,
-      uValueWPerM2K: totalResistance > 0 ? 1 / totalResistance : 0,
+      uValueWPerM2K: u.uValueWPerM2K,
     };
   });
 
@@ -940,6 +956,7 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
       baselineHeating.shares,
     ),
     envelopeAreas,
+    groundFloorZones,
     envelopeHeatLoss,
     ventilationLoss,
     heatingEnergyBalance,

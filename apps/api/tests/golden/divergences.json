@@ -2,7 +2,9 @@
   "divergences": [
     {
       "id": "D13",
-      "x": ["X86"],
+      "x": [
+        "X86"
+      ],
       "title": "Discounted payback: workbook formula (Financial indicators!D19, MATCH) is exactly 1 year too high — workbook error, engine is correct (K21)",
       "status": "open",
       "closesIn": "v7.21 (K21: project owner decides; then accepted)",
@@ -14,56 +16,22 @@
     },
     {
       "id": "D23",
-      "x": ["X98"],
+      "x": [
+        "X98"
+      ],
       "title": "Mechanical ventilation fan electricity: Excel = power x hours x utilisation per line (Equipment!K85+K86 = 7570.45), engine = nameplate kW x 24 h x heating days (17896)",
       "status": "open",
       "closesIn": "F06",
-      "expectedIds": ["ventilation.mechanicalElectricalKwh"],
+      "expectedIds": [
+        "ventilation.mechanicalElectricalKwh"
+      ],
       "note": "The workbook uses 1857 h/y and utilisation 0.5/0.8 per line; the ventilation system model has no hours/utilisation input."
     },
     {
-      "id": "D3",
-      "x": ["X75", "X83"],
-      "title": "Floor: ground zone method and floor over unheated space (F3, n = 0.4)",
-      "status": "open",
-      "closesIn": "F08",
-      "expectedIds": [
-        "balanceCheck.electricityBreakdownKwh",
-        "balanceCheck.electricitySavingsKwh",
-        "balanceCheck.gasBreakdownKwh",
-        "balanceCheck.gasSavingsKwh",
-        "envelope.after.total.building",
-        "envelope.after.total.floor",
-        "envelope.before.total.building",
-        "envelope.before.total.floor",
-        "financial.5.irrActual",
-        "financial.5.npvActualUsd",
-        "generation.finalEnergy.totalAfter",
-        "generation.finalEnergy.totalBefore",
-        "generation.heating.boiler.after.finalEnergyKwh",
-        "generation.heating.boiler.after.usefulNeedKwh",
-        "generation.heating.boiler.before.finalEnergyKwh",
-        "generation.heating.boiler.before.usefulNeedKwh",
-        "generation.heating.total.after.finalEnergyKwh",
-        "generation.heating.total.after.usefulNeedKwh",
-        "generation.heating.total.before.finalEnergyKwh",
-        "generation.heating.total.before.usefulNeedKwh",
-        "measures.5.actualSavingsKwh",
-        "measures.5.actualSavingsUsd",
-        "measures.5.co2ReductionTonnesPerYear",
-        "measures.5.discountedPaybackStandardizedYears",
-        "measures.5.irrStandardized",
-        "measures.5.npvStandardizedUsd",
-        "measures.5.simplePaybackActualYears",
-        "measures.5.simplePaybackStandardizedYears",
-        "measures.5.standardizedSavingsKwh",
-        "measures.5.standardizedSavingsUsd"
-      ],
-      "note": "Floor heat loss (envelope.*.total.floor), measure 5 savings, envelope.*.total.building (dominated by the floor difference; also carries D9) and the heating demand rows generation.heating.*/generation.finalEnergy.* that sit downstream of it (before: 420657 vs 251383 kWh). F06c: measureBalance (D67/D68) uses those same rows, so its scenario side (E67/E68) inherits this gap; the measure sums (D67/D68) also carry D5/D9/D22."
-    },
-    {
       "id": "D5",
-      "x": ["X81"],
+      "x": [
+        "X81"
+      ],
       "title": "Window repair: infiltration share reallocated from ventilation to window",
       "status": "open",
       "closesIn": "P1 (Faza 2+)",
@@ -88,11 +56,17 @@
     },
     {
       "id": "D6",
-      "x": ["X84", "X96", "X33"],
+      "x": [
+        "X84",
+        "X96",
+        "X33"
+      ],
       "title": "Heat pump SCOP 3.11 + backup MTB; fuel-free 'after' heat",
       "status": "open",
       "closesIn": "P2",
       "expectedIds": [
+        "financial.11.npvActualUsd",
+        "measures.11.actualSavingsKwh",
         "measures.11.actualSavingsUsd",
         "measures.11.co2ReductionTonnesPerYear",
         "measures.11.npvStandardizedUsd",
@@ -104,7 +78,10 @@
     },
     {
       "id": "D8",
-      "x": ["X65", "X66"],
+      "x": [
+        "X65",
+        "X66"
+      ],
       "title": "BEMS: Excel's 15 USD/m² estimate vs engine EMS_SAVINGS_RATE = 0.03",
       "status": "open",
       "closesIn": "P1",
@@ -124,20 +101,49 @@
     {
       "id": "D9",
       "x": [],
-      "title": "Working-hours-only rule (K22): Socle 1/2, F1, windows, doors use working hours only",
+      "title": "Working-hours-only rule (K22): Socle 1/2, F1, windows, doors use working hours only (also carries the floor/heating/balance rows that D3 used to hold)",
       "status": "open",
       "closesIn": "K22 (loyiha egasi)",
       "expectedIds": [
+        "balanceCheck.electricityBreakdownKwh",
+        "balanceCheck.electricitySavingsKwh",
+        "balanceCheck.gasBreakdownKwh",
+        "balanceCheck.gasSavingsKwh",
+        "envelope.after.total.building",
+        "envelope.after.total.floor",
         "envelope.after.total.walls",
         "envelope.after.total.windowsDoors",
+        "envelope.before.total.building",
+        "envelope.before.total.floor",
         "envelope.before.total.walls",
-        "envelope.before.total.windowsDoors"
+        "envelope.before.total.windowsDoors",
+        "financial.5.npvActualUsd",
+        "generation.finalEnergy.totalAfter",
+        "generation.finalEnergy.totalBefore",
+        "generation.heating.boiler.after.finalEnergyKwh",
+        "generation.heating.boiler.after.usefulNeedKwh",
+        "generation.heating.boiler.before.finalEnergyKwh",
+        "generation.heating.boiler.before.usefulNeedKwh",
+        "generation.heating.total.after.finalEnergyKwh",
+        "generation.heating.total.after.usefulNeedKwh",
+        "generation.heating.total.before.finalEnergyKwh",
+        "generation.heating.total.before.usefulNeedKwh",
+        "measures.5.actualSavingsKwh",
+        "measures.5.actualSavingsUsd",
+        "measures.5.co2ReductionTonnesPerYear",
+        "measures.5.npvStandardizedUsd",
+        "measures.5.simplePaybackActualYears",
+        "measures.5.simplePaybackStandardizedYears",
+        "measures.5.standardizedSavingsKwh",
+        "measures.5.standardizedSavingsUsd"
       ],
-      "note": "Socle 1/2, F1, windows, doors — working hours only (Losses env. before!E61/E62/E64 = E*F*N39*N40, no non-working row); engine adds the non-working period. Affects walls (+7-9%) and windowsDoors (before 47523 vs 27423; after 21154 vs 22059)."
+      "note": "Socle 1/2, F1, windows, doors — working hours only (Losses env. before!E61/E62/E64 = E*F*N39*N40, no non-working row); engine adds the non-working period. Affects walls (+7-9%) and windowsDoors (before 47523 vs 27423; after 21154 vs 22059). F08 closed D3 (zone method + n: U_eq 0.28796/0.14961, F3 0.77269/0.12090 match the book). What is left of the floor row is this rule: the book's F1 loss is working-hours-only (8490 kWh vs engine 14713). Checked by experiment: with non-working hours removed for socle/F1/windows/doors the envelope totals (walls, windowsDoors, floor, building) all fall within tolerance. generation.*/measures.5/financial.5/balanceCheck.* are downstream of the envelope heat loss; removing D9 alone overshoots the heating demand by 7 % (actual +5.6 % today), so other contributors (D5, D22, D71 usage) remain — not isolated, re-check in F10."
     },
     {
       "id": "D11",
-      "x": ["X55"],
+      "x": [
+        "X55"
+      ],
       "title": "Shading (measure 9) and cooling-demand reduction (measure 19) have no engine category",
       "status": "open",
       "closesIn": "P1",
@@ -163,21 +169,22 @@
     },
     {
       "id": "D12",
-      "x": ["X93", "X94", "X95"],
+      "x": [
+        "X93",
+        "X94",
+        "X95"
+      ],
       "title": "Per-measure savings attribution: engine gives one saving per category, Excel per element",
       "status": "open",
       "closesIn": "F06",
       "expectedIds": [
-        "financial.1.cashflow.accumulatedDiscountedStandardUsd",
         "financial.1.cashflow.discountedStandardNetUsd",
-        "financial.1.cashflow.grossActualSavingsUsd",
         "financial.1.cashflow.grossStandardSavingsUsd",
         "financial.1.cashflow.netStandardSavingsUsd",
-        "financial.1.npvActualUsd",
         "financial.10.npvActualUsd",
         "financial.4.npvActualUsd",
-        "measures.1.actualSavingsKwh",
-        "measures.1.actualSavingsUsd",
+        "financial.7.npvActualUsd",
+        "financial.8.npvActualUsd",
         "measures.1.co2ReductionTonnesPerYear",
         "measures.1.simplePaybackActualYears",
         "measures.1.simplePaybackStandardizedYears",
@@ -193,6 +200,8 @@
         "measures.2.standardizedSavingsUsd",
         "measures.4.actualSavingsKwh",
         "measures.4.actualSavingsUsd",
+        "measures.4.co2ReductionTonnesPerYear",
+        "measures.4.npvStandardizedUsd",
         "measures.4.simplePaybackActualYears",
         "measures.4.simplePaybackStandardizedYears",
         "measures.7.actualSavingsKwh",
@@ -256,7 +265,9 @@
     },
     {
       "id": "D20",
-      "x": ["X98"],
+      "x": [
+        "X98"
+      ],
       "title": "Lighting 'after': Excel takes the installed BoQ power (Lighting!I13 = sum(W x qty)/area = 4.59 W/m2); the engine uses the LED density (7.4 W/m2)",
       "status": "open",
       "closesIn": "Faza 2+",
@@ -285,7 +296,6 @@
       "status": "open",
       "closesIn": "F06",
       "expectedIds": [
-        "financial.13.npvActualUsd",
         "measures.13.actualSavingsKwh",
         "measures.13.actualSavingsUsd",
         "measures.13.simplePaybackActualYears"

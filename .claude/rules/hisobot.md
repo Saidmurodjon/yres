@@ -48,6 +48,7 @@ Holat ustuni: ✅ mavjud (`report.service.ts`da hozir bor) · ⚠️ qisman · �
 | Umumiy ma'lumot jadvali (namunaning Table 2: yuk maydoni/hajmi, harorat, davomiylik va h.k.) | `building.*` (`heatingSeasonDurationDays`, `indoorTempOperationC`/`NonOperationC`, `outdoorAvgHeatingSeasonTempC`, `outdoorDesignTempC`, `occupantCount`, `coolingEnthalpy*KjKg` va h.k. — to'liq ro'yxat `Building_data` sheet, `docs/data-dictionary.md`) | ⚠️ — hozir faqat nom/joylashuv/tur/yil/maydon/aholi bor, iqlim/harorat parametrlari yo'q |
 | Qobiq yuzalari (devor/socle/tom/pol/deraza/eshik maydoni) | `result.envelopeAreas` (`EnvelopeAreaBreakdown`) | ✅ |
 | Devor/tom/pol U-qiymat hisob-kitobi (namunaning Table 7-9, 26-28: qatlamlar, qalinlik, λ, R, U) | `constructionType` + `constructionLayer` (qatlamlar, `material.thermalConductivityWPerMk`) → `UValueResult` | ❌ — hozir hisobotda yo'q, faqat maydon jadvali bor |
+| Gruntdagi pol zona hisobi (zona maydonlari, `R_ni`, `R_i`, `U_eq` — v7.20 `U-values!Q113:U121`, Annex 2) | `result.groundFloorZones[]` (`GroundFloorZonesResult`, F08b) | ❌ — hisoblangan, hisobotga chiqarilmagan |
 | Derazalar/eshiklar tavsifi (tur, U-qiymat) | `openingType` (`uValueWm2k`, `gValue`, `frameFactor`, `shadingFactor`) | ❌ |
 | O'rnatmalar/uskunalar (isitish, ISI, ventilyatsiya, yoritish, boshqa uskunalar) — matnli tavsif emas, hisoblangan quvvat/samaradorlik | `result.generation[]`, `result.lighting[]`, `result.equipment[]` | ⚠️ — jamlangan raqamlar bor (energiya balansi bo'limida), lekin alohida bo'lim sifatida yo'q |
 

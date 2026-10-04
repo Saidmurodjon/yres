@@ -69,6 +69,9 @@ function buildInputs(): AuditInputs {
         id: "ct1",
         code: "W1",
         elementCategory: "external_wall",
+        temperatureReductionFactor: null,
+        groundLengthM: null,
+        groundWidthM: null,
         scenario: "before",
         retrofitOfId: null,
         layers: [{ thicknessM: 0.5, material: { thermalConductivityWPerMk: 0.7 } }],
@@ -77,6 +80,9 @@ function buildInputs(): AuditInputs {
         id: "ct2",
         code: "W1",
         elementCategory: "external_wall",
+        temperatureReductionFactor: null,
+        groundLengthM: null,
+        groundWidthM: null,
         scenario: "after",
         retrofitOfId: "ct1",
         layers: [
@@ -177,6 +183,9 @@ describe("computeAudit", () => {
         id: "ctf",
         code: "F1",
         elementCategory,
+        temperatureReductionFactor: elementCategory === "floor_over_unheated" ? 0.4 : null,
+        groundLengthM: elementCategory === "floor_ground" ? 30 : null,
+        groundWidthM: elementCategory === "floor_ground" ? 15 : null,
         scenario: "before",
         retrofitOfId: null,
         layers: [{ thicknessM: 0.2, material: { thermalConductivityWPerMk: 1.5 } }],
@@ -194,6 +203,22 @@ describe("computeAudit", () => {
     };
     expect(withFloor("floor").some((w) => w.startsWith("Floor type is not specified"))).toBe(true);
     expect(withFloor("floor_ground")).toEqual([]);
+    // the zone breakdown is reported for floor_ground only
+    const ground = buildInputs();
+    ground.constructionTypes.push({
+      id: "ctg",
+      code: "G",
+      elementCategory: "floor_ground",
+      temperatureReductionFactor: null,
+      groundLengthM: 30,
+      groundWidthM: 15,
+      scenario: "before",
+      retrofitOfId: null,
+      layers: [{ thicknessM: 0.1, material: { thermalConductivityWPerMk: 0.04 } }],
+    });
+    const zones = computeAudit(ground, at).groundFloorZones;
+    expect(zones).toHaveLength(1);
+    expect(zones[0]?.zones).toHaveLength(4);
     expect(withFloor("floor_over_unheated")).toEqual([]);
   });
 

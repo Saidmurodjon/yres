@@ -122,6 +122,7 @@ function fullResultFixture(): AuditResult {
     generatedAt: new Date().toISOString(),
     gainsUtilizationCorrection: 1,
     warnings: [],
+    groundFloorZones: [],
     financialAssumptions: deriveFinancialAssumptions(defaultFinancialParameters()),
     measureBalance: [],
     summary: {
@@ -379,6 +380,7 @@ function emptyResultFixture(): AuditResult {
     generatedAt: new Date().toISOString(),
     gainsUtilizationCorrection: 1,
     warnings: [],
+    groundFloorZones: [],
     financialAssumptions: deriveFinancialAssumptions(defaultFinancialParameters()),
     measureBalance: [],
     summary: {

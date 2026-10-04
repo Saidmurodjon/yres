@@ -19,6 +19,7 @@ function heatLoss(scenario: "before" | "after", categories: string[] | null) {
 }
 
 const WALLS = ["external_wall", "socle_heated", "socle_ground"];
+const FLOORS = ["floor", "floor_ground", "floor_over_unheated"];
 
 export const MAPPING: Record<string, Accessor> = {
   "geometry.heatedFloorAreaM2": (_r, i) =>
@@ -28,12 +29,12 @@ export const MAPPING: Record<string, Accessor> = {
 
   "envelope.before.total.walls": heatLoss("before", WALLS),
   "envelope.before.total.roof": heatLoss("before", ["roof"]),
-  "envelope.before.total.floor": heatLoss("before", ["floor"]),
+  "envelope.before.total.floor": heatLoss("before", FLOORS),
   "envelope.before.total.windowsDoors": heatLoss("before", ["window", "door"]),
   "envelope.before.total.building": heatLoss("before", null),
   "envelope.after.total.walls": heatLoss("after", WALLS),
   "envelope.after.total.roof": heatLoss("after", ["roof"]),
-  "envelope.after.total.floor": heatLoss("after", ["floor"]),
+  "envelope.after.total.floor": heatLoss("after", FLOORS),
   "envelope.after.total.windowsDoors": heatLoss("after", ["window", "door"]),
   "envelope.after.total.building": heatLoss("after", null),
 

@@ -20,6 +20,7 @@
   3. `docs/data-dictionary.md` hali v5 bo'yicha yozilgan — varaq/katak tuzilishi uchun foydali, lekin
      v7.20 farqlari uchun `01-audit-metodologiya.md`ni ustun deb oling. v7.20 fayli repo'da yo'q
      (`3-MTM/` papkasida, loyiha egasida) — kerak bo'lsa so'rang, taxmin qilmang.
+- **Pol U-qiymati (F08b)** `uvalue.service.ts`ning `calculateConstructionTypeU()`ida (dvigatel ham, hisobot ham shuni chaqiradi): `floor_ground` — 2 m zona usuli (`calculateGroundFloorUValue`, turning `ground_length_m × ground_width_m` bloki, Rsi/Rse qo'shilmaydi, `λ < 1,2` qatlamlar ΣR); `floor_over_unheated`/`socle_unheated` — `U·n` (`temperature_reduction_factor`, null = 1); eski `floor` — oddiy `1/ΣR` + `warnings[]`. Zona maydonlari `AuditResult.groundFloorZones`da. Kitobdagi F1 faqat ish soatlarida hisoblanadi (D9/K22) — dvigatel hamon ikki davrli.
 - **`runFullAudit()` har chaqiruvda saqlangan kirishlardan hammasini qayta hisoblaydi — `audit_run`
   holat qatoridan tashqari hech narsa saqlanmaydi.** Buni tushunmasdan ichiga keshlash/memoizatsiya
   qo'shmang (binolarning kirishlari tahrirlash paytida doimo o'zgaradi; eskirgan keshlangan natija
