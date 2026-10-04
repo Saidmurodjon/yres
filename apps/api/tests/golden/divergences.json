@@ -4,13 +4,13 @@
       "id": "D13",
       "x": ["X86"],
       "title": "Discounted payback: workbook formula (Financial indicators!D19, MATCH) is exactly 1 year too high — workbook error, engine is correct (K21)",
-      "status": "open",
-      "closesIn": "v7.21 (K21: project owner decides; then accepted)",
+      "status": "accepted",
+      "closesIn": "v7.21 (accepted 2026-10-04 - K21: dvigatel to'g'ri qoladi, Excel v7.21 da tuzatiladi)",
       "expectedIds": [
         "measures.15.discountedPaybackActualYears",
         "measures.15.discountedPaybackStandardizedYears"
       ],
-      "note": "Measure 15: cumulative discounted flow -2019.3 at end of year 4, +9504.6 at year 5 -> 4 + 2019.3/11523.9 = 4.18 y (engine); workbook gives 5.18 (standardized) and 8.42 vs engine 7.42 (actual). Do not copy the workbook error."
+      "note": "Measure 15: cumulative discounted flow -2019.3 at end of year 4, +9504.6 at year 5 -> 4 + 2019.3/11523.9 = 4.18 y (engine); workbook gives 5.18 (standardized) and 8.42 vs engine 7.42 (actual). Do not copy the workbook error. Qaror (K21, 2026-10-04): tavsiya qabul qilindi - dvigatel to'g'ri, golden'da accepted."
     },
     {
       "id": "D23",
@@ -25,8 +25,8 @@
       "id": "D5",
       "x": ["X81"],
       "title": "Window repair: infiltration share reallocated from ventilation to window",
-      "status": "open",
-      "closesIn": "P1 (Faza 2+)",
+      "status": "accepted",
+      "closesIn": "P1 (Faza 2+) (accepted 2026-10-04)",
       "expectedIds": [
         "financial.6.npvActualUsd",
         "measures.10.actualSavingsKwh",
@@ -44,14 +44,14 @@
         "measures.6.standardizedSavingsKwh",
         "measures.6.standardizedSavingsUsd"
       ],
-      "note": "Measure 6 and ventilation measure 10."
+      "note": "Measure 6 and ventilation measure 10. Qaror (K23, 2026-10-04): tavsiya qabul qilindi - Faza 1 chiqishini to'smaydi."
     },
     {
       "id": "D6",
       "x": ["X84", "X96", "X33"],
       "title": "Heat pump SCOP 3.11 + backup MTB; fuel-free 'after' heat",
-      "status": "open",
-      "closesIn": "P2",
+      "status": "accepted",
+      "closesIn": "P2 (accepted 2026-10-04)",
       "expectedIds": [
         "financial.11.npvActualUsd",
         "measures.11.actualSavingsKwh",
@@ -62,14 +62,14 @@
         "measures.11.standardizedSavingsKwh",
         "measures.11.standardizedSavingsUsd"
       ],
-      "note": "Measure 11 (heat pump): monthly SCOP (IHS!B16:J34) and the MTB back-up are not modelled — COP stays an input. X33 (Q+Qd)/η is closed by F04; what remains is upstream demand (D3/D9) and the DHW model."
+      "note": "Measure 11 (heat pump): monthly SCOP (IHS!B16:J34) and the MTB back-up are not modelled — COP stays an input. X33 (Q+Qd)/η is closed by F04; what remains is upstream demand (D3/D9) and the DHW model. Qaror (K23, 2026-10-04): tavsiya qabul qilindi - Faza 1 chiqishini to'smaydi."
     },
     {
       "id": "D8",
       "x": ["X65", "X66"],
       "title": "BEMS: Excel's 15 USD/m² estimate vs engine EMS_SAVINGS_RATE = 0.03",
-      "status": "open",
-      "closesIn": "P1",
+      "status": "accepted",
+      "closesIn": "P1 (accepted 2026-10-04)",
       "expectedIds": [
         "financial.18.npvActualUsd",
         "measures.18.actualSavingsKwh",
@@ -81,14 +81,14 @@
         "measures.18.standardizedSavingsKwh",
         "measures.18.standardizedSavingsUsd"
       ],
-      "note": "Measure 18 (EN ISO 52120 BEMS model)."
+      "note": "Measure 18 (EN ISO 52120 BEMS model). Qaror (K23, 2026-10-04): tavsiya qabul qilindi - Faza 1 chiqishini to'smaydi."
     },
     {
       "id": "D9",
       "x": [],
       "title": "Working-hours-only rule (K22): Socle 1/2, F1, windows, doors use working hours only (also carries the floor/heating/balance rows that D3 used to hold)",
-      "status": "open",
-      "closesIn": "K22 (loyiha egasi)",
+      "status": "accepted",
+      "closesIn": "Faza 2 boshida (accepted 2026-10-04 - K22: metodika auditor tomonidan tasdiqlangan qoidaga keltiriladi)",
       "expectedIds": [
         "balanceCheck.electricityBreakdownKwh",
         "balanceCheck.electricitySavingsKwh",
@@ -122,14 +122,14 @@
         "measures.5.standardizedSavingsKwh",
         "measures.5.standardizedSavingsUsd"
       ],
-      "note": "Socle 1/2, F1, windows, doors — working hours only (Losses env. before!E61/E62/E64 = E*F*N39*N40, no non-working row); engine adds the non-working period. Affects walls (+7-9%) and windowsDoors (before 47523 vs 27423; after 21154 vs 22059). F08 closed D3 (zone method + n: U_eq 0.28796/0.14961, F3 0.77269/0.12090 match the book). What is left of the floor row is this rule: the book's F1 loss is working-hours-only (8490 kWh vs engine 14713). Checked by experiment: with non-working hours removed for socle/F1/windows/doors the envelope totals (walls, windowsDoors, floor, building) all fall within tolerance. generation.*/measures.5/financial.5/balanceCheck.* are downstream of the envelope heat loss; removing D9 alone overshoots the heating demand by 7 % (actual +5.6 % today), so other contributors (D5, D22, D71 usage) remain — not isolated, re-check in F10."
+      "note": "Socle 1/2, F1, windows, doors — working hours only (Losses env. before!E61/E62/E64 = E*F*N39*N40, no non-working row); engine adds the non-working period. Affects walls (+7-9%) and windowsDoors (before 47523 vs 27423; after 21154 vs 22059). F08 closed D3 (zone method + n: U_eq 0.28796/0.14961, F3 0.77269/0.12090 match the book). What is left of the floor row is this rule: the book's F1 loss is working-hours-only (8490 kWh vs engine 14713). Checked by experiment: with non-working hours removed for socle/F1/windows/doors the envelope totals (walls, windowsDoors, floor, building) all fall within tolerance. generation.*/measures.5/financial.5/balanceCheck.* are downstream of the envelope heat loss; removing D9 alone overshoots the heating demand by 7 % (actual +5.6 % today), so other contributors (D5, D22, D71 usage) remain — not isolated, re-check in F10. Qaror (K22, 2026-10-04): tavsiya qabul qilindi - metodik asos auditor tomonidan tasdiqlangan deb hisoblanadi; dvigatel Faza 2 boshida tasdiqlangan qoidaga keltiriladi. Shu tafovut (D9) F06c balans nazorati qabul mezonini (3-DMTT balans ikkala tashuvchida ok) hali bajarilmaganiga asosiy hissa qo'shadi (D5/D12/D22/D24 bilan birga, ajratilmagan) - Faza 1 chiqishini to'smaydi (K23), lekin bank hisobotiga chiqishdan oldin ko'rib chiqilsin."
     },
     {
       "id": "D11",
       "x": ["X55"],
       "title": "Shading (measure 9) and cooling-demand reduction (measure 19) have no engine category",
-      "status": "open",
-      "closesIn": "P1",
+      "status": "accepted",
+      "closesIn": "P1 (accepted 2026-10-04)",
       "expectedIds": [
         "financial.19.npvActualUsd",
         "financial.9.npvActualUsd",
@@ -148,7 +148,7 @@
         "measures.9.standardizedSavingsKwh",
         "measures.9.standardizedSavingsUsd"
       ],
-      "note": "Measures 9 and 19 compute 0."
+      "note": "Measures 9 and 19 compute 0. Qaror (K23, 2026-10-04): tavsiya qabul qilindi - Faza 1 chiqishini to'smaydi."
     },
     {
       "id": "D12",
@@ -283,8 +283,8 @@
       "id": "D14",
       "x": [],
       "title": "Circulation pumps attributed to the equipment measure (Measures_summary!E21 = Equipment!K102 + D65)",
-      "status": "open",
-      "closesIn": "F06",
+      "status": "accepted",
+      "closesIn": "P1 (Faza 2+) (accepted 2026-10-04)",
       "expectedIds": [
         "financial.17.irrActual",
         "financial.17.npvActualUsd",
@@ -300,7 +300,7 @@
         "measures.17.standardizedSavingsKwh",
         "measures.17.standardizedSavingsUsd"
       ],
-      "note": "Engine gives K102 alone (-2508.64, matches the workbook); Excel adds D65 = 7808.64 pumps -> 5300."
+      "note": "Engine gives K102 alone (-2508.64, matches the workbook); Excel adds D65 = 7808.64 pumps -> 5300. Qaror (K23, 2026-10-04): tavsiya qabul qilindi - Faza 1 chiqishini to'smaydi. (closesIn avval 'F06' edi - F06 bu tafovutni yopmadi, to'g'rilandi.)"
     },
     {
       "id": "D24",

@@ -25,6 +25,6 @@
 
 ## Qabul mezonlari
 
-- [ ] `bun run test` yashil, golden ichida; `divergences.json` da `unexplained` yo'q.
-- [ ] README §7 chiqish mezonidagi beshta jami raqam tolerans ichida **yoki** ularni buzayotgan tafovutlar K23 ro'yxatida aniq ko'rsatilgan.
-- [ ] Faqat hujjat/JSON o'zgargan — lint (markdown emas, JSON) yashil.
+- [x] `bun run test` yashil (254/254), golden ichida; `divergences.json` da `unexplained` yo'q.
+- [x] README §7 chiqish mezonidagi beshta jami raqam tolerans ichida **yoki** ularni buzayotgan tafovutlar K23 ro'yxatida aniq ko'rsatilgan (D9/K22 + D5/D6/D8/D11/D14/K23 — barchasi `accepted`). **Eslatma:** F06c ning o'z qabul mezoni ("balans ikkala tashuvchida ok") hamon ochiq — `PROGRESS.md` F10 bo'limiga qarang.
+- [x] Faqat hujjat/JSON o'zgargan — lint (markdown emas, JSON) yashil.

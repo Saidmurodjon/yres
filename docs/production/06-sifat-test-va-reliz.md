@@ -172,9 +172,9 @@ Toleranslar dvigatel Excel formulasini **aynan** takrorlashi kerakligidan kelib 
 | Tejash (barcha chora-tadbirlar) | **664 253,78 kWh/y · 23 784,89 USD/y** | `Measures_summary!E38/F38` |
 | Actual tejash | 339 840,55 kWh/y · 13 180,69 USD/y | `I38/J38` |
 | CAPEX jami (EE + non-EE) | **975 113,37 USD** | `D38` |
-| Taklif etilgan (proposed) CAPEX | 702 496,08 USD · tejash 640 645,72 kWh | `D39/E39` |
+| Taklif etilgan (proposed) CAPEX | 706 124,26 USD · tejash 640 645,72 kWh | `D39/E39` |
 | Oddiy qoplanish (std / actual) | **41,00 y** / 73,98 y | `G38/K38` |
-| NPV jami (std) | **−654 709,02 USD** (taklif etilgan: −378 471,01) | `N38/N39` |
+| NPV jami (std) | **−654 709,02 USD** (taklif etilgan: −382 339,98) | `N38/N39` |
 | Solishtirma: oldin / keyin FESsiz / FES bilan | 234,69 (F) / 30,91 / −29,02 (A, ZEB) | `Breakdown!G75:H76`, `G78:H79` |
 | FES ishlab chiqarish | 150 954,94 kWh/y | `Breakdown!H72` |
 | Moliya parametrlari | 20 y, real 4 % + infl. 2 % → nominal 6,08 %; eskalatsiya gaz 4,856 % / elektr 4,04 % (nominal); kurs 12 140,91 | `Financial parameters!D5:D14` |

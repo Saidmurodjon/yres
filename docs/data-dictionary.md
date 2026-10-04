@@ -1,5 +1,10 @@
 # Data Dictionary — "3-DMTT v5.xlsx" Building Energy Audit Tool
 
+> Bu hujjat `3-DMTT v5.xlsx` bo'yicha yozilgan. Haqiqat manbai endi `3-DMTT v7.20.xlsx` (K1,
+> 2026-10-02) — v5 → v7.20 farqlari uchun `docs/production/01-audit-metodologiya.md` va
+> `docs/production/faza-1/`ga qarang (bu fayl qayta yozilmagan, faqat varaq/katak tuzilishi
+> ma'lumotnomasi sifatida foydali qoladi).
+
 Source: full cell dump (formulas + cached values) of a 29-sheet Uzbek building
 energy-audit Excel workbook. This document reverse-engineers the calculation
 logic sheet by sheet so it can be reimplemented in TypeScript / PostgreSQL.

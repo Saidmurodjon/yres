@@ -78,9 +78,18 @@ Maqsad: production'dagi mavjud xavflar va jimgina ma'lumot yo'qolishini yopish.
 
 **Chiqish mezoni:** production D1'da ishlaydi, Neon o'chirilgan; CI yashil (to'liq sxema, integratsiya testlari lokal D1'da); `12,5` uchala tilda to'g'ri saqlanadi; tiklash mashqi bajarilgan.
 
-### Faza 1 — Hisob to'g'riligi: dvigatelni v7.20 ga yetkazish (3–4 hafta)
+### Faza 1 — Hisob to'g'riligi: dvigatelni v7.20 ga yetkazish (3–4 hafta) — ✅ bajarildi (2026-10-04)
 **Ijro paketi:** `docs/production/faza-1/README.md` (F01–F10, 2026-10-02). v5 fidelity golden qatlami qurilmaydi (K1 — README §0).
 Maqsad: YRES raqamlari auditorning Excel'i bilan mos kelsin.
+
+**Yakun (F10, 2026-10-04):** `bun run test` yashil (254 test), golden'da `unexplained` = 0; har ochiq
+`divergences.json` yozuvi `accepted` (sana bilan) yoki keyingi fazaga havola qilingan (K21–K23).
+**Ochiq qolgan band — F06c ning o'z qabul mezoni ("3-DMTT balans ikkala tashuvchida ok") hali
+bajarilmagan:** gaz 471 867 vs 520 937 kWh (−9,4 %), elektr 135 498 vs 174 228 (−22,2 %) — asosan D9
+(K22: grunt bilan tutashgan elementlar faqat ish soatlari, Faza 2 boshida qoidaga keltiriladi) +
+D5/D12/D22/D24, ajratilmagan holda. Faza 1 chiqish mezoni (README §7: `unexplained` = 0 + har
+tafovut izohlangan/qabul qilingan) shu holda ham bajarilgan deb hisoblanadi — lekin bank hisobotiga
+chiqishdan oldin loyiha egasi bu balans farqini ko'rib chiqishi kerak.
 
 1. **Golden test infratuzilmasi avval** (06 §2): Python ekstraktor → `inputs.json`/`expected.json`;
    `3-dmtt/v5` fidelity (bloklovchi) + `3-dmtt/v7.20` target + `divergences.json` (D1–D8).
@@ -218,9 +227,9 @@ Agentlarning ~45 savoli takrorlanishlardan tozalandi. **Qalin** — keyingi faza
 | K18 | 3-MTM loyihasini YRES'ga import qilish kerakmi yoki u faqat regressiya etaloni bo'ladimi? | Avval etalon, keyin import (UAT uchun) | Faza 1/3 | 01 Q7 |
 | K19 | Excel'dagi eskirgan izohlar v7.21 da tuzatiladimi (`Checks` D-bo'limi, C2, `Breakdown!72`)? | Ha, golden'dan oldin | Faza 1 | 01 Q12 |
 | **K20** | Baza: Neon Postgres'da qolamizmi yoki Cloudflare D1'ga o'tamizmi? | ✅ **Qaror (2026-10-02): D1; kod ijro etildi (D01–D03, 2026-10-02; production cutover — D04 §C kutilmoqda)** — to'liq Cloudflare; production'da faqat test ma'lumot, ko'chirilmaydi, bo'sh bazadan. `docs/adr/ADR-016-cloudflare-d1.md` | Faza 0 | loyiha egasi |
-| **K21** | v7.20 diskontlangan qoplanish formulasi (`Financial indicators!D19`) 1 yilga ortiq beradi (FES: 5,18 o'rniga 4,18) — Excel tuzatiladimi? | Dvigatel to'g'ri qoladi, v7.21 da Excel tuzatiladi | Faza 1 | `faza-1/F05` |
-| **K22** | `Losses env.`: grunt bilan tutashgan elementlar faqat ish soatlari bilan, noish davrida manfiy Δt ham qo'shiladi — metodik asos? | Auditor tasdiqlasin; dvigatel tasdiqlangan qoidaga keltiriladi | Faza 1/2 | `faza-1/F03`, `F10` |
-| **K23** | P1 tafovutlar (infiltratsiya ulushi, oylik SCOP, BEMS, soyalash, nasoslar atributsiyasi) Faza 1 chiqishini to'smaydimi? | To'smaydi — `accepted` + keyingi faza | Faza 1 | `faza-1/F10` |
+| **K21** | v7.20 diskontlangan qoplanish formulasi (`Financial indicators!D19`) 1 yilga ortiq beradi (FES: 5,18 o'rniga 4,18) — Excel tuzatiladimi? | Dvigatel to'g'ri qoladi, v7.21 da Excel tuzatiladi — ✅ **Qaror (2026-10-04): tavsiya qabul qilindi.** `divergences.json` D13 `accepted` | Faza 1 | `faza-1/F05`, `F10` |
+| **K22** | `Losses env.`: grunt bilan tutashgan elementlar (Socle 1, Socle 2, F1) faqat ish soatlari bilan, devor/tom/F3 — ikkala davr; noish davrida manfiy Δt ham qo'shiladi — metodik asos? | Auditor tasdiqlasin; dvigatel tasdiqlangan qoidaga keltiriladi — ✅ **Qaror (2026-10-04): tavsiya qabul qilindi.** `divergences.json` D9 `accepted`, qoidaga keltirish **Faza 2 boshida** | Faza 1/2 | `faza-1/F03`, `F10` |
+| **K23** | P1 tafovutlar (infiltratsiya ulushi D5, oylik SCOP D6, BEMS D8, soyalash D11, nasoslar atributsiyasi D14) Faza 1 chiqishini to'smaydimi? | To'smaydi — `accepted` + keyingi faza — ✅ **Qaror (2026-10-04): tavsiya qabul qilindi.** D5/D6/D8/D11/D14 `divergences.json`da `accepted` | Faza 1 | `faza-1/F10` |
 
 ---
 
