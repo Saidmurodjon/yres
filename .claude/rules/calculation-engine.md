@@ -26,6 +26,13 @@
   holat qatoridan tashqari hech narsa saqlanmaydi.** Buni tushunmasdan ichiga keshlash/memoizatsiya
   qo'shmang (binolarning kirishlari tahrirlash paytida doimo o'zgaradi; eskirgan keshlangan natija
   qayta hisoblashdan yomonroq bo'lardi).
+- **`ENGINE_VERSION` (`services/engine-version.ts`, A01) — `computeAudit` natijasini o'zgartiradigan
+  har commit'da qo'lda oshiriladi.** Qoida: raqamlar o'zgarsa (formula, sukut, yangi had) → MINOR;
+  faqat shakl qo'shilsa (mavjud raqamlar o'zgarmaydi) → PATCH; metodika kitobi versiyasi almashsa
+  yoki `AuditResult`dan maydon olib tashlansa → MAJOR (`METHODOLOGY_VERSION` ham); baytma-bayt bir
+  xil natija beradigan refaktor → oshirilmaydi. Faza 1'ning qolgan/kelgusi topshiriqlari ham shu
+  qoidaga bo'ysunadi. Versiya snapshot qatorida saqlanadi (A04/A05) — `AuditResult`ning o'ziga
+  maydon qo'shilmagan (golden'ga tegmaslik uchun).
 - **`EnergyMeasureResult`: tashuvchi qismlari (F06b, X93/X95 yopildi — qo'sh hisob endi maqsad kodi bo'yicha ajratiladi).** Har chora-tadbirning tejashi *yakuniy* energiyada, tashuvchi bo'yicha
   `savingsByCarrier[]` (qism manfiy bo'lishi mumkin: issiqlik nasosi gaz +, elektr −; ventilyatsiya issiqlik +, fan −);
   `standardizedAnnualSavingsKwh/Usd` va `actual*` — qismlar yig'indisi, `usefulSavingsKwh` — foydali (generatsiyagacha) energiya (K3).

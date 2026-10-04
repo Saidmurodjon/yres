@@ -2618,3 +2618,14 @@ T06b — qamrab olinganlar:
 - **Tekshiruvlar:** `bun run test` (`apps/api`) — 254/254 yashil, golden shu ichida (`unexplained` = 0). Faqat hujjat + JSON o'zgardi — `bunx biome lint`/`biome check` `divergences.json`da yashil (avtomatik qayta formatlandi).
 - **Faza 1 holati:** ✅ bajarildi (2026-10-04, `00-MASTER-PLAN.md`), yuqoridagi F06c balans bandi bilan — bank hisobotiga chiqishdan oldin loyiha egasi shu bandni ko'rib chiqishi tavsiya etiladi.
 **Navbatda:** Faza 2 (`docs/production/faza-2/`).
+
+## Faza 2 · A01 — `ENGINE_VERSION`/`METHODOLOGY_VERSION` konstantalari va oshirish qoidasi (2026-10-04)
+
+- `apps/api/src/services/engine-version.ts` (yangi, `audit.engine.ts` va golden fayllarga tegilmagan): `ENGINE_VERSION = "0.9.0"` (Faza 1 hali F10'dan keyin ham A11'da `1.0.0`ga ko'tariladi), `METHODOLOGY_VERSION = "3-DMTT v7.20"`.
+- `AuditResult`ga maydon qo'shilmadi (A01 spec "Qilmang" bandi) — versiya snapshot qatorida saqlanadi (A04/A05).
+- `Env`ga ixtiyoriy `GIT_SHA?: string` (`src/index.ts`); `.claude/rules/deployment.md`dagi API deploy buyrug'iga `--var GIT_SHA:$(git rev-parse --short HEAD)` qo'shildi (sir emas — `[vars]`).
+- `GET /health` javobi endi `{ status: "ok", engineVersion, gitSha }` (`gitSha` sozlanmagan bo'lsa `null`) — `future-platform.md` kuzatuv bandi bilan mos, ichki ma'lumot oshkor qilmaydi.
+- `.claude/rules/calculation-engine.md`ga oshirish qoidasi bandi qo'shildi: raqam o'zgarsa MINOR, faqat shakl qo'shilsa PATCH, metodika kitobi versiyasi almashsa/maydon olib tashlansa MAJOR, baytma-bayt bir xil refaktor — oshirilmaydi; Faza 1'ning qolgan/kelgusi topshiriqlari ham shu qoidaga bo'ysunadi.
+- Testlar: yangi `apps/api/tests/integration/health.test.ts` — `/health` `engineVersion`/`gitSha: null`ni tekshiradi. type-check, build, biome lint, `bun run --cwd apps/api test` (255/255, avvalgi 254 + yangi 1) yashil.
+- Chetlanish yo'q — spec aniq va kod bilan ziddiyatsiz bajarildi.
+**Navbatda:** A02 (`audit_event` jadvali + revision mexanizmi; `findAccessibleBuilding` bitta so'rov; `buildings` route'lari).

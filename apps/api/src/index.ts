@@ -25,6 +25,7 @@ import { referenceRoutes } from "./routes/reference";
 import { systemsRoutes } from "./routes/systems";
 import { usersRoutes } from "./routes/users";
 import { verifyRoutes } from "./routes/verify";
+import { ENGINE_VERSION } from "./services/engine-version";
 
 export interface Env {
   /** D1 binding (wrangler.toml `[[d1_databases]]`). Durable Objects receive the same binding. */
@@ -45,6 +46,13 @@ export interface Env {
   SENTRY_DSN: string;
   /** Yandex Static Maps API key for the PDF report's building-location map (docs/report-redesign-proposal.md §7). Empty/unset in dev — report.service.ts's fetchYandexStaticMapPng() just skips the image and keeps the text-only coordinates line. */
   YANDEX_STATIC_MAPS_API_KEY: string;
+  /**
+   * Short git commit SHA of the deployed build, set at deploy time via
+   * `--var GIT_SHA:$(git rev-parse --short HEAD)` (deployment.md) — not a secret, just a
+   * `[vars]` value. Unset locally/in tests; surfaced on `/health` for debugging which
+   * commit is live.
+   */
+  GIT_SHA?: string;
   /**
    * Cloudflare's native Rate Limiting binding (see wrangler.toml) — only
    * present when provisioned for an environment. `rateLimit()` middleware
@@ -106,7 +114,9 @@ app.use("*", (c, next) =>
 // module-mocking tricks).
 app.use("*", dbMiddleware);
 
-app.get("/health", (c) => c.json({ status: "ok" }));
+app.get("/health", (c) =>
+  c.json({ status: "ok", engineVersion: ENGINE_VERSION, gitSha: c.env.GIT_SHA ?? null }),
+);
 
 // Credential-guessing targets: sign-in/sign-up (brute force, credential
 // stuffing) and the password-reset request (email-bombing a victim). Other

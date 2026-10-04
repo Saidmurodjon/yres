@@ -20,7 +20,7 @@ routing'i qayta sozlanishi kerak bo'lsa, shu munosabatni saqlang.
 # API — avval migratsiya (faqat qo'shuvchi — data-integrity.md), keyin kod
 cd apps/api
 npx wrangler d1 migrations apply DB --remote --env production   # = bun run db:migrate:prod
-npx wrangler deploy --env production
+npx wrangler deploy --env production --var GIT_SHA:$(git rev-parse --short HEAD)
 
 # Web — VITE_API_URL *build* vaqtida o'rnatilishi shart (Vite env o'zgaruvchilarini inline qiladi), shunchaki deploy vaqtida emas
 cd apps/web
