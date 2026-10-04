@@ -137,3 +137,24 @@ export async function readSnapshotJson<T>(
   }
   return JSON.parse(new TextDecoder().decode(bytes)) as T;
 }
+
+/**
+ * Recognizes the batch-rollback failure the `audit_snapshot_status_flow` trigger (A04,
+ * `packages/db/drizzle/0011_audit_snapshot_triggers.sql`) produces when a submit/approve route
+ * (A05b) attempts an illegal status transition — including the concurrent-approval race, where
+ * the second of two parallel "approve" writes finds `OLD.status` no longer `submitted` by the
+ * time it runs. Mirrors `isRevisionConflict()` in `lib/audit-event.ts`: walks `.cause` a few
+ * levels since D1 wraps the underlying SQLite error, matching on the trigger's `RAISE(ABORT, ...)`
+ * message rather than any specific wrapper type.
+ */
+export function isIllegalTransitionError(err: unknown): boolean {
+  let current: unknown = err;
+  for (let depth = 0; depth < 5 && current != null; depth++) {
+    const message = current instanceof Error ? current.message : String(current);
+    if (message.includes("illegal snapshot status transition")) {
+      return true;
+    }
+    current = current instanceof Error ? current.cause : undefined;
+  }
+  return false;
+}

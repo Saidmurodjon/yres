@@ -3,11 +3,12 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { auditEventStatement } from "../lib/audit-event";
-import { canWrite, findAccessibleBuilding } from "../lib/building-access";
+import { canApprove, canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import { ENGINE_VERSION, METHODOLOGY_VERSION } from "../services/engine-version";
 import {
   buildSnapshotPayload,
+  isIllegalTransitionError,
   readSnapshotJson,
   serialize,
   sha256Hex,
@@ -229,4 +230,147 @@ snapshotRoutes.get("/:id/audit/snapshots/:sid", async (c) => {
   }
 
   return c.json({ snapshot, result });
+});
+
+/**
+ * POST /:id/audit/snapshots/:sid/submit - moves a `draft` snapshot to `submitted` (A05b). Legal
+ * transitions are enforced by the `audit_snapshot_status_flow` trigger (A04), not re-checked
+ * here: an already-`submitted`/`approved`/`superseded` row makes the trigger abort the whole
+ * batch, which this route turns into `409 { error, code: "illegal_transition" }` — the trigger's
+ * own message never reaches the client (security.md, no internal error text to the caller).
+ *
+ * D1 budget (database.md, ≤ 40/request): session lookup (≤ 2) + findAccessibleBuilding (1) +
+ * snapshot existence check (1) + this db.batch's 2 statements (audit_event insert, status update)
+ * = 6 D1 subrequests.
+ */
+snapshotRoutes.post("/:id/audit/snapshots/:sid/submit", async (c) => {
+  const buildingId = c.req.param("id");
+  const parsedSid = snapshotIdParamSchema.safeParse(c.req.param("sid"));
+  if (!parsedSid.success) {
+    return c.json({ error: "Invalid snapshot id" }, 400);
+  }
+  const snapshotId = parsedSid.data;
+
+  const db = c.get("db");
+  const user = c.get("user");
+
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
+    return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
+  }
+
+  const [snapshot] = await db
+    .select({ id: auditSnapshot.id })
+    .from(auditSnapshot)
+    .where(and(eq(auditSnapshot.id, snapshotId), eq(auditSnapshot.buildingId, buildingId)))
+    .limit(1);
+  if (!snapshot) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  try {
+    await db.batch([
+      auditEventStatement(db, c, {
+        buildingId,
+        entity: "snapshot",
+        entityId: snapshotId,
+        action: "submit",
+      }),
+      db
+        .update(auditSnapshot)
+        .set({ status: "submitted", submittedByUserId: user.id, submittedAt: new Date() })
+        .where(and(eq(auditSnapshot.id, snapshotId), eq(auditSnapshot.buildingId, buildingId))),
+    ]);
+  } catch (err) {
+    if (isIllegalTransitionError(err)) {
+      return c.json({ error: "Illegal snapshot status transition", code: "illegal_transition" }, 409);
+    }
+    console.error("[snapshot] submit failed", snapshotId, err instanceof Error ? err.message : err);
+    return c.json({ error: "Internal error" }, 500);
+  }
+
+  return c.json({ ok: true });
+});
+
+/**
+ * POST /:id/audit/snapshots/:sid/approve - moves a `submitted` snapshot to `approved`, demoting
+ * whatever snapshot was previously `approved` for this building to `superseded` first (A05b,
+ * ADR-004). Who may approve: `canApprove()` (`lib/building-access.ts`) — K24 (2026-10-04): the
+ * building owner, self-approval allowed and journaled like any other approval, "four-eyes" is
+ * Faza 5.
+ *
+ * Order inside the batch matters: the old-approved->superseded update runs **before** the
+ * sid->approved update, so the partial unique index (`audit_snapshot_building_approved_unique`,
+ * at most one `approved` row per building) never sees two approved rows at once within the same
+ * statement sequence. If `sid`'s own current status isn't `submitted` (already approved, still
+ * draft, or superseded — including the case where a second, concurrent approve request runs
+ * after a first one already committed), `audit_snapshot_status_flow` aborts that statement and
+ * the whole batch rolls back — this is also what closes the concurrent-approval race (A04 doc
+ * comment): only one of two parallel approvals on the same snapshot can win.
+ *
+ * D1 budget (database.md, ≤ 40/request): session lookup (≤ 2) + findAccessibleBuilding (1) +
+ * snapshot existence check (1) + this db.batch's 3 statements (audit_event insert, demote old
+ * approved, promote sid) = 7 D1 subrequests.
+ */
+snapshotRoutes.post("/:id/audit/snapshots/:sid/approve", async (c) => {
+  const buildingId = c.req.param("id");
+  const parsedSid = snapshotIdParamSchema.safeParse(c.req.param("sid"));
+  if (!parsedSid.success) {
+    return c.json({ error: "Invalid snapshot id" }, 400);
+  }
+  const snapshotId = parsedSid.data;
+
+  const db = c.get("db");
+  const user = c.get("user");
+
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
+    return c.json({ error: "Not found" }, 404);
+  }
+  if (!canApprove(access.role)) {
+    return c.json({ error: "Only the building owner can approve a snapshot." }, 403);
+  }
+
+  const [snapshot] = await db
+    .select({ id: auditSnapshot.id })
+    .from(auditSnapshot)
+    .where(and(eq(auditSnapshot.id, snapshotId), eq(auditSnapshot.buildingId, buildingId)))
+    .limit(1);
+  if (!snapshot) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  try {
+    await db.batch([
+      auditEventStatement(db, c, {
+        buildingId,
+        entity: "snapshot",
+        entityId: snapshotId,
+        action: "approve",
+      }),
+      db
+        .update(auditSnapshot)
+        .set({ status: "superseded", supersededAt: new Date(), supersededById: snapshotId })
+        .where(and(eq(auditSnapshot.buildingId, buildingId), eq(auditSnapshot.status, "approved"))),
+      db
+        .update(auditSnapshot)
+        .set({ status: "approved", approvedByUserId: user.id, approvedAt: new Date() })
+        .where(and(eq(auditSnapshot.id, snapshotId), eq(auditSnapshot.buildingId, buildingId))),
+    ]);
+  } catch (err) {
+    if (isIllegalTransitionError(err)) {
+      return c.json({ error: "Illegal snapshot status transition", code: "illegal_transition" }, 409);
+    }
+    console.error(
+      "[snapshot] approve failed",
+      snapshotId,
+      err instanceof Error ? err.message : err,
+    );
+    return c.json({ error: "Internal error" }, 500);
+  }
+
+  return c.json({ ok: true });
 });

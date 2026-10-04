@@ -2802,3 +2802,43 @@ T06b — qamrab olinganlar:
   `routes/audit.ts`) tegilmadi. A09b (chora-tadbirlar, moliya, a'zolar, izohlar, `audit/run`) — bu
   sessiyaning doirasiga kirmaydi, keyingi qadam.
 **Navbatda:** A09b (`audit_event` chora-tadbirlar/moliya/a'zolar/izohlar/`audit/run`ga).
+
+## Faza 2 · A05b — Snapshot holat o'tishlari: submit/approve, `canApprove()`, 409 (2026-10-04)
+
+- `apps/api/src/lib/building-access.ts`ga `canApprove(role)` qo'shildi — K24 qarori (2026-10-04,
+  tavsiya etilgan variant qabul qilindi): faqat bino `owner`i tasdiqlaydi; o'z-o'zini tasdiqlash
+  ruxsat (route'da `role === "owner"` yozilmaydi, bitta funksiya — `future-platform.md`).
+- `apps/api/src/routes/snapshots.ts`ga ikki endpoint: `POST /:id/audit/snapshots/:sid/submit`
+  (`canWrite` — owner/editor) va `POST /:id/audit/snapshots/:sid/approve` (`canApprove` — faqat
+  owner). Ikkisi ham: `findAccessibleBuilding` → 404, rol tekshiruvi → 403, sid mavjudligini
+  (`and(eq(id,sid), eq(buildingId,id))`) alohida `SELECT` bilan tasdiqlash → 404, so'ng
+  `db.batch([auditEventStatement(submit/approve), ...update(lar)])`. `approve`da batch ichida
+  **avval** eski `approved` qatorni `superseded`ga (`supersededById = sid`), **keyin** `sid`ni
+  `approved`ga o'tkazadi — A04'ning qisman unique indeksi (`audit_snapshot_building_approved_unique`)
+  bu ketma-ketlikni talab qiladi.
+  Noqonuniy o'tish (`audit_snapshot_status_flow` trigger, A04) butun batch'ni qaytaradi; bu xato
+  `snapshot.service.ts`ning yangi `isIllegalTransitionError()` (A02'ning `isRevisionConflict()`i
+  uslubida, `.cause` zanjirini xabar matni bo'yicha tekshiradi) orqali tutiladi → route
+  `409 { error, code: "illegal_transition" }` qaytaradi; ichki trigger matni mijozga berilmaydi.
+  Bir xil snapshot'ga parallel ikkita `approve` so'rovi — ikkinchisi batch bosqichida `sid`ning
+  `OLD.status`i endi `submitted` emasligini ko'radi (trigger) → 409, shu tarzda race atomik yopiladi
+  (alohida qulflash kodisiz).
+- D1 byudjeti (izohlarda): `submit` — sessiya(≤2) + kirish(1) + sid mavjudlik(1) + batch(2) = 6/40;
+  `approve` — sessiya(≤2) + kirish(1) + sid mavjudlik(1) + batch(3) = 7/40.
+- Yangi test fayli `apps/api/tests/integration/snapshot-transitions.test.ts` (9 test): to'liq
+  `draft→submitted→approved` yo'li (`audit_event`da uchtasi ham `owner` actor bilan); ikkinchi
+  snapshot tasdiqlanganda birinchisi `superseded`ga o'tishi; tasdiqlangan'ni qayta tasdiqlash →
+  409 (holat o'zgarmaydi, `approve` audit_event ikkilanmaydi); submitted'ni qayta submit → 409;
+  draft'ni to'g'ridan-to'g'ri approve (submit o'tkazib yuborilgan) → 409; bir xil snapshot'ga
+  `Promise.all` bilan parallel ikkita approve → aniq bitta `200` + bitta `409`, yakunda bitta
+  `approve` audit_event; editor submit qila oladi (200) lekin approve qila olmaydi (403), viewer
+  ikkalasiga ham 403; begona foydalanuvchi (bino a'zosi emas) → 404 (403 emas); noto'g'ri `:sid`
+  → 400, boshqa binodan olingan `:sid` → 404.
+- Tekshiruvlar: root `bun run type-check` (hamma workspace, `apps/web` build bilan) toza;
+  `bunx biome lint` tegilgan 4 faylga toza; `bun run --cwd apps/api test` — **301/301** yashil
+  (avvalgi 288 + bu sessiyadan oldingi A09a progress yozuvidan keyin qo'shilgan testlar + bu
+  sessiyaning 9 yangi testi — aniq boshlang'ich son tasdiqlanmadi, faqat yakuniy 301/301 yashil
+  ekani tasdiqlandi).
+- Chetlanish: yo'q — spec (`A05-snapshot-api.md` A05b bandi) aynan shu tartibda bajarildi.
+  `A05` endi to'liq ✅ (`faza-2/README.md`).
+**Navbatda:** A06 (hisobot snapshot'dan: o'zgarmas PDF + SHA-256).

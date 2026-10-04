@@ -97,3 +97,16 @@ export async function findAccessibleBuilding(
 export function canWrite(role: BuildingRole): boolean {
   return role !== "viewer";
 }
+
+/**
+ * Who may approve an `audit_snapshot` (A05b, K24 — owner decision 2026-10-04, accepted as
+ * recommended): only the building's `owner`, never an `editor`/`viewer`. Self-approval (the owner
+ * approving a snapshot they themselves created/submitted) is allowed — it's recorded in
+ * `audit_event` like any other approval, not blocked here — "four-eyes" review (QC-M7) is
+ * Faza 5. Single source of truth for this check, same reasoning as `canWrite`: route code must
+ * never compare `role === "owner"` directly (`future-platform.md` tenancy note) — if K24 is ever
+ * revisited, only this function changes.
+ */
+export function canApprove(role: BuildingRole): boolean {
+  return role === "owner";
+}
