@@ -111,12 +111,18 @@ const buildingBlockInputSchema = z.object({
 // + session lookup (≤ 2) + findAccessibleBuilding (1, single LEFT JOIN query — A02) + audit_event
 // (1, A09a) = 36, and an "after" PUT adds 2 retrofit lookups = 38. A "before" PUT instead adds: 1
 // read of the after→before links + PRAGMA defer_foreign_keys + ≤ 2 re-link CASE UPDATEs (one per
-// table) = 36 + 4 = 40 ≤ 40.
+// table) = 36 + 4 = 40 ≤ 40. `expectedRevision` (A10) adds NO statement — it's checked inside the
+// audit_event insert's revision subquery (auditEventStatement()) — so this stays exactly 40; this
+// is also why the route only computes the response's `revision` as `expectedRevision + 1` and
+// never spends a 41st query re-reading it when the caller omitted `expectedRevision`.
 export const MAX_ENVELOPE_OPENINGS_TOTAL = 150;
 
 export const replaceEnvelopeSchema = z
   .object({
     scenario: z.enum(scenarioEnum.enumValues).default("before"),
+    // A10: the revision the caller last saw for this building's "envelope" entity (from GET
+    // /:id/envelope). Omit for the pre-A10 guard-less behavior.
+    expectedRevision: z.number().int().min(0).max(1_000_000).optional(),
     // Footprint blocks aren't scenario-specific (retrofit changes U-values, not
     // geometry) — omit this field to leave existing blocks untouched, or pass
     // an array (including []) to replace all of the building's blocks.

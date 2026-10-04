@@ -27,5 +27,8 @@ export const financialParametersSchema = z.object({
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .nullable(),
+  // A10: the revision the caller last saw for this building's "financial" entity (from GET
+  // /:id/financial-parameters). Omit for the pre-A10 guard-less behavior.
+  expectedRevision: z.number().int().min(0).max(1_000_000).optional(),
 });
 export type FinancialParametersInput = z.infer<typeof financialParametersSchema>;

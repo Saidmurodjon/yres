@@ -10,7 +10,7 @@ import {
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
-import { auditEventStatement } from "../lib/audit-event";
+import { auditEventStatement, getRevisions, isRevisionConflict, revisionConflictResponse } from "../lib/audit-event";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import { replaceEnvelopeSchema } from "../schemas/envelope";
@@ -32,7 +32,7 @@ envelopeRoutes.get("/:id/envelope", async (c) => {
     return c.json({ error: "Not found" }, 404);
   }
 
-  const [blocks, constructionTypes, openingTypes, envelopeElements] = await Promise.all([
+  const [blocks, constructionTypes, openingTypes, envelopeElements, revisions] = await Promise.all([
     db.query.buildingBlock.findMany({
       where: eq(buildingBlock.buildingId, buildingId),
     }),
@@ -50,9 +50,17 @@ envelopeRoutes.get("/:id/envelope", async (c) => {
         openings: { with: { openingType: true } },
       },
     }),
+    // A10: so the form can send it back as `expectedRevision` on the next PUT.
+    getRevisions(db, buildingId, ["envelope"]),
   ]);
 
-  return c.json({ blocks, constructionTypes, openingTypes, envelopeElements });
+  return c.json({
+    blocks,
+    constructionTypes,
+    openingTypes,
+    envelopeElements,
+    revision: revisions.envelope,
+  });
 });
 
 // PUT /:id/envelope - bulk-replace the building's envelope
@@ -87,7 +95,7 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const { scenario, buildingBlocks, constructionTypes, openingTypes, envelopeElements } =
+  const { scenario, buildingBlocks, constructionTypes, openingTypes, envelopeElements, expectedRevision } =
     parsed.data;
 
   const buildingBlockRows: (typeof buildingBlock.$inferInsert)[] | undefined = buildingBlocks?.map(
@@ -321,6 +329,7 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
       buildingId,
       entity: "envelope",
       action: "replace",
+      expectedRevision,
       summary: {
         scenario,
         counts: {
@@ -392,7 +401,14 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
     relink(openingType, "o", openingTypeIdByCode);
   }
 
-  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  try {
+    await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  } catch (err) {
+    if (isRevisionConflict(err)) {
+      return revisionConflictResponse(c, db, buildingId, "envelope");
+    }
+    throw err;
+  }
 
   return c.json({
     scenario,
@@ -400,5 +416,10 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
     constructionTypeIds: [...constructionTypeIdByCode.values()],
     openingTypeIds: [...openingTypeIdByCode.values()],
     envelopeElementIds,
+    // A10: this PUT's batch is already at the D1 query budget ceiling (40/40, see
+    // schemas/envelope.ts), so unlike the other A10 routes this never spends an extra query to
+    // re-read the revision when `expectedRevision` was omitted — only the guarded case (where the
+    // new value is known for free, `expectedRevision + 1`) is reported.
+    revision: expectedRevision !== undefined ? expectedRevision + 1 : undefined,
   });
 });

@@ -2986,3 +2986,69 @@ T06b — qamrab olinganlar:
   tarmog'i avval `audit_event`siz edi (spec jadvalida "select" ham "measures" entity'siga kiradi) —
   ikkala tarmoqqa (bo'sh va to'ldirilgan) audit qo'shildi, `summary: { selectedCount }`.
 **Navbatda:** A10a (optimistic concurrency — `expectedRevision`, 409 javob).
+
+## A10a — `expectedRevision` → 409 (API)
+
+- Spec (`docs/production/faza-2/A10-expected-revision.md` §A10a) 13 bulk-replace/select
+  route'iga guard qo'shishni talab qildi: `PUT /envelope`, 9 ta `PUT /systems/*`,
+  `PUT /consumption`, `PUT /consumption/bulk`, `POST /measures/select`,
+  `PUT /financial-parameters`. Mexanizmning o'zi (A02'dan) allaqachon bor edi —
+  `auditEventStatement({ expectedRevision })` revision mos kelmasa `entity_revision`
+  subquery'sini `NULL`ga aylantiradi, NOT NULL cheklov butun `db.batch()`ni qaytaradi; bu A10a'da
+  faqat **chaqirildi**, yangi SQL yozilmadi.
+- Yangi umumiy yordamchi `revisionConflictResponse(c, db, buildingId, entity)`
+  (`apps/api/src/lib/audit-event.ts`) — `isRevisionConflict(err)` rost bo'lganda
+  `getRevisions()` bilan **bitta** qo'shimcha so'rov sarflab `409 { error, code:
+  "revision_conflict", currentRevision }` qaytaradi. Har 13 route'da bir xil naqsh:
+  `try { await db.batch(...) } catch (err) { if (isRevisionConflict(err)) return
+  revisionConflictResponse(...); throw err; }`.
+- Har zod sxemaga `expectedRevision: z.number().int().min(0).max(1_000_000).optional()`
+  qo'shildi (`schemas/envelope.ts`, `schemas/systems.ts`ning `scenarioBodySchema` +
+  `replaceRenewablesSchema`, `schemas/consumption.ts`ning ikkala PUT sxemasi,
+  `schemas/measures.ts`ning `selectMeasuresSchema`, `schemas/financial.ts`). Omissiya — eski
+  guard'siz xatti-harakat (spec §2 "Ixtiyoriy (expand)").
+- **Byudjet (database.md ≤ 40):** `auditEventStatement()`ning `expectedRevision`i batch'ga
+  **hech qanday statement qo'shmaydi** — tekshiruv audit_event insert'ining revision
+  subquery'si ichida. Shuning uchun qobiq "oldin" PUT (allaqachon 40/40, `schemas/envelope.ts`)
+  o'zgarmadi — buni yangi test bilan tasdiqladim (pastda). Boshqa 12 route'da (hammasi
+  byudjetdan ancha past) muvaffaqiyatli javobga `revision` maydonini qo'shish uchun
+  `expectedRevision` berilganda **hisoblab** (`expectedRevision + 1`, qo'shimcha so'rovsiz),
+  berilmaganda esa **1 qo'shimcha `getRevisions()` so'rovi** bilan joriy qiymatni o'qiydi —
+  bu qo'shimcha so'rov `envelope` PUT'da ataylab **yo'q** (spec §4: "qobiq 'oldin' PUT 40/40 —
+  u yerda faqat `expectedRevision + 1`"; omissiya holatida `revision` maydoni butunlay
+  qoldirilган, `undefined`).
+- GET'lar revision(lar)ni qo'shdi: `GET /:id/envelope` → `revision` (bitta `getRevisions`
+  so'rovi, `Promise.all`ga qo'shildi); `GET /:id/systems` → `revisions: { ventilation, dhw,
+  distribution, generation, coolingWindows, coolingSystems, lighting, equipment, renewables }`
+  (hammasi **bitta** `getRevisions(db, buildingId, [9 entity])` chaqiruvida, `inArray` orqali);
+  `GET /:id/consumption` → `revision`; `GET /:id/measures` → `revision`;
+  `GET /:id/financial-parameters` → `revision` (ikkala — default va saqlangan — tarmoqda).
+- **Nozik tuzatish, spec'da aniq aytilmagan:** `financial.ts`ning PUT handler'i avval butun
+  `parsed.data`ni to'g'ridan-to'g'ri `{ ...values, updatedAt: ... }` orqali DB `.values()`ga
+  uzatardi — `expectedRevision` qo'shilgach, bu uni jimgina `building_financial_parameters`
+  jadvaliga yozib yuborgan bo'lardi (ustun yo'q, D1 xato berardi). Tuzatish:
+  `const { expectedRevision, ...parameters } = parsed.data;` bilan ajratib olindi, faqat
+  `parameters` DB'ga va javobga ketadi; yangi test shu aniq leak'ni tekshiradi
+  (`revision-conflict.test.ts`ning financial testi, `parameters.expectedRevision` `undefined`
+  ekanligini tasdiqlaydi). Boshqa 12 route'da bu xavf yo'q edi — ularning hammasi
+  `expectedRevision`ni alohida destructure qilib, faqat ichki massiv elementlarini (masalan
+  `systems`, `bills`) DB qatorlariga map qiladi, butun top-level obyektni emas.
+- Testlar: yangi `apps/api/tests/integration/revision-conflict.test.ts` (5 test) — envelope
+  (stale → 409 + ma'lumot/audit o'zgarmagan + mos kelganda 200/revision+1 + omissiya → eski
+  xatti-harakat), systems (ventilation stale → 409, lekin **boshqa** entity — dhw — o'z
+  revision'i 0 bilan ta'sirlanmagan holda saqlanadi — spec'ning "tizimlarning boshqa bo'limini
+  saqlash 409 bermaydi" talabi), consumption, measures/select, financial-parameters. Bundan
+  tashqari `envelope.test.ts`ga bitta test qo'shildi — mavjud "eng og'ir payload" testining aynan
+  o'zi, endi `expectedRevision: 0` bilan, 200 + `revision: 1` qaytarishini tasdiqlaydi (byudjet
+  qabul mezoni).
+- Tekshiruvlar: `bun install` (ildiz); `bun run --cwd apps/api type-check` — prod kod toza
+  (yagona qizil, A09b'dan meros, tegilmagan `tests/services/report.service.test.ts`dagi
+  oldindan-mavjud `Buffer` xatosi, A06 coder'ga tegishli); `bunx biome lint` (13 tegilgan fayl +
+  2 test fayli) toza; `bun run --cwd apps/api test` — **317/317** (ushbu A10a o'zgarishlaridan
+  oldin, repo HEAD'da allaqachon 311/311 edi — PROGRESS.md'dagi oldingi "302" yozuvdan beri
+  boshqa parallel ish fon qo'shgan; bu sessiya ustiga 6 yangi test qo'shdi:
+  revision-conflict.test.ts'dagi 5 + envelope.test.ts'dagi 1, hammasi yashil).
+- Chetlanish spec'ga nisbatan: yo'q. A10b (web) — alohida keyingi topshiriq, bu sessiyada
+  tegilmadi.
+**Navbatda:** A10b (web — `useRegisterDirty`/`useSyncedRows` formalariga `expectedRevision`
+yuborish va 409'da `ConfirmDialog`), keyin F10'dan so'ng A11/A12.

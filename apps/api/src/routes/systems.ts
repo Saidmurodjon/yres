@@ -14,7 +14,12 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
-import { auditEventStatement } from "../lib/audit-event";
+import {
+  auditEventStatement,
+  getRevisions,
+  isRevisionConflict,
+  revisionConflictResponse,
+} from "../lib/audit-event";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import {
@@ -58,6 +63,7 @@ systemsRoutes.get("/:id/systems", async (c) => {
     lightingZones,
     equipmentItems,
     renewableSystems,
+    revisions,
   ] = await Promise.all([
     db.select().from(ventilationSystem).where(eq(ventilationSystem.buildingId, buildingId)),
     db.select().from(dhwSource).where(eq(dhwSource.buildingId, buildingId)),
@@ -71,6 +77,19 @@ systemsRoutes.get("/:id/systems", async (c) => {
       where: eq(renewableSystem.buildingId, buildingId),
       with: { monthlyProduction: true },
     }),
+    // A10: one query covers all 9 systems.* entities so the form can send each back as
+    // `expectedRevision` on its own PUT.
+    getRevisions(db, buildingId, [
+      "systems.ventilation",
+      "systems.dhw",
+      "systems.distribution",
+      "systems.generation",
+      "systems.cooling_windows",
+      "systems.cooling_systems",
+      "systems.lighting",
+      "systems.equipment",
+      "systems.renewables",
+    ]),
   ]);
 
   return c.json({
@@ -83,6 +102,17 @@ systemsRoutes.get("/:id/systems", async (c) => {
     lightingZones,
     equipmentItems,
     renewableSystems,
+    revisions: {
+      ventilation: revisions["systems.ventilation"],
+      dhw: revisions["systems.dhw"],
+      distribution: revisions["systems.distribution"],
+      generation: revisions["systems.generation"],
+      coolingWindows: revisions["systems.cooling_windows"],
+      coolingSystems: revisions["systems.cooling_systems"],
+      lighting: revisions["systems.lighting"],
+      equipment: revisions["systems.equipment"],
+      renewables: revisions["systems.renewables"],
+    },
   });
 });
 
@@ -108,7 +138,7 @@ systemsRoutes.put("/:id/systems/ventilation", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const { scenario, systems } = parsed.data;
+  const { scenario, systems, expectedRevision } = parsed.data;
   const rows = systems.map((s) => ({ ...s, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
@@ -116,6 +146,7 @@ systemsRoutes.put("/:id/systems/ventilation", async (c) => {
       buildingId,
       entity: "systems.ventilation",
       action: "replace",
+      expectedRevision,
       summary: { count: rows.length },
     }),
     db
@@ -127,9 +158,20 @@ systemsRoutes.put("/:id/systems/ventilation", async (c) => {
   if (rows.length > 0) {
     statements.push(...insertChunked(db, ventilationSystem, rows));
   }
-  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  try {
+    await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  } catch (err) {
+    if (isRevisionConflict(err)) {
+      return revisionConflictResponse(c, db, buildingId, "systems.ventilation");
+    }
+    throw err;
+  }
 
-  return c.json({ scenario, count: rows.length });
+  const revision =
+    expectedRevision !== undefined
+      ? expectedRevision + 1
+      : (await getRevisions(db, buildingId, ["systems.ventilation"]))["systems.ventilation"];
+  return c.json({ scenario, count: rows.length, revision });
 });
 
 // PUT /:id/systems/dhw - bulk-replace a scenario's DHW sources
@@ -151,7 +193,7 @@ systemsRoutes.put("/:id/systems/dhw", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const { scenario, sources } = parsed.data;
+  const { scenario, sources, expectedRevision } = parsed.data;
   const rows = sources.map((s) => ({ ...s, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
@@ -159,6 +201,7 @@ systemsRoutes.put("/:id/systems/dhw", async (c) => {
       buildingId,
       entity: "systems.dhw",
       action: "replace",
+      expectedRevision,
       summary: { count: rows.length },
     }),
     db
@@ -168,9 +211,20 @@ systemsRoutes.put("/:id/systems/dhw", async (c) => {
   if (rows.length > 0) {
     statements.push(...insertChunked(db, dhwSource, rows));
   }
-  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  try {
+    await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  } catch (err) {
+    if (isRevisionConflict(err)) {
+      return revisionConflictResponse(c, db, buildingId, "systems.dhw");
+    }
+    throw err;
+  }
 
-  return c.json({ scenario, count: rows.length });
+  const revision =
+    expectedRevision !== undefined
+      ? expectedRevision + 1
+      : (await getRevisions(db, buildingId, ["systems.dhw"]))["systems.dhw"];
+  return c.json({ scenario, count: rows.length, revision });
 });
 
 // PUT /:id/systems/distribution - bulk-replace a scenario's distribution
@@ -193,7 +247,7 @@ systemsRoutes.put("/:id/systems/distribution", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const { scenario, systems } = parsed.data;
+  const { scenario, systems, expectedRevision } = parsed.data;
   const rows = systems.map((s) => ({ ...s, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
@@ -201,6 +255,7 @@ systemsRoutes.put("/:id/systems/distribution", async (c) => {
       buildingId,
       entity: "systems.distribution",
       action: "replace",
+      expectedRevision,
       summary: { count: rows.length },
     }),
     db
@@ -215,9 +270,20 @@ systemsRoutes.put("/:id/systems/distribution", async (c) => {
   if (rows.length > 0) {
     statements.push(...insertChunked(db, distributionSystem, rows));
   }
-  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  try {
+    await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  } catch (err) {
+    if (isRevisionConflict(err)) {
+      return revisionConflictResponse(c, db, buildingId, "systems.distribution");
+    }
+    throw err;
+  }
 
-  return c.json({ scenario, count: rows.length });
+  const revision =
+    expectedRevision !== undefined
+      ? expectedRevision + 1
+      : (await getRevisions(db, buildingId, ["systems.distribution"]))["systems.distribution"];
+  return c.json({ scenario, count: rows.length, revision });
 });
 
 // PUT /:id/systems/generation - bulk-replace a scenario's generation sources.
@@ -241,7 +307,7 @@ systemsRoutes.put("/:id/systems/generation", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const { scenario, sources } = parsed.data;
+  const { scenario, sources, expectedRevision } = parsed.data;
   const rows = sources.map((s) => ({ ...s, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
@@ -249,6 +315,7 @@ systemsRoutes.put("/:id/systems/generation", async (c) => {
       buildingId,
       entity: "systems.generation",
       action: "replace",
+      expectedRevision,
       summary: { count: rows.length },
     }),
     db
@@ -260,9 +327,20 @@ systemsRoutes.put("/:id/systems/generation", async (c) => {
   if (rows.length > 0) {
     statements.push(...insertChunked(db, generationSource, rows));
   }
-  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  try {
+    await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  } catch (err) {
+    if (isRevisionConflict(err)) {
+      return revisionConflictResponse(c, db, buildingId, "systems.generation");
+    }
+    throw err;
+  }
 
-  return c.json({ scenario, count: rows.length });
+  const revision =
+    expectedRevision !== undefined
+      ? expectedRevision + 1
+      : (await getRevisions(db, buildingId, ["systems.generation"]))["systems.generation"];
+  return c.json({ scenario, count: rows.length, revision });
 });
 
 // PUT /:id/systems/cooling-windows - bulk-replace a scenario's cooling-load windows
@@ -284,7 +362,7 @@ systemsRoutes.put("/:id/systems/cooling-windows", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const { scenario, windows } = parsed.data;
+  const { scenario, windows, expectedRevision } = parsed.data;
   const rows = windows.map((w) => ({ ...w, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
@@ -292,6 +370,7 @@ systemsRoutes.put("/:id/systems/cooling-windows", async (c) => {
       buildingId,
       entity: "systems.cooling_windows",
       action: "replace",
+      expectedRevision,
       summary: { count: rows.length },
     }),
     db
@@ -301,9 +380,20 @@ systemsRoutes.put("/:id/systems/cooling-windows", async (c) => {
   if (rows.length > 0) {
     statements.push(...insertChunked(db, coolingWindow, rows));
   }
-  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  try {
+    await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  } catch (err) {
+    if (isRevisionConflict(err)) {
+      return revisionConflictResponse(c, db, buildingId, "systems.cooling_windows");
+    }
+    throw err;
+  }
 
-  return c.json({ scenario, count: rows.length });
+  const revision =
+    expectedRevision !== undefined
+      ? expectedRevision + 1
+      : (await getRevisions(db, buildingId, ["systems.cooling_windows"]))["systems.cooling_windows"];
+  return c.json({ scenario, count: rows.length, revision });
 });
 
 // PUT /:id/systems/cooling-systems - bulk-replace a scenario's cooling
@@ -326,7 +416,7 @@ systemsRoutes.put("/:id/systems/cooling-systems", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const { scenario, systems } = parsed.data;
+  const { scenario, systems, expectedRevision } = parsed.data;
   const rows = systems.map((s) => ({ ...s, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
@@ -334,6 +424,7 @@ systemsRoutes.put("/:id/systems/cooling-systems", async (c) => {
       buildingId,
       entity: "systems.cooling_systems",
       action: "replace",
+      expectedRevision,
       summary: { count: rows.length },
     }),
     db
@@ -343,9 +434,20 @@ systemsRoutes.put("/:id/systems/cooling-systems", async (c) => {
   if (rows.length > 0) {
     statements.push(...insertChunked(db, coolingSystem, rows));
   }
-  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  try {
+    await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  } catch (err) {
+    if (isRevisionConflict(err)) {
+      return revisionConflictResponse(c, db, buildingId, "systems.cooling_systems");
+    }
+    throw err;
+  }
 
-  return c.json({ scenario, count: rows.length });
+  const revision =
+    expectedRevision !== undefined
+      ? expectedRevision + 1
+      : (await getRevisions(db, buildingId, ["systems.cooling_systems"]))["systems.cooling_systems"];
+  return c.json({ scenario, count: rows.length, revision });
 });
 
 // PUT /:id/systems/lighting - bulk-replace a scenario's lighting zones
@@ -367,7 +469,7 @@ systemsRoutes.put("/:id/systems/lighting", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const { scenario, zones } = parsed.data;
+  const { scenario, zones, expectedRevision } = parsed.data;
   const rows = zones.map((z) => ({ ...z, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
@@ -375,6 +477,7 @@ systemsRoutes.put("/:id/systems/lighting", async (c) => {
       buildingId,
       entity: "systems.lighting",
       action: "replace",
+      expectedRevision,
       summary: { count: rows.length },
     }),
     db
@@ -384,9 +487,20 @@ systemsRoutes.put("/:id/systems/lighting", async (c) => {
   if (rows.length > 0) {
     statements.push(...insertChunked(db, lightingZone, rows));
   }
-  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  try {
+    await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  } catch (err) {
+    if (isRevisionConflict(err)) {
+      return revisionConflictResponse(c, db, buildingId, "systems.lighting");
+    }
+    throw err;
+  }
 
-  return c.json({ scenario, count: rows.length });
+  const revision =
+    expectedRevision !== undefined
+      ? expectedRevision + 1
+      : (await getRevisions(db, buildingId, ["systems.lighting"]))["systems.lighting"];
+  return c.json({ scenario, count: rows.length, revision });
 });
 
 // PUT /:id/systems/equipment - bulk-replace a scenario's equipment inventory
@@ -408,7 +522,7 @@ systemsRoutes.put("/:id/systems/equipment", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const { scenario, items } = parsed.data;
+  const { scenario, items, expectedRevision } = parsed.data;
   const rows = items.map((i) => ({ ...i, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
@@ -416,6 +530,7 @@ systemsRoutes.put("/:id/systems/equipment", async (c) => {
       buildingId,
       entity: "systems.equipment",
       action: "replace",
+      expectedRevision,
       summary: { count: rows.length },
     }),
     db
@@ -425,9 +540,20 @@ systemsRoutes.put("/:id/systems/equipment", async (c) => {
   if (rows.length > 0) {
     statements.push(...insertChunked(db, equipmentItem, rows));
   }
-  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  try {
+    await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  } catch (err) {
+    if (isRevisionConflict(err)) {
+      return revisionConflictResponse(c, db, buildingId, "systems.equipment");
+    }
+    throw err;
+  }
 
-  return c.json({ scenario, count: rows.length });
+  const revision =
+    expectedRevision !== undefined
+      ? expectedRevision + 1
+      : (await getRevisions(db, buildingId, ["systems.equipment"]))["systems.equipment"];
+  return c.json({ scenario, count: rows.length, revision });
 });
 
 // PUT /:id/systems/renewables - bulk-replace the building's entire set of
@@ -456,7 +582,7 @@ systemsRoutes.put("/:id/systems/renewables", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const { systems } = parsed.data;
+  const { systems, expectedRevision } = parsed.data;
 
   const systemRows: (typeof renewableSystem.$inferInsert)[] = [];
   const monthlyRows: (typeof renewableProductionMonthly.$inferInsert)[] = [];
@@ -486,6 +612,7 @@ systemsRoutes.put("/:id/systems/renewables", async (c) => {
       buildingId,
       entity: "systems.renewables",
       action: "replace",
+      expectedRevision,
       summary: { count: systemRows.length },
     }),
     db.delete(renewableSystem).where(eq(renewableSystem.buildingId, buildingId)),
@@ -496,7 +623,18 @@ systemsRoutes.put("/:id/systems/renewables", async (c) => {
   if (monthlyRows.length > 0) {
     statements.push(...insertChunked(db, renewableProductionMonthly, monthlyRows));
   }
-  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  try {
+    await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  } catch (err) {
+    if (isRevisionConflict(err)) {
+      return revisionConflictResponse(c, db, buildingId, "systems.renewables");
+    }
+    throw err;
+  }
 
-  return c.json({ count: systemRows.length });
+  const revision =
+    expectedRevision !== undefined
+      ? expectedRevision + 1
+      : (await getRevisions(db, buildingId, ["systems.renewables"]))["systems.renewables"];
+  return c.json({ count: systemRows.length, revision });
 });

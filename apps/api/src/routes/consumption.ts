@@ -2,7 +2,12 @@ import { chunkRowsForInsert, type energyCarrierEnum, insertChunked, utilityBill 
 import { and, eq, getTableColumns, inArray } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
-import { auditEventStatement } from "../lib/audit-event";
+import {
+  auditEventStatement,
+  getRevisions,
+  isRevisionConflict,
+  revisionConflictResponse,
+} from "../lib/audit-event";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import {
@@ -59,17 +64,22 @@ consumptionRoutes.get("/:id/consumption", async (c) => {
     return c.json({ error: "Not found" }, 404);
   }
 
-  const bills = await db
-    .select()
-    .from(utilityBill)
-    .where(eq(utilityBill.buildingId, buildingId))
-    .limit(limit)
-    .offset(offset);
+  const [bills, revisions] = await Promise.all([
+    db
+      .select()
+      .from(utilityBill)
+      .where(eq(utilityBill.buildingId, buildingId))
+      .limit(limit)
+      .offset(offset),
+    // A10: so the form can send it back as `expectedRevision` on PUT /consumption(/bulk).
+    getRevisions(db, buildingId, ["consumption"]),
+  ]);
 
   return c.json({
     bills,
     page: parsedQuery.data.page,
     pageSize: parsedQuery.data.pageSize,
+    revision: revisions.consumption,
   });
 });
 
@@ -145,7 +155,7 @@ consumptionRoutes.put("/:id/consumption", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const { energyCarrier, year, bills } = parsed.data;
+  const { energyCarrier, year, bills, expectedRevision } = parsed.data;
   const rows = bills.map((bill) => ({
     ...withDerivedFields(bill, energyCarrier),
     buildingId,
@@ -158,6 +168,7 @@ consumptionRoutes.put("/:id/consumption", async (c) => {
       buildingId,
       entity: "consumption",
       action: "replace",
+      expectedRevision,
       summary: { years: [year], carriers: [energyCarrier], count: rows.length },
     }),
     db
@@ -173,9 +184,20 @@ consumptionRoutes.put("/:id/consumption", async (c) => {
   if (rows.length > 0) {
     statements.push(...insertChunked(db, utilityBill, rows));
   }
-  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  try {
+    await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  } catch (err) {
+    if (isRevisionConflict(err)) {
+      return revisionConflictResponse(c, db, buildingId, "consumption");
+    }
+    throw err;
+  }
 
-  return c.json({ energyCarrier, year, count: rows.length });
+  const revision =
+    expectedRevision !== undefined
+      ? expectedRevision + 1
+      : (await getRevisions(db, buildingId, ["consumption"])).consumption;
+  return c.json({ energyCarrier, year, count: rows.length, revision });
 });
 
 // PUT /:id/consumption/bulk - replace WHOLE YEARS (all carriers) in one atomic batch. The consumption tab
@@ -206,7 +228,7 @@ consumptionRoutes.put("/:id/consumption/bulk", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const { years } = parsed.data;
+  const { years, expectedRevision } = parsed.data;
   const rows = years.flatMap((entry) =>
     entry.carriers.flatMap((group) =>
       group.bills.map((bill) => ({
@@ -223,6 +245,7 @@ consumptionRoutes.put("/:id/consumption/bulk", async (c) => {
       buildingId,
       entity: "consumption",
       action: "replace",
+      expectedRevision,
       summary: {
         years: years.map((entry) => entry.year),
         carriers: [...new Set(years.flatMap((entry) => entry.carriers.map((g) => g.energyCarrier)))],
@@ -240,8 +263,19 @@ consumptionRoutes.put("/:id/consumption/bulk", async (c) => {
     ),
   ];
   if (rows.length > 0) statements.push(...insertChunked(db, utilityBill, rows));
-  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  try {
+    await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  } catch (err) {
+    if (isRevisionConflict(err)) {
+      return revisionConflictResponse(c, db, buildingId, "consumption");
+    }
+    throw err;
+  }
 
+  const revision =
+    expectedRevision !== undefined
+      ? expectedRevision + 1
+      : (await getRevisions(db, buildingId, ["consumption"])).consumption;
   return c.json({
     groups: years.flatMap((entry) =>
       entry.carriers.map((group) => ({
@@ -250,5 +284,6 @@ consumptionRoutes.put("/:id/consumption/bulk", async (c) => {
         count: group.bills.length,
       })),
     ),
+    revision,
   });
 });

@@ -90,6 +90,29 @@ export function isRevisionConflict(err: unknown): boolean {
 }
 
 /**
+ * A10's standard 409 for `auditEventStatement()`'s `expectedRevision` check failing the batch.
+ * Spends exactly one extra D1 query (`getRevisions`, conflict path only — the happy path never
+ * calls this) to report the entity's current revision so the caller can decide whether to
+ * overwrite or reload (A10 spec §3).
+ */
+export async function revisionConflictResponse(
+  c: Context<AppEnv>,
+  db: Database,
+  buildingId: string,
+  entity: AuditEntity,
+): Promise<Response> {
+  const revisions = await getRevisions(db, buildingId, [entity]);
+  return c.json(
+    {
+      error: "This section was changed by someone else.",
+      code: "revision_conflict",
+      currentRevision: revisions[entity],
+    },
+    409,
+  );
+}
+
+/**
  * The latest `entityRevision` recorded for each of `entities` on `buildingId`, in one query —
  * an entity with no `audit_event` rows yet comes back as `0` (never missing from the result).
  */

@@ -3,6 +3,9 @@ import { z } from "zod";
 
 export const selectMeasuresSchema = z.object({
   measureIds: z.array(z.string().uuid()).max(500),
+  // A10: the revision the caller last saw for this building's "measures" entity (from GET
+  // /:id/measures). Omit for the pre-A10 guard-less behavior.
+  expectedRevision: z.number().int().min(0).max(1_000_000).optional(),
 });
 
 export type SelectMeasuresInput = z.infer<typeof selectMeasuresSchema>;

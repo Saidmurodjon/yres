@@ -2,7 +2,12 @@ import { energyMeasure, energyMeasureTarget, insertChunked, nonEeMeasure } from 
 import { and, eq, inArray } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
-import { auditEventStatement } from "../lib/audit-event";
+import {
+  auditEventStatement,
+  getRevisions,
+  isRevisionConflict,
+  revisionConflictResponse,
+} from "../lib/audit-event";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import {
@@ -37,17 +42,22 @@ measuresRoutes.get("/:id/measures", async (c) => {
   }
 
   // `with: { targets }` is folded into the same SQL statement (json subquery) — one D1 query.
-  const measures = await db.query.energyMeasure.findMany({
-    where: eq(energyMeasure.buildingId, buildingId),
-    with: { targets: { columns: { kind: true, code: true } } },
-    limit,
-    offset,
-  });
+  const [measures, revisions] = await Promise.all([
+    db.query.energyMeasure.findMany({
+      where: eq(energyMeasure.buildingId, buildingId),
+      with: { targets: { columns: { kind: true, code: true } } },
+      limit,
+      offset,
+    }),
+    // A10: so the measure-selection UI can send it back as `expectedRevision` on POST /select.
+    getRevisions(db, buildingId, ["measures"]),
+  ]);
 
   return c.json({
     measures,
     page: parsedQuery.data.page,
     pageSize: parsedQuery.data.pageSize,
+    revision: revisions.measures,
   });
 });
 
@@ -232,34 +242,48 @@ measuresRoutes.post("/:id/measures/select", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const { measureIds } = parsed.data;
+  const { measureIds, expectedRevision } = parsed.data;
 
   if (measureIds.length === 0) {
-    await db.batch([
-      auditEventStatement(db, c, {
-        buildingId,
-        entity: "measures",
-        action: "update",
-        summary: { selectedCount: 0 },
-      }),
-      db
-        .update(energyMeasure)
-        .set({ proposedForImplementation: false })
-        .where(eq(energyMeasure.buildingId, buildingId)),
-    ]);
+    try {
+      await db.batch([
+        auditEventStatement(db, c, {
+          buildingId,
+          entity: "measures",
+          action: "update",
+          expectedRevision,
+          summary: { selectedCount: 0 },
+        }),
+        db
+          .update(energyMeasure)
+          .set({ proposedForImplementation: false })
+          .where(eq(energyMeasure.buildingId, buildingId)),
+      ]);
+    } catch (err) {
+      if (isRevisionConflict(err)) {
+        return revisionConflictResponse(c, db, buildingId, "measures");
+      }
+      throw err;
+    }
 
-    return c.json({ selected: [] });
+    const revision =
+      expectedRevision !== undefined
+        ? expectedRevision + 1
+        : (await getRevisions(db, buildingId, ["measures"])).measures;
+    return c.json({ selected: [], revision });
   }
 
   // D1 binds at most 100 parameters per statement and every id in an IN list counts, so the selection is
   // applied in chunks. One batch (atomic): audit event + clear the building's flags, then set them chunk
   // by chunk. Budget: 1 (audit) + 1 (clear) + ceil(500 ids / 90) = 8 statements (measureIds is capped at
-  // 500 in the schema).
+  // 500 in the schema). A10's `expectedRevision` adds no statement; unguarded, +1 query
+  // (getRevisions) to report the new revision = 9 ≤ 40.
   const statements: BatchItem<"sqlite">[] = [
     auditEventStatement(db, c, {
       buildingId,
       entity: "measures",
       action: "update",
+      expectedRevision,
       summary: { selectedCount: measureIds.length },
     }),
     db
@@ -281,9 +305,20 @@ measuresRoutes.post("/:id/measures/select", async (c) => {
     );
   }
 
-  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  try {
+    await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
+  } catch (err) {
+    if (isRevisionConflict(err)) {
+      return revisionConflictResponse(c, db, buildingId, "measures");
+    }
+    throw err;
+  }
 
-  return c.json({ selected: measureIds });
+  const revision =
+    expectedRevision !== undefined
+      ? expectedRevision + 1
+      : (await getRevisions(db, buildingId, ["measures"])).measures;
+  return c.json({ selected: measureIds, revision });
 });
 
 // GET /:id/non-ee-measures - list a building's non_ee_measure rows (ancillary

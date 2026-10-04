@@ -8,7 +8,9 @@
 //   renewables: 1 + 2 (20 ÷ 14) + 10 (240 monthly rows ÷ 25) → 13
 // The heaviest (equipment, 24) + session lookup (≤ 2) + findAccessibleBuilding (1) + audit_event
 // (1, A09a) = 28 ≤ 40 (unchanged from before A09a: findAccessibleBuilding's A02 consolidation to
-// one query freed the slot the audit_event row now uses).
+// one query freed the slot the audit_event row now uses). `expectedRevision` (A10) adds no
+// statement to the batch itself (checked inside the audit_event insert); on the unguarded path
+// the route spends one extra query (getRevisions) to report the new revision, 29 ≤ 40.
 import {
   distributionSystemTypeEnum,
   endUseEnum,
@@ -20,7 +22,12 @@ import {
 } from "@yres/db";
 import { z } from "zod";
 
-const scenarioBodySchema = z.object({ scenario: z.enum(scenarioEnum.enumValues) });
+const scenarioBodySchema = z.object({
+  scenario: z.enum(scenarioEnum.enumValues),
+  // A10: the revision the caller last saw for this entity (from GET /:id/systems). Omit for the
+  // pre-A10 guard-less behavior.
+  expectedRevision: z.number().int().min(0).max(1_000_000).optional(),
+});
 
 const ventilationSystemInputSchema = z.object({
   systemType: z.enum(["natural", "mechanical"]),
@@ -140,5 +147,7 @@ const renewableSystemInputSchema = z.object({
 });
 export const replaceRenewablesSchema = z.object({
   systems: z.array(renewableSystemInputSchema).max(20).default([]),
+  // A10: see scenarioBodySchema's comment — renewables aren't scenario-tagged but still guard.
+  expectedRevision: z.number().int().min(0).max(1_000_000).optional(),
 });
 export type ReplaceRenewablesInput = z.infer<typeof replaceRenewablesSchema>;

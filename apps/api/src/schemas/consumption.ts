@@ -38,18 +38,24 @@ const monthlyBillInputSchema = z.object({
 // layout (one table per energy carrier, a row per month) so the frontend can
 // offer that as a grid instead of one add-a-bill form per month.
 // 12 rows, 9 columns → 1 delete + 2 insert chunks (11 rows/stmt) + session (≤ 2) +
-// findAccessibleBuilding (1) + audit_event (1, A09a) = 7 ≤ 40 budget.
+// findAccessibleBuilding (1) + audit_event (1, A09a) = 7 ≤ 40 budget. A10's `expectedRevision`
+// adds no batch statement; the unguarded path spends 1 extra query (getRevisions) to report the
+// new revision, 8 ≤ 40.
 export const replaceUtilityBillsSchema = z.object({
   energyCarrier: z.enum(energyCarrierEnum.enumValues),
   year: yearSchema,
   bills: z.array(monthlyBillInputSchema).max(12),
+  // A10: the revision the caller last saw for this building's "consumption" entity (from GET
+  // /:id/consumption). Omit for the pre-A10 guard-less behavior.
+  expectedRevision: z.number().int().min(0).max(1_000_000).optional(),
 });
 export type ReplaceUtilityBillsInput = z.infer<typeof replaceUtilityBillsSchema>;
 
 // Several years × carriers replaced in ONE request (atomic). Query budget (database.md, ≤ 40): per year the
 // whole year is replaced by one delete; worst case 5 years × 4 carriers × 12 months = 240 rows, 9 columns →
 // 11 rows per statement → 22 inserts + 1 delete = 23 (+ ≤ 4 for session/findAccessibleBuilding +
-// 1 audit_event, A09a) = 28.
+// 1 audit_event, A09a) = 28. A10's `expectedRevision` adds no batch statement; unguarded, +1
+// query (getRevisions) to report the new revision = 29 ≤ 40.
 export const bulkReplaceUtilityBillsSchema = z
   .object({
     years: z
@@ -68,6 +74,8 @@ export const bulkReplaceUtilityBillsSchema = z
       )
       .min(1)
       .max(5),
+    // A10: see replaceUtilityBillsSchema's comment.
+    expectedRevision: z.number().int().min(0).max(1_000_000).optional(),
   })
   .superRefine((value, ctx) => {
     const years = new Set<number>();

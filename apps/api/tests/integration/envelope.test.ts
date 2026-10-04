@@ -224,6 +224,72 @@ describe("Envelope API", () => {
     expect(body.envelopeElements.reduce((sum, el) => sum + el.openings.length, 0)).toBe(150);
   });
 
+  // A10a acceptance: the "before"-scenario PUT batch sits at exactly 40/40 D1 queries already
+  // (schemas/envelope.ts); `expectedRevision` must add zero statements (checked inside the
+  // audit_event insert, not a separate query) so this same worst-case payload still fits with
+  // the guard turned on.
+  it("accepts the largest payload with expectedRevision set, still inside the D1 query budget", async () => {
+    const { cookie } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+    const brick = await seedMaterial("Bricks", 0.7);
+
+    const constructionTypes = Array.from({ length: 15 }, (_, i) => ({
+      code: `W${i}`,
+      elementCategory: "external_wall" as const,
+      layers: Array.from({ length: 8 }, (_, layerOrder) => ({
+        layerOrder,
+        materialId: brick.id,
+        thicknessM: 0.1,
+      })),
+    }));
+    const openingTypes = Array.from({ length: 14 }, (_, i) => ({
+      code: `Win${i}`,
+      category: "window" as const,
+      uValueWm2k: 1.4,
+    }));
+    const envelopeElements = Array.from({ length: 100 }, (_, i) => ({
+      blockName: "A",
+      orientation: "north" as const,
+      constructionTypeCode: `W${i % 15}`,
+      lengthM: 10,
+      openings:
+        i < 75
+          ? [
+              { openingTypeCode: `Win${i % 14}`, count: 1 },
+              { openingTypeCode: "Win0", count: 2 },
+            ]
+          : [],
+    }));
+    const buildingBlocks = Array.from({ length: 22 }, (_, i) => ({
+      name: `Block ${i}`,
+      footprintLengthM: 10,
+      footprintWidthM: 10,
+      numberOfFloors: 3,
+      floorToFloorHeightM: 3,
+      perimeterM: 40,
+    }));
+
+    const put = await authRequest(
+      `/api/buildings/${buildingId}/envelope`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          scenario: "before",
+          expectedRevision: 0,
+          buildingBlocks,
+          constructionTypes,
+          openingTypes,
+          envelopeElements,
+        }),
+      },
+      cookie,
+    );
+    expect(put.status).toBe(200);
+    const body = (await put.json()) as { revision: number };
+    expect(body.revision).toBe(1);
+  });
+
   it("rejects more openings in total than the query budget allows", async () => {
     const { cookie } = await signUpTestUser();
     const buildingId = await createBuilding(cookie);
