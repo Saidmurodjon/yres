@@ -36,7 +36,7 @@
   },
   "delete": {
     "title": "\"{{name}}\" o'chirilsinmi?",
-    "description": "Bu binoni uning qobiq, iste'mol va chora-tadbir ma'lumotlari bilan birga butunlay o'chiradi. Bu amalni bekor qilib bo'lmaydi.",
+    "description": "Bu binoni uning qobiq, iste'mol va chora-tadbir ma'lumotlari bilan birga yashiradi. Keyinchalik faqat qo'llab-quvvatlash orqali tiklanadi.",
     "cancel": "Bekor qilish",
     "deleteBuilding": "Binoni o'chirish",
     "deleting": "O'chirilmoqda...",

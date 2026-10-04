@@ -36,7 +36,7 @@
   },
   "delete": {
     "title": "Delete \"{{name}}\"?",
-    "description": "This permanently deletes the building along with its envelope, consumption, and measure data. This action cannot be undone.",
+    "description": "This hides the building, along with its envelope, consumption, and measure data. It can only be restored by support afterward.",
     "cancel": "Cancel",
     "deleteBuilding": "Delete building",
     "deleting": "Deleting...",

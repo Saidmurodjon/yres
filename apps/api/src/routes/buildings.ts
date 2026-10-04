@@ -1,9 +1,14 @@
 import { type Database, building, buildingMember } from "@yres/db";
 import type { BuildingStatus, BuildingType } from "@yres/types";
-import { and, count, desc, eq, inArray, or, sum } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, or, sum } from "drizzle-orm";
 import { Hono } from "hono";
 import { auditEventStatement } from "../lib/audit-event";
-import { canWrite, findAccessibleBuilding, findOwnedBuilding } from "../lib/building-access";
+import {
+  canWrite,
+  findAccessibleBuilding,
+  findOwnedBuilding,
+  findOwnedBuildingIncludingDeleted,
+} from "../lib/building-access";
 import { buildingSearchText, likeContains, normalizeSearchText } from "../lib/search";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import {
@@ -24,7 +29,10 @@ function accessibleBuildingsCondition(db: Database, userId: string) {
     .select({ id: buildingMember.buildingId })
     .from(buildingMember)
     .where(eq(buildingMember.userId, userId));
-  return or(eq(building.userId, userId), inArray(building.id, memberBuildingIds));
+  return and(
+    isNull(building.deletedAt),
+    or(eq(building.userId, userId), inArray(building.id, memberBuildingIds)),
+  );
 }
 
 /** Shared by GET / and GET /stats — `search`/`type`/`status` mean the same thing in both. */
@@ -256,7 +264,11 @@ buildingRoutes.put("/:id", async (c) => {
   return c.json({ building: updated });
 });
 
-// DELETE /:id - delete a building (owner only — shared editors can't delete it out from under the owner)
+// DELETE /:id - soft-delete a building (owner only — shared editors can't delete it out from
+// under the owner). Hides the building instead of removing it: audit history, inputs and (after
+// A04) snapshots survive (data-integrity.md, 02 D-4).
+// D1 budget: session lookup (≤ 2) + findOwnedBuilding (1) + this db.batch's 2 statements
+// (audit_event insert, building update) = ≤ 5.
 buildingRoutes.delete("/:id", async (c) => {
   const id = c.req.param("id");
   const db = c.get("db");
@@ -267,7 +279,43 @@ buildingRoutes.delete("/:id", async (c) => {
     return c.json({ error: "Not found" }, 404);
   }
 
-  await db.delete(building).where(eq(building.id, id));
+  await db.batch([
+    auditEventStatement(db, c, { buildingId: id, entity: "building", action: "delete" }),
+    db
+      .update(building)
+      .set({ deletedAt: new Date() })
+      .where(and(eq(building.id, id), isNull(building.deletedAt))),
+  ]);
 
   return c.body(null, 204);
+});
+
+// POST /:id/restore - undo a soft-delete (owner only). Not exposed in the web UI (Faza 3/4) —
+// for the project owner / support to use directly, see docs/runbooks/backup-va-tiklash.md.
+// D1 budget: session lookup (≤ 2) + findOwnedBuildingIncludingDeleted (1) + this db.batch's 2
+// statements (audit_event insert, building update) = ≤ 5.
+buildingRoutes.post("/:id/restore", async (c) => {
+  const id = c.req.param("id");
+  const db = c.get("db");
+  const user = c.get("user");
+
+  const existing = await findOwnedBuildingIncludingDeleted(db, id, user.id);
+  if (!existing) {
+    return c.json({ error: "Not found" }, 404);
+  }
+  if (!existing.deletedAt) {
+    return c.json({ error: "Building is not deleted." }, 409);
+  }
+
+  const [, updatedRows] = await db.batch([
+    auditEventStatement(db, c, { buildingId: id, entity: "building", action: "restore" }),
+    db
+      .update(building)
+      .set({ deletedAt: null })
+      .where(eq(building.id, id))
+      .returning(),
+  ]);
+  const [restored] = updatedRows;
+
+  return c.json({ building: restored });
 });

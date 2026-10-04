@@ -1,8 +1,10 @@
+import { auditEvent, auditRun, utilityBill } from "@yres/db";
+import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import app from "../../src/index";
 import { seedClimateRegion as seedClimateRegionRow } from "../helpers/seed-helpers";
 import { authRequest, signUpTestUser } from "../helpers/test-auth";
-import { closeTestDb, resetTestDb } from "../helpers/test-db";
+import { closeTestDb, resetTestDb, testDb } from "../helpers/test-db";
 import { testEnv } from "../helpers/test-env";
 
 async function seedClimateRegion() {
@@ -166,5 +168,156 @@ describe("Buildings API", () => {
     expect(body.buildings).toHaveLength(2);
     expect(body.page).toBe(1);
     expect(body.pageSize).toBe(2);
+  });
+
+  it("soft-deletes a building: child rows and the delete audit_event survive, hidden from list/stats/locations", async () => {
+    const { cookie, userId } = await signUpTestUser();
+    const climateRegionId = await seedClimateRegion();
+
+    const createResponse = await authRequest(
+      "/api/buildings",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...VALID_BUILDING_INPUT, climateRegionId }),
+      },
+      cookie,
+    );
+    const { building } = (await createResponse.json()) as { building: { id: string } };
+
+    await testDb.insert(utilityBill).values({
+      buildingId: building.id,
+      energyCarrier: "electricity",
+      year: 2025,
+      month: 1,
+      consumptionNative: 100,
+    });
+    await testDb.insert(auditRun).values({ buildingId: building.id, triggeredByUserId: userId });
+
+    const deleteResponse = await authRequest(
+      `/api/buildings/${building.id}`,
+      { method: "DELETE" },
+      cookie,
+    );
+    expect(deleteResponse.status).toBe(204);
+
+    // Hidden from direct access and every list/aggregate endpoint.
+    expect((await authRequest(`/api/buildings/${building.id}`, {}, cookie)).status).toBe(404);
+    const list = (await (await authRequest("/api/buildings", {}, cookie)).json()) as {
+      buildings: { id: string }[];
+    };
+    expect(list.buildings.find((b) => b.id === building.id)).toBeUndefined();
+    const stats = (await (await authRequest("/api/buildings/stats", {}, cookie)).json()) as {
+      totalCount: number;
+    };
+    expect(stats.totalCount).toBe(0);
+    const locations = (await (await authRequest("/api/buildings/locations", {}, cookie)).json()) as {
+      locations: string[];
+    };
+    expect(locations.locations).not.toContain(VALID_BUILDING_INPUT.location);
+
+    // A second delete is also 404 (not deleted twice).
+    expect(
+      (await authRequest(`/api/buildings/${building.id}`, { method: "DELETE" }, cookie)).status,
+    ).toBe(404);
+
+    // Child rows and the audit trail are untouched.
+    const bills = await testDb
+      .select()
+      .from(utilityBill)
+      .where(eq(utilityBill.buildingId, building.id));
+    expect(bills).toHaveLength(1);
+    const runs = await testDb.select().from(auditRun).where(eq(auditRun.buildingId, building.id));
+    expect(runs).toHaveLength(1);
+    const deleteEvents = await testDb
+      .select()
+      .from(auditEvent)
+      .where(eq(auditEvent.buildingId, building.id));
+    expect(deleteEvents.some((e) => e.action === "delete")).toBe(true);
+  });
+
+  it("does not let a non-owner delete a building (404, not leaked)", async () => {
+    const owner = await signUpTestUser();
+    const intruder = await signUpTestUser();
+    const climateRegionId = await seedClimateRegion();
+
+    const createResponse = await authRequest(
+      "/api/buildings",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...VALID_BUILDING_INPUT, climateRegionId }),
+      },
+      owner.cookie,
+    );
+    const { building } = (await createResponse.json()) as { building: { id: string } };
+
+    const intruderDelete = await authRequest(
+      `/api/buildings/${building.id}`,
+      { method: "DELETE" },
+      intruder.cookie,
+    );
+    expect(intruderDelete.status).toBe(404);
+
+    expect((await authRequest(`/api/buildings/${building.id}`, {}, owner.cookie)).status).toBe(
+      200,
+    );
+  });
+
+  it("restores a soft-deleted building (owner only); 409 if not deleted, 404 for an intruder", async () => {
+    const owner = await signUpTestUser();
+    const intruder = await signUpTestUser();
+    const climateRegionId = await seedClimateRegion();
+
+    const createResponse = await authRequest(
+      "/api/buildings",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...VALID_BUILDING_INPUT, climateRegionId }),
+      },
+      owner.cookie,
+    );
+    const { building } = (await createResponse.json()) as { building: { id: string } };
+
+    // Not deleted yet — restoring is a 409.
+    expect(
+      (await authRequest(`/api/buildings/${building.id}/restore`, { method: "POST" }, owner.cookie))
+        .status,
+    ).toBe(409);
+
+    await authRequest(`/api/buildings/${building.id}`, { method: "DELETE" }, owner.cookie);
+
+    // An intruder can't restore someone else's (still-hidden) building.
+    expect(
+      (
+        await authRequest(
+          `/api/buildings/${building.id}/restore`,
+          { method: "POST" },
+          intruder.cookie,
+        )
+      ).status,
+    ).toBe(404);
+
+    const restoreResponse = await authRequest(
+      `/api/buildings/${building.id}/restore`,
+      { method: "POST" },
+      owner.cookie,
+    );
+    expect(restoreResponse.status).toBe(200);
+    const { building: restored } = (await restoreResponse.json()) as {
+      building: { id: string; deletedAt: unknown };
+    };
+    expect(restored.deletedAt).toBeNull();
+
+    expect((await authRequest(`/api/buildings/${building.id}`, {}, owner.cookie)).status).toBe(
+      200,
+    );
+
+    const restoreEvents = await testDb
+      .select()
+      .from(auditEvent)
+      .where(eq(auditEvent.buildingId, building.id));
+    expect(restoreEvents.some((e) => e.action === "restore")).toBe(true);
   });
 });

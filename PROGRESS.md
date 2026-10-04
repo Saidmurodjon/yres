@@ -2659,3 +2659,31 @@ T06b — qamrab olinganlar:
 - Chetlanish yo'q — spec aniq va kod bilan ziddiyatsiz bajarildi. `auditEventStatement`ning ikkinchi parametri real Hono
   `Context<AppEnv>` (http-cache.ts bilan bir xil naqsh); route'siz testlarda shunga mos minimal fake-context ishlatildi.
 **Navbatda:** A03 (bino soft-delete, tiklash endpoint'i).
+
+## Faza 2 · A03 — Bino soft-delete (`deleted_at`), tiklash endpoint'i (2026-10-04)
+
+- `packages/db/src/schemas/buildings.ts`: `building.deletedAt` (`integer`, `timestamp_ms`, NULL = ko'rinadi) — faqat
+  `ADD COLUMN` migratsiyasi (`0009_panoramic_nomad.sql`), jadval qayta yaratilmadi.
+- `lib/building-access.ts`: `findOwnedBuilding`/`findAccessibleBuilding` endi `isNull(building.deletedAt)` ham
+  tekshiradi (o'chirilgan bino — begona bino bilan bir xil `404`); yangi `findOwnedBuildingIncludingDeleted()` — faqat
+  `POST /:id/restore` ishlatadi. `routes/buildings.ts`ning `accessibleBuildingsCondition()`iga ham shu shart qo'shildi
+  (`GET /`, `/locations`, `/stats` — barchasi o'chirilgan binoni chiqarmaydi, dashboard metrikalari ham).
+- `DELETE /buildings/:id` endi qattiq `delete()` emas, `db.batch([auditEventStatement(action: "delete"), update(building)
+  .set({ deletedAt: now }).where(id, isNull(deletedAt))])` — javob `204` o'zgarmadi. Byudjet: sessiya ≤2 + egalik 1 +
+  batch 2 = ≤5.
+- Yangi `POST /buildings/:id/restore` (faqat egasi, `findOwnedBuildingIncludingDeleted`): o'chirilmagan bo'lsa `409`,
+  topilmasa `404`, aks holda `db.batch([auditEventStatement(action: "restore"), update(... deletedAt: null)])` →
+  `200 { building }`. Web UI'da ro'yxat/tugma yo'q (spec bo'yicha ataylab, Faza 3/4) — `docs/runbooks/backup-va-tiklash.md`ga
+  curl misoli qo'shildi.
+- `verify.ts`ga filtr **qo'shilmadi** (spec §7) — o'chirilgan binoning chiqarilgan hisoboti baribir tekshiriladi;
+  `audit-inputs.ts` o'zgarmadi (chaqiruvdan oldin allaqachon `findAccessibleBuilding` orqali tekshiriladi).
+- Web: `delete-building-dialog.tsx`ning tasdiq matni (uz/ru/en) "butunlay o'chiradi/bekor qilib bo'lmaydi" dan
+  "yashiradi/faqat qo'llab-quvvatlash orqali tiklanadi"ga o'zgartirildi; tugma hamon destruktiv uslubda.
+- Testlar: `buildings.test.ts`ga 3 yangi test — (1) soft-delete: bola qatorlar (`utility_bill`, `audit_run`) va
+  `delete` audit_event saqlanib qoladi, bino `GET`/`list`/`stats`/`locations`dan yo'qoladi, qayta `DELETE` → `404`;
+  (2) begona foydalanuvchi o'chira olmaydi (`404`, mavjudligi oshkor qilinmaydi); (3) `restore` — o'chirilmagan
+  bino uchun `409`, begona uchun `404`, egasi uchun `200` + `audit_event`da `restore` qatori. type-check, build
+  (web matni), biome lint, `db:generate` (faqat `ALTER TABLE ADD`, qayta yaratish yo'q), `db:migrate:local`,
+  `bun run --cwd apps/api test` (265/265, avvalgi 262 + yangi 3) — barchasi yashil.
+- Chetlanish yo'q — spec aniq va kod bilan ziddiyatsiz bajarildi.
+**Navbatda:** A04 (`audit_snapshot` + `audit_snapshot_report` sxemasi, o'zgarmaslik triggerlari, ADR-004 fayli).

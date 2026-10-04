@@ -49,6 +49,21 @@ npx wrangler d1 time-travel info yres-production --env production
    (yoki `--bookmark=<id>`). Buyruq oldingi bookmark'ni chiqaradi — saqlang.
 3. Tekshiring: yuqoridagi `select count(*)` so'rovlari, ilovaga kirish, bitta binoni ochish.
 
+## Yumshoq o'chirilgan binoni tiklash (A03)
+
+`DELETE /buildings/:id` binoni qattiq o'chirmaydi — `deleted_at`ni belgilaydi (bola qatorlar, `audit_event`, kelgusi
+snapshot'lar tegilmaydi). Foydalanuvchi "binomni qaytarib bering" deb murojaat qilsa, Web UI'da tiklash tugmasi yo'q
+(ataylab, Faza 3/4) — faqat bino egasi nomidan, loyiha egasi/qo'llab-quvvatlash to'g'ridan-to'g'ri API'ga so'rov yuboradi
+(egasining sessiya cookie'si/token'i bilan):
+
+```bash
+curl -X POST https://yres-api.saidmurod.com/api/buildings/<BUILDING_ID>/restore \
+  -H "Cookie: <egasining sessiya cookie'si>"
+```
+
+Muvaffaqiyatli bo'lsa `200` + tiklangan `building` qatori; allaqachon o'chirilmagan bo'lsa `409`; begona foydalanuvchi
+nomidan yoki mavjud bo'lmagan id bilan `404`.
+
 ## Rejalashtirilgan (hozir emas)
 
 - Kunlik `wrangler d1 export` → R2 `yres-backups` (cron) — Faza 4. Time Travel muddatidan uzoq saqlash kerak bo'lsa

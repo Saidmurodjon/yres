@@ -1,0 +1,1 @@
+ALTER TABLE `building` ADD `deleted_at` integer;

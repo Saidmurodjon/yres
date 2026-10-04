@@ -59,6 +59,13 @@ export const building = sqliteTable(
     updatedAt: integer("updated_at", { mode: "timestamp_ms" })
       .notNull()
       .$defaultFn(() => new Date()),
+    /**
+     * Soft-delete (A03, 02 D-4): NULL = visible. `DELETE /buildings/:id` sets this instead of
+     * removing the row — child rows (envelope, systems, audit_run, audit_event) stay intact, and
+     * (after A04) `audit_snapshot`'s FK keeps a hard delete from ever being possible. Only checked
+     * in `building-access.ts` and `accessibleBuildingsCondition` — never re-checked in routes.
+     */
+    deletedAt: integer("deleted_at", { mode: "timestamp_ms" }),
   },
   (table) => [index("building_user_id_idx").on(table.userId)],
 );
