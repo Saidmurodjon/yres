@@ -1,5 +1,7 @@
 import type {
   AuditResult,
+  AuditSnapshotListItem,
+  AuditSnapshotReportLang,
   BuildingStatus,
   BuildingType,
   ReportAnnotationSectionKey,
@@ -106,6 +108,30 @@ export interface BuildingStatsParams {
   search?: string;
   type?: BuildingType;
   status?: BuildingStatus;
+}
+
+/**
+ * A05/A06 return the full `audit_snapshot`/`audit_snapshot_report` D1 rows (more columns than the
+ * UI needs — hashes, R2 keys). A08's panel only reads a handful of fields explicitly; the index
+ * signature lets the rest pass through untyped instead of duplicating the whole backend row shape.
+ */
+interface AuditSnapshotRecord {
+  id: string;
+  buildingId: string;
+  status: "draft" | "submitted" | "approved" | "superseded";
+  engineVersion: string;
+  generatedAt: string;
+  createdAt: string;
+  [key: string]: unknown;
+}
+
+interface AuditSnapshotReportRecord {
+  id: string;
+  snapshotId: string;
+  lang: AuditSnapshotReportLang;
+  sha256: string;
+  createdAt: string;
+  [key: string]: unknown;
 }
 
 function toQueryString(params?: ListParams | BuildingListParams | BuildingStatsParams): string {
@@ -441,6 +467,54 @@ export const api = {
         `/api/buildings/${buildingId}/audit/annotations/${sectionKey}`,
         { method: "PUT", body: JSON.stringify({ note }) },
       ),
+    /** "Rasmiy versiyalar" paneli (A08) — immutable snapshots, A05/A06 ustida. */
+    snapshots: {
+      list: (buildingId: string) =>
+        request<{ snapshots: AuditSnapshotListItem[] }>(
+          `/api/buildings/${buildingId}/audit/snapshots`,
+        ),
+      get: (buildingId: string, snapshotId: string) =>
+        request<{ snapshot: AuditSnapshotRecord; result: AuditResult }>(
+          `/api/buildings/${buildingId}/audit/snapshots/${snapshotId}`,
+        ),
+      create: (buildingId: string) =>
+        request<{ snapshot: AuditSnapshotRecord }>(
+          `/api/buildings/${buildingId}/audit/snapshots`,
+          { method: "POST" },
+        ),
+      submit: (buildingId: string, snapshotId: string) =>
+        request<{ ok: true }>(
+          `/api/buildings/${buildingId}/audit/snapshots/${snapshotId}/submit`,
+          { method: "POST" },
+        ),
+      approve: (buildingId: string, snapshotId: string) =>
+        request<{ ok: true }>(
+          `/api/buildings/${buildingId}/audit/snapshots/${snapshotId}/approve`,
+          { method: "POST" },
+        ),
+      issueReport: (buildingId: string, snapshotId: string, lang: AuditSnapshotReportLang) =>
+        request<{ report: AuditSnapshotReportRecord }>(
+          `/api/buildings/${buildingId}/audit/snapshots/${snapshotId}/reports`,
+          { method: "POST", body: JSON.stringify({ lang }) },
+        ),
+      downloadReport: async (
+        buildingId: string,
+        snapshotId: string,
+        lang: AuditSnapshotReportLang,
+      ): Promise<{ blob: Blob; fileName: string }> => {
+        const response = await fetch(
+          `${API_URL}/api/buildings/${buildingId}/audit/snapshots/${snapshotId}/reports/${lang}`,
+          { credentials: "include" },
+        );
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new ApiError(response.status, body as ApiErrorBody);
+        }
+        const disposition = response.headers.get("Content-Disposition") ?? "";
+        const fileName = /filename="([^"]+)"/.exec(disposition)?.[1] ?? `snapshot-${lang}.pdf`;
+        return { blob: await response.blob(), fileName };
+      },
+    },
   },
   /** Public, unauthenticated — the report's cover-page QR code links here (docs/report-redesign-proposal.md §8). */
   verify: (auditRunId: string) =>

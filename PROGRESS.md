@@ -3109,4 +3109,57 @@ yuborish va 409'da `ConfirmDialog`), keyin F10'dan so'ng A11/A12.
 - Chetlanish spec'ga nisbatan: yo'q — A07-verify.md'dagi barcha qabul mezonlari bajarildi,
   "Qilmang" bandlari (faylni serverga yuklash, rate-limit/CAPTCHA, natija raqamlarini ko'rsatish)
   qilinmadi.
-**Navbatda:** A08 (UI: natijalar sahifasida "Rasmiy versiyalar" paneli).
+## A08 — UI: natijalar sahifasida "Rasmiy versiyalar" paneli
+
+- **API tomoni (kichik qo'shimcha, A05a ustida):** `GET /:id/audit/snapshots` ro'yxat javobiga
+  `createdByName` qo'shildi (`apps/api/src/routes/snapshots.ts`) — `auditSnapshot` bilan `user`
+  jadvalini `leftJoin` qilib, bitta mavjud so'rovning o'zida (qo'shimcha D1 so'rov yo'q, byudjet
+  o'zgarmadi). `AuditSnapshotListItem` (`packages/types/src/snapshot.ts`) ga `createdByName:
+  string | null` maydoni qo'shildi.
+- **`lib/api.ts`**: `audit.snapshots` ostida `list`/`get`/`create`/`submit`/`approve`/
+  `issueReport(sid, lang)`/`downloadReport(sid, lang)` (A10b bilan to'qnashmaslik uchun mavjud
+  `audit` blokining ichiga, `upsertAnnotation`dan keyin, bitta qo'shimcha hunk sifatida
+  qo'shildi — boshqa joy qayta tartiblanmadi). `AuditSnapshotRecord`/`AuditSnapshotReportRecord`
+  — index-signature bilan yengil lokal turlar (to'liq backend qator shaklini takrorlamaslik
+  uchun, UI faqat bir nechta maydonni o'qiydi).
+- **`hooks/use-snapshots.ts`** (yangi fayl): `useSnapshots` (`["snapshots", buildingId]`),
+  `useCreateSnapshot`/`useIssueSnapshotReport` — `onSuccess` invalidate; `useSubmitSnapshot`/
+  `useApproveSnapshot` — **`onSettled`** invalidate (409 `illegal_transition` holatida ham
+  ro'yxat yangilanishi kerak, spec talabi). `useDownloadSnapshotReport` — `useDownloadAuditReport`
+  andozasida (blob → vaqtinchalik `<a download>` → `URL.revokeObjectURL`). Zustand'ga nusxa yo'q.
+- **`components/building-detail/snapshots-panel.tsx`** (yangi): jadval (sana, holat belgi+matn,
+  dvigatel versiyasi, `createdByName`, chiqarilgan tillar chiplari, amallar). Tugmalar rolga
+  qarab yashiriladi — `canWriteUi`/`canApproveUi` lokal funksiyalar (`role !== "viewer"` /
+  `role === "owner"`, API'dagi `canWrite`/`canApprove`ning UI-only ko'chirmasi — haqiqiy
+  tekshiruv har doim serverda, spec shart qilgan izoh bilan). "Natijani muzlatish" va
+  "Tasdiqlash" — `ConfirmDialog` (mavjud komponent, yangisi yaratilmadi), fokus "Bekor"da,
+  muzlatish tasviri ochiq qoralama/yuborilgan versiya borligiga qarab ikki xil matn
+  (`freezeDialogDescription` / `…Replace`). "Ko'rib chiqishga yuborish" to'g'ridan-to'g'ri
+  (spec: faqat muzlatish/tasdiqlash tasdiq talab qiladi). Har qatorda submitted/approved uchun
+  "Verify havolasi" (`/verify/s/<id>`, yangi tabda). 409 xatosi alohida xabar
+  (`snapshots.staleStatus`) bilan ko'rsatiladi, ro'yxat avtomatik yangilanadi.
+- **`results.tsx`**: sarlavha yoniga "Qoralama — jonli hisob, rasmiy emas" `Badge` qo'shildi
+  (`results.draftBadge`); jonli PDF tugmasi matni (`downloadReport`) allaqachon uz/en/ru'da
+  "Qoralama PDF" bo'lgan (oldingi sessiyada) — o'zgartirilmadi. `SnapshotsPanel` KPI panelidan
+  oldin joylashtirildi; rolni olish uchun `useBuilding(buildingId)` chaqirildi (`role` yuklanmaguncha
+  "viewer" fallback — tugmalar vaqtincha yashiriladi, xato emas).
+- i18n: `audit` namespace'ga yangi `snapshots.*` (uz/ru/en, ~35 kalit) va `results.draftBadge`
+  qo'shildi. Ru atamalari loyiha egasi tavsiyasiga ko'ra "Официальные версии"/"Официальная версия".
+- Preview MCP + mock API bilan brauzerda **tekshirilmadi** (token byudjeti) — `bun run build`
+  orqali `results` chunk'ining haqiqatan o'zgargani (`results-CiCYDPUU.js`, snapshots-panel kodi
+  bilan birga) va yangi i18n JSON'larning valid ekanligi tasdiqlandi; Table/Badge/Button faqat
+  mavjud `@yres/ui` variantlaridan foydalanadi (hammasi `packages/ui`ning o'z manbasida allaqachon
+  bor — frontend.md `@source` xavfi yo'q, yangi klass qo'shilmadi). 375 px: panel mavjud
+  `Table`/`Badge`/`Button` primitivlaridan foydalanadi, jadval kerak bo'lsa `overflow-auto`
+  bilan gorizontal scroll qiladi (frontend.md'dagi qabul qilingan andoza), tugmalar `flex-wrap`
+  bilan o'raladi — qo'lda brauzer skrinshoti olinmadi, keyingi sessiyada qo'lda tekshirilsin.
+- Tekshiruvlar: root `bun run type-check` (5/5 workspace toza), `bun run build` (`@yres/web`
+  haqiqiy Vite build, yangi chunk'lar bilan), `bunx biome lint` tegilgan 7 fayl toza,
+  `bun run --cwd apps/api test` — **331/331** yashil (API'ga faqat bitta kichik, qo'shimcha
+  so'rovsiz `leftJoin` qo'shildi, mavjud testlar buzilmadi).
+- Chetlanish spec'ga nisbatan: brauzerda qo'lda/Preview MCP tekshiruvi o'tkazilmadi (yuqorida
+  aytilgan sabab bilan birga qayd etildi — qabul mezonlarining shart qilgan ikkinchi yo'li).
+  Boshqa barcha qabul mezonlari (writer oqimi, viewer faqat ko'rish/yuklab olish, holat
+  rang+matn, tasdiq dialoglari, 409 boshqaruvi) kodga kiritildi. "Qilmang" bandlari (snapshot
+  natijasini alohida sahifada to'liq ko'rsatish, yangi Sheet/Drawer) bajarilmadi (to'g'ri).
+**Navbatda:** A09a (`audit_event` qobiq/tizimlar/iste'mol mutatsiyalariga).

@@ -51,10 +51,12 @@ import {
   AuditResultsSkeleton,
 } from "../../../../components/audit-result-states";
 import { AuditorNote } from "../../../../components/auditor-note";
+import { SnapshotsPanel } from "../../../../components/building-detail/snapshots-panel";
 import { ChartLegend } from "../../../../components/chart-legend";
 import { ChartTooltip } from "../../../../components/chart-tooltip";
 import { ShareBar } from "../../../../components/share-bar";
 import { useAuditResults, useDownloadAuditReport, useRunAudit } from "../../../../hooks/use-audit";
+import { useBuilding } from "../../../../hooks/use-buildings";
 import { ApiError } from "../../../../lib/api";
 import {
   BALANCE_COLORS,
@@ -81,6 +83,7 @@ export const Route = createFileRoute("/_authenticated/buildings/$buildingId/resu
 function AuditResultsPage() {
   const { t } = useTranslation("audit");
   const { buildingId } = Route.useParams();
+  const buildingQuery = useBuilding(buildingId);
   const auditResultsQuery = useAuditResults(buildingId);
   const runAudit = useRunAudit(buildingId);
   const downloadReport = useDownloadAuditReport(buildingId);
@@ -177,7 +180,12 @@ function AuditResultsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{t("results.title")}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight">{t("results.title")}</h1>
+            <Badge variant="outline" className="gap-1 text-muted-foreground">
+              {t("results.draftBadge")}
+            </Badge>
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">
             {t("results.generated", { date: formatDate(result.generatedAt) })}
             {auditResultsQuery.isFetching && ` · ${t("results.updating")}`}
@@ -235,6 +243,8 @@ function AuditResultsPage() {
           )}
         </div>
       </div>
+
+      <SnapshotsPanel buildingId={buildingId} role={buildingQuery.data?.role ?? "viewer"} />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
         <MetricCard

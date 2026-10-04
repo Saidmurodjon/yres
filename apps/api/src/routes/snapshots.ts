@@ -1,4 +1,4 @@
-import { auditSnapshot, auditSnapshotReport, reportLangEnum } from "@yres/db";
+import { auditSnapshot, auditSnapshotReport, reportLangEnum, user as userTable } from "@yres/db";
 import type { AuditResult } from "@yres/types";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
@@ -131,9 +131,10 @@ snapshotRoutes.post("/:id/audit/snapshots", async (c) => {
  * this never mutates anything, A-2/security.md). Never touches R2: everything returned here
  * (`summary`, status, hashes) lives in D1 already, exactly so listing is cheap.
  *
- * Two D1 queries total: the snapshot page itself, then `audit_snapshot_report` rows for those
- * same snapshot ids via a subquery (`inArray` with a subquery, not a JS array built from the
- * first query's results — database.md's `inArray` note).
+ * Two D1 queries total: the snapshot page itself (left-joined to `user` for `createdByName` —
+ * same round trip, no extra statement), then `audit_snapshot_report` rows for those same
+ * snapshot ids via a subquery (`inArray` with a subquery, not a JS array built from the first
+ * query's results — database.md's `inArray` note).
  */
 snapshotRoutes.get("/:id/audit/snapshots", async (c) => {
   const buildingId = c.req.param("id");
@@ -146,13 +147,14 @@ snapshotRoutes.get("/:id/audit/snapshots", async (c) => {
   }
 
   const snapshotsQuery = db
-    .select()
+    .select({ snapshot: auditSnapshot, createdByName: userTable.name })
     .from(auditSnapshot)
+    .leftJoin(userTable, eq(auditSnapshot.createdByUserId, userTable.id))
     .where(eq(auditSnapshot.buildingId, buildingId))
     .orderBy(desc(auditSnapshot.createdAt))
     .limit(50);
 
-  const [snapshots, reports] = await Promise.all([
+  const [snapshotRows, reports] = await Promise.all([
     snapshotsQuery,
     db
       .select()
@@ -181,8 +183,9 @@ snapshotRoutes.get("/:id/audit/snapshots", async (c) => {
   }
 
   return c.json({
-    snapshots: snapshots.map((snapshot) => ({
+    snapshots: snapshotRows.map(({ snapshot, createdByName }) => ({
       ...snapshot,
+      createdByName: createdByName ?? null,
       reports: reportsBySnapshotId.get(snapshot.id) ?? [],
     })),
   });

@@ -17,6 +17,8 @@ export interface AuditSnapshotListItem {
   engineVersion: string;
   generatedAt: string;
   createdAt: string;
+  /** Null when the creating user's row no longer resolves (left join, A08) — never hidden. */
+  createdByName: string | null;
   summary: AuditSummary;
   reports: { lang: AuditSnapshotReportLang; sha256: string; createdAt: string }[];
 }
