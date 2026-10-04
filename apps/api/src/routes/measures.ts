@@ -2,6 +2,7 @@ import { energyMeasure, energyMeasureTarget, insertChunked, nonEeMeasure } from 
 import { and, eq, inArray } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
+import { auditEventStatement } from "../lib/audit-event";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import {
@@ -75,11 +76,19 @@ measuresRoutes.post("/:id/measures", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  // One atomic batch: the measure row + its targets. Budget: 1 + ceil(40 / 25) = 3 statements
-  // (targets are capped at 40 in the schema; the target table has 4 columns -> 25 rows per insert).
+  // One atomic batch: the audit event + the measure row + its targets. Budget:
+  // 1 (audit) + 1 (measure) + ceil(40 / 25) = 4 statements (targets are capped at 40 in the
+  // schema; the target table has 4 columns -> 25 rows per insert).
   const { targets, ...measureFields } = parsed.data;
   const measureId = crypto.randomUUID();
   const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "measures",
+      entityId: measureId,
+      action: "create",
+      summary: { name: measureFields.name, category: measureFields.category },
+    }),
     db.insert(energyMeasure).values({ ...measureFields, id: measureId, buildingId }),
     ...insertChunked(
       db,
@@ -129,6 +138,13 @@ measuresRoutes.put("/:id/measures/:measureId", async (c) => {
 
   const { targets, ...measureFields } = parsed.data;
   const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "measures",
+      entityId: measureId,
+      action: "update",
+      summary: { name: measureFields.name, category: measureFields.category },
+    }),
     db
       .update(energyMeasure)
       .set(measureFields)
@@ -165,14 +181,30 @@ measuresRoutes.delete("/:id/measures/:measureId", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const deleted = await db
-    .delete(energyMeasure)
-    .where(and(eq(energyMeasure.id, measureId), eq(energyMeasure.buildingId, buildingId)))
-    .returning();
-
-  if (deleted.length === 0) {
+  // Fetched up front (not from the delete's own `.returning()`) because the audit summary has to
+  // be known *before* the batch runs — it's the first statement in the same `db.batch()` as the
+  // delete (database.md, A09 "Qilmang": no audit row outside the mutation's batch).
+  const existing = await db.query.energyMeasure.findFirst({
+    where: and(eq(energyMeasure.id, measureId), eq(energyMeasure.buildingId, buildingId)),
+    columns: { name: true, category: true, investmentCostUsd: true },
+  });
+  if (!existing) {
     return c.json({ error: "Not found" }, 404);
   }
+
+  const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "measures",
+      entityId: measureId,
+      action: "delete",
+      summary: existing,
+    }),
+    db
+      .delete(energyMeasure)
+      .where(and(eq(energyMeasure.id, measureId), eq(energyMeasure.buildingId, buildingId))),
+  ];
+  await db.batch(statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]);
 
   return c.body(null, 204);
 });
@@ -203,18 +235,33 @@ measuresRoutes.post("/:id/measures/select", async (c) => {
   const { measureIds } = parsed.data;
 
   if (measureIds.length === 0) {
-    await db
-      .update(energyMeasure)
-      .set({ proposedForImplementation: false })
-      .where(eq(energyMeasure.buildingId, buildingId));
+    await db.batch([
+      auditEventStatement(db, c, {
+        buildingId,
+        entity: "measures",
+        action: "update",
+        summary: { selectedCount: 0 },
+      }),
+      db
+        .update(energyMeasure)
+        .set({ proposedForImplementation: false })
+        .where(eq(energyMeasure.buildingId, buildingId)),
+    ]);
 
     return c.json({ selected: [] });
   }
 
   // D1 binds at most 100 parameters per statement and every id in an IN list counts, so the selection is
-  // applied in chunks. One batch (atomic): clear the building's flags, then set them chunk by chunk.
-  // Budget: 1 + ceil(500 ids / 90) = 7 statements (measureIds is capped at 500 in the schema).
+  // applied in chunks. One batch (atomic): audit event + clear the building's flags, then set them chunk
+  // by chunk. Budget: 1 (audit) + 1 (clear) + ceil(500 ids / 90) = 8 statements (measureIds is capped at
+  // 500 in the schema).
   const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "measures",
+      action: "update",
+      summary: { selectedCount: measureIds.length },
+    }),
     db
       .update(energyMeasure)
       .set({ proposedForImplementation: false })
@@ -278,10 +325,20 @@ measuresRoutes.post("/:id/non-ee-measures", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const [row] = await db
-    .insert(nonEeMeasure)
-    .values({ ...parsed.data, buildingId })
-    .returning();
+  const nonEeMeasureId = crypto.randomUUID();
+  const [, [row]] = (await db.batch([
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "non_ee_measures",
+      entityId: nonEeMeasureId,
+      action: "create",
+      summary: { description: parsed.data.description.slice(0, 200), unitCostUsd: parsed.data.unitCostUsd },
+    }),
+    db
+      .insert(nonEeMeasure)
+      .values({ ...parsed.data, id: nonEeMeasureId, buildingId })
+      .returning(),
+  ])) as unknown as [unknown, (typeof nonEeMeasure.$inferSelect)[]];
 
   return c.json({ nonEeMeasure: row }, 201);
 });
@@ -307,14 +364,34 @@ measuresRoutes.put("/:id/non-ee-measures/:measureId", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const [row] = await db
-    .update(nonEeMeasure)
-    .set(parsed.data)
-    .where(and(eq(nonEeMeasure.id, measureId), eq(nonEeMeasure.buildingId, buildingId)))
-    .returning();
-  if (!row) {
+  // Existence is checked up front (not via the update's own `.returning()`) so a 404 never writes
+  // an audit_event — the audit statement has to go first in the batch, before we know whether the
+  // WHERE actually matched a row (security.md/A09 acceptance criteria).
+  const existing = await db.query.nonEeMeasure.findFirst({
+    where: and(eq(nonEeMeasure.id, measureId), eq(nonEeMeasure.buildingId, buildingId)),
+    columns: { id: true },
+  });
+  if (!existing) {
     return c.json({ error: "Not found" }, 404);
   }
+
+  const [, [row]] = (await db.batch([
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "non_ee_measures",
+      entityId: measureId,
+      action: "update",
+      summary: {
+        description: parsed.data.description.slice(0, 200),
+        unitCostUsd: parsed.data.unitCostUsd,
+      },
+    }),
+    db
+      .update(nonEeMeasure)
+      .set(parsed.data)
+      .where(and(eq(nonEeMeasure.id, measureId), eq(nonEeMeasure.buildingId, buildingId)))
+      .returning(),
+  ])) as unknown as [unknown, (typeof nonEeMeasure.$inferSelect)[]];
 
   return c.json({ nonEeMeasure: row });
 });
@@ -334,14 +411,26 @@ measuresRoutes.delete("/:id/non-ee-measures/:measureId", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const deleted = await db
-    .delete(nonEeMeasure)
-    .where(and(eq(nonEeMeasure.id, measureId), eq(nonEeMeasure.buildingId, buildingId)))
-    .returning();
-
-  if (deleted.length === 0) {
+  const existing = await db.query.nonEeMeasure.findFirst({
+    where: and(eq(nonEeMeasure.id, measureId), eq(nonEeMeasure.buildingId, buildingId)),
+    columns: { description: true, unitCostUsd: true },
+  });
+  if (!existing) {
     return c.json({ error: "Not found" }, 404);
   }
+
+  await db.batch([
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "non_ee_measures",
+      entityId: measureId,
+      action: "delete",
+      summary: { description: existing.description.slice(0, 200), unitCostUsd: existing.unitCostUsd },
+    }),
+    db
+      .delete(nonEeMeasure)
+      .where(and(eq(nonEeMeasure.id, measureId), eq(nonEeMeasure.buildingId, buildingId))),
+  ]);
 
   return c.body(null, 204);
 });

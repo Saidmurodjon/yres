@@ -1,6 +1,7 @@
 import { buildingMember, user } from "@yres/db";
 import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { auditEventStatement } from "../lib/audit-event";
 import { findAccessibleBuilding, findOwnedBuilding } from "../lib/building-access";
 import { notifyUser } from "../lib/notify";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
@@ -84,11 +85,23 @@ membersRoutes.post("/:id/members", async (c) => {
     return c.json({ error: "That user already has access to this building." }, 400);
   }
 
-  const [member] = await db
-    .insert(buildingMember)
-    .values({ buildingId, userId: invitedUser.id, role, invitedByUserId: currentUser.id })
-    .returning();
+  const memberId = crypto.randomUUID();
+  const [, [member]] = (await db.batch([
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "members",
+      entityId: memberId,
+      action: "create",
+      summary: { targetUserId: invitedUser.id, role },
+    }),
+    db
+      .insert(buildingMember)
+      .values({ id: memberId, buildingId, userId: invitedUser.id, role, invitedByUserId: currentUser.id })
+      .returning(),
+  ])) as unknown as [unknown, (typeof buildingMember.$inferSelect)[]];
 
+  // Fire-and-forget, intentionally *after* the batch above (realtime.md): a push failure must
+  // never undo or block the actual membership grant.
   await notifyUser(c.env, db, {
     userId: invitedUser.id,
     type: "building_shared",
@@ -129,11 +142,30 @@ membersRoutes.patch("/:id/members/:memberId", async (c) => {
     return c.json({ error: "Not found" }, 404);
   }
 
-  const [updated] = await db
-    .update(buildingMember)
-    .set({ role: parsed.data.role })
-    .where(and(eq(buildingMember.id, memberId), eq(buildingMember.buildingId, buildingId)))
-    .returning();
+  // `targetUserId` for the audit summary has to be known before the batch (it's the first
+  // statement), so it's fetched up front rather than off the update's own `.returning()`.
+  const existing = await db.query.buildingMember.findFirst({
+    where: and(eq(buildingMember.id, memberId), eq(buildingMember.buildingId, buildingId)),
+    columns: { userId: true },
+  });
+  if (!existing) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  const [, [updated]] = (await db.batch([
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "members",
+      entityId: memberId,
+      action: "update",
+      summary: { targetUserId: existing.userId, role: parsed.data.role },
+    }),
+    db
+      .update(buildingMember)
+      .set({ role: parsed.data.role })
+      .where(and(eq(buildingMember.id, memberId), eq(buildingMember.buildingId, buildingId)))
+      .returning(),
+  ])) as unknown as [unknown, (typeof buildingMember.$inferSelect)[]];
 
   if (!updated) {
     return c.json({ error: "Not found" }, 404);
@@ -154,10 +186,27 @@ membersRoutes.delete("/:id/members/:memberId", async (c) => {
     return c.json({ error: "Not found" }, 404);
   }
 
-  const deleted = await db
-    .delete(buildingMember)
-    .where(and(eq(buildingMember.id, memberId), eq(buildingMember.buildingId, buildingId)))
-    .returning();
+  const existing = await db.query.buildingMember.findFirst({
+    where: and(eq(buildingMember.id, memberId), eq(buildingMember.buildingId, buildingId)),
+    columns: { userId: true, role: true },
+  });
+  if (!existing) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  const deleted = await db.batch([
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "members",
+      entityId: memberId,
+      action: "delete",
+      summary: { targetUserId: existing.userId, role: existing.role },
+    }),
+    db
+      .delete(buildingMember)
+      .where(and(eq(buildingMember.id, memberId), eq(buildingMember.buildingId, buildingId)))
+      .returning(),
+  ]).then(([, rows]) => rows);
 
   if (deleted.length === 0) {
     return c.json({ error: "Not found" }, 404);

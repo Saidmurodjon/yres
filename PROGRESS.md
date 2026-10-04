@@ -2842,3 +2842,68 @@ T06b — qamrab olinganlar:
 - Chetlanish: yo'q — spec (`A05-snapshot-api.md` A05b bandi) aynan shu tartibda bajarildi.
   `A05` endi to'liq ✅ (`faza-2/README.md`).
 **Navbatda:** A06 (hisobot snapshot'dan: o'zgarmas PDF + SHA-256).
+
+## Faza 2 · A09b — `audit_event` chora-tadbirlar/moliya/a'zolar/izohlar/`audit/run`ga yoyildi (2026-10-04)
+
+- `routes/measures.ts`: `POST/PUT/DELETE /:id/measures/:mid` va `POST /:id/measures/select` endi
+  `auditEventStatement()`ni (`entity: "measures"`) batch'ning birinchi bayonoti qiladi. PUT/DELETE'da
+  mavjudlik (va DELETE/PUT uchun `summary`ga kerakli `{ name, category, investmentCostUsd }`/`{ name,
+  category }`) oldindan alohida `SELECT` bilan tekshiriladi — chunki audit bayonoti batch'ning
+  **birinchi** elementi bo'lishi kerak, ya'ni WHERE haqiqatan mos kelganini bilishdan oldin qurilishi
+  kerak; aks holda 404'da ham bo'sh UPDATE/DELETE bilan birga audit qatori yozilib qolardi (bu A09
+  qabul mezoniga zid bo'lardi). `POST/PUT/DELETE /:id/non-ee-measures[/:mid]` xuddi shunday
+  (`entity: "non_ee_measures"`, summary `description` 200 belgigacha kesilgan + `unitCostUsd`).
+- `routes/financial.ts`: `PUT /:id/financial-parameters` upsert'i endi audit bilan bitta batch'da
+  (`entity: "financial"`, `entityId: buildingId` — bu jadvalning PK'si shu), `summary: { baseYear,
+  periodYears }` (to'liq payload emas, A09 "Qilmang").
+- `routes/members.ts`: `POST/PATCH/DELETE /:id/members[/:mid]` — `entity: "members"`, `summary`da
+  **faqat** `targetUserId` + `role` (email/ism yo'q, spec §4). PATCH/DELETE uchun `targetUserId` audit
+  bayonoti qurilishidan oldin kerak bo'lgani uchun alohida `SELECT` bilan olinadi (PATCH/DELETE'ning
+  o'z `.returning()`idan emas). `notifyUser()` chaqirig'i o'zgarishsiz batch'dan **keyin**, fire-and-
+  forget qoladi (`realtime.md`) — endi buni aniq izohlaydigan izoh qo'shildi.
+- `routes/audit.ts`: `PUT /:id/audit/annotations/:sectionKey` — bo'sh note (delete) ham, note bilan
+  upsert (update) ham endi audit bilan bir batch'da (`entity: "annotations"`, `entityId: sectionKey`
+  — bu jadvalning tabiiy kalit qismi, alohida UUID emas, lekin `audit_event.entityId` FK'siz oddiy
+  `text`, muammosiz). `POST /:id/audit/run` — spec §5: `audit_event` (`entity: "audit_run"`,
+  `action: "run"`) endi `audit_run`ning boshlang'ich `"running"` INSERT'i bilan **bitta** batch'da
+  (`id` oldindan `crypto.randomUUID()` bilan hosil qilinadi, chunki audit bayonotiga `entityId` kerak).
+  Shu yerga tegilgani uchun V-6 ham tuzatildi: `catch` blokidagi javobda endi `error.message` o'rniga
+  umumiy `"Audit run failed."` + `code: "audit_failed"` qaytadi, haqiqiy xato `console.error("[audit]
+  run failed", { buildingId, runId, error })` bilan faqat serverga yoziladi. `auditRun.errorMessage`
+  ustuniga haqiqiy xabar saqlanishi **o'zgarmadi** (spec §5: bu faqat bino a'zolariga ko'rinadi, mavjud
+  xatti-harakat). `apps/web/src/lib/api.ts`ning `audit.run()`i `error?: string`ni umumiy tip sifatida
+  oladi — frontend hech qayerda `error.message`ning aniq matniga tayanmaydi (tekshirildi:
+  `hooks/use-audit.ts` faqat mutation holatini ishlatadi), shuning uchun bu o'zgarish UI tomonida
+  qo'shimcha tuzatish talab qilmadi.
+- Har joyda bir xil naqsh: audit mavjud bo'lmagan qatorga yozilmasligi uchun (1) agar route allaqachon
+  mavjudlikni oldindan tekshirsa (measures PUT) — audit shu tekshiruvdan keyin qo'shiladi; (2) agar
+  yo'q bo'lsa (non-ee-measures PUT/DELETE, members PATCH/DELETE) — yangi oldindan `SELECT` qo'shildi.
+  `.returning()` kerak bo'lgan joyda natija batch massividan destructuring qilinadi (A09a'dagi
+  `consumption.ts` andozasi: `const [, [row]] = (await db.batch([...])) as unknown as [unknown, T[]]`).
+- Yangi testlar mavjud `apps/api/tests/integration/audit-event-matrix.test.ts`ga **qo'shildi** (alohida
+  fayl emas — bitta faylda ikkita `describe`, A09a + A09b): 10 ta yangi test — measures
+  POST/PUT/DELETE (revision 1→2→3, DELETE summary'da email/token yo'qligi tekshiriladi), measures/select,
+  non-ee-measures POST/PUT/DELETE, 404 (noldirilgan measure PUT) → qator yo'q, financial PUT (+ 403
+  viewer → qator yo'q), members POST/PATCH/DELETE (summary'da email yo'q, `userId` bor tekshiriladi),
+  annotations update→delete juftligi, audit/run (201 yoki 500 — ikkalasida ham audit yoziladi, 500'da
+  `code: "audit_failed"` va xom stack-trace yo'qligi tekshiriladi) + 403 viewer → qator yo'q.
+  **Nozik tuzatish**: ikkinchi `describe` qo'shilganda birinchi test topilgan — A09a blokining o'z
+  `afterAll(closeTestDb)`i ikkinchi blok boshlanishidan oldin umumiy Miniflare/D1'ni yopib qo'yardi
+  ("poisoned stub" xatosi, vitest describe hook'lari fayl tartibida ketma-ket ishlaydi, interleave
+  qilinmaydi) — A09a blokidan `afterAll(closeTestDb)` olib tashlandi, yagona `closeTestDb()` endi faqat
+  fayl oxiridagi A09b blokida.
+- Tekshiruvlar: `bun install` (ildiz, `@cloudflare/workers-types` yo'q edi); `bunx biome lint`
+  (tegilgan 5 fayl) toza; `bun run --cwd apps/api type-check` — prod kod (`tsc --noEmit`) toza,
+  `tsc -p tsconfig.test.json` A09a'da aniqlangan oldindan-mavjud `Buffer` xatosi bilan qizil (shu fayl
+  tegilmagan, A09b'ga aloqasiz); root `bun run type-check` xuddi shu sababdan `@yres/api` qadamida
+  qizil, `@yres/web` (build ham) toza. `bun run --cwd apps/api test` — **302/302** yashil (avvalgi 292
+  + yangi 10; audit-event-matrix.test.ts o'zi 27/27).
+- Byudjet: hech bir route 40 D1 so'rov chegarasiga yaqinlashmadi — eng og'izi measures POST/PUT
+  (audit + mutation + ≤4 target bo'lagi + findAccessibleBuilding + sessiya ≈ 7-8), financial PUT endi
+  4 (access + audit + upsert + sessiya), members/annotations/audit-run har biri ≤6. Byudjet izohlari
+  `financial.ts`da yangilandi; qolganlarida avvalgi izoh formatiga mos qo'shimcha izoh qo'shildi
+  (alohida formulasi bo'lmagan — barchasi byudjetdan ancha past).
+- Chetlanish yo'q spec'ga nisbatan. Bitta kichik qaror: `measures/select`ning bo'sh-`measureIds`
+  tarmog'i avval `audit_event`siz edi (spec jadvalida "select" ham "measures" entity'siga kiradi) —
+  ikkala tarmoqqa (bo'sh va to'ldirilgan) audit qo'shildi, `summary: { selectedCount }`.
+**Navbatda:** A10a (optimistic concurrency — `expectedRevision`, 409 javob).

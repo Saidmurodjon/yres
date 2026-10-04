@@ -5,6 +5,7 @@
 import { auditEvent } from "@yres/db";
 import { and, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { defaultFinancialParameters } from "../../src/lib/financial-defaults";
 import { seedClimateRegion, seedMaterial } from "../helpers/seed-helpers";
 import { authRequest, signUpTestUser } from "../helpers/test-auth";
 import { closeTestDb, resetTestDb, testDb } from "../helpers/test-db";
@@ -65,10 +66,9 @@ describe("audit_event matrix — A09a (envelope, systems, consumption)", () => {
   beforeEach(async () => {
     await resetTestDb();
   });
-
-  afterAll(async () => {
-    await closeTestDb();
-  });
+  // No `afterAll(closeTestDb)` here on purpose — this file has a second `describe` below (A09b)
+  // sharing the same Miniflare/D1 instance; closing it here would tear it down for that block too
+  // (vitest runs describe blocks' hooks in file order, not interleaved).
 
   it("PUT /envelope writes one 'envelope'/replace event", async () => {
     const { cookie, userId } = await signUpTestUser();
@@ -356,5 +356,267 @@ describe("audit_event matrix — A09a (envelope, systems, consumption)", () => {
     );
     expect(response.status).toBe(200);
     await expectOneEvent(buildingId, "envelope", "replace", userId);
+  });
+});
+
+// A09b acceptance tests: the remaining single-row mutation routes (measures, non-ee-measures,
+// financial parameters, members, annotations, audit/run) each write exactly one `audit_event` in
+// the same `db.batch()` as the mutation.
+describe("audit_event matrix — A09b (measures, financial, members, annotations, audit_run)", () => {
+  beforeEach(async () => {
+    await resetTestDb();
+  });
+
+  afterAll(async () => {
+    await closeTestDb();
+  });
+
+  it("measures: POST/PUT/DELETE write create/update/delete events; DELETE's summary has no PII", async () => {
+    const { cookie, userId } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+
+    const createResponse = await authRequest(
+      `/api/buildings/${buildingId}/measures`,
+      json("POST", {
+        name: "Wall insulation",
+        category: "envelope_wall_insulation",
+        investmentCostUsd: 10000,
+      }),
+      cookie,
+    );
+    expect(createResponse.status).toBe(201);
+    await expectOneEvent(buildingId, "measures", "create", userId, 1);
+    const { measure } = (await createResponse.json()) as { measure: { id: string } };
+
+    const putResponse = await authRequest(
+      `/api/buildings/${buildingId}/measures/${measure.id}`,
+      json("PUT", {
+        name: "Wall insulation (revised)",
+        category: "envelope_wall_insulation",
+        investmentCostUsd: 12000,
+      }),
+      cookie,
+    );
+    expect(putResponse.status).toBe(200);
+
+    const deleteResponse = await authRequest(
+      `/api/buildings/${buildingId}/measures/${measure.id}`,
+      { method: "DELETE" },
+      cookie,
+    );
+    expect(deleteResponse.status).toBe(204);
+
+    const events = await eventsFor(buildingId, "measures");
+    expect(events.map((e) => [e.action, e.entityRevision])).toEqual([
+      ["create", 1],
+      ["update", 2],
+      ["delete", 3],
+    ]);
+    const summary = events[2]?.summary as Record<string, unknown>;
+    expect(summary).toMatchObject({ name: "Wall insulation (revised)", category: "envelope_wall_insulation" });
+    expect(JSON.stringify(summary)).not.toContain("@");
+  });
+
+  it("measures/select writes one 'measures'/update event", async () => {
+    const { cookie, userId } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+
+    const createResponse = await authRequest(
+      `/api/buildings/${buildingId}/measures`,
+      json("POST", { name: "Roof insulation", category: "envelope_roof_insulation", investmentCostUsd: 5000 }),
+      cookie,
+    );
+    const { measure } = (await createResponse.json()) as { measure: { id: string } };
+
+    const selectResponse = await authRequest(
+      `/api/buildings/${buildingId}/measures/select`,
+      json("POST", { measureIds: [measure.id] }),
+      cookie,
+    );
+    expect(selectResponse.status).toBe(200);
+
+    const events = await eventsFor(buildingId, "measures");
+    expect(events.map((e) => [e.action, e.entityRevision])).toEqual([
+      ["create", 1],
+      ["update", 2],
+    ]);
+  });
+
+  it("non-ee-measures: POST/PUT/DELETE write create/update/delete events", async () => {
+    const { cookie, userId } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+
+    const createResponse = await authRequest(
+      `/api/buildings/${buildingId}/non-ee-measures`,
+      json("POST", { description: "Cable replacement", unitCostUsd: 500 }),
+      cookie,
+    );
+    expect(createResponse.status).toBe(201);
+    const { nonEeMeasure } = (await createResponse.json()) as { nonEeMeasure: { id: string } };
+
+    const putResponse = await authRequest(
+      `/api/buildings/${buildingId}/non-ee-measures/${nonEeMeasure.id}`,
+      json("PUT", { description: "Cable replacement (full run)", unitCostUsd: 700 }),
+      cookie,
+    );
+    expect(putResponse.status).toBe(200);
+
+    const deleteResponse = await authRequest(
+      `/api/buildings/${buildingId}/non-ee-measures/${nonEeMeasure.id}`,
+      { method: "DELETE" },
+      cookie,
+    );
+    expect(deleteResponse.status).toBe(204);
+
+    const events = await eventsFor(buildingId, "non_ee_measures");
+    expect(events.map((e) => [e.action, e.entityRevision])).toEqual([
+      ["create", 1],
+      ["update", 2],
+      ["delete", 3],
+    ]);
+    expect(events[0]).toMatchObject({ actorUserId: userId });
+  });
+
+  it("a 404 (nonexistent measure) writes no audit_event", async () => {
+    const { cookie } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+
+    const response = await authRequest(
+      `/api/buildings/${buildingId}/measures/${crypto.randomUUID()}`,
+      json("PUT", { name: "X", category: "envelope_wall_insulation", investmentCostUsd: 1 }),
+      cookie,
+    );
+    expect(response.status).toBe(404);
+    expect(await eventsFor(buildingId, "measures")).toEqual([]);
+  });
+
+  it("PUT /financial-parameters writes one 'financial'/update event", async () => {
+    const { cookie, userId } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+
+    const response = await authRequest(
+      `/api/buildings/${buildingId}/financial-parameters`,
+      json("PUT", defaultFinancialParameters()),
+      cookie,
+    );
+    expect(response.status).toBe(200);
+    await expectOneEvent(buildingId, "financial", "update", userId);
+  });
+
+  it("a 403 (viewer) on financial-parameters writes no audit_event", async () => {
+    const owner = await signUpTestUser();
+    const buildingId = await createBuilding(owner.cookie);
+    const viewer = await signUpTestUser();
+    await authRequest(
+      `/api/buildings/${buildingId}/members`,
+      json("POST", { email: viewer.email, role: "viewer" }),
+      owner.cookie,
+    );
+
+    const response = await authRequest(
+      `/api/buildings/${buildingId}/financial-parameters`,
+      json("PUT", defaultFinancialParameters()),
+      viewer.cookie,
+    );
+    expect(response.status).toBe(403);
+    expect(await eventsFor(buildingId, "financial")).toEqual([]);
+  });
+
+  it("members: POST/PATCH/DELETE write create/update/delete events with no email/name in summary", async () => {
+    const owner = await signUpTestUser();
+    const buildingId = await createBuilding(owner.cookie);
+    const invitee = await signUpTestUser();
+
+    const inviteResponse = await authRequest(
+      `/api/buildings/${buildingId}/members`,
+      json("POST", { email: invitee.email, role: "viewer" }),
+      owner.cookie,
+    );
+    expect(inviteResponse.status).toBe(201);
+    const { member } = (await inviteResponse.json()) as { member: { id: string } };
+
+    const patchResponse = await authRequest(
+      `/api/buildings/${buildingId}/members/${member.id}`,
+      json("PATCH", { role: "editor" }),
+      owner.cookie,
+    );
+    expect(patchResponse.status).toBe(200);
+
+    const deleteResponse = await authRequest(
+      `/api/buildings/${buildingId}/members/${member.id}`,
+      { method: "DELETE" },
+      owner.cookie,
+    );
+    expect(deleteResponse.status).toBe(204);
+
+    const events = await eventsFor(buildingId, "members");
+    expect(events.map((e) => [e.action, e.entityRevision])).toEqual([
+      ["create", 1],
+      ["update", 2],
+      ["delete", 3],
+    ]);
+    for (const event of events) {
+      const summary = JSON.stringify(event.summary);
+      expect(summary).not.toContain(invitee.email);
+      expect(summary).toContain(invitee.userId);
+    }
+  });
+
+  it("annotations: a note PUT writes an 'update' event, clearing it writes a 'delete' event", async () => {
+    const { cookie, userId } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+
+    const putResponse = await authRequest(
+      `/api/buildings/${buildingId}/audit/annotations/consumption_gas`,
+      json("PUT", { note: "Looks good overall." }),
+      cookie,
+    );
+    expect(putResponse.status).toBe(200);
+
+    const clearResponse = await authRequest(
+      `/api/buildings/${buildingId}/audit/annotations/consumption_gas`,
+      json("PUT", { note: "" }),
+      cookie,
+    );
+    expect(clearResponse.status).toBe(200);
+
+    const events = await eventsFor(buildingId, "annotations");
+    expect(events.map((e) => [e.action, e.entityRevision])).toEqual([
+      ["update", 1],
+      ["delete", 2],
+    ]);
+    expect(events[0]).toMatchObject({ actorUserId: userId, entityId: "consumption_gas" });
+  });
+
+  it("POST /audit/run writes one 'audit_run'/run event even though the run itself has no engine data", async () => {
+    const { cookie, userId } = await signUpTestUser();
+    const buildingId = await createBuilding(cookie);
+
+    const response = await authRequest(`/api/buildings/${buildingId}/audit/run`, { method: "POST" }, cookie);
+    // Either outcome is fine for this assertion — the audit_event is written in the same batch as
+    // the initial `auditRun` insert, before the engine even runs (A09-audit-event-yoyish.md §5).
+    expect([201, 500]).toContain(response.status);
+    await expectOneEvent(buildingId, "audit_run", "run", userId);
+
+    if (response.status === 500) {
+      const body = (await response.json()) as { error: string; code: string };
+      expect(body.code).toBe("audit_failed");
+      expect(body.error).not.toMatch(/\bat\b.*\.ts:\d+/); // not a raw stack trace
+    }
+  });
+
+  it("a 403 (viewer) on audit/run writes no audit_event", async () => {
+    const owner = await signUpTestUser();
+    const buildingId = await createBuilding(owner.cookie);
+    const viewer = await signUpTestUser();
+    await authRequest(
+      `/api/buildings/${buildingId}/members`,
+      json("POST", { email: viewer.email, role: "viewer" }),
+      owner.cookie,
+    );
+
+    const response = await authRequest(`/api/buildings/${buildingId}/audit/run`, { method: "POST" }, viewer.cookie);
+    expect(response.status).toBe(403);
+    expect(await eventsFor(buildingId, "audit_run")).toEqual([]);
   });
 });

@@ -1,6 +1,8 @@
 import { auditRun, reportAnnotation } from "@yres/db";
 import { and, desc, eq } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
+import { auditEventStatement } from "../lib/audit-event";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import {
@@ -41,15 +43,30 @@ auditRoutes.post("/:id/audit/run", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const [run] = await db
-    .insert(auditRun)
-    .values({
+  // The audit_event ("run") row and the audit_run ("running") row go in one atomic batch (A09b) —
+  // the id is generated up front so the audit statement can reference it as `entityId`.
+  const runId = crypto.randomUUID();
+  const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
       buildingId,
-      triggeredByUserId: user.id,
-      status: "running",
-      startedAt: new Date(),
-    })
-    .returning();
+      entity: "audit_run",
+      entityId: runId,
+      action: "run",
+    }),
+    db
+      .insert(auditRun)
+      .values({
+        id: runId,
+        buildingId,
+        triggeredByUserId: user.id,
+        status: "running",
+        startedAt: new Date(),
+      })
+      .returning(),
+  ];
+  const [, [run]] = (await db.batch(
+    statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]],
+  )) as unknown as [unknown, (typeof auditRun.$inferSelect)[]];
 
   if (!run) {
     return c.json({ error: "Failed to create audit run" }, 500);
@@ -65,13 +82,22 @@ auditRoutes.post("/:id/audit/run", async (c) => {
     return c.json({ auditRun: { ...run, status: "completed" as const }, result }, 201);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    // The real error (incl. stack) is logged server-side only — the client gets a generic
+    // message + machine-readable code, never `error.message` (V-6, security.md). The row's own
+    // `errorMessage` column still gets the real message; that's pre-existing, unchanged behavior
+    // (A09-audit-event-yoyish.md §5 — it's only ever visible to this building's own members).
+    console.error("[audit] run failed", { buildingId, runId: run.id, error });
     await db
       .update(auditRun)
       .set({ status: "failed", errorMessage })
       .where(eq(auditRun.id, run.id));
 
     return c.json(
-      { auditRun: { ...run, status: "failed" as const, errorMessage }, error: errorMessage },
+      {
+        auditRun: { ...run, status: "failed" as const, errorMessage },
+        error: "Audit run failed.",
+        code: "audit_failed",
+      },
       500,
     );
   }
@@ -252,25 +278,42 @@ auditRoutes.put("/:id/audit/annotations/:sectionKey", async (c) => {
   const note = parsed.data.note.trim();
 
   if (note.length === 0) {
-    await db
-      .delete(reportAnnotation)
-      .where(
-        and(
-          eq(reportAnnotation.buildingId, buildingId),
-          eq(reportAnnotation.sectionKey, sectionKey),
+    await db.batch([
+      auditEventStatement(db, c, {
+        buildingId,
+        entity: "annotations",
+        entityId: sectionKey,
+        action: "delete",
+      }),
+      db
+        .delete(reportAnnotation)
+        .where(
+          and(
+            eq(reportAnnotation.buildingId, buildingId),
+            eq(reportAnnotation.sectionKey, sectionKey),
+          ),
         ),
-      );
+    ]);
     return c.json({ annotation: null });
   }
 
-  const [annotation] = await db
-    .insert(reportAnnotation)
-    .values({ buildingId, sectionKey, note, createdByUserId: user.id })
-    .onConflictDoUpdate({
-      target: [reportAnnotation.buildingId, reportAnnotation.sectionKey],
-      set: { note, updatedAt: new Date() },
-    })
-    .returning();
+  const [, [annotation]] = (await db.batch([
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "annotations",
+      entityId: sectionKey,
+      action: "update",
+      summary: { noteLength: note.length },
+    }),
+    db
+      .insert(reportAnnotation)
+      .values({ buildingId, sectionKey, note, createdByUserId: user.id })
+      .onConflictDoUpdate({
+        target: [reportAnnotation.buildingId, reportAnnotation.sectionKey],
+        set: { note, updatedAt: new Date() },
+      })
+      .returning(),
+  ])) as unknown as [unknown, (typeof reportAnnotation.$inferSelect)[]];
 
   return c.json({ annotation });
 });

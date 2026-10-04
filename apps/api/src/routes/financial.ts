@@ -1,6 +1,7 @@
 import { buildingFinancialParameters } from "@yres/db";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
+import { auditEventStatement } from "../lib/audit-event";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { defaultFinancialParameters } from "../lib/financial-defaults";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
@@ -40,7 +41,8 @@ financialRoutes.get("/:id/financial-parameters", async (c) => {
   });
 });
 
-// PUT /:id/financial-parameters - upsert (3 D1 queries incl. access check)
+// PUT /:id/financial-parameters - upsert in one atomic batch with its audit_event row (A09b).
+// Budget: 4 D1 queries (access check + audit insert + upsert, plus the session lookup).
 financialRoutes.put("/:id/financial-parameters", async (c) => {
   const buildingId = c.req.param("id");
   const body = await c.req.json().catch(() => null);
@@ -57,10 +59,19 @@ financialRoutes.put("/:id/financial-parameters", async (c) => {
   }
 
   const values = { ...parsed.data, updatedAt: new Date() };
-  await db
-    .insert(buildingFinancialParameters)
-    .values({ buildingId, ...values })
-    .onConflictDoUpdate({ target: buildingFinancialParameters.buildingId, set: values });
+  await db.batch([
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "financial",
+      entityId: buildingId,
+      action: "update",
+      summary: { baseYear: parsed.data.baseYear, periodYears: parsed.data.periodYears },
+    }),
+    db
+      .insert(buildingFinancialParameters)
+      .values({ buildingId, ...values })
+      .onConflictDoUpdate({ target: buildingFinancialParameters.buildingId, set: values }),
+  ]);
 
   return c.json({
     parameters: parsed.data,
