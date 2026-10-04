@@ -2720,3 +2720,45 @@ T06b — qamrab olinganlar:
   `approvedByUserId` `user.id`ga oddiy (restrict) FK — spec ularning `onDelete` xatti-harakatini belgilamagan,
   mavjud `auditRun.triggeredByUserId` andozasiga ergashildi.
 **Navbatda:** A05a (Snapshot API: yaratish/ro'yxat/o'qish).
+
+## Faza 2 · A05a — Snapshot API: yaratish/ro'yxat/o'qish (2026-10-04)
+
+- `services/snapshot.service.ts` (yangi): `buildSnapshotPayload(db, building, generatedAt)` — `loadAuditInputs`
+  (21 so'rov) + 4 ta kontekst funksiyasi (`getUValueBreakdown` 2, `getConsumptionHistory` 1,
+  `getLatestEnergyTariffs` 1, `getReportAnnotations` 1 = 5) parallel chaqiradi, so'ng `computeAudit(inputs,
+  {generatedAt})` — `AuditResult`/dvigatelga hech qanday o'zgarish, faqat bir marta chaqirish. `context.building`
+  — `report.service.ts` o'qiydigan 16 ustun (`grep -o "building\.[a-zA-Z]*"` bilan topilgan), `userId`/`searchText`
+  chiqarib tashlangan. `serialize()`/`sha256Hex()` (`crypto.subtle.digest`), `snapshotR2Keys()` (
+  `snapshots/{b}/{s}/inputs|result|context.json`), `readSnapshotJson()` — R2'dan o'qib SHA-256 qayta tekshiradi,
+  mos kelmasa oddiy `Error` (route buni ushlab `[snapshot] integrity mismatch <id>` log qiladi, mijozga umumiy
+  `500`).
+- `routes/snapshots.ts` (yangi, `src/index.ts`da `/api/buildings` ga ulandi):
+  - `POST /:id/audit/snapshots` — `canWrite` (403 viewer'ga); avval 3 ta R2 `put` (inputs/result/context),
+    keyin bitta `db.batch()`: `audit_event` (create, entityId=snapshotId) → eski `draft`/`submitted`
+    snapshot'larni `superseded` (`supersededAt`/`supersededById=yangi id`, `approved`ga tegmaydi) → yangi
+    `audit_snapshot` insert (`status: "draft"`). D1 byudjeti: sessiya ≤2 + kirish 1 + kiritmalar 21 + kontekst
+    5 + batch 3 = 32; +3 R2 `put` = 35 subrequest (< 50). Javob `201 { snapshot }`.
+  - `GET /:id/audit/snapshots` — viewer ham; 2 so'rov (snapshot sahifasi + `audit_snapshot_report`
+    `inArray(snapshotId, subquery)` — JS massiv emas), R2'ga tegmaydi.
+  - `GET /:id/audit/snapshots/:sid` — `z.string().uuid()` validatsiya (400), qator
+    `and(eq(id,sid), eq(buildingId,id))` (IDOR), `result.json` R2'dan hash tekshiruvi bilan → `{snapshot, result}`.
+    Qayta hisoblamaydi.
+- Testlar uchun R2: `tests/helpers/test-db.ts`ning `getPlatformProxy` chaqiruviga `REPORTS_BUCKET: R2Bucket`
+  qo'shildi (ishladi — haqiqiy lokal Miniflare R2, `report.test.ts` ham shu orqali o'tdi) — Map-asosidagi soxta
+  bucketga ehtiyoj bo'lmadi. `test-env.ts`ning `REPORTS_BUCKET` endi `testReportsBucket` (haqiqiy); chat uchun
+  `put`-only soxta bucket saqlanib qoldi (`CHAT_ATTACHMENTS_BUCKET`, boshqa route hali uni o'qimaydi).
+- Yangi `apps/api/tests/integration/snapshot-api.test.ts` (4 test): (1) snapshot yaratilgach bino kiritmasi +
+  global `energy_tariff` + `climate_monthly_normal` o'zgartiriladi → `GET …/:sid` o'zgarmagan, jonli
+  `/audit/results` o'zgargan; (2) qayta tiklanuvchanlik — R2'dan o'qilgan `inputs`ni `computeAudit()`ga uzatish
+  saqlangan `result`ga deep-equal; (3) R2 obyekti buzilsa → `500` (natija qaytmaydi, xato matnida hash/r2 so'zi
+  yo'q), begona bino `:sid` → `404`, viewer POST → `403`, noto'g'ri `:sid` → `400`; (4) yangi snapshot ochiq
+  `draft`/`submitted`ni `superseded` qiladi (`supersededById` yangisiga), qo'lda `approved`ga ko'tarilgan
+  snapshot'ga tegmaydi, har bitta `create` `audit_event`da (`entity: "snapshot"`).
+- type-check (ildizdan, 5/5 workspace, `apps/web` build ham), `bunx biome lint` (6 fayl) va `bunx biome format`
+  (100-belgili qator kengligi uchun), `bun run --cwd apps/api test` — **275/275** (avvalgi 271 + yangi 4), barchasi
+  yashil.
+- Chetlanish yo'q — spec aniq va kod bilan ziddiyatsiz bajarildi. Bitta kichik qaror: superseding `UPDATE`'ga
+  `supersededById = yangi snapshot id` ham qo'shildi (spec faqat "`.set(superseded)`" deb yozgan, lekin schema
+  izohi "Points at the replacement snapshot's id" deb aniq ta'riflagan va `audit_snapshot_frozen` trigger bu
+  ustunni bloklamaydi — shuning uchun qo'shildi, ustun bo'sh qolmasligi uchun).
+**Navbatda:** A05b (holat o'tishlari: submit/approve, `canApprove`).

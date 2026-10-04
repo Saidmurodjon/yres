@@ -12,10 +12,14 @@ const MIGRATIONS_DIR = fileURLToPath(new URL("../../../../packages/db/drizzle", 
  * every test process starts from an empty database and nothing touches the network or disk.
  * Routes run through the production `createDb` (drizzle-orm/d1) and the real atomic `db.batch()`.
  *
+ * `REPORTS_BUCKET` rides along on the same proxy (A05a: snapshot tests need a real `get`/`put` R2
+ * round-trip, not just the `put`-only fake in test-env.ts) — Miniflare provisions it from the same
+ * `wrangler.toml` binding, in memory, same as `DB`.
+ *
  * Top-level await: a test file imports `testDb`/`testD1` synchronously, so the database must exist
  * by the time the module finishes loading.
  */
-const proxy = await getPlatformProxy<{ DB: D1Database }>({
+const proxy = await getPlatformProxy<{ DB: D1Database; REPORTS_BUCKET: R2Bucket }>({
   configPath: fileURLToPath(new URL("../../wrangler.toml", import.meta.url)),
   persist: false,
 });
@@ -32,6 +36,7 @@ export const testExecutionCtx: ExecutionContext = proxy.ctx;
 
 export const testD1: D1Database = proxy.env.DB;
 export const testDb: Database = createDb(testD1);
+export const testReportsBucket: R2Bucket = proxy.env.REPORTS_BUCKET;
 
 /** Applies `packages/db/drizzle/*.sql` in name order, exactly as `wrangler d1 migrations apply` would. */
 async function applyMigrations() {

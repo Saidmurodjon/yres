@@ -1,14 +1,15 @@
 import type { Env } from "../../src/index";
-import { testD1 } from "./test-db";
+import { testD1, testReportsBucket } from "./test-db";
 
 /**
- * Trivial in-memory stand-in for the R2Bucket binding — just enough of the
- * interface (`put`) for routes/audit.ts's report route to run in tests
- * without a real Cloudflare R2 bucket. Not a full R2Bucket implementation.
+ * Trivial in-memory stand-in for the chat-attachments R2Bucket binding — just enough of the
+ * interface (`put`) since no test exercises a real read of it yet. `REPORTS_BUCKET` itself uses
+ * the real local Miniflare R2 from test-db.ts (A05a needs a real `get`/`put` round-trip for
+ * snapshot integrity checks), not this fake.
  */
-const fakeReportsBucket = {
+const fakeChatAttachmentsBucket = {
   put: async () => undefined,
-} as unknown as Env["REPORTS_BUCKET"];
+} as unknown as Env["CHAT_ATTACHMENTS_BUCKET"];
 
 /**
  * No route exercised by these tests calls into either Durable Object
@@ -37,8 +38,8 @@ export const testEnv: Env = {
   // can point this at whatever port its Vite dev server actually runs on —
   // CORS requires an exact origin match, not just "some localhost".
   WEB_URL: process.env.E2E_WEB_URL ?? "http://localhost:5173",
-  REPORTS_BUCKET: fakeReportsBucket,
-  CHAT_ATTACHMENTS_BUCKET: fakeReportsBucket as unknown as Env["CHAT_ATTACHMENTS_BUCKET"],
+  REPORTS_BUCKET: testReportsBucket,
+  CHAT_ATTACHMENTS_BUCKET: fakeChatAttachmentsBucket,
   // Blank in tests: sendEmail()/Sentry both no-op on a blank key/DSN rather
   // than erroring (see src/lib/email.ts and the withSentry call in
   // src/index.ts), so tests never send real email or report to Sentry.
