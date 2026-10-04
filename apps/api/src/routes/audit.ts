@@ -159,10 +159,10 @@ auditRoutes.get("/:id/audit/results", async (c) => {
 
 // GET /:id/audit/report - a downloadable PDF summarizing the latest audit
 // result. Recomputed fresh on every request (same "recalculate on demand"
-// rule as /results) rather than served from a stored copy — a cached copy
-// is still written to R2 under a stable per-building key so there's a
-// persistent artifact (e.g. for future emailing/sharing features), but the
-// response itself never depends on that cache being warm or fresh.
+// rule as /results) rather than served from a stored copy. A06: this is now always a DRAFT —
+// watermarked, no QR/verify link, and it writes nothing (not R2, not `audit_run.reportR2Key`),
+// closing A-2 fully for this route. A legally-defensible, immutable PDF comes from
+// `POST .../snapshots/:sid/reports` instead (routes/snapshots.ts).
 auditRoutes.get("/:id/audit/report", async (c) => {
   const buildingId = c.req.param("id");
   const db = c.get("db");
@@ -196,32 +196,17 @@ auditRoutes.get("/:id/audit/report", async (c) => {
   // (docs/report-redesign-proposal.md §2).
   const requestedLang = c.req.query("lang");
   const lang = isReportLang(requestedLang) ? requestedLang : "en";
-  // Encoded as a QR code on the report's cover page (docs/report-redesign-
-  // proposal.md §8) — points at the public, unauthenticated verify route.
-  const verifyUrl = `${c.env.WEB_URL}/verify/${latestCompleted.id}`;
   const pdfBytes = await generateAuditReportPdf(
     access.building,
     result,
     { uValues, consumptionHistory, tariffs, annotations },
     lang,
     c.env.YANDEX_STATIC_MAPS_API_KEY,
-    verifyUrl,
+    undefined,
+    { draft: true },
   );
 
-  // A GET must not write for a viewer (A-2): the cached copy and `reportR2Key` are only refreshed when the
-  // caller could write anyway. The side effect itself goes away with snapshots + POST /reports (Faza 2).
-  if (canWrite(access.role)) {
-    const r2Key = `reports/${buildingId}/latest.pdf`;
-    await c.env.REPORTS_BUCKET.put(r2Key, pdfBytes, {
-      httpMetadata: { contentType: "application/pdf" },
-    });
-    await db
-      .update(auditRun)
-      .set({ reportR2Key: r2Key })
-      .where(eq(auditRun.id, latestCompleted.id));
-  }
-
-  const fileName = `${access.building.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-audit-report.pdf`;
+  const fileName = `${access.building.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-draft-audit-report.pdf`;
   return new Response(pdfBytes, {
     headers: {
       "Content-Type": "application/pdf",

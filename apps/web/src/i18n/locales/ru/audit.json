@@ -87,7 +87,7 @@
     "updating": "Обновление…",
     "financialAnalysis": "Финансовый анализ",
     "preparing": "Подготовка…",
-    "downloadReport": "Скачать отчёт",
+    "downloadReport": "Скачать черновик PDF",
     "running": "Выполняется…",
     "reRunAudit": "Повторить аудит",
     "runFailed": "Не удалось запустить аудит.",

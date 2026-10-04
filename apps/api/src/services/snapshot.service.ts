@@ -8,7 +8,7 @@ import {
   getReportAnnotations,
   getUValueBreakdown,
 } from "./report-data.service";
-import type { ReportExtras } from "./report.service";
+import type { ReportBuilding, ReportExtras } from "./report.service";
 
 type Building = typeof building.$inferSelect;
 
@@ -18,8 +18,10 @@ type Building = typeof building.$inferSelect;
  * a later PDF render (A06) from this snapshot never has to touch the live `building` row. Deliberately
  * excludes `userId`/`searchText`/timestamps: not read by the report, and `userId` especially
  * shouldn't ride along inside a supposedly-immutable artifact (ownership can change via sharing).
+ * Return type is `report.service.ts`'s own `ReportBuilding` (A06) — one Pick list, not two kept
+ * in sync by hand; a field mismatch here is now a type error, not a silent drift.
  */
-function pickReportBuildingFields(b: Building) {
+function pickReportBuildingFields(b: Building): ReportBuilding {
   return {
     name: b.name,
     location: b.location,
@@ -40,10 +42,8 @@ function pickReportBuildingFields(b: Building) {
   };
 }
 
-export type ReportBuildingFields = ReturnType<typeof pickReportBuildingFields>;
-
 export interface SnapshotContext {
-  building: ReportBuildingFields;
+  building: ReportBuilding;
   extras: ReportExtras;
 }
 
@@ -114,18 +114,19 @@ export function snapshotR2Keys(
 }
 
 /**
- * Reads one of a snapshot's frozen JSON blobs back from R2 and re-verifies its SHA-256 against
- * the hash recorded in `audit_snapshot` — proves the bytes a caller gets are exactly the bytes
- * that were hashed at creation time, not a silently-corrupted or tampered R2 object. Throws a
- * plain `Error` on any mismatch (missing object or hash mismatch); routes catch this, log
- * `[snapshot] integrity mismatch <snapshotId>` (no payload/PII) and return a generic `500` —
- * never the raw error message to the client (security.md).
+ * Reads a frozen blob back from R2 and re-verifies its SHA-256 against the hash recorded in D1
+ * (`audit_snapshot`/`audit_snapshot_report`) — proves the bytes a caller gets are exactly the
+ * bytes that were hashed at creation time, not a silently-corrupted or tampered R2 object. Throws
+ * a plain `Error` on any mismatch (missing object or hash mismatch); callers catch this, log
+ * `[snapshot] ... integrity mismatch <id>` (no payload/PII) and return a generic `500` — never the
+ * raw error message to the client (security.md). Shared by `readSnapshotJson` (parses the result)
+ * and `readSnapshotBytes` (A06 — a snapshot-backed PDF is binary, not JSON).
  */
-export async function readSnapshotJson<T>(
+async function readAndVerify(
   bucket: R2Bucket,
   key: string,
   expectedSha256: string,
-): Promise<T> {
+): Promise<Uint8Array> {
   const object = await bucket.get(key);
   if (!object) {
     throw new Error(`snapshot object missing: ${key}`);
@@ -135,7 +136,25 @@ export async function readSnapshotJson<T>(
   if (actualSha256 !== expectedSha256) {
     throw new Error(`snapshot integrity mismatch: ${key}`);
   }
+  return bytes;
+}
+
+export async function readSnapshotJson<T>(
+  bucket: R2Bucket,
+  key: string,
+  expectedSha256: string,
+): Promise<T> {
+  const bytes = await readAndVerify(bucket, key, expectedSha256);
   return JSON.parse(new TextDecoder().decode(bytes)) as T;
+}
+
+/** Same integrity re-check as `readSnapshotJson`, but for a stored binary blob (A06: an `audit_snapshot_report`'s PDF bytes) — no JSON parse. */
+export async function readSnapshotBytes(
+  bucket: R2Bucket,
+  key: string,
+  expectedSha256: string,
+): Promise<Uint8Array> {
+  return readAndVerify(bucket, key, expectedSha256);
 }
 
 /**
@@ -152,6 +171,25 @@ export function isIllegalTransitionError(err: unknown): boolean {
   for (let depth = 0; depth < 5 && current != null; depth++) {
     const message = current instanceof Error ? current.message : String(current);
     if (message.includes("illegal snapshot status transition")) {
+      return true;
+    }
+    current = current instanceof Error ? current.cause : undefined;
+  }
+  return false;
+}
+
+/**
+ * Recognizes the `audit_snapshot_report_snapshot_lang_unique` index violation two concurrent
+ * `POST .../snapshots/:sid/reports` requests for the same `(sid, lang)` can race into (A06 spec:
+ * "mavjud qatorni qaytaring, yetim obyekt zararsiz" — the loser's PDF the batch never committed
+ * stays an orphaned-but-harmless R2 object, not cleaned up). Same depth-walk as
+ * `isIllegalTransitionError`, matching SQLite's own wording rather than a wrapper type.
+ */
+export function isUniqueConstraintError(err: unknown): boolean {
+  let current: unknown = err;
+  for (let depth = 0; depth < 5 && current != null; depth++) {
+    const message = current instanceof Error ? current.message : String(current);
+    if (message.includes("UNIQUE constraint failed")) {
       return true;
     }
     current = current instanceof Error ? current.cause : undefined;

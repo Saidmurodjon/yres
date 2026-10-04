@@ -85,7 +85,7 @@ describe("Audit routes: viewers cannot write (A-2)", () => {
     expect(await runs(buildingId)).toHaveLength(1);
   });
 
-  it("lets a viewer download the report without writing the cached copy; a writer's download does", async () => {
+  it("lets both a viewer and a writer download the (draft) report, and neither write (A06)", async () => {
     const { owner, viewer, buildingId } = await setup();
     await authRequest(`/api/buildings/${buildingId}/audit/run`, { method: "POST" }, owner.cookie);
 
@@ -104,6 +104,8 @@ describe("Audit routes: viewers cannot write (A-2)", () => {
       owner.cookie,
     );
     expect(ownerPdf.status).toBe(200);
-    expect((await runs(buildingId))[0]?.reportR2Key).toBe(`reports/${buildingId}/latest.pdf`);
+    // A06: the live GET never writes R2 or `audit_run` for *any* role any more — a legally
+    // defensible, stored PDF now only comes from `POST .../snapshots/:sid/reports`.
+    expect((await runs(buildingId))[0]?.reportR2Key).toBeNull();
   });
 });

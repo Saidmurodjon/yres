@@ -83,7 +83,7 @@
     "updating": "Updating…",
     "financialAnalysis": "Financial analysis",
     "preparing": "Preparing…",
-    "downloadReport": "Download report",
+    "downloadReport": "Download draft PDF",
     "running": "Running…",
     "reRunAudit": "Re-run audit",
     "runFailed": "Failed to run audit.",

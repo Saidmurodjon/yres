@@ -2843,6 +2843,85 @@ T06b — qamrab olinganlar:
   `A05` endi to'liq ✅ (`faza-2/README.md`).
 **Navbatda:** A06 (hisobot snapshot'dan: o'zgarmas PDF + SHA-256).
 
+## Faza 2 · A06 — Hisobot snapshot'dan: o'zgarmas PDF + SHA-256; jonli PDF = QORALAMA (2026-10-04)
+
+- `report.service.ts`: `generateAuditReportPdf`ning birinchi parametri endi to'liq `Building` emas,
+  yangi eksport qilingan `ReportBuilding` (`Pick<Building, 16 maydon>` — aynan
+  `snapshot.service.ts`ning `pickReportBuildingFields`i muzlatadigan ro'yxat; endi ikkinchisi
+  birinchisining qaytish turidan foydalanadi, ikki joyda qo'lda sinxronlanadigan ro'yxat yo'q).
+  Oxiriga ixtiyoriy `options?: { draft?: boolean; snapshot?: { id, engineVersion,
+  methodologyVersion } }` qo'shildi. `ReportLayout`ga ikki metod: `setDates(date)`
+  (`doc.setCreationDate/ModificationDate` — `result.generatedAt`ga, wall-clock'ga emas, "bir
+  yildan keyin ham baytma-bayt bir xil" buzilmasin) va `applyDraftWatermark(text)` (hamma
+  `doc.getPages()` bo'yicha diagonal matn, `rotate: degrees(45)`, `opacity: 0.12` — bitta marta,
+  hamma sahifa qo'shilgandan keyin chaqiriladi). `draft: true` → muqovada "not official" qatori +
+  suv belgisi; `snapshot` meta → QR ostida "Snapshot {id8} · Engine {v} · {methodology} · {date}"
+  qatori (faqat `verifyUrl` bor bo'lganda, ya'ni QR chizilganda). `report-i18n.ts`ga uch kalit
+  (`draftWatermark`, `notOfficial`, `snapshotLine`) uch tilda — rus matni PROGRESS'da ko'rib
+  chiqish uchun belgilandi (pastga qarang).
+- `routes/audit.ts`ning `GET /:id/audit/report`i endi har doim `{ draft: true }` va `verifyUrl:
+  undefined` (QR yo'q) bilan chaqiradi; R2 `put` va `audit_run.reportR2Key` UPDATE'i butunlay olib
+  tashlandi — bu endi hech qanday rol uchun yozmaydi (A-2 to'liq yopildi, avval faqat viewer uchun
+  yopiq edi). Fayl nomi `*-draft-audit-report.pdf`ga o'zgardi.
+- `routes/snapshots.ts`ga ikki yangi endpoint: `POST /:id/audit/snapshots/:sid/reports` (`{ lang }`,
+  faqat `submitted`/`approved` snapshot, aks holda 409) — mavjud `(sid, lang)` qatorini 200 bilan
+  qaytaradi (qayta render yo'q); aks holda `result.json`+`context.json`ni `readSnapshotJson` bilan
+  hash tekshirib o'qiydi, `generateAuditReportPdf(context.building, result, context.extras, lang,
+  yandexKey, verifyUrl=".../verify/s/{sid}", { snapshot: {...snapshot row'dan} })` chaqiradi,
+  `sha256Hex`, `reportId = crypto.randomUUID()` (kalitda — `{lang}-{reportId}.pdf`, A06 spec'ning
+  `audit_snapshot_report` doc commentidagi `{lang}.pdf`dan ataylab chetlanishi, parallel so'rovlar
+  bir-birini ustidan yozmasin), R2 `put`, so'ng `db.batch([auditEventStatement(issue_report),
+  insert(auditSnapshotReport)])`. Unique to'qnashuv (`(snapshotId, lang)` — ikki parallel so'rov
+  poyga qilsa) `snapshot.service.ts`ning yangi `isUniqueConstraintError()`i (`isIllegalTransitionError`
+  uslubida) bilan tutiladi → mavjud qatorni 200 bilan qaytaradi, yutqazgan PDF obyekt zararsiz
+  yetim qoladi (tozalanmaydi, spec). `GET /:id/audit/snapshots/:sid/reports/:lang` (viewer ham) —
+  qator `:sid` orqali `buildingId`ga bog'lab o'qiladi (IDOR), yangi `readSnapshotBytes()` bilan R2
+  baytlarini SHA-256 bo'yicha qayta tekshiradi (mos kelmasa `[snapshot] report integrity mismatch`
+  logi + generik `500`), `Content-Disposition: attachment; filename="<slug>-<sid8>-<lang>.pdf"`.
+  Ikkalasi ham hech narsa yozmaydi GET'da.
+- `snapshot.service.ts`: `readSnapshotJson`/yangi `readSnapshotBytes` endi ikkalasi ham bitta
+  ichki `readAndVerify()` (R2 `get` + SHA-256 qayta hisoblash) dan foydalanadi — avval
+  `readSnapshotJson` o'zi JSON parse bilan aralash edi. `SnapshotContext.building`ning turi endi
+  o'zining eski `ReportBuildingFields`i o'rniga `report.service.ts`ning `ReportBuilding`i (yuqoridagi
+  bir-manba konsolidatsiyasi).
+- D1 byudjeti (izohlarda): `POST .../reports` — sessiya(≤2) + kirish(1) + snapshot(1) +
+  mavjud-hisobot(1) + batch(2) = 7/40; R2 2 get + 1 put + 1 Yandex fetch (bor bo'lsa). `GET
+  .../reports/:lang` — sessiya(≤2) + kirish(1) + snapshot(1) + hisobot qatori(1) = 5/40; R2 1 get.
+- Kichik qo'shimcha tuzatish (topshiriqda so'ralgan, A09a'dan qolgan): `tests/services/
+  report.service.test.ts`da 4 joyda `Buffer.from(bytes.slice(0,5)).toString("utf-8")` ishlatilgan
+  edi — `@types/node` o'rnatilmagan holatda `tsc -p tsconfig.test.json` buni "Cannot find name
+  'Buffer'" bilan rad etardi (bu sessiyada `@types/pg`ning tranzitiv bog'liqligi orqali
+  `@types/node` baribir hal bo'lib ketgani uchun bu holatda mahalliy ravishda qizil chiqmadi, lekin
+  bog'liqlik nozik/tasodifiy bo'lgani uchun baribir tuzatildi) — hammasi `new
+  TextDecoder().decode(bytes.slice(0,5))`ga o'zgartirildi, yangi bog'liqlik qo'shilmadi.
+- Web: `apps/web`dagi jonli yuklab olish tugmasi yorlig'i (`results.downloadReport` kaliti, uchta
+  tilda) "Hisobotni yuklab olish"/"Download report"/"Скачать отчёт"dan "Qoralama PDF yuklab
+  olish"/"Download draft PDF"/"Скачать черновик PDF"ga o'zgartirildi — bu endi aniq qoralama
+  ekanini bildiradi; rasmiy (snapshot'dan) yuklab olish tugmalari A08'da qo'shiladi.
+- Yangi testlar: `tests/integration/snapshot-report.test.ts` (5 test) — issue→ikki marta
+  yuklab olish (baytlar bir xil, SHA-256 qatorga teng) bino/tarif/iqlim o'zgargandan keyin ham;
+  ikkinchi POST → bir xil qator, yangi R2 obyekt yo'q (bitta qator, bitta `issue_report`
+  audit_event); draft snapshot'ga POST → 409; viewer POST → 403, viewer GET → 200, begona
+  foydalanuvchi GET → 404, mavjud bo'lmagan til → 404, yaroqsiz til → 400; korrupsiyalangan R2
+  obyekt → 500 (xabarda sha/hash/r2/hex so'zlari yo'q). `tests/integration/audit-access.test.ts`
+  yangilandi: eski "viewer yozmaydi, writer yozadi" testi endi "ikkalasi ham yozmaydi"ni tekshiradi
+  (A-2 to'liq yopilgani). `tests/services/report.service.test.ts`ga 3 yangi test: `draft: true` +
+  QR yo'q holatda muvaffaqiyatli render; `snapshot` meta + QR bilan render; `setDates` — PDF'ning
+  `/CreationDate`/`/ModDate`si `result.generatedAt`ga teng (±1s — PDF sana formatida millisekund
+  yo'q, pdf-lib yaxlitlaydi).
+- **Ochiq**: suv belgisi va snapshot qatorining PDF'da haqiqatan ko'rinishi/sahifadan chiqib
+  ketmasligi **ko'zda ko'rib chiqilmadi** — faqat `PDFDocument.load()` orqali struktura tekshirildi
+  (pdf-lib'da matn chiqarib olish API'si yo'q). Ru matni (`notOfficial`/`snapshotLine`) loyiha
+  egasi tomonidan ko'rib chiqilishi kerak (`i18n-and-appearance.md`).
+- Tekshiruvlar: root `bun run type-check` (`@yres/api` ham `tsconfig.test.json` ham, `@yres/web`
+  build bilan) — hammasi toza; `bunx biome lint` tegilgan fayllarga toza; `bun run --cwd apps/api
+  test` — **318/318** yashil (avvalgi 301 + A06'ning 5+3 yangi testi + boshqa parallel ishdan
+  qo'shilgan testlar); `bun run --cwd apps/web build` toza.
+- Chetlanish yo'q spec'ga nisbatan (`A06-hisobot-snapshotdan.md`dagi "Qilmang" bandlariga rioya
+  qilindi: rasmiy PDF GET'da lazy generatsiya qilinmadi, draft snapshot'dan PDF chiqarilmadi,
+  mavjud PDF "yangilanmadi").
+**Navbatda:** A07 (verify: snapshot holati, versiya, hash; brauzerda fayl tekshiruvi).
+
 ## Faza 2 · A09b — `audit_event` chora-tadbirlar/moliya/a'zolar/izohlar/`audit/run`ga yoyildi (2026-10-04)
 
 - `routes/measures.ts`: `POST/PUT/DELETE /:id/measures/:mid` va `POST /:id/measures/select` endi

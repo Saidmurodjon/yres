@@ -453,7 +453,7 @@ describe("generateAuditReportPdf", () => {
       "https://yres.example.com/verify/00000000-0000-0000-0000-000000000000",
     );
 
-    expect(Buffer.from(bytes.slice(0, 5)).toString("utf-8")).toBe("%PDF-");
+    expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
     const loaded = await PDFDocument.load(bytes);
     expect(loaded.getPageCount()).toBeGreaterThan(1);
   });
@@ -465,7 +465,7 @@ describe("generateAuditReportPdf", () => {
       emptyExtrasFixture(),
     );
 
-    expect(Buffer.from(bytes.slice(0, 5)).toString("utf-8")).toBe("%PDF-");
+    expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
     const loaded = await PDFDocument.load(bytes);
     expect(loaded.getPageCount()).toBeGreaterThanOrEqual(1);
   });
@@ -476,7 +476,7 @@ describe("generateAuditReportPdf", () => {
     expect(result.measures.filter((m) => m.proposedForImplementation)).toHaveLength(1);
 
     const bytes = await generateAuditReportPdf(buildingFixture(), result, fullExtrasFixture());
-    expect(Buffer.from(bytes.slice(0, 5)).toString("utf-8")).toBe("%PDF-");
+    expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
   });
 
   it.each(["ru", "uz"] as const)(
@@ -489,9 +489,70 @@ describe("generateAuditReportPdf", () => {
         lang,
       );
 
-      expect(Buffer.from(bytes.slice(0, 5)).toString("utf-8")).toBe("%PDF-");
+      expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
       const loaded = await PDFDocument.load(bytes);
       expect(loaded.getPageCount()).toBeGreaterThan(1);
     },
   );
+
+  // A06: the live `GET /audit/report` route always passes `{ draft: true }` and no `verifyUrl`
+  // (no QR). This only confirms the watermark path doesn't crash and still yields a valid,
+  // multi-page PDF — pdf-lib has no text-extraction API, so whether "DRAFT" is actually legible
+  // and stays on every page (not clipped off an edge) was checked by eye, not asserted here (see
+  // PROGRESS.md's A06 entry).
+  it("renders with a draft watermark and no QR when verifyUrl is omitted", async () => {
+    const bytes = await generateAuditReportPdf(
+      buildingFixture(),
+      fullResultFixture(),
+      fullExtrasFixture(),
+      "en",
+      undefined,
+      undefined,
+      { draft: true },
+    );
+
+    expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
+    const loaded = await PDFDocument.load(bytes);
+    expect(loaded.getPageCount()).toBeGreaterThan(1);
+  });
+
+  // A06: the snapshot-backed `POST .../snapshots/:sid/reports` route passes `snapshot` meta
+  // alongside a real `verifyUrl` — the cover page prints the snapshot id/engine/methodology line
+  // under the QR code.
+  it("renders with snapshot provenance meta under the QR code without throwing", async () => {
+    const bytes = await generateAuditReportPdf(
+      buildingFixture(),
+      fullResultFixture(),
+      fullExtrasFixture(),
+      "en",
+      undefined,
+      "https://yres.example.com/verify/s/00000000-0000-0000-0000-000000000000",
+      {
+        snapshot: {
+          id: "00000000-0000-0000-0000-000000000000",
+          engineVersion: "0.9.0",
+          methodologyVersion: "3-DMTT v7.20",
+        },
+      },
+    );
+
+    expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
+    const loaded = await PDFDocument.load(bytes);
+    expect(loaded.getPageCount()).toBeGreaterThan(1);
+  });
+
+  it("pins PDF creation/modification dates to AuditResult.generatedAt, not wall-clock time", async () => {
+    const result = fullResultFixture();
+    const bytes = await generateAuditReportPdf(buildingFixture(), result, fullExtrasFixture());
+
+    const loaded = await PDFDocument.load(bytes);
+    // PDF date strings (`D:YYYYMMDDHHmmSS`) have no sub-second precision — pdf-lib's own
+    // round-trip drops milliseconds (rounding, not truncating), so this allows a <1s delta
+    // rather than asserting exact equality.
+    const expectedMs = new Date(result.generatedAt).getTime();
+    expect(Math.abs((loaded.getCreationDate()?.getTime() ?? 0) - expectedMs)).toBeLessThan(1000);
+    expect(Math.abs((loaded.getModificationDate()?.getTime() ?? 0) - expectedMs)).toBeLessThan(
+      1000,
+    );
+  });
 });

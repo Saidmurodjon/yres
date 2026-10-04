@@ -1,4 +1,5 @@
-import { auditSnapshot, auditSnapshotReport } from "@yres/db";
+import { auditSnapshot, auditSnapshotReport, reportLangEnum } from "@yres/db";
+import type { AuditResult } from "@yres/types";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
@@ -6,12 +7,16 @@ import { auditEventStatement } from "../lib/audit-event";
 import { canApprove, canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import { ENGINE_VERSION, METHODOLOGY_VERSION } from "../services/engine-version";
+import { generateAuditReportPdf } from "../services/report.service";
 import {
   buildSnapshotPayload,
   isIllegalTransitionError,
+  isUniqueConstraintError,
+  readSnapshotBytes,
   readSnapshotJson,
   serialize,
   sha256Hex,
+  type SnapshotContext,
   snapshotR2Keys,
 } from "../services/snapshot.service";
 
@@ -20,6 +25,8 @@ export const snapshotRoutes = new Hono<AppEnv>();
 snapshotRoutes.use("*", authMiddleware);
 
 const snapshotIdParamSchema = z.string().uuid();
+const reportLangParamSchema = z.enum(reportLangEnum.enumValues);
+const issueReportBodySchema = z.object({ lang: z.enum(reportLangEnum.enumValues) });
 
 /**
  * POST /:id/audit/snapshots - freeze the building's current inputs/result/context into an
@@ -373,4 +380,250 @@ snapshotRoutes.post("/:id/audit/snapshots/:sid/approve", async (c) => {
   }
 
   return c.json({ ok: true });
+});
+
+/**
+ * POST /:id/audit/snapshots/:sid/reports - renders and permanently stores one immutable PDF for a
+ * `submitted`/`approved` snapshot × language (A06, ADR-004). Unlike the live `GET /audit/report`
+ * (routes/audit.ts — always a watermarked DRAFT, recomputed fresh and never stored), this calls
+ * `generateAuditReportPdf()` **once** from the snapshot's frozen `result.json`/`context.json`
+ * (never recomputed from current inputs — calculation-engine.md "Qilmang") and stores the bytes
+ * forever under a key that includes this call's own `reportId`, not just `(sid, lang)` — two
+ * concurrent requests for the same `(sid, lang)` therefore never overwrite each other's R2 object;
+ * only one of their `audit_snapshot_report` inserts can win the `(snapshotId, lang)` unique index,
+ * and the loser's PDF object is simply orphaned-but-harmless (not cleaned up, A06 spec).
+ *
+ * A repeat call for an already-issued `(sid, lang)` is not a re-render: it 200s the existing row
+ * (no new PDF, no new R2 object) — "mavjud PDF'ni yangilash yo'q" is a deliberate non-feature
+ * (A06 spec "Qilmang": issue a new snapshot instead).
+ *
+ * D1 budget (database.md, ≤ 40/request): session lookup (≤ 2) + findAccessibleBuilding (1) +
+ * snapshot status lookup (1) + existing-report lookup (1) + this db.batch's 2 statements
+ * (audit_event insert, audit_snapshot_report insert) = 7 D1 subrequests; + 2 R2 `get`s (result,
+ * context) + 1 R2 `put` (the rendered PDF) + 1 Yandex Static Maps fetch (only if configured).
+ */
+snapshotRoutes.post("/:id/audit/snapshots/:sid/reports", async (c) => {
+  const buildingId = c.req.param("id");
+  const parsedSid = snapshotIdParamSchema.safeParse(c.req.param("sid"));
+  if (!parsedSid.success) {
+    return c.json({ error: "Invalid snapshot id" }, 400);
+  }
+  const snapshotId = parsedSid.data;
+
+  const body = await c.req.json().catch(() => null);
+  const parsedBody = issueReportBodySchema.safeParse(body);
+  if (!parsedBody.success) {
+    return c.json({ error: "Invalid body", details: parsedBody.error.flatten() }, 400);
+  }
+  const { lang } = parsedBody.data;
+
+  const db = c.get("db");
+  const user = c.get("user");
+
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
+    return c.json({ error: "Not found" }, 404);
+  }
+  if (!canWrite(access.role)) {
+    return c.json({ error: "You only have view access to this building." }, 403);
+  }
+
+  const [snapshot] = await db
+    .select()
+    .from(auditSnapshot)
+    .where(and(eq(auditSnapshot.id, snapshotId), eq(auditSnapshot.buildingId, buildingId)))
+    .limit(1);
+  if (!snapshot) {
+    return c.json({ error: "Not found" }, 404);
+  }
+  if (snapshot.status !== "submitted" && snapshot.status !== "approved") {
+    return c.json(
+      {
+        error: "A report can only be issued for a submitted or approved snapshot.",
+        code: "illegal_transition",
+      },
+      409,
+    );
+  }
+
+  const [existing] = await db
+    .select()
+    .from(auditSnapshotReport)
+    .where(
+      and(eq(auditSnapshotReport.snapshotId, snapshotId), eq(auditSnapshotReport.lang, lang)),
+    )
+    .limit(1);
+  if (existing) {
+    return c.json({ report: existing }, 200);
+  }
+
+  let result: AuditResult;
+  let context: SnapshotContext;
+  try {
+    [result, context] = await Promise.all([
+      readSnapshotJson<AuditResult>(
+        c.env.REPORTS_BUCKET,
+        snapshot.resultR2Key,
+        snapshot.resultSha256,
+      ),
+      readSnapshotJson<SnapshotContext>(
+        c.env.REPORTS_BUCKET,
+        snapshot.contextR2Key,
+        snapshot.contextSha256,
+      ),
+    ]);
+  } catch (err) {
+    console.error(
+      "[snapshot] report integrity mismatch",
+      snapshotId,
+      err instanceof Error ? err.message : err,
+    );
+    return c.json({ error: "Internal error" }, 500);
+  }
+
+  // Public, unauthenticated verify route (A07) — distinct from the live report's
+  // `/verify/{auditRunId}` since this points at an immutable snapshot, not a live audit_run.
+  const verifyUrl = `${c.env.WEB_URL}/verify/s/${snapshotId}`;
+  const pdfBytes = await generateAuditReportPdf(
+    context.building,
+    result,
+    context.extras,
+    lang,
+    c.env.YANDEX_STATIC_MAPS_API_KEY,
+    verifyUrl,
+    {
+      snapshot: {
+        id: snapshotId,
+        engineVersion: snapshot.engineVersion,
+        methodologyVersion: snapshot.methodologyVersion,
+      },
+    },
+  );
+  const sha256 = await sha256Hex(pdfBytes);
+  const reportId = crypto.randomUUID();
+  // `reportId` rides along in the key (not just `{lang}.pdf`, A06 spec's deliberate deviation
+  // from the `audit_snapshot_report` doc comment) so two parallel requests racing for the same
+  // `(sid, lang)` never overwrite each other's bytes before the unique index picks a winner.
+  const r2Key = `reports/${buildingId}/${snapshotId}/${lang}-${reportId}.pdf`;
+  await c.env.REPORTS_BUCKET.put(r2Key, pdfBytes, {
+    httpMetadata: { contentType: "application/pdf" },
+  });
+
+  try {
+    const [, insertedRows] = await db.batch([
+      auditEventStatement(db, c, {
+        buildingId,
+        entity: "snapshot",
+        entityId: snapshotId,
+        action: "issue_report",
+        summary: { lang, sha256 },
+      }),
+      db
+        .insert(auditSnapshotReport)
+        .values({
+          id: reportId,
+          snapshotId,
+          lang,
+          r2Key,
+          sha256,
+          sizeBytes: pdfBytes.length,
+          createdByUserId: user.id,
+        })
+        .returning(),
+    ]);
+    const [report] = insertedRows;
+    return c.json({ report }, 201);
+  } catch (err) {
+    if (isUniqueConstraintError(err)) {
+      // Lost the (sid, lang) race — the PDF object this request just wrote above is now a
+      // harmless orphan; the row that won the insert is the one we hand back (A06 spec).
+      const [winner] = await db
+        .select()
+        .from(auditSnapshotReport)
+        .where(
+          and(eq(auditSnapshotReport.snapshotId, snapshotId), eq(auditSnapshotReport.lang, lang)),
+        )
+        .limit(1);
+      if (winner) {
+        return c.json({ report: winner }, 200);
+      }
+    }
+    console.error(
+      "[snapshot] issue report failed",
+      snapshotId,
+      err instanceof Error ? err.message : err,
+    );
+    return c.json({ error: "Internal error" }, 500);
+  }
+});
+
+/**
+ * GET /:id/audit/snapshots/:sid/reports/:lang - downloads one already-issued, immutable PDF
+ * (A06). Any accessible role may read (viewer included — this never mutates anything,
+ * A-2/security.md). `:sid` is matched together with `:id`, and the report row is matched
+ * together with `:sid` (not just its own `id`), so a report from a different building or a
+ * different snapshot can never be reached through this URL (IDOR, security.md).
+ *
+ * D1 budget (database.md, ≤ 40/request): session lookup (≤ 2) + findAccessibleBuilding (1) +
+ * snapshot existence check (1) + report row lookup (1) = 5 D1 subrequests; + 1 R2 `get`. Writes
+ * nothing.
+ */
+snapshotRoutes.get("/:id/audit/snapshots/:sid/reports/:lang", async (c) => {
+  const buildingId = c.req.param("id");
+  const parsedSid = snapshotIdParamSchema.safeParse(c.req.param("sid"));
+  const parsedLang = reportLangParamSchema.safeParse(c.req.param("lang"));
+  if (!parsedSid.success || !parsedLang.success) {
+    return c.json({ error: "Invalid snapshot id or language" }, 400);
+  }
+  const snapshotId = parsedSid.data;
+  const lang = parsedLang.data;
+
+  const db = c.get("db");
+  const user = c.get("user");
+
+  const access = await findAccessibleBuilding(db, buildingId, user.id);
+  if (!access) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  const [snapshot] = await db
+    .select({ id: auditSnapshot.id })
+    .from(auditSnapshot)
+    .where(and(eq(auditSnapshot.id, snapshotId), eq(auditSnapshot.buildingId, buildingId)))
+    .limit(1);
+  if (!snapshot) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  const [report] = await db
+    .select()
+    .from(auditSnapshotReport)
+    .where(
+      and(eq(auditSnapshotReport.snapshotId, snapshotId), eq(auditSnapshotReport.lang, lang)),
+    )
+    .limit(1);
+  if (!report) {
+    return c.json({ error: "Not found" }, 404);
+  }
+
+  let bytes: Uint8Array;
+  try {
+    bytes = await readSnapshotBytes(c.env.REPORTS_BUCKET, report.r2Key, report.sha256);
+  } catch (err) {
+    console.error(
+      "[snapshot] report integrity mismatch",
+      report.id,
+      err instanceof Error ? err.message : err,
+    );
+    return c.json({ error: "Internal error" }, 500);
+  }
+
+  const slug = access.building.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+  const fileName = `${slug}-${snapshotId.slice(0, 8)}-${lang}.pdf`;
+  return new Response(bytes, {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="${fileName}"`,
+    },
+  });
 });

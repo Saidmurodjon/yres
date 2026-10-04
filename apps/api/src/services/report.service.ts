@@ -1,7 +1,7 @@
 import fontkit from "@pdf-lib/fontkit";
 import type { building } from "@yres/db";
 import type { AuditResult, GenerationSourceResult, ReportAnnotationSectionKey } from "@yres/types";
-import { PDFDocument, type PDFFont, type PDFPage, rgb } from "pdf-lib";
+import { degrees, PDFDocument, type PDFFont, type PDFPage, rgb } from "pdf-lib";
 import qrcode from "qrcode-generator";
 import { PT_SERIF_BOLD_BASE64 } from "../assets/fonts/pt-serif-bold";
 import { PT_SERIF_ITALIC_BASE64 } from "../assets/fonts/pt-serif-italic";
@@ -15,6 +15,35 @@ import { type ReportLang, enumLabel, localeTag, t } from "./report-i18n";
 
 type Building = typeof building.$inferSelect;
 
+/**
+ * The exact building columns this file reads (A06: `grep -o "building\.[a-zA-Z]*"
+ * services/report.service.ts` — kept in sync with `snapshot.service.ts`'s `pickReportBuildingFields`,
+ * which freezes exactly these fields into a snapshot's `context.json`). `generateAuditReportPdf`
+ * accepts this narrowed type rather than the full `Building` row so a snapshot-backed report (A06)
+ * can be rendered from `SnapshotContext.building` — a plain object read back from R2, not a live
+ * DB row — without that assignment going through `as`. A full `Building` row is still a valid
+ * argument (structural subtyping: it has every field here, plus more).
+ */
+export type ReportBuilding = Pick<
+  Building,
+  | "name"
+  | "location"
+  | "buildingType"
+  | "yearBuilt"
+  | "latitude"
+  | "longitude"
+  | "netCooledFloorAreaM2"
+  | "heatingSeasonDurationDays"
+  | "indoorTempOperationC"
+  | "indoorTempNonOperationC"
+  | "outdoorAvgHeatingSeasonTempC"
+  | "outdoorDesignTempC"
+  | "occupantCount"
+  | "coolingEnthalpyInsideKjKg"
+  | "coolingEnthalpyOutsideKjKg"
+  | "coolingEnthalpyHottestDayKjKg"
+>;
+
 /** Raw data `AuditResult` doesn't carry — fetched separately by the `/audit/report` route via `report-data.service.ts` (see `.claude/rules/hisobot.md`). */
 export interface ReportExtras {
   uValues: ConstructionTypeUValueBreakdown[];
@@ -22,6 +51,20 @@ export interface ReportExtras {
   tariffs: LatestTariffRow[];
   /** Auditor freeform notes, keyed by report section (docs/report-redesign-proposal.md §5b) — optional, so callers that don't pass it (e.g. existing tests) still render fine with no notes. */
   annotations?: Partial<Record<ReportAnnotationSectionKey, string>>;
+}
+
+/** Snapshot provenance shown on a snapshot-backed PDF's cover (A06) — never set for the live/draft report. */
+export interface ReportSnapshotMeta {
+  id: string;
+  engineVersion: string;
+  methodologyVersion: string;
+}
+
+export interface GenerateAuditReportPdfOptions {
+  /** True for the live `GET /audit/report` endpoint (A06): adds a diagonal watermark and a "not official" cover line, and must be paired with no `verifyUrl` (no QR) by the caller — this flag doesn't enforce that itself. */
+  draft?: boolean;
+  /** Set only when rendering from an immutable `audit_snapshot` (A06 `POST .../snapshots/:sid/reports`) — prints the snapshot id/engine/methodology under the QR code. */
+  snapshot?: ReportSnapshotMeta;
 }
 
 const MONTH_NAMES = [
@@ -685,6 +728,35 @@ class ReportLayout {
     this.y -= sizePt + 8;
   }
 
+  /** Pins PDF metadata to the frozen `AuditResult.generatedAt` instead of the wall-clock moment this ran (A06) — otherwise two renders of the *same* snapshot, done on different days, would differ in bytes purely from `/CreationDate`/`/ModDate`, breaking the "byte-for-byte forever" guarantee. */
+  setDates(date: Date) {
+    this.doc.setCreationDate(date);
+    this.doc.setModificationDate(date);
+  }
+
+  /**
+   * Diagonal "DRAFT"-style watermark across every page already in the document (A06 — the live,
+   * non-snapshot report). Applied once, after all content has been added, by walking
+   * `doc.getPages()` directly rather than hooking into `addPage`/`ensureSpace` — simpler, and
+   * correct here because nothing renders *after* this call.
+   */
+  applyDraftWatermark(text: string) {
+    const fontSize = 64;
+    const textWidth = this.bold.widthOfTextAtSize(text, fontSize);
+    for (const page of this.doc.getPages()) {
+      const { width, height } = page.getSize();
+      page.drawText(text, {
+        x: width / 2 - textWidth / 2,
+        y: height / 2,
+        size: fontSize,
+        font: this.bold,
+        color: MUTED,
+        opacity: 0.12,
+        rotate: degrees(45),
+      });
+    }
+  }
+
   async toBytes(): Promise<Uint8Array> {
     return this.doc.save();
   }
@@ -882,14 +954,18 @@ async function fetchYandexStaticMapPng(
  * never translated — see that file's own doc comment for why.
  */
 export async function generateAuditReportPdf(
-  building: Building,
+  building: ReportBuilding,
   result: AuditResult,
   extras: ReportExtras,
   lang: ReportLang = "en",
   yandexStaticMapsApiKey?: string,
   verifyUrl?: string,
+  options?: GenerateAuditReportPdfOptions,
 ): Promise<Uint8Array> {
   const layout = await ReportLayout.create(lang);
+  // Pinned to the frozen/computed result time, not wall-clock `new Date()` — see `setDates`'s
+  // own doc comment (A06, "byte-for-byte forever").
+  layout.setDates(new Date(result.generatedAt));
 
   layout.title(t(lang, "title"));
   layout.paragraph(
@@ -903,12 +979,14 @@ export async function generateAuditReportPdf(
       }),
     }),
   );
+  if (options?.draft) {
+    layout.paragraph(t(lang, "notOfficial"));
+  }
 
   // QR code + note authenticating this specific PDF as platform-generated
   // (docs/report-redesign-proposal.md §8) — `verifyUrl` is only absent for
-  // callers that don't pass one (e.g. existing unit tests), never in
-  // production (routes/audit.ts always builds one from the completed
-  // audit_run it just resolved).
+  // callers that don't pass one (e.g. existing unit tests, and A06's live/
+  // draft endpoint, which stopped passing one so a draft PDF carries no QR).
   if (verifyUrl) {
     const qr = qrcode(0, "M");
     qr.addData(verifyUrl);
@@ -916,6 +994,20 @@ export async function generateAuditReportPdf(
     layout.qrCode(qr.getModuleCount(), (row, col) => qr.isDark(row, col), 80);
     layout.paragraph(t(lang, "reportGeneratedByPlatform"));
     layout.paragraph(t(lang, "scanToVerify", { url: verifyUrl }));
+    if (options?.snapshot) {
+      layout.paragraph(
+        t(lang, "snapshotLine", {
+          id: options.snapshot.id.slice(0, 8),
+          engineVersion: options.snapshot.engineVersion,
+          methodologyVersion: options.snapshot.methodologyVersion,
+          date: new Date(result.generatedAt).toLocaleDateString(localeTag(lang), {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          }),
+        }),
+      );
+    }
   }
 
   layout.heading(t(lang, "headingBuilding"));
@@ -1498,6 +1590,10 @@ export async function generateAuditReportPdf(
         [55, 80, 85, 85, 75, 85],
       );
     }
+  }
+
+  if (options?.draft) {
+    layout.applyDraftWatermark(t(lang, "draftWatermark"));
   }
 
   return layout.toBytes();
