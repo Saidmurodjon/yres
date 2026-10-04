@@ -169,6 +169,34 @@ describe("computeAudit", () => {
     expect(warnings[0]).toContain("workingDaysPerYear");
   });
 
+  it("warns about a legacy unspecified floor but not about the new floor kinds (F08)", () => {
+    const at = { generatedAt: "2026-01-01T00:00:00.000Z" };
+    const withFloor = (elementCategory: "floor" | "floor_ground" | "floor_over_unheated") => {
+      const inputs = buildInputs();
+      inputs.constructionTypes.push({
+        id: "ctf",
+        code: "F1",
+        elementCategory,
+        scenario: "before",
+        retrofitOfId: null,
+        layers: [{ thicknessM: 0.2, material: { thermalConductivityWPerMk: 1.5 } }],
+      });
+      inputs.envelopeElements.push({
+        id: "elf",
+        orientation: "south",
+        constructionTypeId: "ctf",
+        lengthM: 30,
+        heightEnvContactM: 15,
+        heightGroundContactM: 0,
+        openings: [],
+      });
+      return computeAudit(inputs, at).warnings;
+    };
+    expect(withFloor("floor").some((w) => w.startsWith("Floor type is not specified"))).toBe(true);
+    expect(withFloor("floor_ground")).toEqual([]);
+    expect(withFloor("floor_over_unheated")).toEqual([]);
+  });
+
   it("applies a source's distribution efficiency only to an end-use without pipe segments", () => {
     const inputs = buildInputs();
     const first = inputs.generationSources[0];

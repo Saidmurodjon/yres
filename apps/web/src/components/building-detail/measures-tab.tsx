@@ -60,7 +60,7 @@ interface NewMeasureForm {
 const TARGET_ELEMENT_CATEGORIES: Partial<Record<MeasureCategory, readonly string[]>> = {
   envelope_wall_insulation: ["external_wall", "socle_heated", "socle_unheated", "socle_ground"],
   envelope_roof_insulation: ["roof"],
-  envelope_floor_insulation: ["floor"],
+  envelope_floor_insulation: ["floor", "floor_ground", "floor_over_unheated"],
 };
 
 const targetKey = (t: MeasureTarget) => `${t.kind}:${t.code}`;

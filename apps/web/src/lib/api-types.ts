@@ -208,6 +208,9 @@ export interface ConstructionType {
   scenario: Scenario;
   retrofitOfId: string | null;
   description: string | null;
+  temperatureReductionFactor: number | null;
+  groundLengthM: number | null;
+  groundWidthM: number | null;
   layers: ConstructionLayer[];
 }
 
@@ -275,6 +278,9 @@ export interface ReplaceEnvelopePayload {
     description?: string | null;
     /** Only for scenario "after": code of the "before" type this one replaces. */
     retrofitOfCode?: string | null;
+    temperatureReductionFactor?: number | null;
+    groundLengthM?: number | null;
+    groundWidthM?: number | null;
     layers: { layerOrder: number; materialId: string; thicknessM: number }[];
   }[];
   openingTypes: {

@@ -77,7 +77,12 @@
       "thicknessPlaceholder": "Thickness (m)",
       "noMaterials": "No materials in the reference catalog yet — layers can't be added until materials are seeded.",
       "uValuePreview": "U ≈ {{value}} W/m²K",
-      "uValueUnavailable": "U-value: complete the layers"
+      "uValueUnavailable": "U-value: complete the layers",
+      "reductionFactor": "Temperature reduction factor n",
+      "reductionFactorHint": "0.4 for a floor over an unheated, unvented void (ShNQ 2.01.04). Empty = 1.",
+      "groundLength": "Block length (m)",
+      "groundWidth": "Block width (m)",
+      "groundHint": "Sample block size for the 2 m ground-zone method; areas still come from the envelope elements."
     },
     "openingTypes": {
       "title": "Opening types",
@@ -152,7 +157,9 @@
       "elementOpeningCountInvalid": "Envelope element \"{{blockName}}\" has an opening with an invalid count.",
       "retrofitOfRequired": "Type \"{{code}}\": choose which \"before\" type it replaces.",
       "retrofitCategoryMismatch": "Type \"{{code}}\": it must replace a type of the same category.",
-      "retrofitOfDuplicate": "\"Before\" type \"{{replaced}}\" is replaced by more than one type."
+      "retrofitOfDuplicate": "\"Before\" type \"{{replaced}}\" is replaced by more than one type.",
+      "reductionFactorInvalid": "Type \"{{code}}\": the temperature reduction factor n must be a number above 0 and at most 1.",
+      "groundDimensionInvalid": "Type \"{{code}}\": block length and width must be numbers above 0 (at most 1000 m)."
     },
     "titleAfter": "Edit envelope — \"After\" scenario",
     "descriptionAfter": "Define the types after renovation. Geometry (blocks, elements) is taken from the \"before\" state. Each new type must say which \"before\" type it replaces; types that nothing replaces stay as they are. Saving replaces all \"after\" types.",

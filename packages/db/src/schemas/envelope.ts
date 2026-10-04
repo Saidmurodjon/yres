@@ -23,6 +23,12 @@ export const constructionType = sqliteTable("construction_type", {
   scenario: text("scenario", { enum: scenarioEnum.enumValues }).notNull().default("before"),
   retrofitOfId: text("retrofit_of_id").references((): AnySQLiteColumn => constructionType.id),
   description: text("description"),
+  // F08. Temperature reduction factor n (v7.20 `Losses env.`: 0.4 over an unheated void); null = 1.
+  // Used by floor_over_unheated and socle_unheated.
+  temperatureReductionFactor: real("temperature_reduction_factor"),
+  // F08. Sample block size of the zone method (`U-values!S110:S111`) — floor_ground only.
+  groundLengthM: real("ground_length_m"),
+  groundWidthM: real("ground_width_m"),
 });
 
 export const constructionLayer = sqliteTable("construction_layer", {

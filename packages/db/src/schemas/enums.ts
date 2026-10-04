@@ -54,6 +54,9 @@ export const envelopeElementCategoryEnum = defineEnum([
   "socle_ground",
   "roof",
   "floor",
+  // F08: floor kinds the v7.20 book calculates differently; plain "floor" stays for legacy data.
+  "floor_ground",
+  "floor_over_unheated",
 ]);
 
 export const openingCategoryEnum = defineEnum(["window", "door"]);

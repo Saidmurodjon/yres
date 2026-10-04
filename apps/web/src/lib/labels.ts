@@ -78,7 +78,9 @@ export const ENVELOPE_ELEMENT_CATEGORY_LABELS: Record<EnvelopeElementCategory, s
   socle_unheated: "Socle (unheated)",
   socle_ground: "Socle (ground)",
   roof: "Roof",
-  floor: "Floor",
+  floor: "Floor (legacy, unspecified)",
+  floor_ground: "Floor on ground",
+  floor_over_unheated: "Floor over unheated space",
 };
 
 export const ENVELOPE_ELEMENT_CATEGORIES = Object.keys(

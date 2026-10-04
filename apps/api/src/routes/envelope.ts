@@ -180,6 +180,9 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
           ? (beforeConstructionTypeIdByCode.get(ct.retrofitOfCode) ?? null)
           : null,
         description: ct.description ?? null,
+        temperatureReductionFactor: ct.temperatureReductionFactor ?? null,
+        groundLengthM: ct.groundLengthM ?? null,
+        groundWidthM: ct.groundWidthM ?? null,
       };
     },
   );

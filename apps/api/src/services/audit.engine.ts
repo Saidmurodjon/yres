@@ -796,6 +796,11 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
 
   warnings.push(...collectMeasureTargetWarnings(measureRows, inputs));
   warnings.push(...collectOpeningRetrofitWarnings(openingTypeUValues));
+  if (envelopeElementInputs.some((el) => el.elementCategory === "floor")) {
+    warnings.push(
+      'Floor type is not specified: elements of category "floor" are calculated as a plain U·A·Δt wall (no ground-zone method, no unheated-space factor). Choose "Floor on ground" or "Floor over unheated space".',
+    );
+  }
 
   const generationRows: GenerationRow[] = generation.map((g) => {
     const sourceType = generationSourceById.get(g.sourceId)?.sourceType;

@@ -12,23 +12,46 @@ const constructionLayerInputSchema = z.object({
   thicknessM: z.number().finite().positive(),
 });
 
-const constructionTypeInputSchema = z.object({
-  // Client-assigned code, unique within this payload. Used to cross-reference
-  // envelope elements to their construction type without needing real DB ids
-  // up front (this is a full bulk-replace, so ids don't exist yet).
-  code: z.string().min(1).max(100),
-  elementCategory: z.enum(envelopeElementCategoryEnum.enumValues),
-  description: z.string().max(10_000).nullable().optional(),
-  layers: z.array(constructionLayerInputSchema).max(8).default([]),
-  // Only meaningful when this payload's `scenario` is "after" — the `code`
-  // of the existing "before"-scenario construction type this one retrofits
-  // (`envelope.service.ts`'s `resolveHeatLossGroups()` swaps an element's
-  // before-type for whichever type has `retrofitOfId` pointing back at it).
-  // Resolved to a real `construction_type.id` in the route since the
-  // before-scenario type was created by an earlier PUT and isn't part of
-  // this payload.
-  retrofitOfCode: z.string().min(1).max(100).nullable().optional(),
-});
+const constructionTypeInputSchema = z
+  .object({
+    // Client-assigned code, unique within this payload. Used to cross-reference
+    // envelope elements to their construction type without needing real DB ids
+    // up front (this is a full bulk-replace, so ids don't exist yet).
+    code: z.string().min(1).max(100),
+    elementCategory: z.enum(envelopeElementCategoryEnum.enumValues),
+    description: z.string().max(10_000).nullable().optional(),
+    layers: z.array(constructionLayerInputSchema).max(8).default([]),
+    // Only meaningful when this payload's `scenario` is "after" — the `code`
+    // of the existing "before"-scenario construction type this one retrofits
+    // (`envelope.service.ts`'s `resolveHeatLossGroups()` swaps an element's
+    // before-type for whichever type has `retrofitOfId` pointing back at it).
+    // Resolved to a real `construction_type.id` in the route since the
+    // before-scenario type was created by an earlier PUT and isn't part of
+    // this payload.
+    retrofitOfCode: z.string().min(1).max(100).nullable().optional(),
+    // F08. Temperature reduction factor n — required for floor_over_unheated (v7.20: 0.4), optional for
+    // socle_unheated, null = 1.
+    temperatureReductionFactor: z.number().finite().gt(0).max(1).nullable().optional(),
+    // F08. Zone-method sample block (`U-values!S110:S111`) — required for floor_ground.
+    groundLengthM: z.number().finite().gt(0).max(1000).nullable().optional(),
+    groundWidthM: z.number().finite().gt(0).max(1000).nullable().optional(),
+  })
+  .superRefine((ct, ctx) => {
+    const need = (field: "temperatureReductionFactor" | "groundLengthM" | "groundWidthM") => {
+      if (ct[field] == null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [field],
+          message: "Required for this element category",
+        });
+      }
+    };
+    if (ct.elementCategory === "floor_over_unheated") need("temperatureReductionFactor");
+    if (ct.elementCategory === "floor_ground") {
+      need("groundLengthM");
+      need("groundWidthM");
+    }
+  });
 
 const openingTypeInputSchema = z.object({
   code: z.string().min(1).max(100),
@@ -78,7 +101,7 @@ const buildingBlockInputSchema = z.object({
 // request on Workers Free). Worst case, statements in the single db.batch():
 //   deletes                                   4  (elements, opening types, construction types, blocks)
 //   buildingBlocks      22 rows ÷ 11/stmt     2  (9 columns → floor(100/9) = 11)
-//   constructionTypes   15 rows ÷ 14/stmt     2  (7 columns)
+//   constructionTypes   15 rows ÷ 10/stmt     2  (10 columns)
 //   constructionLayers 120 rows ÷ 20/stmt     6  (5 columns; 15 types × 8 layers)
 //   openingTypes        14 rows ÷  7/stmt     2  (13 columns)
 //   envelopeElements   100 rows ÷ 10/stmt    10  (10 columns)

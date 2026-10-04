@@ -4,7 +4,9 @@ export type EnvelopeElementCategory =
   | "socle_unheated"
   | "socle_ground"
   | "roof"
-  | "floor";
+  | "floor"
+  | "floor_ground"
+  | "floor_over_unheated";
 
 export type Orientation =
   | "north"

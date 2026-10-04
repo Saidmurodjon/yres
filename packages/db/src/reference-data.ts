@@ -94,6 +94,18 @@ export const SURFACE_RESISTANCES = [
     interiorResistanceM2kPerW: 0.17,
     exteriorResistanceM2kPerW: 0.04,
   },
+  // F08 (migration 0006). Over an unheated void: v7.20 `U-values!T131:T132`.
+  {
+    elementCategory: "floor_over_unheated",
+    interiorResistanceM2kPerW: 0.115,
+    exteriorResistanceM2kPerW: 0.167,
+  },
+  // Zone method (floor_ground) bypasses Rsi/Rse; the legacy-floor values only keep the row from being absent.
+  {
+    elementCategory: "floor_ground",
+    interiorResistanceM2kPerW: 0.17,
+    exteriorResistanceM2kPerW: 0.04,
+  },
   {
     elementCategory: "socle_heated",
     interiorResistanceM2kPerW: 0.13,

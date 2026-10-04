@@ -76,7 +76,12 @@
       "thicknessPlaceholder": "Qalinlik (m)",
       "noMaterials": "Ma'lumotnoma katalogida hali materiallar yo'q — materiallar kiritilmaguncha qatlamlarni qo'shib bo'lmaydi.",
       "uValuePreview": "U ≈ {{value}} Vt/m²K",
-      "uValueUnavailable": "U-qiymati: qatlamlarni to'ldiring"
+      "uValueUnavailable": "U-qiymati: qatlamlarni to'ldiring",
+      "reductionFactor": "Harorat kamaytirish koeffitsienti n",
+      "reductionFactorHint": "Isitilmaydigan, shamollatilmaydigan bo'shliq ustidagi pol uchun 0,4 (ShNQ 2.01.04). Bo'sh = 1.",
+      "groundLength": "Blok uzunligi (m)",
+      "groundWidth": "Blok kengligi (m)",
+      "groundHint": "Gruntdagi pol zona usuli (2 m polosalar) uchun namunaviy blok o'lchamlari; maydonlar hamon qobiq elementlaridan olinadi."
     },
     "openingTypes": {
       "title": "Ochilma turlari",
@@ -150,7 +155,9 @@
       "elementOpeningCountInvalid": "\"{{blockName}}\" qobiq elementida noto'g'ri sonli ochilma bor.",
       "retrofitOfRequired": "\"{{code}}\" turi: qaysi \"Oldin\" turini almashtirishini tanlang.",
       "retrofitCategoryMismatch": "\"{{code}}\" turi: u shu toifadagi turni almashtirishi kerak.",
-      "retrofitOfDuplicate": "\"Oldin\" turi \"{{replaced}}\" bir nechta tur bilan almashtirilgan."
+      "retrofitOfDuplicate": "\"Oldin\" turi \"{{replaced}}\" bir nechta tur bilan almashtirilgan.",
+      "reductionFactorInvalid": "\"{{code}}\" turi: n koeffitsienti 0 dan katta va 1 dan oshmaydigan son bo'lishi kerak.",
+      "groundDimensionInvalid": "\"{{code}}\" turi: blok uzunligi va kengligi 0 dan katta son bo'lishi kerak (1000 m gacha)."
     },
     "titleAfter": "Qobiqni tahrirlash — \"Keyin\" stsenariysi",
     "descriptionAfter": "Rekonstruksiyadan keyingi turlarni kiriting. Geometriya (bloklar, elementlar) \"Oldin\" holatidan olinadi. Har bir yangi tur \"Oldin\"gi qaysi turni almashtirishini ko'rsatishi shart; hech narsa almashtirmagan turlar o'zgarishsiz qoladi. Saqlash barcha \"Keyin\" turlarini almashtiradi.",

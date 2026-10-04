@@ -125,11 +125,15 @@ export function ConstructionTypesStep({
             key={row.rowId}
             onRemove={() => onChange(rows.filter((r) => r.rowId !== row.rowId))}
             headerExtra={
-              <Badge variant={uValue !== null ? "default" : "secondary"}>
-                {uValue !== null
-                  ? t("editor.constructionTypes.uValuePreview", { value: formatNumber(uValue, 2) })
-                  : t("editor.constructionTypes.uValueUnavailable")}
-              </Badge>
+              row.elementCategory === "floor_ground" ? undefined : (
+                <Badge variant={uValue !== null ? "default" : "secondary"}>
+                  {uValue !== null
+                    ? t("editor.constructionTypes.uValuePreview", {
+                        value: formatNumber(uValue, 2),
+                      })
+                    : t("editor.constructionTypes.uValueUnavailable")}
+                </Badge>
+              )
             }
           >
             <div className="grid gap-3 sm:grid-cols-3">
@@ -174,6 +178,52 @@ export function ConstructionTypesStep({
                   </SelectContent>
                 </Select>
               </div>
+              {(row.elementCategory === "floor_over_unheated" ||
+                row.elementCategory === "socle_unheated") && (
+                <div className="space-y-1.5">
+                  <Label htmlFor={`${formId}-${row.rowId}-n`}>
+                    {t("editor.constructionTypes.reductionFactor")}
+                    {row.elementCategory === "floor_over_unheated" ? " *" : ""}
+                  </Label>
+                  <NumberInput
+                    id={`${formId}-${row.rowId}-n`}
+                    value={row.temperatureReductionFactor}
+                    onValueChange={(raw) =>
+                      updateRow(row.rowId, { temperatureReductionFactor: raw })
+                    }
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t("editor.constructionTypes.reductionFactorHint")}
+                  </p>
+                </div>
+              )}
+              {row.elementCategory === "floor_ground" && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`${formId}-${row.rowId}-gl`}>
+                      {t("editor.constructionTypes.groundLength")} *
+                    </Label>
+                    <NumberInput
+                      id={`${formId}-${row.rowId}-gl`}
+                      value={row.groundLengthM}
+                      onValueChange={(raw) => updateRow(row.rowId, { groundLengthM: raw })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`${formId}-${row.rowId}-gw`}>
+                      {t("editor.constructionTypes.groundWidth")} *
+                    </Label>
+                    <NumberInput
+                      id={`${formId}-${row.rowId}-gw`}
+                      value={row.groundWidthM}
+                      onValueChange={(raw) => updateRow(row.rowId, { groundWidthM: raw })}
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground sm:col-span-3">
+                    {t("editor.constructionTypes.groundHint")}
+                  </p>
+                </>
+              )}
               <div className="space-y-1.5">
                 <Label htmlFor={`${formId}-${row.rowId}-desc`}>
                   {t("editor.constructionTypes.description")}

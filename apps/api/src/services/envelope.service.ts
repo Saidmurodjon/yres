@@ -160,6 +160,8 @@ export function calculateEnvelopeAreas(elements: EnvelopeElementInput[]): Envelo
         breakdown.roofAreaM2 += netAreaM2;
         break;
       case "floor":
+      case "floor_ground":
+      case "floor_over_unheated":
         breakdown.floorAreaM2 += netAreaM2;
         break;
     }

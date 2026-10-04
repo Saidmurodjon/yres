@@ -124,7 +124,10 @@ const ENVELOPE_CATEGORIES: Record<string, { construction: string[]; opening: str
     opening: [],
   },
   envelope_roof_insulation: { construction: ["roof"], opening: [] },
-  envelope_floor_insulation: { construction: ["floor"], opening: [] },
+  envelope_floor_insulation: {
+    construction: ["floor", "floor_ground", "floor_over_unheated"],
+    opening: [],
+  },
   window_replacement: { construction: [], opening: ["window", "door"] },
 };
 

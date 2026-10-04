@@ -34,6 +34,11 @@ export interface ConstructionTypeRow {
   description: string;
   /** "After" scenario only: code of the "before" type this one replaces ("" = not chosen yet). */
   retrofitOfCode: string;
+  /** Temperature reduction factor n — floor_over_unheated (required) / socle_unheated (optional). */
+  temperatureReductionFactor: string;
+  /** Zone-method sample block (m) — floor_ground only. */
+  groundLengthM: string;
+  groundWidthM: string;
   layers: LayerRow[];
 }
 
@@ -98,6 +103,9 @@ export function emptyConstructionType(): ConstructionTypeRow {
     elementCategory: "external_wall",
     description: "",
     retrofitOfCode: "",
+    temperatureReductionFactor: "",
+    groundLengthM: "",
+    groundWidthM: "",
     layers: [],
   };
 }
@@ -191,6 +199,9 @@ export function toEditorState(
       elementCategory: ct.elementCategory as EnvelopeElementCategory,
       description: ct.description ?? "",
       retrofitOfCode: codeOf(data.constructionTypes, ct.retrofitOfId),
+      temperatureReductionFactor: formatNumberForInput(ct.temperatureReductionFactor, locale),
+      groundLengthM: formatNumberForInput(ct.groundLengthM, locale),
+      groundWidthM: formatNumberForInput(ct.groundWidthM, locale),
       layers: [...ct.layers]
         .sort((a, b) => a.layerOrder - b.layerOrder)
         .map((l) => ({
@@ -313,6 +324,23 @@ export function parseEditorState(
         errors.push(
           t("envelope:editor.errors.retrofitOfDuplicate", { replaced: ct.retrofitOfCode }),
         );
+    }
+    if (ct.elementCategory === "floor_over_unheated") {
+      const n = read(ct.temperatureReductionFactor);
+      if (!(Number.isFinite(n) && n > 0 && n <= 1))
+        errors.push(t("envelope:editor.errors.reductionFactorInvalid", { code: ct.code || "?" }));
+    } else if (ct.elementCategory === "socle_unheated") {
+      readOptional(
+        ct.temperatureReductionFactor,
+        `${ct.code || "?"} — ${t("envelope:editor.constructionTypes.reductionFactor").replace(/\s*\*$/, "")}`,
+      );
+    }
+    if (ct.elementCategory === "floor_ground") {
+      for (const raw of [ct.groundLengthM, ct.groundWidthM]) {
+        const v = read(raw);
+        if (!(Number.isFinite(v) && v > 0 && v <= 1000))
+          errors.push(t("envelope:editor.errors.groundDimensionInvalid", { code: ct.code || "?" }));
+      }
     }
     for (const layer of ct.layers) {
       if (!layer.materialId)
@@ -445,6 +473,12 @@ export function parseEditorState(
         elementCategory: ct.elementCategory,
         description: ct.description.trim() || null,
         ...(isBefore ? {} : { retrofitOfCode: ct.retrofitOfCode }),
+        ...(ct.elementCategory === "floor_over_unheated" || ct.elementCategory === "socle_unheated"
+          ? { temperatureReductionFactor: optional(ct.temperatureReductionFactor) ?? null }
+          : {}),
+        ...(ct.elementCategory === "floor_ground"
+          ? { groundLengthM: read(ct.groundLengthM), groundWidthM: read(ct.groundWidthM) }
+          : {}),
         layers: ct.layers.map((l, idx) => ({
           layerOrder: idx,
           materialId: l.materialId,

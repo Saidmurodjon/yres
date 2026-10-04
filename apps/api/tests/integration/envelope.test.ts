@@ -249,6 +249,70 @@ describe("Envelope API", () => {
     );
     expect(response.status).toBe(400);
   });
+  describe("floor kinds (F08a)", () => {
+    const put = (buildingId: string, cookie: string, constructionTypes: unknown[]) =>
+      authRequest(
+        `/api/buildings/${buildingId}/envelope`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scenario: "before", constructionTypes }),
+        },
+        cookie,
+      );
+
+    it("requires n for floor_over_unheated and the block size for floor_ground", async () => {
+      const { cookie } = await signUpTestUser();
+      const buildingId = await createBuilding(cookie);
+      expect(
+        (await put(buildingId, cookie, [{ code: "F3", elementCategory: "floor_over_unheated" }]))
+          .status,
+      ).toBe(400);
+      expect(
+        (
+          await put(buildingId, cookie, [
+            { code: "F1", elementCategory: "floor_ground", groundLengthM: 50.3 },
+          ])
+        ).status,
+      ).toBe(400);
+      expect(
+        (
+          await put(buildingId, cookie, [
+            {
+              code: "F3",
+              elementCategory: "floor_over_unheated",
+              temperatureReductionFactor: 1.2,
+            },
+          ])
+        ).status,
+      ).toBe(400);
+    });
+
+    it("stores and returns n and the ground block size", async () => {
+      const { cookie } = await signUpTestUser();
+      const buildingId = await createBuilding(cookie);
+      const res = await put(buildingId, cookie, [
+        { code: "F1", elementCategory: "floor_ground", groundLengthM: 50.3, groundWidthM: 12.8 },
+        { code: "F3", elementCategory: "floor_over_unheated", temperatureReductionFactor: 0.4 },
+      ]);
+      expect(res.status).toBe(200);
+      const env = (await (
+        await authRequest(`/api/buildings/${buildingId}/envelope`, {}, cookie)
+      ).json()) as {
+        constructionTypes: {
+          code: string;
+          groundLengthM: number | null;
+          groundWidthM: number | null;
+          temperatureReductionFactor: number | null;
+        }[];
+      };
+      const f1 = env.constructionTypes.find((c) => c.code === "F1");
+      const f3 = env.constructionTypes.find((c) => c.code === "F3");
+      expect([f1?.groundLengthM, f1?.groundWidthM]).toEqual([50.3, 12.8]);
+      expect(f3?.temperatureReductionFactor).toBe(0.4);
+    });
+  });
+
   describe("after scenario (F07)", () => {
     const put = (buildingId: string, cookie: string, body: unknown) =>
       authRequest(
