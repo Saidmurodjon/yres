@@ -160,3 +160,13 @@ export const auditActionEnum = defineEnum([
   "approve",
   "issue_report",
 ]);
+
+/**
+ * `audit_snapshot.status` lifecycle (ADR-004): `draft` → `submitted` → `approved` → `superseded`,
+ * enforced in both directions by the `audit_snapshot_status_flow` DB trigger (A04) — this enum is
+ * the zod-level mirror, not the source of truth for which transitions are legal.
+ */
+export const snapshotStatusEnum = defineEnum(["draft", "submitted", "approved", "superseded"]);
+
+/** `audit_snapshot_report.lang` — matches `apps/api/src/services/report-i18n.ts`'s `ReportLang`. */
+export const reportLangEnum = defineEnum(["en", "ru", "uz"]);

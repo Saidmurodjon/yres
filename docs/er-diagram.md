@@ -126,6 +126,15 @@ erDiagram
   from the inputs above each time they're requested, but the run's lifecycle (so the UI
   can show progress/history and let the user re-download a past report) is tracked here.
 
+### Immutable records (ADR-004, Faza 2 A trek)
+- `audit_snapshot` — a frozen audit result: engine/methodology version, R2 keys + SHA-256 for the
+  `inputs`/`result`/`context` JSON blobs (too large for a D1 column — `database.md`), a small
+  duplicated `summary` for cheap listing, and a `draft→submitted→approved→superseded` status
+  enforced by a DB trigger. `buildingId` has no `onDelete` (restrict) — a building with any
+  snapshot can never be hard-deleted, only soft-deleted (A03).
+- `audit_snapshot_report` — one immutable rendered PDF per snapshot × language, `r2Key` + `sha256`
+  + `sizeBytes`; write-once, a DB trigger blocks any `UPDATE`.
+
 ### Auth (Better Auth)
 - `user`, `session`, `account`, `verification` — standard Better Auth tables.
 

@@ -2687,3 +2687,36 @@ T06b — qamrab olinganlar:
   `bun run --cwd apps/api test` (265/265, avvalgi 262 + yangi 3) — barchasi yashil.
 - Chetlanish yo'q — spec aniq va kod bilan ziddiyatsiz bajarildi.
 **Navbatda:** A04 (`audit_snapshot` + `audit_snapshot_report` sxemasi, o'zgarmaslik triggerlari, ADR-004 fayli).
+
+## Faza 2 · A04 — `audit_snapshot` + `audit_snapshot_report` sxemasi, o'zgarmaslik triggerlari, ADR-004 (2026-10-04)
+
+- `packages/db/src/schemas/enums.ts`: `snapshotStatusEnum` (`draft|submitted|approved|superseded`),
+  `reportLangEnum` (`en|ru|uz`, `report-i18n.ts`ning `ReportLang`iga mos). `packages/db/src/schemas/snapshots.ts`
+  (yangi): `audit_snapshot` (22 ustun — R2 kalit+SHA-256 uchlik `inputs`/`result`/`context`, kichik `summary` json,
+  muallif/vaqt ustunlari, `buildingId` FK `onDelete`siz — restrict) va `audit_snapshot_report` (snapshot × til,
+  `uniqueIndex(snapshotId, lang)`). Qisman unique indeks `audit_snapshot_building_approved_unique`
+  (`(buildingId) WHERE status = 'approved'`) — `db:generate` buni to'g'ridan-to'g'ri chiqardi, `--custom`ga hojat
+  bo'lmadi (drizzle-orm 0.45.2 sqlite-core `.where()`ni qo'llab-quvvatlaydi).
+- Uch trigger (`--custom` migratsiya, `0011_audit_snapshot_triggers.sql`): `audit_snapshot_frozen` (holat/approval
+  ustunlaridan tashqari hamma ustunni muzlatadi), `audit_snapshot_status_flow` (faqat draft→{submitted,superseded},
+  submitted→{approved,superseded}, approved→superseded — A05b'dagi parallel tasdiqlash yarishini ham atomik
+  yopadi), `audit_snapshot_report_frozen` (har qanday UPDATE'ni rad etadi). DELETE trigger yo'q (o'chirish yo'li
+  kodda yo'q, `resetTestDb()` generik `DELETE FROM`ga tayanadi).
+- `packages/types/src/snapshot.ts` (yangi): `AuditSnapshotStatus`, `AuditSnapshotReportLang`,
+  `AuditSnapshotListItem` (A08 shu turdan foydalanadi).
+- `docs/adr/ADR-004-audit-snapshot.md` (yangi) — variantlar, R2 sababi (o'lcham: golden `result` ≈ 214 KB,
+  `inputs` ≈ 41 KB, D1 bayonot chegarasi 100 KB), triggerlar, holat oqimi, K24–K26 havolasi.
+  `docs/data-dictionary.md`ga 28-band, `docs/er-diagram.md`ga "Immutable records (ADR-004)" bo'limi qo'shildi.
+- Migratsiyalar: `0010_happy_justin_hammer.sql` (ikki jadval + ikki indeks — faqat `CREATE TABLE`/`CREATE INDEX`,
+  qayta yaratish yo'q, `PRAGMA foreign_keys=OFF` chiqmadi), `0011_audit_snapshot_triggers.sql` (uch trigger).
+  `db:migrate:local` toza qo'llandi.
+- Testlar: yangi `apps/api/tests/integration/snapshot-schema.test.ts` (6 test) — muzlatilgan ustun UPDATE → xato;
+  uchta noqonuniy status o'tishi (draft→approved, approved→draft, superseded→approved) → xato; to'liq
+  draft→submitted→approved→superseded oqimi → o'tadi; bitta binoda ikkinchi `approved` → unique xatosi;
+  `audit_snapshot_report` UPDATE → xato; snapshot'li binoni `db.delete(building)` → FK xatosi. type-check (5/5
+  workspace), biome lint, `db:generate` SQL ko'rib chiqildi, `db:migrate:local`,
+  `bun run --cwd apps/api test` (271/271, avvalgi 265 + yangi 6) — barchasi yashil.
+- Chetlanish yo'q — spec aniq va kod bilan ziddiyatsiz bajarildi. `createdByUserId`/`submittedByUserId`/
+  `approvedByUserId` `user.id`ga oddiy (restrict) FK — spec ularning `onDelete` xatti-harakatini belgilamagan,
+  mavjud `auditRun.triggeredByUserId` andozasiga ergashildi.
+**Navbatda:** A05a (Snapshot API: yaratish/ro'yxat/o'qish).

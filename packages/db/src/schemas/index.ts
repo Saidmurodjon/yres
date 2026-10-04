@@ -20,3 +20,4 @@ export * from "./notifications";
 export * from "./chat";
 export * from "./report-annotations";
 export * from "./audit-events";
+export * from "./snapshots";

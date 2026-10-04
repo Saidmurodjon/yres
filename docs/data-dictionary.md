@@ -1242,6 +1242,13 @@ indicators` (investment & savings source for every block) and by
 27. **NonEnergyMeasure** — ancillary renovation cost item (not
     energy-saving): description, unit, quantity, unit cost, total cost.
 
+28. **AuditSnapshot / AuditSnapshotReport** — not sourced from the workbook at all (app-level
+    record, ADR-004, Faza 2 A trek): a frozen, immutable copy of one `AuditSnapshot` run
+    (engine/methodology version, R2 keys + SHA-256 for the `inputs`/`result`/`context` JSON, a
+    small duplicated `summary`) plus one immutable rendered PDF per language. Exists so a bank can
+    verify which exact inputs and engine version produced a given PDF, long after the building's
+    live data has moved on.
+
 ---
 
 ## Ambiguities / items requiring manual review of the original .xlsx
