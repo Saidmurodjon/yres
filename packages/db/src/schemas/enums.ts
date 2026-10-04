@@ -120,3 +120,43 @@ export const conversationTypeEnum = defineEnum(["direct", "group"]);
 
 /** "owner" can rename/add/remove members in a group; meaningless for "direct" conversations. */
 export const conversationMemberRoleEnum = defineEnum(["owner", "member"]);
+
+/**
+ * `audit_event.entity` — which part of a building's data a mutation touched. The `systems.*`
+ * values cover each "replace rows" route under /systems (ventilation, dhw, distribution,
+ * generation, cooling windows/systems, lighting, equipment, renewables) separately, since each
+ * has its own revision counter (A02/A09).
+ */
+export const auditEntityEnum = defineEnum([
+  "building",
+  "envelope",
+  "systems.ventilation",
+  "systems.dhw",
+  "systems.distribution",
+  "systems.generation",
+  "systems.cooling_windows",
+  "systems.cooling_systems",
+  "systems.lighting",
+  "systems.equipment",
+  "systems.renewables",
+  "consumption",
+  "measures",
+  "non_ee_measures",
+  "financial",
+  "members",
+  "annotations",
+  "audit_run",
+  "snapshot",
+]);
+
+export const auditActionEnum = defineEnum([
+  "create",
+  "update",
+  "replace",
+  "delete",
+  "restore",
+  "run",
+  "submit",
+  "approve",
+  "issue_report",
+]);

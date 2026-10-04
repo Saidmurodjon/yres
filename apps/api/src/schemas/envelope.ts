@@ -107,9 +107,10 @@ const buildingBlockInputSchema = z.object({
 //   envelopeElements   100 rows ÷ 10/stmt    10  (10 columns)
 //   envelopeOpenings   150 rows ÷ 25/stmt     6  (4 columns; total across elements, see superRefine)
 //                                            -- 32
-// + session lookup (≤ 2) + findAccessibleBuilding (≤ 2) = 36, and an "after" PUT adds 2 retrofit lookups = 38.
-// A "before" PUT instead adds: 1 read of the after→before links + PRAGMA defer_foreign_keys + ≤ 2 re-link
-// CASE UPDATEs (one per table) = 36 + 4 = 40 ≤ 40.
+// + session lookup (≤ 2) + findAccessibleBuilding (1, single LEFT JOIN query — A02) = 35, and an
+// "after" PUT adds 2 retrofit lookups = 37. A "before" PUT instead adds: 1 read of the
+// after→before links + PRAGMA defer_foreign_keys + ≤ 2 re-link CASE UPDATEs (one per table) =
+// 35 + 4 = 39 ≤ 40 (A09a's `audit_event` row adds the last 1).
 export const MAX_ENVELOPE_OPENINGS_TOTAL = 150;
 
 export const replaceEnvelopeSchema = z

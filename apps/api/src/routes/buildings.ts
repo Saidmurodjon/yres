@@ -2,6 +2,7 @@ import { type Database, building, buildingMember } from "@yres/db";
 import type { BuildingStatus, BuildingType } from "@yres/types";
 import { and, count, desc, eq, inArray, or, sum } from "drizzle-orm";
 import { Hono } from "hono";
+import { auditEventStatement } from "../lib/audit-event";
 import { canWrite, findAccessibleBuilding, findOwnedBuilding } from "../lib/building-access";
 import { buildingSearchText, likeContains, normalizeSearchText } from "../lib/search";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
@@ -162,6 +163,8 @@ buildingRoutes.get("/stats", async (c) => {
 });
 
 // POST / - create a building
+// D1 budget (database.md): session lookup (≤ 2) + this db.batch's 2 statements (audit_event
+// insert, building insert) = ≤ 4, well inside the ≤ 40/request budget.
 buildingRoutes.post("/", async (c) => {
   const body = await c.req.json().catch(() => null);
   const parsed = createBuildingSchema.safeParse(body);
@@ -171,15 +174,23 @@ buildingRoutes.post("/", async (c) => {
 
   const db = c.get("db");
   const user = c.get("user");
+  const id = crypto.randomUUID();
 
-  const [created] = await db
-    .insert(building)
-    .values({
-      ...parsed.data,
-      userId: user.id,
-      searchText: buildingSearchText(parsed.data.name, parsed.data.location),
-    })
-    .returning();
+  // `audit_event` row first in the batch (A02 §3): if the insert below fails (e.g. a bogus
+  // `climateRegionId` → FK violation), the whole batch rolls back and neither row exists.
+  const [, insertedRows] = await db.batch([
+    auditEventStatement(db, c, { buildingId: id, entity: "building", action: "create" }),
+    db
+      .insert(building)
+      .values({
+        ...parsed.data,
+        id,
+        userId: user.id,
+        searchText: buildingSearchText(parsed.data.name, parsed.data.location),
+      })
+      .returning(),
+  ]);
+  const [created] = insertedRows;
 
   return c.json({ building: created }, 201);
 });
@@ -199,6 +210,8 @@ buildingRoutes.get("/:id", async (c) => {
 });
 
 // PUT /:id - update a building (owner or editor; viewers are read-only)
+// D1 budget: session lookup (≤ 2) + findAccessibleBuilding (1) + this db.batch's 2 statements
+// (audit_event insert, building update) = ≤ 5.
 buildingRoutes.put("/:id", async (c) => {
   const id = c.req.param("id");
   const body = await c.req.json().catch(() => null);
@@ -218,18 +231,27 @@ buildingRoutes.put("/:id", async (c) => {
     return c.json({ error: "You only have view access to this building." }, 403);
   }
 
-  const [updated] = await db
-    .update(building)
-    .set({
-      ...parsed.data,
-      searchText: buildingSearchText(
-        parsed.data.name ?? access.building.name,
-        parsed.data.location ?? access.building.location,
-      ),
-      updatedAt: new Date(),
-    })
-    .where(eq(building.id, id))
-    .returning();
+  const [, updatedRows] = await db.batch([
+    auditEventStatement(db, c, {
+      buildingId: id,
+      entity: "building",
+      action: "update",
+      summary: { fields: Object.keys(parsed.data) },
+    }),
+    db
+      .update(building)
+      .set({
+        ...parsed.data,
+        searchText: buildingSearchText(
+          parsed.data.name ?? access.building.name,
+          parsed.data.location ?? access.building.location,
+        ),
+        updatedAt: new Date(),
+      })
+      .where(eq(building.id, id))
+      .returning(),
+  ]);
+  const [updated] = updatedRows;
 
   return c.json({ building: updated });
 });

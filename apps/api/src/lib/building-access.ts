@@ -35,28 +35,36 @@ export interface BuildingAccess {
  * reasoning as `findOwnedBuilding`). Use this for anything a shared
  * collaborator should be able to reach — most routes should use this
  * instead of `findOwnedBuilding`.
+ *
+ * One query (A02 budget note): a `LEFT JOIN` against `building_member`
+ * scoped to this user, so a non-member still gets their `building` row back
+ * (with `memberRole: null`) instead of the join dropping it. Semantics are
+ * unchanged from the previous two-query version — only the query count did.
  */
 export async function findAccessibleBuilding(
   db: Database,
   buildingId: string,
   userId: string,
 ): Promise<BuildingAccess | null> {
-  const [found] = await db.select().from(building).where(eq(building.id, buildingId)).limit(1);
-  if (!found) return null;
-
-  if (found.userId === userId) {
-    return { building: found, role: "owner" };
-  }
-
-  const [member] = await db
-    .select()
-    .from(buildingMember)
-    .where(and(eq(buildingMember.buildingId, buildingId), eq(buildingMember.userId, userId)))
+  const [found] = await db
+    .select({ building, memberRole: buildingMember.role })
+    .from(building)
+    .leftJoin(
+      buildingMember,
+      and(eq(buildingMember.buildingId, building.id), eq(buildingMember.userId, userId)),
+    )
+    .where(eq(building.id, buildingId))
     .limit(1);
 
-  if (!member) return null;
+  if (!found) return null;
 
-  return { building: found, role: member.role };
+  if (found.building.userId === userId) {
+    return { building: found.building, role: "owner" };
+  }
+
+  if (!found.memberRole) return null;
+
+  return { building: found.building, role: found.memberRole };
 }
 
 /** "viewer" is read-only; "owner" and "editor" can modify the building's data. */

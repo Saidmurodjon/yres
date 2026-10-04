@@ -60,7 +60,7 @@ Faza 1 sessiyasi parallel ishlayotgan bo'lsa: commit'dan oldin `git pull --rebas
 | # | Topshiriq | Fayl | Commit | Qachon | Holat |
 |---|---|---|---|---|---|
 | A01 | `ENGINE_VERSION` konstantasi, `METHODOLOGY_VERSION`, oshirish qoidasi | `A01-engine-version.md` | 1 | hozir | ✅ |
-| A02 | `audit_event` jadvali + yordamchi + revision mexanizmi; `findAccessibleBuilding` bitta so'rov; `buildings` route'lari | `A02-audit-event.md` | 1 | hozir | ⬜ |
+| A02 | `audit_event` jadvali + yordamchi + revision mexanizmi; `findAccessibleBuilding` bitta so'rov; `buildings` route'lari | `A02-audit-event.md` | 1 | hozir | ✅ |
 | A03 | Bino soft-delete (`deleted_at`), tiklash endpoint'i | `A03-soft-delete.md` | 1 | hozir | ⬜ |
 | A04 | `audit_snapshot` + `audit_snapshot_report` sxemasi, o'zgarmaslik triggerlari, ADR-004 fayli | `A04-snapshot-sxema.md` | 1 | hozir | ⬜ |
 | A05 | Snapshot API: yaratish/ro'yxat/o'qish (a); holat o'tishlari (b) | `A05-snapshot-api.md` | 2 (a, b) | hozir | ⬜ |

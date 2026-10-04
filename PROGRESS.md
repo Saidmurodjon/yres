@@ -2629,3 +2629,33 @@ T06b — qamrab olinganlar:
 - Testlar: yangi `apps/api/tests/integration/health.test.ts` — `/health` `engineVersion`/`gitSha: null`ni tekshiradi. type-check, build, biome lint, `bun run --cwd apps/api test` (255/255, avvalgi 254 + yangi 1) yashil.
 - Chetlanish yo'q — spec aniq va kod bilan ziddiyatsiz bajarildi.
 **Navbatda:** A02 (`audit_event` jadvali + revision mexanizmi; `findAccessibleBuilding` bitta so'rov; `buildings` route'lari).
+
+## Faza 2 · A02 — `audit_event` jadvali + revision mexanizmi; `findAccessibleBuilding` bitta so'rov (2026-10-04)
+
+- `packages/db/src/schemas/audit-events.ts` (yangi) — `audit_event` jadvali: `buildingId`/`actorUserId` **FK'siz** (ataylab —
+  jurnal bino/foydalanuvchi o'chirilishiga bog'lanmasligi kerak), `entity`/`action` enum (`enums.ts`ga `auditEntityEnum`/
+  `auditActionEnum` qo'shildi, `systems.*` har bir "replace rows" route uchun alohida), `entityRevision` NOT NULL,
+  `summary` json, `requestId`. Indekslar: `uniqueIndex(buildingId, entity, entityRevision)`, `index(buildingId, createdAt)`.
+  Migratsiya `0007_open_stranger.sql` (jadval, FK/`PRAGMA foreign_keys=OFF` yo'q) + `--custom` `0008_audit_event_append_only.sql`
+  (`BEFORE UPDATE … RAISE(ABORT, …)`; **DELETE trigger qo'yilmadi** — `resetTestDb()` har testdan oldin oddiy `DELETE` qiladi).
+- `apps/api/src/lib/audit-event.ts` (yangi): `auditEventStatement(db, c, input)` — `entityRevision`ni SQL subquery bilan
+  hisoblaydi (`max(entityRevision)+1`); `expectedRevision` berilsa `case when … then … else null end` — mos kelmasa subquery
+  `NULL` qaytaradi, NOT NULL ustun buzilib butun `db.batch()` orqaga qaytadi (D1 batch = tranzaksiya). `isRevisionConflict(err)`
+  — `err`/`err.cause` zanjirida (≤5 qavat) `"audit_event.entity_revision"` matnini qidiradi; haqiqiy D1 xato matni mahalliy
+  Miniflare'da tasdiqlangan (`NOT NULL constraint failed: audit_event.entity_revision`, `cause.message`da ham bor).
+  `getRevisions(db, buildingId, entities)` — bitta `group by entity` so'rov, yo'q entity uchun `0`. `summary` 8 KB'dan oshsa
+  `{ truncated: true }`ga almashtiriladi (PII/xom payload hech qachon yozilmaydi).
+- `lib/building-access.ts`ning `findAccessibleBuilding()` endi bitta `LEFT JOIN` so'rovi (`building` ⟕ `building_member`,
+  shu `userId` bilan scope qilingan) — semantika o'zgarmadi (egasi → `owner`, a'zo → rol, aks holda `null`), faqat so'rov soni
+  2 → 1. `schemas/envelope.ts`dagi byudjet izohi yangilandi: "oldin" PUT 40 → **39** (A09a `audit_event` bilan 40 ga qaytadi).
+- `routes/buildings.ts`: `POST /` va `PUT /:id` endi `db.batch([auditEventStatement(...), insert/update…returning()])` — audit
+  yozuvi **birinchi**. `POST` uchun id oldindan `crypto.randomUUID()` bilan yaratiladi (audit event va insert bir xil id'ni
+  ko'rishi uchun). Javob shakli o'zgarmadi. Har ikki route'ga D1 byudjet izohi qo'shildi (≤4 va ≤5 — ≤40 dan ancha past).
+- Testlar: yangi `apps/api/tests/integration/audit-event.test.ts` (7 test) — POST/PUT revision 1→2, batch rollback (bogus
+  `climateRegionId`, na bino na audit_event), `expectedRevision` konflikti (`isRevisionConflict` true, ma'lumot o'zgarmagan),
+  append-only trigger (`UPDATE audit_event` → xato), summary truncation, `getRevisions`. `audit-access.test.ts`/`members.test.ts`
+  o'zgarishsiz yashil (bitta-so'rov refaktori xatti-harakatni o'zgartirmagan). type-check, build, biome lint, `db:generate`
+  SQL ko'rib chiqildi, `db:migrate:local`, `bun run --cwd apps/api test` (262/262, avvalgi 255 + yangi 7) — barchasi yashil.
+- Chetlanish yo'q — spec aniq va kod bilan ziddiyatsiz bajarildi. `auditEventStatement`ning ikkinchi parametri real Hono
+  `Context<AppEnv>` (http-cache.ts bilan bir xil naqsh); route'siz testlarda shunga mos minimal fake-context ishlatildi.
+**Navbatda:** A03 (bino soft-delete, tiklash endpoint'i).
