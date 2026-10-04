@@ -128,6 +128,7 @@ function fullResultFixture(): AuditResult {
     summary: {
       currentEnergyUseKwhPerM2Year: 200,
       potentialEnergyUseKwhPerM2Year: 100,
+      potentialEnergyUseWithoutPvKwhPerM2Year: 100,
       potentialSavingsKwhPerM2Year: 100,
       co2ReductionTonnesPerYear: 12.3,
       totalInvestmentUsd: 50000,
@@ -266,6 +267,13 @@ function fullResultFixture(): AuditResult {
     lighting: [],
     equipment: [],
     renewableProduction: [],
+    renewableBalance: {
+      productionKwh: 0,
+      demandAfterWithoutPvKwh: 0,
+      selfConsumedKwh: 0,
+      exportedKwh: 0,
+      coverageRatio: null,
+    },
     finalEnergyByEndUse: [
       { endUse: "heating", scenario: "before", finalEnergyConsumptionKwh: 600000 },
       { endUse: "heating", scenario: "after", finalEnergyConsumptionKwh: 280000 },
@@ -386,6 +394,7 @@ function emptyResultFixture(): AuditResult {
     summary: {
       currentEnergyUseKwhPerM2Year: 0,
       potentialEnergyUseKwhPerM2Year: 0,
+      potentialEnergyUseWithoutPvKwhPerM2Year: 0,
       potentialSavingsKwhPerM2Year: 0,
       co2ReductionTonnesPerYear: 0,
       totalInvestmentUsd: 0,
@@ -414,6 +423,13 @@ function emptyResultFixture(): AuditResult {
     lighting: [],
     equipment: [],
     renewableProduction: [],
+    renewableBalance: {
+      productionKwh: 0,
+      demandAfterWithoutPvKwh: 0,
+      selfConsumedKwh: 0,
+      exportedKwh: 0,
+      coverageRatio: null,
+    },
     finalEnergyByEndUse: [],
     energyBalanceBreakdown: [],
     specificConsumptionSummary: [],

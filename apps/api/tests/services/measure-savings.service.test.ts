@@ -1,5 +1,6 @@
 import type { EnvelopeHeatLossResult } from "@yres/types";
 import { describe, expect, it } from "vitest";
+import { calculateRenewableBalance } from "../../src/services/renewable.service";
 import {
   type GenerationRow,
   type SavingsContext,
@@ -57,6 +58,9 @@ function context(overrides: Partial<SavingsContext> = {}): SavingsContext {
     lighting: [],
     equipment: [],
     renewableProduction: [],
+    renewableBalance: calculateRenewableBalance(0, 0),
+    pvExportEnabled: false,
+    pvExportUsdPerKwh: 0,
     heatingEnergyBalance: [],
     dhwDemand: [],
     cooling: [],
@@ -176,5 +180,28 @@ describe("calculateGainsUtilizationCorrection", () => {
       [],
     );
     expect(factor).toBe(1);
+  });
+});
+
+describe("resolveMeasureSavings — PV (F09)", () => {
+  const pvContext = (pvExportEnabled: boolean) =>
+    context({
+      renewableBalance: calculateRenewableBalance(150_000, 78_000),
+      pvExportEnabled,
+      pvExportUsdPerKwh: 0.05,
+    });
+
+  it("counts only the self-consumed share when export is off (K4 default)", () => {
+    const { parts, usefulKwh } = resolveMeasureSavings("pv", [], pvContext(false));
+    expect(parts).toEqual([{ carrier: "electricity", kwh: 78_000 }]);
+    expect(usefulKwh).toBe(150_000);
+  });
+
+  it("adds the export at its own tariff when export is on", () => {
+    const { parts } = resolveMeasureSavings("pv", [], pvContext(true));
+    expect(parts).toEqual([
+      { carrier: "electricity", kwh: 78_000 },
+      { carrier: "electricity", kwh: 72_000, usdPerKwh: 0.05 },
+    ]);
   });
 });

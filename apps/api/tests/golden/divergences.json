@@ -2,9 +2,7 @@
   "divergences": [
     {
       "id": "D13",
-      "x": [
-        "X86"
-      ],
+      "x": ["X86"],
       "title": "Discounted payback: workbook formula (Financial indicators!D19, MATCH) is exactly 1 year too high — workbook error, engine is correct (K21)",
       "status": "open",
       "closesIn": "v7.21 (K21: project owner decides; then accepted)",
@@ -16,22 +14,16 @@
     },
     {
       "id": "D23",
-      "x": [
-        "X98"
-      ],
+      "x": ["X98"],
       "title": "Mechanical ventilation fan electricity: Excel = power x hours x utilisation per line (Equipment!K85+K86 = 7570.45), engine = nameplate kW x 24 h x heating days (17896)",
       "status": "open",
       "closesIn": "F06",
-      "expectedIds": [
-        "ventilation.mechanicalElectricalKwh"
-      ],
+      "expectedIds": ["ventilation.mechanicalElectricalKwh"],
       "note": "The workbook uses 1857 h/y and utilisation 0.5/0.8 per line; the ventilation system model has no hours/utilisation input."
     },
     {
       "id": "D5",
-      "x": [
-        "X81"
-      ],
+      "x": ["X81"],
       "title": "Window repair: infiltration share reallocated from ventilation to window",
       "status": "open",
       "closesIn": "P1 (Faza 2+)",
@@ -56,11 +48,7 @@
     },
     {
       "id": "D6",
-      "x": [
-        "X84",
-        "X96",
-        "X33"
-      ],
+      "x": ["X84", "X96", "X33"],
       "title": "Heat pump SCOP 3.11 + backup MTB; fuel-free 'after' heat",
       "status": "open",
       "closesIn": "P2",
@@ -78,10 +66,7 @@
     },
     {
       "id": "D8",
-      "x": [
-        "X65",
-        "X66"
-      ],
+      "x": ["X65", "X66"],
       "title": "BEMS: Excel's 15 USD/m² estimate vs engine EMS_SAVINGS_RATE = 0.03",
       "status": "open",
       "closesIn": "P1",
@@ -141,9 +126,7 @@
     },
     {
       "id": "D11",
-      "x": [
-        "X55"
-      ],
+      "x": ["X55"],
       "title": "Shading (measure 9) and cooling-demand reduction (measure 19) have no engine category",
       "status": "open",
       "closesIn": "P1",
@@ -169,11 +152,7 @@
     },
     {
       "id": "D12",
-      "x": [
-        "X93",
-        "X94",
-        "X95"
-      ],
+      "x": ["X93", "X94", "X95"],
       "title": "Per-measure savings attribution: engine gives one saving per category, Excel per element",
       "status": "open",
       "closesIn": "F06",
@@ -265,9 +244,7 @@
     },
     {
       "id": "D20",
-      "x": [
-        "X98"
-      ],
+      "x": ["X98"],
       "title": "Lighting 'after': Excel takes the installed BoQ power (Lighting!I13 = sum(W x qty)/area = 4.59 W/m2); the engine uses the LED density (7.4 W/m2)",
       "status": "open",
       "closesIn": "Faza 2+",
@@ -324,6 +301,22 @@
         "measures.17.standardizedSavingsUsd"
       ],
       "note": "Engine gives K102 alone (-2508.64, matches the workbook); Excel adds D65 = 7808.64 pumps -> 5300."
+    },
+    {
+      "id": "D24",
+      "x": ["X36", "X88"],
+      "title": "PV balance and the specific consumption are correct in form but inherit the open upstream differences",
+      "status": "open",
+      "closesIn": "inherited (D20, D6, D23, D8, D22; before: D5, D9)",
+      "expectedIds": [
+        "compare.specificAfterKwhPerM2",
+        "compare.specificAfterWithPvKwhPerM2",
+        "compare.specificBeforeKwhPerM2",
+        "pv.electricityDemandKwh",
+        "pv.exportedKwh",
+        "pv.selfConsumedKwh"
+      ],
+      "note": "F09 formulas follow PV!C34:C36 and Breakdown!H71:H76. After F08b the 'after' electricity is 104 505 vs 77 855 kWh (+26 650): D20 lighting +9 384 (24 736 vs 15 352), D6 heating electricity +3 397 (15 105 vs 11 708), D23 fan +10 325 (17 896 vs 7 570), D8 BEMS +3 285 (3 356 vs 6 641); ~258 kWh of the gap is not itemised (not checked line by line). The specific 'after' gap (+16.75 kWh/m2, about 42 190 kWh) adds D22: the engine counts the solar-DHW generation's 15 549 kWh as final energy, the workbook does not. The 'before' specific gap (244.3 vs 234.7) is the remaining heating/DHW demand difference (D5, D9; D3 was closed by F08b). Each closes by itself when those do."
     }
   ],
   "notModelled": [
@@ -410,10 +403,6 @@
         "ems.thermalSavingsKwh",
         "equipment.savingsKwh",
         "lighting.savingsKwh",
-        "pv.electricityDemandKwh",
-        "pv.exportedKwh",
-        "pv.productionValueUsd",
-        "pv.selfConsumedKwh",
         "totals.all.standardizedElectricityUsd",
         "totals.all.standardizedGasUsd",
         "totals.proposed.standardizedElectricityUsd",
@@ -490,9 +479,6 @@
         "class.afterWithoutPv",
         "class.beforeWithoutPv",
         "class.zebLevel",
-        "compare.specificAfterKwhPerM2",
-        "compare.specificAfterWithPvKwhPerM2",
-        "compare.specificBeforeKwhPerM2",
         "composition.circulationPumpsKwh",
         "composition.dhwElectricitySavedByHeatPumpKwh",
         "composition.dhwElectricitySavedBySolarKwh",

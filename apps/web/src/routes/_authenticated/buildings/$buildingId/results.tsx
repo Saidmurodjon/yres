@@ -244,7 +244,9 @@ function AuditResultsPage() {
         />
         <MetricCard
           label={t("results.kpi.potentialEnergyUse")}
-          value={`${formatNumber(summary.potentialEnergyUseKwhPerM2Year, 0)} kWh/m²/yr`}
+          value={`${formatNumber(summary.potentialEnergyUseKwhPerM2Year, 0)} kWh/m²/yr${
+            summary.potentialEnergyUseKwhPerM2Year < 0 ? ` ${t("results.kpi.netExporter")}` : ""
+          }`}
           icon={<TrendingDown className="h-5 w-5" />}
           trend={
             summary.potentialEnergyUseKwhPerM2Year < summary.currentEnergyUseKwhPerM2Year
@@ -330,7 +332,10 @@ function AuditResultsPage() {
                 </ResponsiveContainer>
                 <ChartLegend
                   items={[
-                    { label: t("results.endUseChart.beforeRetrofit"), color: SCENARIO_COLORS.before },
+                    {
+                      label: t("results.endUseChart.beforeRetrofit"),
+                      color: SCENARIO_COLORS.before,
+                    },
                     { label: t("results.endUseChart.afterRetrofit"), color: SCENARIO_COLORS.after },
                   ]}
                 />
@@ -530,7 +535,9 @@ function AuditResultsPage() {
                   <TableHead className="text-right">
                     {t("results.measures.columnSavingsUsd")}
                   </TableHead>
-                  <TableHead className="text-right">{t("results.measures.columnPayback")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("results.measures.columnPayback")}
+                  </TableHead>
                   <TableHead className="text-right">{t("results.measures.columnNpv")}</TableHead>
                   <TableHead className="text-right">{t("results.measures.columnCo2")}</TableHead>
                   <TableHead>{t("results.measures.columnStatus")}</TableHead>

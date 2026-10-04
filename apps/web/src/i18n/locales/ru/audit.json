@@ -95,6 +95,7 @@
     "kpi": {
       "currentEnergyUse": "Текущее энергопотребление",
       "potentialEnergyUse": "Потенциальное энергопотребление",
+      "netExporter": "(чистый экспортёр)",
       "potentialSavings": "Потенциальная экономия",
       "co2Reduction": "Снижение CO2",
       "totalInvestment": "Общие инвестиции",

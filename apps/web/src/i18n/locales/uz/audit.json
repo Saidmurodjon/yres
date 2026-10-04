@@ -89,6 +89,7 @@
     "kpi": {
       "currentEnergyUse": "Joriy energiya iste'moli",
       "potentialEnergyUse": "Potensial energiya iste'moli",
+      "netExporter": "(sof eksportchi)",
       "potentialSavings": "Potensial tejamkorlik",
       "co2Reduction": "CO2 kamayishi",
       "totalInvestment": "Umumiy investitsiya",

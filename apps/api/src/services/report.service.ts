@@ -1015,8 +1015,19 @@ export async function generateAuditReportPdf(
       ],
       [
         t(lang, "labelPotentialEnergyUse"),
-        `${fmt(lang, summary.potentialEnergyUseKwhPerM2Year, 0)} ${t(lang, "unitKwhPerM2Yr")}`,
+        // Negative = the PV exports more than the building uses (v7.20 `H76`); say so instead of leaving a bare minus.
+        `${fmt(lang, summary.potentialEnergyUseKwhPerM2Year, 0)} ${t(lang, "unitKwhPerM2Yr")}${
+          summary.potentialEnergyUseKwhPerM2Year < 0 ? ` ${t(lang, "labelNetExporter")}` : ""
+        }`,
       ],
+      ...(result.renewableBalance.productionKwh > 0
+        ? ([
+            [
+              t(lang, "labelPotentialEnergyUseWithoutPv"),
+              `${fmt(lang, summary.potentialEnergyUseWithoutPvKwhPerM2Year, 0)} ${t(lang, "unitKwhPerM2Yr")}`,
+            ],
+          ] as [string, string][])
+        : []),
       [
         t(lang, "labelPotentialSavings"),
         `${fmt(lang, summary.potentialSavingsKwhPerM2Year, 0)} ${t(lang, "unitKwhPerM2Yr")}`,
@@ -1246,6 +1257,21 @@ export async function generateAuditReportPdf(
     );
     const finalEnergyNote = extras.annotations?.final_energy;
     if (finalEnergyNote) layout.note(finalEnergyNote);
+  }
+
+  const pv = result.renewableBalance;
+  if (pv.productionKwh > 0) {
+    layout.heading(t(lang, "headingPvBalance"));
+    layout.keyValueGrid([
+      [t(lang, "labelPvProduction"), `${fmt(lang, pv.productionKwh, 0)} kWh`],
+      [t(lang, "labelPvDemand"), `${fmt(lang, pv.demandAfterWithoutPvKwh, 0)} kWh`],
+      [t(lang, "labelPvSelfConsumed"), `${fmt(lang, pv.selfConsumedKwh, 0)} kWh`],
+      [t(lang, "labelPvExported"), `${fmt(lang, pv.exportedKwh, 0)} kWh`],
+      [
+        t(lang, "labelPvCoverage"),
+        pv.coverageRatio === null ? "—" : fmtPct(lang, pv.coverageRatio),
+      ],
+    ]);
   }
 
   const proposedMeasures = result.measures.filter((m) => m.proposedForImplementation);

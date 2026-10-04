@@ -91,6 +91,7 @@
     "kpi": {
       "currentEnergyUse": "Current energy use",
       "potentialEnergyUse": "Potential energy use",
+      "netExporter": "(net exporter)",
       "potentialSavings": "Potential savings",
       "co2Reduction": "CO2 reduction",
       "totalInvestment": "Total investment",

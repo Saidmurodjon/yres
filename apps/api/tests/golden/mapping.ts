@@ -48,6 +48,14 @@ export const MAPPING: Record<string, Accessor> = {
     r.equipment.find((l) => l.scenario === "after")?.annualConsumptionKwh ?? null,
   "pv.annualProductionKwh": (r) =>
     r.renewableProduction.find((p) => p.systemType === "pv")?.annualProductionKwh ?? null,
+  "pv.electricityDemandKwh": (r) => r.renewableBalance.demandAfterWithoutPvKwh,
+  "pv.selfConsumedKwh": (r) => r.renewableBalance.selfConsumedKwh,
+  "pv.exportedKwh": (r) => r.renewableBalance.exportedKwh,
+  "pv.productionValueUsd": (r) =>
+    r.measures.find((m) => m.category === "pv")?.standardizedAnnualSavingsUsd ?? null,
+  "compare.specificBeforeKwhPerM2": (r) => r.summary.currentEnergyUseKwhPerM2Year,
+  "compare.specificAfterKwhPerM2": (r) => r.summary.potentialEnergyUseWithoutPvKwhPerM2Year,
+  "compare.specificAfterWithPvKwhPerM2": (r) => r.summary.potentialEnergyUseKwhPerM2Year,
   "solarDhw.annualKwh": (r) =>
     r.renewableProduction.find((p) => p.systemType === "solar_dhw")?.annualProductionKwh ?? null,
 };

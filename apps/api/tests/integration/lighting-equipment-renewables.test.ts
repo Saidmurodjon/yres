@@ -226,8 +226,18 @@ describe("Lighting/equipment/renewables end-to-end wiring into AuditEngine", () 
       (lightingBeforeKwh + equipmentBeforeKwh) / 464,
       3,
     );
-    // "after" = lighting (equipment after is 0) minus the PV offset, clamped at 0.
-    expect(result.summary.potentialEnergyUseKwhPerM2Year).toBe(0);
+    // "after" = lighting (equipment after is 0); with PV it is NOT clipped at 0 — a net exporter reads negative (F09).
+    expect(result.summary.potentialEnergyUseWithoutPvKwhPerM2Year).toBeCloseTo(
+      lightingAfterKwh / 464,
+      3,
+    );
+    expect(result.summary.potentialEnergyUseKwhPerM2Year).toBeCloseTo(
+      (lightingAfterKwh - pvProduction) / 464,
+      3,
+    );
+    expect(result.summary.potentialEnergyUseKwhPerM2Year).toBeLessThan(0);
+    expect(result.renewableBalance.selfConsumedKwh).toBeCloseTo(lightingAfterKwh, 3);
+    expect(result.renewableBalance.exportedKwh).toBeCloseTo(pvProduction - lightingAfterKwh, 3);
 
     const lightingMeasure = result.measures.find((m) => m.category === "lighting");
     expect(lightingMeasure?.standardizedAnnualSavingsKwh).toBeCloseTo(

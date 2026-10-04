@@ -11,7 +11,7 @@ import type {
 } from "./heatbalance";
 import type { LightingResult } from "./lighting";
 import type { EnergyMeasureResult, NonEeMeasureResult } from "./measures";
-import type { RenewableProductionResult } from "./renewable";
+import type { RenewableBalance, RenewableProductionResult } from "./renewable";
 
 /** One `Measures_summary` totals row: row 38 (`all` — every measure) or row 39 (`proposed` — only those marked for implementation). */
 export interface MeasurePackageTotals {
@@ -46,7 +46,10 @@ export interface MeasureBalanceRow {
 
 export interface AuditSummary {
   currentEnergyUseKwhPerM2Year: number;
+  /** With PV, **not clipped at 0**: negative means the building exports more than it uses (`H76`). */
   potentialEnergyUseKwhPerM2Year: number;
+  /** The same "after" total without PV (`H75`). */
+  potentialEnergyUseWithoutPvKwhPerM2Year: number;
   potentialSavingsKwhPerM2Year: number;
   co2ReductionTonnesPerYear: number;
   /** Proposed EE measures' investment plus every non-EE measure's cost (`Measures_summary!D31` includes both — see `docs/calculation-engine-audit.md`). */
@@ -129,6 +132,7 @@ export interface AuditResult {
   equipment: EquipmentResult[];
   /** Not scenario-tagged — see `renewable.service.ts`'s doc comment for why. */
   renewableProduction: RenewableProductionResult[];
+  renewableBalance: RenewableBalance;
   finalEnergyByEndUse: EndUseEnergyTotals[];
   energyBalanceBreakdown: EnergyBalanceRow[];
   specificConsumptionSummary: SpecificConsumptionRow[];

@@ -21,6 +21,7 @@ import type {
   MeasureCategory,
   MeasurePackageTotals,
   NonEeMeasureResult,
+  RenewableBalance,
   RenewableProductionResult,
   Scenario,
   SpecificConsumptionRow,
@@ -79,7 +80,11 @@ import {
   deriveBaselineHeating,
   resolveMeasureSavings,
 } from "./measure-savings.service";
-import { type RenewableSystemInput, calculateRenewableProduction } from "./renewable.service";
+import {
+  type RenewableSystemInput,
+  calculateRenewableBalance,
+  calculateRenewableProduction,
+} from "./renewable.service";
 import {
   calculateMechanicalAirFlowM3h,
   calculateMechanicalVentilationCoolingGainKwh,
@@ -828,6 +833,11 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
     envelopeHeatLoss,
     ventilationLoss,
   );
+  const afterElectricGenerationKwh = generationRows
+    .filter((g) => g.scenario === "after" && g.carrier === "electricity" && g.endUse !== "cooling")
+    .reduce((sum, g) => sum + g.finalEnergyConsumptionKwh, 0);
+  const fanKwh = (scenario: Scenario) =>
+    ventilationLoss.find((v) => v.scenario === scenario)?.mechanicalElectricalKwh ?? 0;
   const savingsContext: SavingsContext = {
     envelopeHeatLoss,
     ventilationLoss,
@@ -836,6 +846,10 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
     lighting,
     equipment,
     renewableProduction,
+    // Filled in below: the PV balance needs the BEMS saving, which this same context computes.
+    renewableBalance: calculateRenewableBalance(0, 0),
+    pvExportEnabled: financialAssumptions.pvExportEnabled,
+    pvExportUsdPerKwh: financialAssumptions.pvExportUsdPerKwh,
     heatingEnergyBalance,
     dhwDemand,
     cooling,
@@ -843,6 +857,34 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
     gainsUtilizationCorrection,
     emsSavingsRate: EMS_SAVINGS_RATE,
   };
+
+  // BEMS saving (`Breakdown…!G24`, negative demand): the EMS measures' own savings, electricity part vs all carriers.
+  let emsElectricKwh = 0;
+  let emsTotalKwh = 0;
+  for (const row of measureRows) {
+    if (row.category !== "ems") continue;
+    for (const part of resolveMeasureSavings(row.category, row.targets, savingsContext).parts) {
+      emsTotalKwh += part.kwh;
+      if (part.carrier === "electricity") emsElectricKwh += part.kwh;
+    }
+  }
+  const pvProductionKwh =
+    renewableProduction.find((r) => r.systemType === "pv")?.annualProductionKwh ?? 0;
+  // `PV!C34 = Σ Breakdown!G16:G21 + G24`: the "after" electricity without PV.
+  const renewableBalance = calculateRenewableBalance(
+    pvProductionKwh,
+    (lighting.find((l) => l.scenario === "after")?.annualConsumptionKwh ?? 0) +
+      (equipment.find((e) => e.scenario === "after")?.annualConsumptionKwh ?? 0) +
+      (cooling.find((c) => c.scenario === "after")?.electricalEnergyForCoolingKwh ?? 0) +
+      afterElectricGenerationKwh +
+      fanKwh("after") -
+      emsElectricKwh,
+  );
+  savingsContext.renewableBalance = renewableBalance;
+  // What PV is credited with as a saving: with export off the surplus is not (see the "pv" case).
+  const pvCreditedKwh =
+    renewableBalance.selfConsumedKwh +
+    (financialAssumptions.pvExportEnabled ? renewableBalance.exportedKwh : 0);
 
   const measures: EnergyMeasureResult[] = measureRows.map((measure) => {
     const savings = resolveMeasureSavings(measure.category, measure.targets, savingsContext);
@@ -859,8 +901,11 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
     }
 
     const unpriced = new Set<string>();
-    const priced = savings.parts.map((part) => {
-      const usdPerKwh = financialAssumptions.usdPerKwh[part.carrier];
+    const pricedParts = savings.parts.map((part) => {
+      const usdPerKwh =
+        part.usdPerKwh !== undefined
+          ? part.usdPerKwh
+          : financialAssumptions.usdPerKwh[part.carrier];
       if (usdPerKwh == null) unpriced.add(part.carrier);
       const ratio = baselineRatioByCarrier.get(part.carrier) ?? 1;
       const valuePerKwh = usdPerKwh ?? 0;
@@ -870,6 +915,19 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
         standardizedUsd: part.kwh * valuePerKwh,
         actualKwh: part.kwh * ratio,
         actualUsd: part.kwh * ratio * valuePerKwh,
+      };
+    });
+    // One row per carrier (PV can bring two electricity parts at different tariffs; their USD already differ).
+    const priced = [...new Set(pricedParts.map((p) => p.carrier))].map((carrier) => {
+      const rows = pricedParts.filter((p) => p.carrier === carrier);
+      const total = (pick: (p: (typeof pricedParts)[number]) => number) =>
+        rows.reduce((acc, p) => acc + pick(p), 0);
+      return {
+        carrier,
+        standardizedKwh: total((p) => p.standardizedKwh),
+        standardizedUsd: total((p) => p.standardizedUsd),
+        actualKwh: total((p) => p.actualKwh),
+        actualUsd: total((p) => p.actualUsd),
       };
     });
     for (const carrier of unpriced) {
@@ -935,7 +993,9 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
     finalEnergyByEndUse,
     lighting,
     equipment,
-    renewableProduction,
+    ventilationLoss,
+    renewableBalance,
+    emsTotalKwh,
   );
 
   return {
@@ -953,6 +1013,7 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
       equipment,
       cooling,
       renewableProduction,
+      pvCreditedKwh,
       baselineHeating.shares,
     ),
     envelopeAreas,
@@ -967,6 +1028,7 @@ export function computeAudit(inputs: AuditInputs, options: { generatedAt: string
     lighting,
     equipment,
     renewableProduction,
+    renewableBalance,
     finalEnergyByEndUse,
     energyBalanceBreakdown,
     specificConsumptionSummary,
@@ -1042,34 +1104,34 @@ function buildAuditSummary(
   finalEnergyByEndUse: EndUseEnergyTotals[],
   lighting: LightingResult[],
   equipment: EquipmentResult[],
-  renewableProduction: RenewableProductionResult[],
+  ventilationLoss: VentilationLossResult[],
+  renewableBalance: RenewableBalance,
+  emsTotalKwh: number,
 ): AuditSummary {
-  // Lighting and equipment are direct final electricity consumption (no
-  // generation/distribution conversion applies to them the way it does for
-  // heating/DHW/cooling), so they're summed in here rather than folded into
-  // `finalEnergyByEndUse` (whose `EndUse` type is specifically the three
-  // end-uses that go through a `generationSource`).
-  const lightingEquipmentKwh = (scenario: "before" | "after") =>
+  // `Breakdown Baseline & Balance!G71:H71`: lighting and equipment are direct final electricity (no generation
+  // step), and the mechanical ventilation fan's electricity is final energy too — none of them are in
+  // `finalEnergyByEndUse` (heating/DHW/cooling only), so they are added here.
+  const directElectricityKwh = (scenario: "before" | "after") =>
     (lighting.find((l) => l.scenario === scenario)?.annualConsumptionKwh ?? 0) +
-    (equipment.find((e) => e.scenario === scenario)?.annualConsumptionKwh ?? 0);
+    (equipment.find((e) => e.scenario === scenario)?.annualConsumptionKwh ?? 0) +
+    (ventilationLoss.find((v) => v.scenario === scenario)?.mechanicalElectricalKwh ?? 0);
 
   const currentTotalKwh =
     finalEnergyByEndUse
       .filter((e) => e.scenario === "before")
-      .reduce((sum, e) => sum + e.finalEnergyConsumptionKwh, 0) + lightingEquipmentKwh("before");
+      .reduce((sum, e) => sum + e.finalEnergyConsumptionKwh, 0) + directElectricityKwh("before");
 
-  // PV/Solar DHW production only ever represents a proposed addition (no
-  // "before" state — see renewable.service.ts), so it offsets the "after"
-  // total only, clamped at 0 rather than going negative.
-  const renewableOffsetKwh = renewableProduction.reduce((sum, r) => sum + r.annualProductionKwh, 0);
-  const potentialTotalKwh = Math.max(
-    0,
+  // "After" without PV (`H75`) = end-uses + direct electricity − the BEMS saving (all carriers, `G24`). PV only
+  // ever represents a proposed addition (no "before" state — see renewable.service.ts), so it offsets the "after"
+  // total only. Solar DHW is not netted here: it already reduces the DHW generation's final energy.
+  const potentialWithoutPvKwh =
     finalEnergyByEndUse
       .filter((e) => e.scenario === "after")
       .reduce((sum, e) => sum + e.finalEnergyConsumptionKwh, 0) +
-      lightingEquipmentKwh("after") -
-      renewableOffsetKwh,
-  );
+    directElectricityKwh("after") -
+    emsTotalKwh;
+  // `H76`: with PV, NOT clipped at 0 — a net exporter reads negative (−29 kWh/m²·y in the workbook).
+  const potentialTotalKwh = potentialWithoutPvKwh - renewableBalance.productionKwh;
 
   // `Measures_summary!38/39`: v7.20 `D39` sums only the "Yes" rows of the `Non-EE measures` "Q" column
   // (the column defaults to true for rows saved before F06).
@@ -1083,6 +1145,8 @@ function buildAuditSummary(
     currentEnergyUseKwhPerM2Year: heatedFloorAreaM2 > 0 ? currentTotalKwh / heatedFloorAreaM2 : 0,
     potentialEnergyUseKwhPerM2Year:
       heatedFloorAreaM2 > 0 ? potentialTotalKwh / heatedFloorAreaM2 : 0,
+    potentialEnergyUseWithoutPvKwhPerM2Year:
+      heatedFloorAreaM2 > 0 ? potentialWithoutPvKwh / heatedFloorAreaM2 : 0,
     potentialSavingsKwhPerM2Year:
       heatedFloorAreaM2 > 0 ? (currentTotalKwh - potentialTotalKwh) / heatedFloorAreaM2 : 0,
     co2ReductionTonnesPerYear: proposed.co2ReductionTonnesPerYear,
@@ -1163,6 +1227,7 @@ function buildMeasureBalance(
   equipment: EquipmentResult[],
   cooling: CoolingResult[],
   renewableProduction: RenewableProductionResult[],
+  pvCreditedKwh: number,
   baselineShares: { carrier: EnergyCarrier; share: number }[],
 ): MeasureBalanceRow[] {
   const carriers: EnergyCarrier[] = ["gas", "electricity", "district_heat", "coal"];
@@ -1192,7 +1257,7 @@ function buildMeasureBalance(
     electric(cooling, (r: CoolingResult) => r.electricalEnergyForCoolingKwh),
   );
   for (const production of renewableProduction) {
-    if (production.systemType === "pv") add("electricity", production.annualProductionKwh);
+    if (production.systemType === "pv") add("electricity", pvCreditedKwh);
     else {
       const dhwBefore = generation.filter(
         (g) => g.scenario === "before" && g.endUse === "dhw" && g.carrier != null,

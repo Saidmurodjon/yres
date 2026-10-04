@@ -8,6 +8,7 @@ import type {
   GenerationSourceResult,
   HeatingEnergyBalanceResult,
   LightingResult,
+  RenewableBalance,
   RenewableProductionResult,
   Scenario,
   VentilationLossResult,
@@ -18,6 +19,8 @@ import { heatLossTypeKey } from "./heatloss.service";
 export interface CarrierSavingPart {
   carrier: EnergyCarrier;
   kwh: number;
+  /** Overrides the carrier's tariff for this part (PV export is paid at the export tariff, not the retail one). */
+  usdPerKwh?: number | null;
 }
 
 export interface MeasureSavings {
@@ -110,6 +113,10 @@ export interface SavingsContext {
   lighting: LightingResult[];
   equipment: EquipmentResult[];
   renewableProduction: RenewableProductionResult[];
+  /** F09: PV self-consumption/export split; `pvExport*` come from the building's financial assumptions. */
+  renewableBalance: RenewableBalance;
+  pvExportEnabled: boolean;
+  pvExportUsdPerKwh: number;
   heatingEnergyBalance: HeatingEnergyBalanceResult[];
   dhwDemand: DhwDemandResult[];
   cooling: CoolingResult[];
@@ -273,10 +280,20 @@ export function resolveMeasureSavings(
       );
       return { usefulKwh: kwh, parts: [{ carrier: "electricity", kwh }] };
     }
+    // v7.20 `PV!C35:C38`: the yearly self-consumed share is valued at the retail tariff; the surplus is exported
+    // and valued at the export tariff only when the project enables export (K4, off by default). With export off
+    // the surplus is not a saving at all — it stays visible in `renewableBalance`.
     case "pv": {
-      const kwh =
-        context.renewableProduction.find((r) => r.systemType === "pv")?.annualProductionKwh ?? 0;
-      return { usefulKwh: kwh, parts: [{ carrier: "electricity", kwh }] };
+      const { productionKwh, selfConsumedKwh, exportedKwh } = context.renewableBalance;
+      const parts: CarrierSavingPart[] = [{ carrier: "electricity", kwh: selfConsumedKwh }];
+      if (context.pvExportEnabled && exportedKwh > 0) {
+        parts.push({
+          carrier: "electricity",
+          kwh: exportedKwh,
+          usdPerKwh: context.pvExportUsdPerKwh,
+        });
+      }
+      return { usefulKwh: productionKwh, parts };
     }
     case "solar_dhw": {
       const kwh =
