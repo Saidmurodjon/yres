@@ -65,7 +65,7 @@ Faza 1 sessiyasi parallel ishlayotgan bo'lsa: commit'dan oldin `git pull --rebas
 | A04 | `audit_snapshot` + `audit_snapshot_report` sxemasi, o'zgarmaslik triggerlari, ADR-004 fayli | `A04-snapshot-sxema.md` | 1 | hozir | ✅ |
 | A05 | Snapshot API: yaratish/ro'yxat/o'qish (a); holat o'tishlari (b) | `A05-snapshot-api.md` | 2 (a, b) | hozir | ✅ |
 | A06 | Hisobot snapshot'dan: o'zgarmas PDF + SHA-256; jonli PDF = QORALAMA | `A06-hisobot-snapshotdan.md` | 1 | hozir | ✅ |
-| A07 | Verify: snapshot holati, versiya, hash; brauzerda fayl tekshiruvi | `A07-verify.md` | 1 | hozir | ⬜ |
+| A07 | Verify: snapshot holati, versiya, hash; brauzerda fayl tekshiruvi | `A07-verify.md` | 1 | hozir | ✅ |
 | A08 | UI: natijalar sahifasida "Rasmiy versiyalar" paneli | `A08-snapshot-ui.md` | 1 | hozir | ⬜ |
 | A09 | `audit_event` barcha bino mutatsiyalariga (a: qobiq/tizimlar/iste'mol; b: qolganlari) | `A09-audit-event-yoyish.md` | 2 (a, b) | hozir | ✅ |
 | A10 | `expectedRevision` → 409: API (a), web (b) | `A10-expected-revision.md` | 2 (a, b) | hozir | a ✅ |

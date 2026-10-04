@@ -6,5 +6,29 @@
   "invalidTitle": "Tasdiqlanmadi",
   "invalidDescription": "Ushbu hisobotni bizning ma'lumotlarimizga qarshi tasdiqlab bo'lmadi. U eskirgan bo'lishi yoki havola noto'g'ri bo'lishi mumkin.",
   "disclaimer": "Bu faqat hisobot ushbu platformada yaratilganini tasdiqlaydi — bino ma'lumotlari yaratilgandan beri o'zgarmaganini kafolatlamaydi.",
-  "backToHome": "YRES'ga o'tish"
+  "backToHome": "YRES'ga o'tish",
+  "legacyNotice": "Eski formatdagi hisobot: platformada yaratilgani tasdiqlanadi, raqamlari tasdiqlanmaydi.",
+  "snapshot": {
+    "title": "Hisobotni tekshirish",
+    "statusApproved": "Amalda (tasdiqlangan)",
+    "statusSubmitted": "Ko'rib chiqilmoqda, hali tasdiqlanmagan",
+    "statusSuperseded": "Yangi versiya bilan almashtirilgan",
+    "buildingLine": "\"{{buildingName}}\" uchun energiya audit hisoboti.",
+    "approvedAt": "Tasdiqlangan sana: {{date}}",
+    "submittedNote": "Ushbu hisobot hali tasdiqlanmagan — ko'rib chiqish bosqichida.",
+    "supersededAt": "Almashtirilgan sana: {{date}}",
+    "engineVersion": "Dvigatel versiyasi",
+    "methodologyVersion": "Metodika versiyasi",
+    "generatedAt": "Hisoblangan sana: {{date}}",
+    "inputsHash": "Kiritma ma'lumotlari hash'i (SHA-256)",
+    "fileCheckTitle": "Fayl tekshiruvi",
+    "fileCheckDisclaimer": "Fayl serverga yuborilmaydi — tekshiruv to'liq brauzeringizda bajariladi.",
+    "fileCheckSelect": "PDF faylni tanlash",
+    "fileTooLarge": "Fayl 50 MB dan katta — tekshirib bo'lmaydi.",
+    "fileCheckError": "Faylni o'qishda xato yuz berdi.",
+    "fileMatch": "Fayl ushbu hisobotga mos (til: {{lang}}).",
+    "fileMismatch": "Mos emas — fayl o'zgartirilgan yoki boshqa versiya.",
+    "invalidDescription": "Ushbu hisobotni bizning ma'lumotlarimizga qarshi tasdiqlab bo'lmadi. U qoralama bo'lishi, mavjud bo'lmasligi yoki havola noto'g'ri bo'lishi mumkin.",
+    "disclaimer": "Bu faqat hisobot ushbu platformada yaratilganini, uning holati va versiyasini tasdiqlaydi — natija raqamlari bu yerda ko'rsatilmaydi."
+  }
 }

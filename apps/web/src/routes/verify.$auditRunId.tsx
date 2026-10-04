@@ -46,6 +46,9 @@ function VerifyReportPage() {
                   date: query.data.completedAt ? formatDate(query.data.completedAt) : "",
                 })}
               </CardDescription>
+              {query.data.legacy ? (
+                <p className="text-xs text-muted-foreground">{t("legacyNotice")}</p>
+              ) : null}
             </div>
           ) : (
             <div className="space-y-2">

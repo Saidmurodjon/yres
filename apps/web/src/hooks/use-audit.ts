@@ -65,6 +65,17 @@ export function useVerifyAuditRun(auditRunId: string | undefined) {
   });
 }
 
+/** Public, unauthenticated (A07) — used by the /verify/s/$snapshotId page, not gated behind a building/session. */
+export function useVerifySnapshot(snapshotId: string | undefined) {
+  return useQuery({
+    queryKey: ["verify-snapshot", snapshotId],
+    queryFn: () => api.verifySnapshot(snapshotId as string),
+    enabled: !!snapshotId,
+    retry: (failureCount, error) =>
+      error instanceof ApiError && error.status === 404 ? false : failureCount < 2,
+  });
+}
+
 /** Downloads the audit report PDF and triggers a browser save-as, rather than just returning the blob. */
 export function useDownloadAuditReport(buildingId: string) {
   return useMutation({

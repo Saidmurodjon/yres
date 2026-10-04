@@ -444,7 +444,26 @@ export const api = {
   },
   /** Public, unauthenticated — the report's cover-page QR code links here (docs/report-redesign-proposal.md §8). */
   verify: (auditRunId: string) =>
-    request<{ valid: boolean; buildingName?: string; completedAt?: string }>(
+    request<{ valid: boolean; legacy?: boolean; buildingName?: string; completedAt?: string }>(
       `/api/verify/${auditRunId}`,
     ),
+  /**
+   * Public, unauthenticated (A07) — a snapshot-backed report's QR code links to
+   * `/verify/s/:snapshotId` instead of the legacy `/verify/:auditRunId` above. Response is a
+   * strict whitelist (apps/api/src/routes/verify.ts) — no location/financial/result data.
+   */
+  verifySnapshot: (snapshotId: string) =>
+    request<{
+      valid: boolean;
+      buildingName?: string;
+      status?: "submitted" | "approved" | "superseded";
+      generatedAt?: string;
+      submittedAt?: string | null;
+      approvedAt?: string | null;
+      supersededAt?: string | null;
+      engineVersion?: string;
+      methodologyVersion?: string;
+      inputsSha256?: string;
+      reports?: { lang: "en" | "ru" | "uz"; sha256: string; sizeBytes: number; createdAt: string }[];
+    }>(`/api/verify/s/${snapshotId}`),
 };

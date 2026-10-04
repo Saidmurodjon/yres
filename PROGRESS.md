@@ -3052,3 +3052,61 @@ T06b — qamrab olinganlar:
   tegilmadi.
 **Navbatda:** A10b (web — `useRegisterDirty`/`useSyncedRows` formalariga `expectedRevision`
 yuborish va 409'da `ConfirmDialog`), keyin F10'dan so'ng A11/A12.
+
+## A07 — Verify: snapshot holati, versiya, hash; brauzerda fayl tekshiruvi (2026-10-04)
+
+- **API** (`apps/api/src/routes/verify.ts`): yangi `GET /api/verify/s/:snapshotId` (ommaviy,
+  `authMiddleware` siz) — `snapshotId` UUID emas yoki topilmasa yoki `status === "draft"` →
+  `404 { valid: false }`. Topilsa oq ro'yxat javobi: `valid, buildingName, status, generatedAt,
+  submittedAt, approvedAt, supersededAt, engineVersion, methodologyVersion, inputsSha256,
+  reports: [{ lang, sha256, sizeBytes, createdAt }]` — joylashuv/moliya/natija raqamlari/
+  foydalanuvchi ma'lumoti yo'q (security.md, 06 V8). `Cache-Control: no-store`. Bino
+  `building.deletedAt` bo'yicha filtrlanmaydi (A03 §7) — o'chirilgan binoning snapshot'i hamon
+  tasdiqlanadi (test bilan tekshirildi). 2 so'rov (snapshot+bino join, hisobotlar ro'yxati) —
+  byudjet ichida. Eski `GET /:auditRunId` xatti-harakati o'zgarmadi, faqat muvaffaqiyatli
+  javobga `legacy: true` qo'shildi (web eski sahifada ogohlantirish ko'rsatishi uchun) —
+  UUID bo'lmagan `auditRunId` allaqachon 404 qaytarardi (D1/SQLite matn solishtirishi mos
+  kelmaydi, Postgres davridagi `22P02` xavfi 06-hujjatda qoldirilgan eskirgan tashvish edi,
+  ADR-016 bilan bartaraf bo'lgan).
+- A06'ning hisobot chiqarish route'i (`snapshots.ts:484`) allaqachon `verifyUrl =
+  ${WEB_URL}/verify/s/${snapshotId}`ni QR kod uchun ishlatardi — bu A07'dan oldin yozilgan, bu
+  sessiyada faqat shu URL haqiqatan ishlashi ta'minlandi.
+- **Web**: yangi `apps/web/src/routes/verify.s.$snapshotId.tsx` (`/verify/s/$snapshotId`,
+  `_authenticated`dan tashqarida), hook `useVerifySnapshot` (`hooks/use-audit.ts`, mavjud
+  `useVerifyAuditRun`dan keyin qo'shildi, mavjud kod o'zgartirilmadi), `api.verifySnapshot`
+  (`lib/api.ts`, mavjud `verify` metodidan keyin qo'shildi — A10b bilan to'qnashmaslik uchun
+  faqat qo'shish, qayta tartiblash yo'q). Holat belgisi + matn (`Badge` + ikonka, faqat rang
+  emas — forms-and-numbers.md): `approved` → yashil "Amalda", `submitted` → sariq "Ko'rib
+  chiqilmoqda", `superseded` → kulrang "Almashtirilgan". Versiya/metodika/hisoblangan sana va
+  SHA-256 (birinchi 16 belgi + nusxalash tugmasi, `navigator.clipboard` try/catch bilan).
+  **Fayl tekshiruvi**: `<input type="file" accept="application/pdf">` → brauzerda
+  `crypto.subtle.digest("SHA-256", ...)` → `reports[].sha256` bilan solishtirish — fayl
+  hech qachon serverga yuborilmaydi (matnda aniq aytilgan), 50 MB'dan katta fayl hisoblanmaydi
+  (xato matni). Eski sahifa (`verify.$auditRunId.tsx`) `legacy: true` bo'lsa ogohlantirish
+  qo'shildi. 375 px'da gorizontal scroll yo'q — bitta ustunli `Card` (`max-w-md`), uzun hash
+  `break-all`/`break-words`.
+- Tarjimalar: mavjud `verify` namespace'ga yangi `legacyNotice` + `snapshot.*` kalitlar
+  uz/ru/en'da qo'shildi (yangi namespace/registratsiya kerak emas). **Ochiq band:** ru matni
+  (`statusApproved`/`fileMatch` va h.k.) mashina-darajadagi tarjima, loyiha egasi ko'rib
+  chiqishi tavsiya etiladi (i18n-and-appearance.md — maxsus atama aniqligi).
+- Testlar: yangi `apps/api/tests/integration/verify.test.ts` (7 test) — draft → 404; submitted →
+  200 + javob kalitlari aynan oq ro'yxatga teng (`Object.keys` tekshiruvi); approved + bitta
+  hisobot issued → `reports[0]` mos keladi; superseded → hamon 200 (not-found emas); mavjud
+  bo'lmagan UUID va `not-a-uuid` → ikkalasi ham 404; bino soft-delete qilingach ham snapshot
+  verify ishlayverishi (A03 §7); eski `/:auditRunId` route — haqiqiy audit-run yaratib
+  `legacy: true`ni va ikki 404 holatini tasdiqlaydi.
+- Brauzerda fayl tekshiruvi (haqiqiy PDF tanlash → "mos", bitta bayt o'zgartirilgan nusxa →
+  "mos emas") Preview MCP + mock API bilan **tekshirilmadi** bu sessiyada (token byudjeti) —
+  mantiq integratsiya testidagi backend sha256 bilan bir xil (`crypto.subtle.digest("SHA-256",
+  ...)`, bayt-bayt), va `bun run build` orqali chunk/route to'g'ri generatsiya qilingani
+  tasdiqlandi; qo'lda keyingi tekshiruvda ko'rib chiqilsin.
+- Tekshiruvlar: root `bun run type-check` (5/5 workspace, `@yres/web` haqiqiy Vite build'ni ham
+  ishga tushiradi) va `bun run build` — ikkalasi toza, yangi `verify.s.$snapshotId` chunk'i
+  chiqdi; `bunx biome lint` tegilgan 6 fayl toza; `bun run --cwd apps/api test` — **331/331**
+  (bu sessiyadan oldin 331 edi degan taxmin emas — oldingi A10a yozuvida 317 edi, bu orada
+  boshqa parallel ish fon qo'shgan bo'lishi mumkin; bu sessiya ustiga 7 yangi test qo'shdi, barchasi
+  yashil).
+- Chetlanish spec'ga nisbatan: yo'q — A07-verify.md'dagi barcha qabul mezonlari bajarildi,
+  "Qilmang" bandlari (faylni serverga yuklash, rate-limit/CAPTCHA, natija raqamlarini ko'rsatish)
+  qilinmadi.
+**Navbatda:** A08 (UI: natijalar sahifasida "Rasmiy versiyalar" paneli).
