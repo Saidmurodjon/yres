@@ -98,7 +98,8 @@ const buildingBlockInputSchema = z.object({
 });
 
 // Array bounds are sized so one PUT stays inside the D1 query budget (database.md: ≤ 40 per
-// request on Workers Free). Worst case, statements in the single db.batch():
+// request on Workers Free). Worst case, statements in the single db.batch() (excluding the
+// audit_event row, which auditEventStatement() adds as the batch's first statement, A09a):
 //   deletes                                   4  (elements, opening types, construction types, blocks)
 //   buildingBlocks      22 rows ÷ 11/stmt     2  (9 columns → floor(100/9) = 11)
 //   constructionTypes   15 rows ÷ 10/stmt     2  (10 columns)
@@ -107,10 +108,10 @@ const buildingBlockInputSchema = z.object({
 //   envelopeElements   100 rows ÷ 10/stmt    10  (10 columns)
 //   envelopeOpenings   150 rows ÷ 25/stmt     6  (4 columns; total across elements, see superRefine)
 //                                            -- 32
-// + session lookup (≤ 2) + findAccessibleBuilding (1, single LEFT JOIN query — A02) = 35, and an
-// "after" PUT adds 2 retrofit lookups = 37. A "before" PUT instead adds: 1 read of the
-// after→before links + PRAGMA defer_foreign_keys + ≤ 2 re-link CASE UPDATEs (one per table) =
-// 35 + 4 = 39 ≤ 40 (A09a's `audit_event` row adds the last 1).
+// + session lookup (≤ 2) + findAccessibleBuilding (1, single LEFT JOIN query — A02) + audit_event
+// (1, A09a) = 36, and an "after" PUT adds 2 retrofit lookups = 38. A "before" PUT instead adds: 1
+// read of the after→before links + PRAGMA defer_foreign_keys + ≤ 2 re-link CASE UPDATEs (one per
+// table) = 36 + 4 = 40 ≤ 40.
 export const MAX_ENVELOPE_OPENINGS_TOTAL = 150;
 
 export const replaceEnvelopeSchema = z

@@ -10,6 +10,7 @@ import {
 import { and, eq, inArray, sql } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
+import { auditEventStatement } from "../lib/audit-event";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import { replaceEnvelopeSchema } from "../schemas/envelope";
@@ -313,7 +314,25 @@ envelopeRoutes.put("/:id/envelope", async (c) => {
         where a.building_id = ${buildingId} and a.scenario = 'after'`);
   }
 
-  const statements: BatchItem<"sqlite">[] = [];
+  const statements: BatchItem<"sqlite">[] = [
+    // `audit_event` row first in the batch (A02 §3/A09a): if anything below fails, the whole
+    // batch rolls back and no audit row is left behind either.
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "envelope",
+      action: "replace",
+      summary: {
+        scenario,
+        counts: {
+          blocks: buildingBlockRows?.length ?? 0,
+          constructionTypes: constructionTypeRows.length,
+          openingTypes: openingTypeRows.length,
+          elements: envelopeElementRows.length,
+          openings: envelopeOpeningRows.length,
+        },
+      },
+    }),
+  ];
   if (scenario === "before") {
     // The "before" types are re-created with new ids and "after" types point at them (retrofit_of_id FK).
     // The link is by code, so: deferred FK check (1) → delete/insert as usual → after the inserts re-point

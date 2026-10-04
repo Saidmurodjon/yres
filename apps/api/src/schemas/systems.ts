@@ -1,11 +1,14 @@
 // Array bounds keep each PUT's single db.batch() inside the D1 query budget (database.md: ≤ 40
-// per request on Workers Free; session + access check take ≤ 4). Worst case = 1 delete + ceil(rows ÷ floor(100 ÷ columns)):
+// per request on Workers Free). Worst case = 1 delete + ceil(rows ÷ floor(100 ÷ columns)), not
+// counting the audit_event row auditEventStatement() adds as the batch's first statement (A09a):
 //   ventilation 20 ÷ 11 (9 cols)  → 3      dhw 20 ÷ 14 (7)           → 3
 //   distribution 50 ÷ 12 (8)      → 6      generation 20 ÷ 14 (7)    → 3
 //   cooling windows 100 ÷ 14 (7)  → 9      cooling systems 50 ÷ 20 (5) → 4
 //   lighting 100 ÷ 14 (7)         → 9      equipment 200 ÷ 9 (11)    → 24
 //   renewables: 1 + 2 (20 ÷ 14) + 10 (240 monthly rows ÷ 25) → 13
-// The heaviest (equipment, 24) + 4 = 28 ≤ 40.
+// The heaviest (equipment, 24) + session lookup (≤ 2) + findAccessibleBuilding (1) + audit_event
+// (1, A09a) = 28 ≤ 40 (unchanged from before A09a: findAccessibleBuilding's A02 consolidation to
+// one query freed the slot the audit_event row now uses).
 import {
   distributionSystemTypeEnum,
   endUseEnum,

@@ -20,7 +20,8 @@ const utilityBillInputSchema = z.object({
 });
 
 export const createUtilityBillsSchema = z.object({
-  // 4 carriers × 12 months × 3 years = 144 rows; 9 columns → 11 rows/stmt → 14 chunks (≤ 40 budget).
+  // 4 carriers × 12 months × 3 years = 144 rows; 9 columns → 11 rows/stmt → 14 chunks + session
+  // (≤ 2) + findAccessibleBuilding (1) + audit_event (1, A09a) = 18 ≤ 40 budget.
   bills: z.array(utilityBillInputSchema).min(1).max(144),
 });
 
@@ -36,6 +37,8 @@ const monthlyBillInputSchema = z.object({
 // One full year of a single carrier's bills — matches the source workbook's
 // layout (one table per energy carrier, a row per month) so the frontend can
 // offer that as a grid instead of one add-a-bill form per month.
+// 12 rows, 9 columns → 1 delete + 2 insert chunks (11 rows/stmt) + session (≤ 2) +
+// findAccessibleBuilding (1) + audit_event (1, A09a) = 7 ≤ 40 budget.
 export const replaceUtilityBillsSchema = z.object({
   energyCarrier: z.enum(energyCarrierEnum.enumValues),
   year: yearSchema,
@@ -45,7 +48,8 @@ export type ReplaceUtilityBillsInput = z.infer<typeof replaceUtilityBillsSchema>
 
 // Several years × carriers replaced in ONE request (atomic). Query budget (database.md, ≤ 40): per year the
 // whole year is replaced by one delete; worst case 5 years × 4 carriers × 12 months = 240 rows, 9 columns →
-// 11 rows per statement → 22 inserts + 1 delete = 23 (+ ≤ 5 for auth/access).
+// 11 rows per statement → 22 inserts + 1 delete = 23 (+ ≤ 4 for session/findAccessibleBuilding +
+// 1 audit_event, A09a) = 28.
 export const bulkReplaceUtilityBillsSchema = z
   .object({
     years: z

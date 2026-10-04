@@ -2762,3 +2762,43 @@ T06b — qamrab olinganlar:
   izohi "Points at the replacement snapshot's id" deb aniq ta'riflagan va `audit_snapshot_frozen` trigger bu
   ustunni bloklamaydi — shuning uchun qo'shildi, ustun bo'sh qolmasligi uchun).
 **Navbatda:** A05b (holat o'tishlari: submit/approve, `canApprove`).
+
+## Faza 2 · A09a — `audit_event` qobiq/tizimlar/iste'molga yoyildi (2026-10-04)
+
+- `auditEventStatement()` (A02) endi quyidagi bulk-replace route'larning har birida `db.batch()`ning
+  **birinchi** bayonoti: `PUT /:id/envelope` (`entity: "envelope"`, `action: "replace"`, `summary:
+  { scenario, counts: { blocks, constructionTypes, openingTypes, elements, openings } }`); to'qqizta
+  `PUT /:id/systems/*` (`entity: "systems.<bo'lim>"`, `summary: { count }`); `POST /:id/consumption`
+  (`action: "create"`), `PUT /:id/consumption` va `PUT /:id/consumption/bulk` (`action: "replace"`,
+  uchtasi ham `entity: "consumption"`, `summary: { years, carriers, count }`). `routes/envelope.ts`da
+  audit qatori "before" stsenariyning `PRAGMA defer_foreign_keys`idan **oldin** push qilinadi — bu
+  muammo emas, chunki audit qatori hech qanday FK buzmaydi. `routes/consumption.ts`ning POST'i oldin
+  `chunks.map(...)`ni to'g'ridan-to'g'ri `db.batch()`ga uzatardi; endi audit bayonoti bilan birga bitta
+  massivga yig'iladi va natija destructuring'i (`const [, ...chunkResults] = ...`) shunga mos
+  o'zgartirildi — javob shakli (`{ bills: [...] }`) o'zgarmadi.
+- Byudjet izohlari yangilandi (`database.md` formula uslubida), har birida audit qatori qo'shilgandan
+  keyingi yakuniy son: `schemas/envelope.ts` — "oldin" PUT 36 (bazaviy) + 4 (PRAGMA+o'qish+2 relink) =
+  **40/40**; "keyin" PUT 36 + 2 (retrofit lookup) = **38/40**. `schemas/systems.ts` — eng og'ir
+  (equipment) 24 + session(≤2) + findAccessibleBuilding(1) + audit(1) = **28/40** (o'zgarmadi — A02
+  findAccessibleBuilding'ni bitta so'rovga tushirgani bo'shatgan joyni audit egalladi).
+  `schemas/consumption.ts` — POST **18/40**, PUT (bir yil/tashuvchi) **7/40**, PUT `/bulk` **28/40**.
+- Yangi test fayli `apps/api/tests/integration/audit-event-matrix.test.ts` (17 test): barcha 1
+  qobiq + 9 tizim + 3 iste'mol route'i uchun — muvaffaqiyatli so'rov → to'g'ri `entity`/`action`/
+  `actorUserId`/`entityRevision` bilan bitta qator (iste'mol uchun ketma-ket POST→PUT revision 1→2
+  ekanini ham tekshiradi); 400 (noto'g'ri ventilyatsiya payload'i), 404 (begona), 403 (viewer) → qator
+  yo'q; batch yiqilishi (qobiqdagi `constructionLayer.materialId` haqiqiy `material` qatoriga ishora
+  qilmaydi → FK, `routes/envelope.ts` buni tutib olmaydi, 500) → audit qatori ham yo'q (atomiklik) —
+  bitta qo'shimcha test shu FK stsenariysi haqiqiy material bilan muvaffaqiyatli o'tishini tasdiqlaydi
+  (yolg'on-salbiy ehtiyot chorasi).
+- Tekshiruvlar: `bunx biome lint` (tegilgan 7 fayl) toza; `tsc --noEmit` (`apps/api/tsconfig.json`,
+  prod kod) toza; `bun run --cwd apps/api test` — **288/288** (avvalgi 271 + yangi 17) yashil.
+  `tsc -p tsconfig.test.json` (turbo `type-check`) oldindan mavjud, A09a'ga aloqasiz xato bilan
+  qizil: `tests/services/report.service.test.ts`da `Buffer` nomi topilmadi (`tsconfig.test.json`da
+  `types` ro'yxatida `"node"` yo'q) — bu fayl A09a tomonidan tegilmagan va shu holat A09a oldidan ham
+  bor edi (tasdiqlangan: `git status` bu faylni o'zgarmagan ko'rsatadi, xato aynan shu turdagi, boshqa
+  hech narsaga bog'liq emas). A09a doirasida tuzatilmadi — keraksiz skop kengaytirishdan saqlanish
+  uchun; alohida kichik topshiriq sifatida belgilash tavsiya etiladi.
+- Chetlanish: A05a (parallel sessiya, `routes/snapshots.ts`/`snapshot.service.ts`/`index.ts`/
+  `routes/audit.ts`) tegilmadi. A09b (chora-tadbirlar, moliya, a'zolar, izohlar, `audit/run`) — bu
+  sessiyaning doirasiga kirmaydi, keyingi qadam.
+**Navbatda:** A09b (`audit_event` chora-tadbirlar/moliya/a'zolar/izohlar/`audit/run`ga).

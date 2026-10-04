@@ -2,6 +2,7 @@ import { chunkRowsForInsert, type energyCarrierEnum, insertChunked, utilityBill 
 import { and, eq, getTableColumns, inArray } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
+import { auditEventStatement } from "../lib/audit-event";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import {
@@ -97,16 +98,27 @@ consumptionRoutes.post("/:id/consumption", async (c) => {
     buildingId,
   }));
 
-  // One INSERT ... RETURNING per ≤100-parameter chunk, all in one atomic batch.
+  // `audit_event` row first in the batch (A02 §3/A09a), then one INSERT ... RETURNING per
+  // ≤100-parameter chunk, all in one atomic batch.
   const chunks = chunkRowsForInsert(rows, Object.keys(getTableColumns(utilityBill)).length);
-  const statements: BatchItem<"sqlite">[] = chunks.map((chunk) =>
-    db.insert(utilityBill).values(chunk).returning(),
-  );
-  const results = (await db.batch(
+  const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "consumption",
+      action: "create",
+      summary: {
+        years: [...new Set(rows.map((r) => r.year))],
+        carriers: [...new Set(rows.map((r) => r.energyCarrier))],
+        count: rows.length,
+      },
+    }),
+    ...chunks.map((chunk) => db.insert(utilityBill).values(chunk).returning()),
+  ];
+  const [, ...chunkResults] = (await db.batch(
     statements as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]],
-  )) as unknown as (typeof utilityBill.$inferSelect)[][];
+  )) as unknown as [unknown, ...(typeof utilityBill.$inferSelect)[][]];
 
-  return c.json({ bills: results.flat() }, 201);
+  return c.json({ bills: chunkResults.flat() }, 201);
 });
 
 // PUT /:id/consumption - bulk-replace one carrier's bills for one year (the
@@ -142,6 +154,12 @@ consumptionRoutes.put("/:id/consumption", async (c) => {
   }));
 
   const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "consumption",
+      action: "replace",
+      summary: { years: [year], carriers: [energyCarrier], count: rows.length },
+    }),
     db
       .delete(utilityBill)
       .where(
@@ -201,6 +219,16 @@ consumptionRoutes.put("/:id/consumption/bulk", async (c) => {
   );
 
   const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "consumption",
+      action: "replace",
+      summary: {
+        years: years.map((entry) => entry.year),
+        carriers: [...new Set(years.flatMap((entry) => entry.carriers.map((g) => g.energyCarrier)))],
+        count: rows.length,
+      },
+    }),
     db.delete(utilityBill).where(
       and(
         eq(utilityBill.buildingId, buildingId),

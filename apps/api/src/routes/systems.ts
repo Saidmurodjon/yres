@@ -14,6 +14,7 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { BatchItem } from "drizzle-orm/batch";
 import { Hono } from "hono";
+import { auditEventStatement } from "../lib/audit-event";
 import { canWrite, findAccessibleBuilding } from "../lib/building-access";
 import { type AppEnv, authMiddleware } from "../middleware/auth";
 import {
@@ -111,6 +112,12 @@ systemsRoutes.put("/:id/systems/ventilation", async (c) => {
   const rows = systems.map((s) => ({ ...s, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "systems.ventilation",
+      action: "replace",
+      summary: { count: rows.length },
+    }),
     db
       .delete(ventilationSystem)
       .where(
@@ -148,6 +155,12 @@ systemsRoutes.put("/:id/systems/dhw", async (c) => {
   const rows = sources.map((s) => ({ ...s, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "systems.dhw",
+      action: "replace",
+      summary: { count: rows.length },
+    }),
     db
       .delete(dhwSource)
       .where(and(eq(dhwSource.buildingId, buildingId), eq(dhwSource.scenario, scenario))),
@@ -184,6 +197,12 @@ systemsRoutes.put("/:id/systems/distribution", async (c) => {
   const rows = systems.map((s) => ({ ...s, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "systems.distribution",
+      action: "replace",
+      summary: { count: rows.length },
+    }),
     db
       .delete(distributionSystem)
       .where(
@@ -226,6 +245,12 @@ systemsRoutes.put("/:id/systems/generation", async (c) => {
   const rows = sources.map((s) => ({ ...s, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "systems.generation",
+      action: "replace",
+      summary: { count: rows.length },
+    }),
     db
       .delete(generationSource)
       .where(
@@ -263,6 +288,12 @@ systemsRoutes.put("/:id/systems/cooling-windows", async (c) => {
   const rows = windows.map((w) => ({ ...w, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "systems.cooling_windows",
+      action: "replace",
+      summary: { count: rows.length },
+    }),
     db
       .delete(coolingWindow)
       .where(and(eq(coolingWindow.buildingId, buildingId), eq(coolingWindow.scenario, scenario))),
@@ -299,6 +330,12 @@ systemsRoutes.put("/:id/systems/cooling-systems", async (c) => {
   const rows = systems.map((s) => ({ ...s, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "systems.cooling_systems",
+      action: "replace",
+      summary: { count: rows.length },
+    }),
     db
       .delete(coolingSystem)
       .where(and(eq(coolingSystem.buildingId, buildingId), eq(coolingSystem.scenario, scenario))),
@@ -334,6 +371,12 @@ systemsRoutes.put("/:id/systems/lighting", async (c) => {
   const rows = zones.map((z) => ({ ...z, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "systems.lighting",
+      action: "replace",
+      summary: { count: rows.length },
+    }),
     db
       .delete(lightingZone)
       .where(and(eq(lightingZone.buildingId, buildingId), eq(lightingZone.scenario, scenario))),
@@ -369,6 +412,12 @@ systemsRoutes.put("/:id/systems/equipment", async (c) => {
   const rows = items.map((i) => ({ ...i, buildingId, scenario }));
 
   const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "systems.equipment",
+      action: "replace",
+      summary: { count: rows.length },
+    }),
     db
       .delete(equipmentItem)
       .where(and(eq(equipmentItem.buildingId, buildingId), eq(equipmentItem.scenario, scenario))),
@@ -433,6 +482,12 @@ systemsRoutes.put("/:id/systems/renewables", async (c) => {
   }
 
   const statements: BatchItem<"sqlite">[] = [
+    auditEventStatement(db, c, {
+      buildingId,
+      entity: "systems.renewables",
+      action: "replace",
+      summary: { count: systemRows.length },
+    }),
     db.delete(renewableSystem).where(eq(renewableSystem.buildingId, buildingId)),
   ];
   if (systemRows.length > 0) {
