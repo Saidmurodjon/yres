@@ -36,14 +36,16 @@ import {
   useUpdateMeasure,
   useUpdateNonEeMeasure,
 } from "../../hooks";
+import { useRevisionConflict } from "../../hooks/use-revision-conflict";
 import { ApiError } from "../../lib/api";
 import type { MeasureCategory, MeasureTarget } from "../../lib/api-types";
 import { MEASURE_CATEGORY_LABELS, formatNumber } from "../../lib/labels";
 import { formatNumberForInput, parseLocaleNumber, toNumberLocale } from "../../lib/number";
 import { ConfirmDialog } from "../confirm-dialog";
-import { FinancialParametersCard } from "./financial-parameters-card";
 import { NumberInput } from "../number-input";
+import { RevisionConflictDialog } from "../revision-conflict-dialog";
 import { useConfirmDiscard, useRegisterDirty } from "../unsaved-changes";
+import { FinancialParametersCard } from "./financial-parameters-card";
 
 const MEASURE_CATEGORIES = Object.keys(MEASURE_CATEGORY_LABELS) as MeasureCategory[];
 
@@ -103,8 +105,9 @@ export function MeasuresTab({
 }: { buildingId: string; readOnly?: boolean }) {
   const { t, i18n } = useTranslation("measures");
   const locale = toNumberLocale(i18n.language);
-  const { data, isLoading, isError, error } = useMeasures(buildingId, { pageSize: 200 });
+  const { data, isLoading, isError, error, refetch } = useMeasures(buildingId, { pageSize: 200 });
   const selectMeasures = useSelectMeasures(buildingId);
+  const revisionConflict = useRevisionConflict();
   const createMeasure = useCreateMeasure(buildingId);
   const updateMeasure = useUpdateMeasure(buildingId);
   const confirmDiscard = useConfirmDiscard();
@@ -232,16 +235,30 @@ export function MeasuresTab({
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  async function handleSave() {
+  async function handleSave(expectedRevisionOverride?: number) {
     setSaveError(null);
     setSaved(false);
     try {
-      await selectMeasures.mutateAsync([...selected]);
+      await selectMeasures.mutateAsync({
+        measureIds: [...selected],
+        expectedRevision: expectedRevisionOverride ?? data?.revision,
+      });
+      revisionConflict.clear();
       setSaved(true);
       setSelectionTouched(false);
     } catch (err) {
+      if (revisionConflict.check(err)) return;
       setSaveError(err instanceof ApiError ? err.message : t("ee.failedToSaveSelection"));
     }
+  }
+
+  // "Load their version": discard the local ticks and resync from a fresh fetch.
+  async function handleReloadFromConflict() {
+    revisionConflict.clear();
+    const result = await refetch();
+    const freshMeasures = result.data?.measures ?? [];
+    setSelected(new Set(freshMeasures.filter((m) => m.proposedForImplementation).map((m) => m.id)));
+    setSelectionTouched(false);
   }
 
   function startEdit(m: (typeof measures)[number]) {
@@ -412,7 +429,7 @@ export function MeasuresTab({
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle className="text-base">{t("ee.title")}</CardTitle>
           {measures.length > 0 && !readOnly && (
-            <Button size="sm" onClick={handleSave} disabled={selectMeasures.isPending}>
+            <Button size="sm" onClick={() => handleSave()} disabled={selectMeasures.isPending}>
               {selectMeasures.isPending ? t("ee.saving") : t("ee.saveSelection")}
             </Button>
           )}
@@ -767,6 +784,12 @@ export function MeasuresTab({
           setNonEeDeleteError(null);
           setPendingDelete(null);
         }}
+      />
+      <RevisionConflictDialog
+        open={revisionConflict.conflict !== null}
+        pending={selectMeasures.isPending}
+        onOverwrite={() => handleSave(revisionConflict.conflict?.currentRevision)}
+        onReload={handleReloadFromConflict}
       />
     </div>
   );

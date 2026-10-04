@@ -39,7 +39,14 @@ export function useReplaceConsumption(buildingId: string) {
 export function useBulkReplaceConsumption(buildingId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (years: BulkReplaceYearInput[]) => api.consumption.bulkReplace(buildingId, years),
+    mutationFn: ({
+      years,
+      expectedRevision,
+    }: {
+      years: BulkReplaceYearInput[];
+      /** A10: the "consumption" revision last seen (`ConsumptionList.revision`). */
+      expectedRevision?: number;
+    }) => api.consumption.bulkReplace(buildingId, years, expectedRevision),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["buildings", buildingId, "consumption"] });
     },

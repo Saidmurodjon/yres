@@ -3,11 +3,13 @@ import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle 
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useMaterials, useReplaceEnvelope, useSurfaceResistance } from "../../hooks";
+import { useEnvelope, useMaterials, useReplaceEnvelope, useSurfaceResistance } from "../../hooks";
+import { useRevisionConflict } from "../../hooks/use-revision-conflict";
 import { ApiError } from "../../lib/api";
 import type { EnvelopeData } from "../../lib/api-types";
 import { toNumberLocale } from "../../lib/number";
 import { ConfirmDialog } from "../confirm-dialog";
+import { RevisionConflictDialog } from "../revision-conflict-dialog";
 import { useRegisterDirty } from "../unsaved-changes";
 import { BuildingBlocksStep } from "./envelope-editor/building-blocks-step";
 import { ConstructionTypesStep } from "./envelope-editor/construction-types-step";
@@ -43,6 +45,10 @@ export function EnvelopeEditorDialog({
   const { data: materialsData, isLoading: materialsLoading } = useMaterials();
   const { data: surfaceResistanceData } = useSurfaceResistance();
   const replaceEnvelope = useReplaceEnvelope(buildingId);
+  // Only used here to re-fetch on "load their version" (A10) — the dialog's own content comes from
+  // the `envelope` prop, which the parent re-fetches via the same query key after a successful save.
+  const { refetch: refetchEnvelope } = useEnvelope(buildingId);
+  const revisionConflict = useRevisionConflict();
   const materials = materialsData?.materials ?? [];
   const surfaceResistances = surfaceResistanceData?.surfaceResistances ?? [];
 
@@ -80,7 +86,7 @@ export function EnvelopeEditorDialog({
     }
   }, [open]);
 
-  async function handleSubmit() {
+  async function handleSubmit(expectedRevisionOverride?: number) {
     setApiError(null);
     const { payload, errors: validationErrors } = parseEditorState(
       state,
@@ -93,11 +99,24 @@ export function EnvelopeEditorDialog({
     if (!payload) return;
 
     try {
-      await replaceEnvelope.mutateAsync(payload);
+      await replaceEnvelope.mutateAsync({
+        ...payload,
+        expectedRevision: expectedRevisionOverride ?? envelope.revision,
+      });
+      revisionConflict.clear();
       onOpenChange(false);
     } catch (err) {
+      if (revisionConflict.check(err)) return;
       setApiError(err instanceof ApiError ? err.message : t("editor.saveFailed"));
     }
+  }
+
+  // "Load their version": the user's edits in this dialog are discarded (they explicitly chose this
+  // over "keep my edits"), the dialog closes, and the next open shows whatever `refetchEnvelope` got.
+  async function handleReloadFromConflict() {
+    revisionConflict.clear();
+    await refetchEnvelope();
+    onOpenChange(false);
   }
 
   // Esc, a click outside, the × and "Cancel" all come through here: unsaved edits are never dropped silently.
@@ -256,7 +275,7 @@ export function EnvelopeEditorDialog({
               <Button variant="outline" onClick={requestClose}>
                 {t("common:cancel")}
               </Button>
-              <Button onClick={handleSubmit} disabled={replaceEnvelope.isPending}>
+              <Button onClick={() => handleSubmit()} disabled={replaceEnvelope.isPending}>
                 {replaceEnvelope.isPending ? t("common:saving") : t("editor.saveEnvelope")}
               </Button>
             </div>
@@ -288,6 +307,12 @@ export function EnvelopeEditorDialog({
           setPendingScenario(null);
         }}
         onCancel={() => setPendingScenario(null)}
+      />
+      <RevisionConflictDialog
+        open={revisionConflict.conflict !== null}
+        pending={replaceEnvelope.isPending}
+        onOverwrite={() => handleSubmit(revisionConflict.conflict?.currentRevision)}
+        onReload={handleReloadFromConflict}
       />
     </>
   );

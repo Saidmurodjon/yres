@@ -13,6 +13,7 @@ import {
 import { type ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFinancialParameters, useSaveFinancialParameters } from "../../hooks";
+import { useRevisionConflict } from "../../hooks/use-revision-conflict";
 import { useSyncedRows } from "../../hooks/use-synced-rows";
 import { ApiError } from "../../lib/api";
 import type { FinancialParameters } from "../../lib/api-types";
@@ -24,6 +25,7 @@ import {
 } from "../../lib/number";
 import { fractionToPercentText, parsePercentAsFraction } from "../../lib/percent";
 import { NumberInput } from "../number-input";
+import { RevisionConflictDialog } from "../revision-conflict-dialog";
 import { useRegisterDirty } from "../unsaved-changes";
 
 type NumberKey =
@@ -178,8 +180,9 @@ export function FinancialParametersCard({
 }: { buildingId: string; readOnly?: boolean }) {
   const { t, i18n } = useTranslation("measures");
   const locale = toNumberLocale(i18n.language);
-  const { data, isLoading, isError, error } = useFinancialParameters(buildingId);
+  const { data, isLoading, isError, error, refetch } = useFinancialParameters(buildingId);
   const save = useSaveFinancialParameters(buildingId);
+  const revisionConflict = useRevisionConflict();
   const [saveError, setSaveError] = useState<string | null>(null);
   const [invalid, setInvalid] = useState<ReadonlySet<NumberKey>>(new Set());
   const [dateInvalid, setDateInvalid] = useState(false);
@@ -210,8 +213,8 @@ export function FinancialParametersCard({
     setRows((prev) => prev.map((r) => ({ ...r, [key]: value })));
   }
 
-  async function handleSave() {
-    if (!row) return;
+  async function handleSave(expectedRevisionOverride?: number) {
+    if (!row || !data) return;
     setSaveError(null);
     setSaved(false);
     const result = toPayload(row, locale);
@@ -224,11 +227,26 @@ export function FinancialParametersCard({
     setInvalid(new Set());
     setDateInvalid(false);
     try {
-      await save.mutateAsync(result.payload);
+      await save.mutateAsync({
+        ...result.payload,
+        expectedRevision: expectedRevisionOverride ?? data.revision,
+      });
+      revisionConflict.clear();
       markClean();
       setSaved(true);
     } catch (err) {
+      if (revisionConflict.check(err)) return;
       setSaveError(err instanceof ApiError ? err.message : t("financial.failedToSave"));
+    }
+  }
+
+  // "Load their version": discard the local edit and show whatever the refetch returns.
+  async function handleReloadFromConflict() {
+    revisionConflict.clear();
+    const result = await refetch();
+    if (result.data) {
+      setRows([toRow(result.data.parameters, locale)]);
+      markClean();
     }
   }
 
@@ -356,11 +374,17 @@ export function FinancialParametersCard({
         )}
         {saved && !dirty && <p className="text-sm text-success">✓ {t("financial.saved")}</p>}
         {!readOnly && (
-          <Button onClick={handleSave} disabled={save.isPending || !dirty}>
+          <Button onClick={() => handleSave()} disabled={save.isPending || !dirty}>
             {save.isPending ? t("ee.saving") : t("financial.save")}
           </Button>
         )}
       </CardContent>
+      <RevisionConflictDialog
+        open={revisionConflict.conflict !== null}
+        pending={save.isPending}
+        onOverwrite={() => handleSave(revisionConflict.conflict?.currentRevision)}
+        onReload={handleReloadFromConflict}
+      />
     </Card>
   );
 }

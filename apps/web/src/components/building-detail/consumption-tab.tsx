@@ -27,6 +27,7 @@ import type { ClipboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBulkReplaceConsumption, useConsumption } from "../../hooks";
+import { useRevisionConflict } from "../../hooks/use-revision-conflict";
 import { ApiError } from "../../lib/api";
 import type {
   BulkReplaceYearInput,
@@ -48,6 +49,7 @@ import {
 } from "../../lib/number";
 import { AuditorNote } from "../auditor-note";
 import { NumberInput } from "../number-input";
+import { RevisionConflictDialog } from "../revision-conflict-dialog";
 import { useRegisterDirty } from "../unsaved-changes";
 import { MonthlyComparisonChart } from "./consumption-comparison-chart";
 import {
@@ -181,8 +183,11 @@ export function ConsumptionTab({
 }: { buildingId: string; readOnly?: boolean }) {
   const { t, i18n } = useTranslation("consumption");
   const locale = toNumberLocale(i18n.language);
-  const { data, isLoading, isError, error } = useConsumption(buildingId, { pageSize: 500 });
+  const { data, isLoading, isError, error, refetch } = useConsumption(buildingId, {
+    pageSize: 500,
+  });
   const bulkReplace = useBulkReplaceConsumption(buildingId);
+  const revisionConflict = useRevisionConflict();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const bills = useMemo(() => data?.bills ?? [], [data]);
@@ -299,7 +304,7 @@ export function ConsumptionTab({
    * One atomic request for every edited year (all carriers of each — the server replaces whole years, so an
    * emptied carrier clears its old rows). Any unreadable cell stops the whole save; nothing is skipped.
    */
-  async function handleSaveAll() {
+  async function handleSaveAll(expectedRevisionOverride?: number) {
     setSaveError(null);
     setSaved(false);
     const dirtyYears = [...dirtyByYear.keys()].sort((a, b) => b - a);
@@ -323,12 +328,31 @@ export function ConsumptionTab({
     }
 
     try {
-      await bulkReplace.mutateAsync(payload);
+      await bulkReplace.mutateAsync({
+        years: payload,
+        expectedRevision: expectedRevisionOverride ?? data?.revision,
+      });
+      revisionConflict.clear();
       setSaved(true);
       setBaseline(structuredClone(gridsByYear));
     } catch (err) {
+      if (revisionConflict.check(err)) return;
       setSaveError(err instanceof ApiError ? err.message : t("saveFailed"));
     }
+  }
+
+  // "Load their version": discard the local edits and rebuild the grids from a fresh fetch.
+  async function handleReloadFromConflict() {
+    revisionConflict.clear();
+    const result = await refetch();
+    const freshBills = result.data?.bills ?? [];
+    const nextYears = [...new Set([...freshBills.map((b) => b.year), ...years])].sort(
+      (a, b) => b - a,
+    );
+    const freshGrids = gridsFromBills(freshBills, nextYears, locale);
+    setYears(nextYears);
+    setGridsByYear(freshGrids);
+    setBaseline(structuredClone(freshGrids));
   }
 
   async function handleFileSelected(file: File) {
@@ -554,7 +578,7 @@ export function ConsumptionTab({
           </CardContent>
           <CardFooter className="justify-end">
             <Button
-              onClick={handleSaveAll}
+              onClick={() => handleSaveAll()}
               disabled={bulkReplace.isPending || dirtyGroupCount === 0}
             >
               <Save className="h-4 w-4" />
@@ -603,6 +627,12 @@ export function ConsumptionTab({
           />
         </>
       )}
+      <RevisionConflictDialog
+        open={revisionConflict.conflict !== null}
+        pending={bulkReplace.isPending}
+        onOverwrite={() => handleSaveAll(revisionConflict.conflict?.currentRevision)}
+        onReload={handleReloadFromConflict}
+      />
     </div>
   );
 }

@@ -17,7 +17,6 @@ import type {
   BuildingWithRole,
   BulkReplaceYearInput,
   ChatAttachmentUploadResult,
-  FinancialParameters,
   FinancialParametersResponse,
   ChatMessage,
   ChatUserSearchResult,
@@ -47,6 +46,7 @@ import type {
   ReplaceRenewablesPayload,
   ReplaceUtilityBillsInput,
   ReplaceVentilationPayload,
+  SaveFinancialParametersInput,
   SurfaceResistance,
   SystemsData,
   UpdateBuildingInput,
@@ -63,12 +63,15 @@ export class ApiError extends Error {
   status: number;
   code?: string;
   details?: unknown;
+  /** Only set when `code === "revision_conflict"` (A10) — the entity's actual revision. */
+  currentRevision?: number;
 
   constructor(status: number, body: ApiErrorBody) {
     super(body.error || `Request failed with status ${status}`);
     this.status = status;
     this.code = body.code;
     this.details = body.details;
+    this.currentRevision = body.currentRevision;
   }
 }
 
@@ -264,13 +267,16 @@ export const api = {
         constructionTypeIds: string[];
         openingTypeIds: string[];
         envelopeElementIds: string[];
+        /** A10: `expectedRevision + 1` when the payload guarded the write; omitted otherwise (this PUT is
+         * already at the D1 query budget ceiling, so it never spends an extra query to re-read it). */
+        revision?: number;
       }>(`/api/buildings/${buildingId}/envelope`, { method: "PUT", body: JSON.stringify(payload) }),
   },
 
   financialParameters: {
     get: (buildingId: string) =>
       request<FinancialParametersResponse>(`/api/buildings/${buildingId}/financial-parameters`),
-    put: (buildingId: string, data: FinancialParameters) =>
+    put: (buildingId: string, data: SaveFinancialParametersInput) =>
       request<FinancialParametersResponse>(`/api/buildings/${buildingId}/financial-parameters`, {
         method: "PUT",
         body: JSON.stringify(data),
@@ -279,14 +285,14 @@ export const api = {
 
   measures: {
     list: (buildingId: string, params?: ListParams) =>
-      request<{ measures: EnergyMeasure[]; page: number; pageSize: number }>(
+      request<{ measures: EnergyMeasure[]; page: number; pageSize: number; revision: number }>(
         `/api/buildings/${buildingId}/measures${toQueryString(params)}`,
       ),
-    select: (buildingId: string, measureIds: string[]) =>
-      request<{ selected: string[] }>(`/api/buildings/${buildingId}/measures/select`, {
-        method: "POST",
-        body: JSON.stringify({ measureIds }),
-      }),
+    select: (buildingId: string, measureIds: string[], expectedRevision?: number) =>
+      request<{ selected: string[]; revision?: number }>(
+        `/api/buildings/${buildingId}/measures/select`,
+        { method: "POST", body: JSON.stringify({ measureIds, expectedRevision }) },
+      ),
     create: (buildingId: string, data: CreateMeasureInput) =>
       request<{ measure: EnergyMeasure }>(`/api/buildings/${buildingId}/measures`, {
         method: "POST",
@@ -322,7 +328,7 @@ export const api = {
 
   consumption: {
     list: (buildingId: string, params?: ListParams) =>
-      request<{ bills: UtilityBill[]; page: number; pageSize: number }>(
+      request<{ bills: UtilityBill[]; page: number; pageSize: number; revision: number }>(
         `/api/buildings/${buildingId}/consumption${toQueryString(params)}`,
       ),
     create: (buildingId: string, bills: CreateUtilityBillInput[]) =>
@@ -331,51 +337,54 @@ export const api = {
         body: JSON.stringify({ bills }),
       }),
     replace: (buildingId: string, payload: ReplaceUtilityBillsInput) =>
-      request<{ energyCarrier: string; year: number; count: number }>(
+      request<{ energyCarrier: string; year: number; count: number; revision?: number }>(
         `/api/buildings/${buildingId}/consumption`,
         { method: "PUT", body: JSON.stringify(payload) },
       ),
-    bulkReplace: (buildingId: string, years: BulkReplaceYearInput[]) =>
-      request<{ groups: { energyCarrier: string; year: number; count: number }[] }>(
-        `/api/buildings/${buildingId}/consumption/bulk`,
-        { method: "PUT", body: JSON.stringify({ years }) },
-      ),
+    bulkReplace: (buildingId: string, years: BulkReplaceYearInput[], expectedRevision?: number) =>
+      request<{
+        groups: { energyCarrier: string; year: number; count: number }[];
+        revision?: number;
+      }>(`/api/buildings/${buildingId}/consumption/bulk`, {
+        method: "PUT",
+        body: JSON.stringify({ years, expectedRevision }),
+      }),
   },
 
   systems: {
     get: (buildingId: string) => request<SystemsData>(`/api/buildings/${buildingId}/systems`),
     replaceVentilation: (buildingId: string, payload: ReplaceVentilationPayload) =>
-      request<{ scenario: string; count: number }>(
+      request<{ scenario: string; count: number; revision?: number }>(
         `/api/buildings/${buildingId}/systems/ventilation`,
         { method: "PUT", body: JSON.stringify(payload) },
       ),
     replaceDhw: (buildingId: string, payload: ReplaceDhwPayload) =>
-      request<{ scenario: string; count: number }>(`/api/buildings/${buildingId}/systems/dhw`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-      }),
+      request<{ scenario: string; count: number; revision?: number }>(
+        `/api/buildings/${buildingId}/systems/dhw`,
+        { method: "PUT", body: JSON.stringify(payload) },
+      ),
     replaceDistribution: (buildingId: string, payload: ReplaceDistributionPayload) =>
-      request<{ scenario: string; count: number }>(
+      request<{ scenario: string; count: number; revision?: number }>(
         `/api/buildings/${buildingId}/systems/distribution`,
         { method: "PUT", body: JSON.stringify(payload) },
       ),
     replaceGeneration: (buildingId: string, payload: ReplaceGenerationPayload) =>
-      request<{ scenario: string; count: number }>(
+      request<{ scenario: string; count: number; revision?: number }>(
         `/api/buildings/${buildingId}/systems/generation`,
         { method: "PUT", body: JSON.stringify(payload) },
       ),
     replaceCoolingWindows: (buildingId: string, payload: ReplaceCoolingWindowsPayload) =>
-      request<{ scenario: string; count: number }>(
+      request<{ scenario: string; count: number; revision?: number }>(
         `/api/buildings/${buildingId}/systems/cooling-windows`,
         { method: "PUT", body: JSON.stringify(payload) },
       ),
     replaceCoolingSystems: (buildingId: string, payload: ReplaceCoolingSystemsPayload) =>
-      request<{ scenario: string; count: number }>(
+      request<{ scenario: string; count: number; revision?: number }>(
         `/api/buildings/${buildingId}/systems/cooling-systems`,
         { method: "PUT", body: JSON.stringify(payload) },
       ),
     replaceLighting: (buildingId: string, payload: ReplaceLightingPayload) =>
-      request<{ scenario: string; count: number }>(
+      request<{ scenario: string; count: number; revision?: number }>(
         `/api/buildings/${buildingId}/systems/lighting`,
         {
           method: "PUT",
@@ -383,7 +392,7 @@ export const api = {
         },
       ),
     replaceEquipment: (buildingId: string, payload: ReplaceEquipmentPayload) =>
-      request<{ scenario: string; count: number }>(
+      request<{ scenario: string; count: number; revision?: number }>(
         `/api/buildings/${buildingId}/systems/equipment`,
         {
           method: "PUT",
@@ -391,10 +400,10 @@ export const api = {
         },
       ),
     replaceRenewables: (buildingId: string, payload: ReplaceRenewablesPayload) =>
-      request<{ count: number }>(`/api/buildings/${buildingId}/systems/renewables`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-      }),
+      request<{ count: number; revision?: number }>(
+        `/api/buildings/${buildingId}/systems/renewables`,
+        { method: "PUT", body: JSON.stringify(payload) },
+      ),
   },
 
   members: {

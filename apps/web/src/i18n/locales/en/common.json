@@ -50,5 +50,11 @@
     "pageOf": "Page {{page}} of {{pageCount}}",
     "previous": "Previous",
     "next": "Next"
+  },
+  "revisionConflict": {
+    "title": "Changed by someone else",
+    "description": "This section was changed by someone else while you were editing. You can keep your edits (overwriting theirs) or load their version (your edits will be lost).",
+    "overwrite": "Keep my edits (overwrite)",
+    "reload": "Load their version (my edits will be lost)"
   }
 }

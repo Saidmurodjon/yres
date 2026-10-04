@@ -3163,3 +3163,73 @@ yuborish va 409'da `ConfirmDialog`), keyin F10'dan so'ng A11/A12.
   rang+matn, tasdiq dialoglari, 409 boshqaruvi) kodga kiritildi. "Qilmang" bandlari (snapshot
   natijasini alohida sahifada to'liq ko'rsatish, yangi Sheet/Drawer) bajarilmadi (to'g'ri).
 **Navbatda:** A09a (`audit_event` qobiq/tizimlar/iste'mol mutatsiyalariga).
+
+**Navbatda:** A08 (UI: natijalar sahifasida "Rasmiy versiyalar" paneli).
+
+
+## A10b — `expectedRevision` → 409 (web) (2026-10-04)
+
+- Spec (`A10-expected-revision.md` §A10b) talab qilgan beshta formani (`envelope-editor-dialog.tsx`,
+  `systems-tab.tsx`ning 9 bo'limi, `consumption-tab.tsx`, `measures-tab.tsx`, `financial-parameters-card.tsx`)
+  qamrab oldi — har biri endi GET'dan kelgan `revision`(lar)ni tahrir boshlangan qiymat sifatida
+  saqlaydi va saqlashda `expectedRevision` yuboradi.
+- **Umumiy infratuzilma** (13 chaqiruv nuqtasida bir xil kodni takrorlamaslik uchun):
+  `hooks/use-revision-conflict.ts`ning `useRevisionConflict()`i — `check(err)` `ApiError.code ===
+  "revision_conflict"` bo'lsa holatni yozib `true` qaytaradi (chaqiruvchi `if (check(err)) return;`
+  qiladi, boshqa xato o'z yo'lida ko'rsatiladi — hech qachon jimgina yutilmaydi); va
+  `components/revision-conflict-dialog.tsx`ning `<RevisionConflictDialog>`i — spec §7dagi ikkita
+  tanlovni (`overwrite`/`reload`) ko'rsatadi, Escape/overlay-click/X tugmasi bilan yopilmaydi (ikkisidan
+  biri majburiy — `onOpenChange`/`onEscapeKeyDown`/`onPointerDownOutside` barchasi no-op).
+- **"Mening tahrirlarimni saqlash"** — `handleSave(expectedRevisionOverride?)` qayta chaqiriladi,
+  `expectedRevision: expectedRevisionOverride ?? <joriy revision>` bilan (birinchi urinishda
+  `<joriy revision>` GET'dan, konflikt holatida `currentRevision` 409 javobidan).
+- **"Ularning versiyasini yuklash"** — mahalliy tahrirlar tashlab yuboriladi: forma o'zining query
+  hook'ini (`useEnvelope`/`useSystems`/`useConsumption`/`useMeasures`/`useFinancialParameters`) qayta
+  chaqirib (`refetch()`), natijadagi yangi ma'lumotdan qatorlarni qayta quradi (`useSyncedRows`ning
+  `setRows(fresh)` + `markClean()` ketma-ketligi — `clean` harakati `missedSync` bo'lmasa `rows`ni
+  o'zgartirmaydi, shuning uchun avval `setRows` bilan yangi qiymat **qo'yiladi**, keyin `markClean()`
+  faqat `dirty`ni `false` qiladi; ikkala dispatch bir xil reducer-chaqiruv ichida, poyga holati yo'q).
+  Qobiq dialogida "yuklash" — dialog yopiladi (keyingi ochilishda server holatini ko'rsatadi), chunki
+  u ko'p bosqichli editor state (`EditorState`) bilan ishlaydi, uni qayta qurish qatorlar kabi
+  arzon emas.
+- **`systems-tab.tsx`ning 9 bo'limi** — har biriga alohida `revision`/`refetchSystems` prop'i
+  qo'shildi (parent `SystemsTab`ning yagona `useSystems().refetch`idan hosil qilingan
+  `refetchSystems = async () => (await refetch()).data`); har bo'lim qatorlarni serverdan xaritalash
+  funksiyasini (`mapVentilationRow` va h.k.) alohida nomlangan funksiyaga chiqardi — bir marta
+  boshlang'ich sinxronlash uchun, bir marta "ularning versiyasi" uchun ishlatiladi (ikki marta
+  yozilmasin deb).
+- **`lib/api.ts`/`api-types.ts`**: `ApiError`/`ApiErrorBody`ga `currentRevision?: number` qo'shildi
+  (409 javobining `currentRevision` maydoni uchun — spec §8 "yangi tur kerak emas" shart edi, shu
+  sababli `ApiError`ning o'zidagi mavjud `code`/`details` naqshiga ergashildi, alohida xato klassi
+  yo'q). `EnvelopeData.revision`, `SystemsData.revisions` (9 kalit), `FinancialParametersResponse.revision`
+  va consumption/measures ro'yxat javoblariga `revision` qo'shildi. 9 ta `Replace*Payload`,
+  `ReplaceEnvelopePayload`, `ReplaceUtilityBillsInput`ga `expectedRevision?: number` qo'shildi.
+  `financial-parameters.put`/`measures.select`/`consumption.bulkReplace` imzolari `expectedRevision`
+  o'tkazish uchun o'zgartirildi (`SaveFinancialParametersInput = FinancialParameters &
+  { expectedRevision?: number }` yangi tur).
+- uz/ru/en `common.json`ga `revisionConflict.{title,description,overwrite,reload}` qo'shildi.
+- Tekshiruvlar: `bun install` (ildiz); ildizdan `bun run type-check` — barcha 5 paket (`@yres/api`
+  ham) toza; `apps/web`da `bun run build` (= `type-check`, haqiqiy Vite build) toza; `bunx biome
+  lint` (14 tegilgan/yangi fayl) toza; `apps/web`da `bun run test` — **71/71** (mavjud
+  `use-synced-rows.test.ts` ham, yangi test qo'shilmadi — pastga qarang); `bun run --cwd apps/api
+  test` — **324/324** (A10a'dan beri +7, bu sessiya backend'ga tegmadi).
+- **Brauzer tekshiruvi — qo'lda ro'yxat (Preview MCP ishlatilmadi, qabul mezoni §(b) buni
+  ixtiyoriy deb belgilaydi):** koddan ko'zdan kechirish orqali tasdiqlangan: (1) har bir
+  `handleSave`da `ApiError.code === "revision_conflict"` ushlanganda `setError`/`setSaveError`
+  o'rniga `revisionConflict.check(err)` chaqiriladi va `true` bo'lsa darhol `return` qilinadi — demak
+  409'da forma o'z oddiy xato xabarini KO'RSATMAYDI, faqat dialog ochiladi; (2) ikkala tugma
+  (`onOverwrite`/`onReload`) `disabled={pending}` bilan ikki marta bosishdan himoyalangan; (3) hech
+  bir yo'lda mahalliy `rows`/`state` 409 javobidan keyin avtomatik tozalanmaydi — faqat foydalanuvchi
+  "Ularning versiyasini yuklash"ni aniq bosganda. Haqiqiy ikkita brauzer tab'i bilan qo'lda
+  (mock yoki haqiqiy API, ikkinchi tab eski revision bilan saqlab 409 hosil qilib) sinov hali
+  qilinmagan — buni keyingi sessiya yoki loyiha egasi tasdiqlashi mumkin.
+- Yangi unit test yozilmadi: konflikt UI mantiqi React komponent ichida (hook + dialog holati),
+  mavjud `apps/web` test infratuzilmasi (`vitest`, DOM-siz) komponent render testlarini
+  qamrab olmaydi (`testing-and-verification.md`da aytilgan "lokal bazasiz UI" yo'li Preview MCP
+  talab qiladi). `useRevisionConflict()`ning o'zi juda oddiy (ApiError tekshiruvi + useState) —
+  alohida test fayliga arzimaydi deb hisoblandi; agar loyiha egasi talab qilsa, keyingi sessiyada
+  qo'shilishi mumkin.
+- Chetlanish spec'ga nisbatan: yo'q, bitta kichik qaror aniq belgilanmagan joyda qabul qilindi —
+  qobiq editor'ida "ularning versiyasini yuklash" qatorlarni qayta qurish o'rniga dialogni yopadi
+  (yuqoridagi izohga qarang).
+**Navbatda:** F10'dan so'ng A11/A12 (A10 to'liq yopildi — a ✅, b ✅).

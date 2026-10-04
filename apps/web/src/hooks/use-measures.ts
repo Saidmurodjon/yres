@@ -14,7 +14,14 @@ export function useMeasures(buildingId: string | undefined, params?: ListParams)
 export function useSelectMeasures(buildingId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (measureIds: string[]) => api.measures.select(buildingId, measureIds),
+    mutationFn: ({
+      measureIds,
+      expectedRevision,
+    }: {
+      measureIds: string[];
+      /** A10: the "measures" revision last seen (`MeasuresList.revision`). */
+      expectedRevision?: number;
+    }) => api.measures.select(buildingId, measureIds, expectedRevision),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["buildings", buildingId, "measures"] });
     },

@@ -68,7 +68,7 @@ Faza 1 sessiyasi parallel ishlayotgan bo'lsa: commit'dan oldin `git pull --rebas
 | A07 | Verify: snapshot holati, versiya, hash; brauzerda fayl tekshiruvi | `A07-verify.md` | 1 | hozir | ✅ |
 | A08 | UI: natijalar sahifasida "Rasmiy versiyalar" paneli | `A08-snapshot-ui.md` | 1 | hozir | ✅ |
 | A09 | `audit_event` barcha bino mutatsiyalariga (a: qobiq/tizimlar/iste'mol; b: qolganlari) | `A09-audit-event-yoyish.md` | 2 (a, b) | hozir | ✅ |
-| A10 | `expectedRevision` → 409: API (a), web (b) | `A10-expected-revision.md` | 2 (a, b) | hozir | a ✅ |
+| A10 | `expectedRevision` → 409: API (a), web (b) | `A10-expected-revision.md` | 2 (a, b) | hozir | ✅ |
 | A11 | `ENGINE_VERSION` qulfi: golden natija o'zgarsa versiya oshirilishi shart | `A11-engine-version-qulf.md` | 1 | **F10 dan keyin** | ⬜ |
 | A12 | Yakun: qoidalar, hisobot.md, master reja, PROGRESS | `A12-yakun.md` | 1 | oxirida (F10 dan keyin) | ⬜ |
 

@@ -258,6 +258,8 @@ export interface EnvelopeData {
   constructionTypes: ConstructionType[];
   openingTypes: OpeningType[];
   envelopeElements: EnvelopeElement[];
+  /** A10: the "envelope" entity's revision at fetch time — send back as `expectedRevision` on PUT. */
+  revision: number;
 }
 
 export interface ReplaceEnvelopePayload {
@@ -307,6 +309,8 @@ export interface ReplaceEnvelopePayload {
     heightGroundContactM?: number;
     openings: { openingTypeCode: string; count: number }[];
   }[];
+  /** A10: the "envelope" revision last seen (`EnvelopeData.revision`). Omit for the pre-A10 guard-less PUT. */
+  expectedRevision?: number;
 }
 
 export type MeasureCategory =
@@ -408,6 +412,8 @@ export interface ReplaceUtilityBillsInput {
   energyCarrier: EnergyCarrier;
   year: number;
   bills: MonthlyBillInput[];
+  /** A10: the "consumption" revision last seen. Omit for the pre-A10 guard-less PUT. */
+  expectedRevision?: number;
 }
 
 /** One edited year with ALL its carriers: the server replaces the whole year (unlisted carriers are cleared). */
@@ -587,6 +593,18 @@ export interface SystemsData {
   lightingZones: LightingZone[];
   equipmentItems: EquipmentItem[];
   renewableSystems: RenewableSystem[];
+  /** A10: each sub-entity's revision at fetch time — send back as `expectedRevision` on its own PUT. */
+  revisions: {
+    ventilation: number;
+    dhw: number;
+    distribution: number;
+    generation: number;
+    coolingWindows: number;
+    coolingSystems: number;
+    lighting: number;
+    equipment: number;
+    renewables: number;
+  };
 }
 
 export interface ReplaceVentilationPayload {
@@ -599,6 +617,8 @@ export interface ReplaceVentilationPayload {
     fanElectricalPowerKw?: number | null;
     coolingSeasonHours?: number | null;
   }[];
+  /** A10: this sub-entity's revision last seen (`SystemsData.revisions.ventilation`). Omit for the pre-A10 guard-less PUT. */
+  expectedRevision?: number;
 }
 
 export interface ReplaceDhwPayload {
@@ -609,6 +629,8 @@ export interface ReplaceDhwPayload {
     specificConsumptionLPersonDay: number;
     personsServed: number;
   }[];
+  /** A10: `SystemsData.revisions.dhw`. Omit for the pre-A10 guard-less PUT. */
+  expectedRevision?: number;
 }
 
 export interface ReplaceDistributionPayload {
@@ -620,6 +642,8 @@ export interface ReplaceDistributionPayload {
     insulatedFraction?: number;
     meanFluidTempC: number;
   }[];
+  /** A10: `SystemsData.revisions.distribution`. Omit for the pre-A10 guard-less PUT. */
+  expectedRevision?: number;
 }
 
 export interface ReplaceGenerationPayload {
@@ -631,6 +655,8 @@ export interface ReplaceGenerationPayload {
     shareOfDemand?: number;
     distributionEfficiency?: number | null;
   }[];
+  /** A10: `SystemsData.revisions.generation`. Omit for the pre-A10 guard-less PUT. */
+  expectedRevision?: number;
 }
 
 export interface ReplaceCoolingWindowsPayload {
@@ -641,6 +667,8 @@ export interface ReplaceCoolingWindowsPayload {
     gValue: number;
     shadingFactor?: number;
   }[];
+  /** A10: `SystemsData.revisions.coolingWindows`. Omit for the pre-A10 guard-less PUT. */
+  expectedRevision?: number;
 }
 
 export interface ReplaceCoolingSystemsPayload {
@@ -650,6 +678,8 @@ export interface ReplaceCoolingSystemsPayload {
     seer: number;
     distributionEfficiency?: number;
   }[];
+  /** A10: `SystemsData.revisions.coolingSystems`. Omit for the pre-A10 guard-less PUT. */
+  expectedRevision?: number;
 }
 
 export interface ReplaceLightingPayload {
@@ -660,6 +690,8 @@ export interface ReplaceLightingPayload {
     technologyMix: LightingTechnologyMix;
     utilizationFactor: number;
   }[];
+  /** A10: `SystemsData.revisions.lighting`. Omit for the pre-A10 guard-less PUT. */
+  expectedRevision?: number;
 }
 
 export interface ReplaceEquipmentPayload {
@@ -674,6 +706,8 @@ export interface ReplaceEquipmentPayload {
     heatingUtilizationFactor?: number;
     coolingUtilizationFactor?: number;
   }[];
+  /** A10: `SystemsData.revisions.equipment`. Omit for the pre-A10 guard-less PUT. */
+  expectedRevision?: number;
 }
 
 export interface ReplaceRenewablesPayload {
@@ -685,6 +719,8 @@ export interface ReplaceRenewablesPayload {
     unitCostUsd: number;
     monthlyProductionKwh: number[];
   }[];
+  /** A10: `SystemsData.revisions.renewables`. Omit for the pre-A10 guard-less PUT. */
+  expectedRevision?: number;
 }
 
 export type AuditRunStatus = "pending" | "running" | "completed" | "failed";
@@ -711,6 +747,8 @@ export interface ApiErrorBody {
   /** Stable machine-readable code some endpoints add next to `error` (e.g. ATTACHMENT_TYPE_NOT_ALLOWED). */
   code?: string;
   details?: unknown;
+  /** Only on `code: "revision_conflict"` (A10) — the entity's actual revision, to retry with or discard for. */
+  currentRevision?: number;
 }
 
 /** `GET/PUT /api/buildings/:id/financial-parameters` — rates are fractions (0.04 = 4 %), as stored. */
@@ -741,4 +779,9 @@ export interface FinancialParametersResponse {
   /** Nominal rates and USD/kWh tariffs derived on the server from the saved (or default) parameters. */
   assumptions: FinancialAssumptions;
   isDefault: boolean;
+  /** A10: the "financial" entity's revision — send back as `expectedRevision` on PUT. */
+  revision: number;
 }
+
+/** `PUT /api/buildings/:id/financial-parameters` body — `FinancialParameters` plus A10's optimistic-concurrency guard. */
+export type SaveFinancialParametersInput = FinancialParameters & { expectedRevision?: number };

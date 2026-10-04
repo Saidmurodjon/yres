@@ -50,5 +50,11 @@
     "pageOf": "{{page}}-sahifa, jami {{pageCount}}",
     "previous": "Oldingi",
     "next": "Keyingi"
+  },
+  "revisionConflict": {
+    "title": "Boshqa foydalanuvchi tomonidan o'zgartirildi",
+    "description": "Siz tahrirlayotganda bu bo'limni boshqa foydalanuvchi o'zgartirdi. Siz mening tahrirlarimni saqlashingiz (ularning o'zgarishini ustidan yozish) yoki ularning versiyasini yuklashingiz mumkin (mening tahrirlarim yo'qoladi).",
+    "overwrite": "Mening tahrirlarimni saqlash (ustidan yozish)",
+    "reload": "Ularning versiyasini yuklash (mening tahrirlarim yo'qoladi)"
   }
 }
